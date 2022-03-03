@@ -14,7 +14,9 @@ type Question =
 
 service : {
     "add_user": (text) -> (User);
-    "get_user": (text) -> (User) query;   
+    "get_user": (text) -> (User) query;  
+    "get_users": () -> (vec User) query; 
     "add_question": (text, text) -> (Question);
     "get_question": (text) -> (Question) query;
+    "get_questions": () -> (vec Question) query;
 }
