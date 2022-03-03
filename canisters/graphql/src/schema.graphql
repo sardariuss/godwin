@@ -1,0 +1,35 @@
+type Question {
+   id: ID!
+   author: User! @relation(name: "Question:author::User:username")
+   text: String!
+   interest: Int!
+}
+
+type User {
+   id: ID!
+   username: String!
+}
+
+type QuestionVote {
+   id: ID!
+   user: User! @relation(name: "QuestionVote:user::User:username")
+   question: Question! @relation(name: "QuestionVote:question::Question:text")
+   opinion: Opinion! 
+}
+
+type QuestionInterest {
+   id: ID!
+   user: User! @relation(name: "QuestionInterest:user::User:username")
+   question: Question! @relation(name: "QuestionInterest:question::Question:text")
+   interest: Interest!
+}
+
+enum Opinion {
+   AGREE
+   DISAGREE
+}
+
+enum Interest {
+   UP
+   DOWN
+}

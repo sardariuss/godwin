@@ -1,0 +1,20 @@
+type User = 
+ record {
+   id: text;
+   username: text;
+ };
+
+type Question =
+ record {
+   id: text;
+   author: User;
+   text: text;
+   interest: int32;
+ };
+
+service : {
+    "add_user": (text) -> (User);
+    "get_user": (text) -> (User) query;   
+    "add_question": (text, text) -> (Question);
+    "get_question": (text) -> (Question) query;
+}
