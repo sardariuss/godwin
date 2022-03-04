@@ -12,6 +12,20 @@ type Question =
    interest: int32;
  };
 
+type QuestionVote = 
+ record {
+   id: text;
+   user: User;
+   question: Question;
+   opinion: Opinion;
+ };
+
+type Opinion = 
+ variant {
+    AGREE;
+    DISAGREE
+ };
+
 service : {
     "add_user": (text) -> (User);
     "get_user": (text) -> (User) query;  
@@ -19,4 +33,6 @@ service : {
     "add_question": (text, text) -> (Question);
     "get_question": (text) -> (Question) query;
     "get_questions": () -> (vec Question) query;
+    "add_vote": (text, text, Opinion) -> (QuestionVote);
+    "get_votes": () -> (vec QuestionVote) query;
 }

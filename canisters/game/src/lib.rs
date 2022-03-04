@@ -21,6 +21,29 @@ struct Question {
    interest: i32
 }
 
+#[derive(Debug, serde::Deserialize, ic_cdk::export::candid::CandidType, Clone)]
+struct QuestionVote {
+   id: String,
+   user: User,
+   question: Question,
+   opinion: Opinion
+}
+
+#[derive(Debug, serde::Deserialize, ic_cdk::export::candid::CandidType, Clone)]
+enum Opinion {
+   AGREE,
+   DISAGREE
+}
+
+impl std::fmt::Display for Opinion {
+   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      match *self {
+         Opinion::AGREE => write!(f, "AGREE"),
+         Opinion::DISAGREE => write!(f, "DISAGREE"),
+      }
+   }
+}
+
 /// Add a user
 /// \param[in] username The name of the user
 /// \return The added user
@@ -152,4 +175,77 @@ async fn get_questions() -> Vec<Question> {
    let json_data : Value = serde_json::from_str(&json_str.0).unwrap();
    let questions : Vec<Question> = serde_json::from_value(json_data["data"]["readQuestion"].clone()).unwrap();
    return questions;
+}
+
+/// Vote on a question
+/// \param[in] user_id The ID of the user who votes
+/// \param[in] question_id The ID of the question to vote on
+/// \param[in] opinion The opinion of the user
+/// \return The vote
+#[ic_cdk_macros::update]
+async fn add_vote(user_id: String, question_id: String, opinion: Opinion) -> QuestionVote {
+   let query = String::from(r#"mutation ($user_id: ID!, $question_id: ID!, $opinion: Opinion!) {
+      createQuestionVote(
+         input: {user: {connect: $user_id}, question: {connect: $question_id}, opinion: $opinion}
+      ){
+         id
+         user {
+            id
+            username
+         }
+         question {
+            id
+            author {
+               id
+               username
+            }
+            text
+            interest
+         }
+         opinion
+      }
+   }"#);
+   
+   let params = format!(r#"{{
+      "user_id": "{}",
+      "question_id": "{}",
+      "opinion": "{}"
+    }}"#, user_id, question_id, opinion);
+
+   let json_str = GraphQLCanister::graphql_mutation(
+      query, params).await;
+   let json_data : Value = serde_json::from_str(&json_str.0).unwrap();
+   let vote : QuestionVote = serde_json::from_value(json_data["data"]["createQuestionVote"][0].clone()).unwrap();
+   return vote;
+}
+
+/// Getter for the votes
+/// \return The votes
+#[ic_cdk_macros::query]
+async fn get_votes() -> Vec<QuestionVote> {
+   let query = String::from(r#"query{
+      readQuestionVote {
+         id
+         user {
+            id
+            username
+         }
+         question {
+            id
+            author {
+               id
+               username
+            }
+            text
+            interest
+         }
+         opinion
+      }
+   }
+   "#);
+   let params = format!(r#"{{}}"#);
+   let json_str = GraphQLCanister::graphql_query(query, params).await;
+   let json_data : Value = serde_json::from_str(&json_str.0).unwrap();
+   let votes : Vec<QuestionVote> = serde_json::from_value(json_data["data"]["readQuestionVote"].clone()).unwrap();
+   return votes;
 }
