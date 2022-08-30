@@ -1,27 +1,35 @@
 {
-    "canisters": {
-        "frontend": {
-            "type": "assets",
-            "source": ["canisters/frontend/build"]
-        },
-        "playground": {
-            "type": "assets",
-            "source": ["canisters/playground/build"]
-        },
-        "graphql": {
-            "type": "custom",
-            "build": "cargo build --target wasm32-unknown-unknown --package graphql --release",
-            "candid": "canisters/graphql/src/graphql.did",
-            "wasm": "target/wasm32-unknown-unknown/release/graphql.wasm"
-        },
-        "game": {
-            "type": "custom",
-            "build": "cargo build --target wasm32-unknown-unknown --package game --release",
-            "candid": "canisters/game/src/game.did",
-            "wasm": "target/wasm32-unknown-unknown/release/game.wasm",
-            "dependencies": [
-               "graphql"
-            ]
-        }
+  "canisters": {
+    "godwin_backend": {
+      "main": "src/godwin_backend/main.mo",
+      "type": "motoko"
+    },
+    "godwin_frontend": {
+      "dependencies": [
+        "godwin_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/godwin_frontend/src/index.html"
+      },
+      "source": [
+        "src/godwin_frontend/assets",
+        "dist/godwin_frontend/"
+      ],
+      "type": "assets"
     }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "dfx": "0.11.1",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    }
+  },
+  "version": 1
 }
