@@ -7,13 +7,8 @@ import Result "mo:base/Result";
 import TrieSet "mo:base/TrieSet";
 import Principal "mo:base/Principal";
 
-actor {
+shared({ caller = initializer }) actor class Godwin() = {
   
-  type Direction = {
-    #LR;
-    #RL;
-  };
-
   type QuestionStatus = {
     #CREATED;
     #CAN_VOTE;
@@ -26,18 +21,29 @@ actor {
     author: Principal;
     title: Text;
     text: Text;
-    endorsements: Nat;
-    votes: Trie<Opinion, Nat>;
     status: QuestionStatus;
-    category: ?(Text, ?Direction);
+    endorsements: Nat; // Number of endorsements
+    votes: Trie<Opinion, Nat>; // Number of votes for each opinion
+    categorization: Trie<PoliticalDimension, PoliticalSideTotal>; // Number of categorization votes for each political dimension
   };
 
   type PoliticalDimension = Text;
   type PoliticalSide = Text;
   type PoliticalSides = (PoliticalSide, PoliticalSide);
-  type PoliticalCategory = {
+
+  type Direction = {
+    #LR;
+    #RL;
+  };
+
+  type PoliticalSideTotal = {
+    lr: Nat;
+    rl: Nat;
+  };
+
+  type CategorizationVote = {
     dimension: PoliticalDimension;
-    sides: PoliticalSides;
+    direction: Direction;
   };
 
   type User = {
@@ -87,6 +93,8 @@ actor {
     #ABS_DISAGREE;
   };
 
+  private stable var admin_ = initializer;
+
   private stable var opinion_parameters_ = Trie.empty<Opinion, Float>();
   opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#ABS_AGREE), equalOpinion, 1.0).0;
   opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#RATHER_AGREE), equalOpinion, 0.5).0;
@@ -108,28 +116,21 @@ actor {
   private stable var questions_ = RBT.init<Nat, Question>();
   private stable var question_index_ : Nat = 0;
 
-  // key = user_id, value = map( key = question_id, value = opinion )
-  private stable var votes_ = Trie.empty<Principal, Trie<Nat, Opinion>>();
-
   // key = user_id, value = set( question_id )
   private stable var endorsements_ = Trie.empty<Principal, Set<Nat>>();
 
-  public func getQuestion(index: Nat) : async ?Question {
-    return RBT.get<Nat, Question>(questions_, Nat.compare, index);
+  // key = user_id, value = map( key = question_id, value = opinion )
+  private stable var votes_ = Trie.empty<Principal, Trie<Nat, Opinion>>();
+
+  // key = user_id, value = map ( key = question_id, value = categorization_vote )
+  private stable var categorization_ = Trie.empty<Principal, Trie<Nat, CategorizationVote>>();
+
+  public func getQuestion(question_id: Nat) : async ?Question {
+    return RBT.get<Nat, Question>(questions_, Nat.compare, question_id);
   };
 
   public func getQuestions() : async RBT.ScanLimitResult<Nat, Question> {
     return RBT.scanLimit<Nat, Question>(questions_, Nat.compare, 0, 10, #fwd, 10);
-  };
-
-  func initVotes() : Trie<Opinion, Nat> {
-    var votes = Trie.empty<Opinion, Nat>();
-    votes := Trie.put(votes, keyOpinion(#ABS_AGREE), equalOpinion, 0).0;
-    votes := Trie.put(votes, keyOpinion(#RATHER_AGREE), equalOpinion, 0).0;
-    votes := Trie.put(votes, keyOpinion(#NEUTRAL), equalOpinion, 0).0;
-    votes := Trie.put(votes, keyOpinion(#RATHER_DISAGREE), equalOpinion, 0).0;
-    votes := Trie.put(votes, keyOpinion(#ABS_DISAGREE), equalOpinion, 0).0;
-    return votes;
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
@@ -138,10 +139,10 @@ actor {
       author = caller;
       title = title;
       text = text;
-      endorsements = 0;
-      votes = initVotes();
       status = #CREATED;
-      category = null;
+      endorsements = 0;
+      votes = Trie.empty<Opinion, Nat>();
+      categorization = Trie.empty<PoliticalDimension, PoliticalSideTotal>();
     };
     questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
     question_index_ := question_index_ + 1;
@@ -153,49 +154,64 @@ actor {
     #AlreadyEndorsed;
   };
 
-  // @todo: maybe one shall be able to remove endorsement
-  public shared({caller}) func endorse(question_id: Nat) : async Result<(), EndorsementError> {
+  type GetQuestionError = {
+    #QuestionNotFound;
+  };
+
+  func getQuestion_(question_id: Nat) : Result<Question, GetQuestionError> {
     switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
       case(null){
         return #err(#QuestionNotFound);
       };
       case(?question){
-        // Get the user endorsements (initialized with an empty set if none is found)
-        var user_endorsements = TrieSet.empty<Nat>();
-        switch(Trie.get(endorsements_, keyPrincipal(caller), Principal.equal)){
-          case(null){};
-          case(?endorsements){
-            user_endorsements := endorsements;
-          };
-        };
-        // Check if the question has already been endorsed
-        switch(Trie.get(user_endorsements, keyNat(question_id), Nat.equal)){
-          case(?question_id){
-            // The user has already given its endorsement
-            return #err(#AlreadyEndorsed);
-          };
-          case(null){
-            // Add the question to the user endorsements
-            user_endorsements := TrieSet.put(user_endorsements, question_id, Int.hash(question_id), Nat.equal);
-            endorsements_ := Trie.put(endorsements_, keyPrincipal(caller), Principal.equal, user_endorsements).0;
-            // Increase the question's endorsements
-            let updated_question = {
-              id = question.id;
-              author = question.author;
-              title = question.title;
-              text = question.text;
-              endorsements = question.endorsements + 1;
-              votes = question.votes;
-              status = question.status;
-              category = question.category;
-            };
-            questions_ := RBT.put(questions_, Nat.compare, question_index_, updated_question);
-            // Success
-            return #ok;
-          };
-        };
+        return #ok(question);
       };
     };
+  };
+
+  func getUserEndorsements_(user: Principal) : Set<Nat> {
+    var user_endorsements = TrieSet.empty<Nat>();
+    switch(Trie.get(endorsements_, keyPrincipal(user), Principal.equal)){
+      case(null){};
+      case(?endorsements){
+        user_endorsements := endorsements;
+      };
+    };
+    return user_endorsements;
+  };
+
+  // @todo: maybe one shall be able to remove endorsement
+  public shared({caller}) func endorse(question_id: Nat) : async Result<(), EndorsementError> {
+    Result.chain<Question, (), EndorsementError>(getQuestion_(question_id), func(question) {
+      // Get the user endorsements (initialized with an empty set if none is found)
+      var user_endorsements = getUserEndorsements_(caller);
+      // Check if the question has already been endorsed
+      switch(Trie.get(user_endorsements, keyNat(question_id), Nat.equal)){
+        case(?question_id){
+          // The user has already given his endorsement
+          return #err(#AlreadyEndorsed);
+        };
+        case(null){
+          // Add the question to the user endorsements
+          user_endorsements := TrieSet.put(user_endorsements, question_id, Int.hash(question_id), Nat.equal);
+          endorsements_ := Trie.put(endorsements_, keyPrincipal(caller), Principal.equal, user_endorsements).0;
+          // Increase the question's endorsements
+          let updated_question = {
+            id = question.id;
+            author = question.author;
+            title = question.title;
+            text = question.text;
+            status = question.status;
+            endorsements = question.endorsements + 1;
+            votes = question.votes;
+            categorization = question.categorization;
+          };
+          questions_ := RBT.put(questions_, Nat.compare, question_index_, updated_question);
+          // Success
+          return #ok;
+        };
+      };
+    });
   };
 
   type VoteError = {
@@ -204,7 +220,7 @@ actor {
     #AlreadyVoted;
   };
 
-  func addVote(question: Question, opinion: Opinion) : Question {
+  func addVote_(question: Question, opinion: Opinion) : Question {
     // Get the current number of votes for this opinion
     var opinion_votes : Nat = 0;
     switch(Trie.get(question.votes, keyOpinion(opinion), equalOpinion)){
@@ -219,46 +235,88 @@ actor {
       author = question.author;
       title = question.title;
       text = question.text;
+      status = question.status;
       endorsements = question.endorsements;
       votes = Trie.put(question.votes, keyOpinion(opinion), equalOpinion, opinion_votes).0;
-      status = question.status;
-      category = question.category;
+      categorization = question.categorization;
     };
   };
 
   public shared({caller}) func vote(question_id: Nat, opinion: Opinion) : async Result<(), VoteError> {
-    switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
-      case(null){
-        return #err(#QuestionNotFound);
+    Result.chain<Question, (), VoteError>(getQuestion_(question_id), func(question) {
+      // Verify the question status
+      if (question.status == #CREATED){
+        return #err(#QuestionNotOpen);
       };
-      case(?question){
-        if (question.status == #CREATED){
-          return #err(#QuestionNotOpen);
+      // Get the user votes (initialized with an empty list if none is found)
+      var user_votes = Trie.empty<Nat, Opinion>();
+      switch(Trie.get(votes_, keyPrincipal(caller), Principal.equal)){
+        case(null){};
+        case(?votes){
+          user_votes := votes;
         };
-        // Get the user votes (initialized with an empty list if none is found)
-        var user_votes = Trie.empty<Nat, Opinion>();
-        switch(Trie.get(votes_, keyPrincipal(caller), Principal.equal)){
-          case(null){};
-          case(?votes){
-            user_votes := votes;
-          };
+      };
+      // Check if the user has already vote on this question
+      switch(Trie.get(user_votes, keyNat(question_id), Nat.equal)){
+        case(?id){
+          // The user has already voted
+          return #err(#AlreadyVoted);
         };
-        // Check if the user has already vote on this question
-        switch(Trie.get(user_votes, keyNat(question_id), Nat.equal)){
-          case(?id){
-            // The user has already voted
-            return #err(#AlreadyVoted);
-          };
-          case(null){
-            // Add the vote
-            user_votes := Trie.put(user_votes, keyNat(question_id), Nat.equal, opinion).0;
-            votes_ := Trie.put(votes_, keyPrincipal(caller), Principal.equal, user_votes).0;
-            // Add the vote to the question
-            questions_ := RBT.put(questions_, Nat.compare, question_index_, addVote(question, opinion));
-            // Success
-            return #ok;
-          };
+        case(null){
+          // Add the vote
+          user_votes := Trie.put(user_votes, keyNat(question_id), Nat.equal, opinion).0;
+          votes_ := Trie.put(votes_, keyPrincipal(caller), Principal.equal, user_votes).0;
+          // Add the vote to the question
+          questions_ := RBT.put(questions_, Nat.compare, question_index_, addVote_(question, opinion));
+          // Success
+          return #ok;
         };
+      };
+    });
+  };
+
+  type CategorizeError = {
+    #InsufficientCredentials;
+    #DimensionNotFound;
+    #QuestionNotFound;
+  };
+
+  public shared({caller}) func categorize(
+    question_id: Nat,
+    dimension: PoliticalDimension,
+    direction: Direction
+  ) : async Result<(), CategorizeError> {
+    Result.chain<(), (), CategorizeError>(verifyCredentials_(caller), func () {
+      Result.chain<(), (), CategorizeError>(verifyDimension_(dimension), func () {
+        Result.chain<Question, (), CategorizeError>(getQuestion_(question_id), func(question) {
+          return #ok; // @todo
+        })
+      })
+    });
+  };
+
+  type VerifyCredentialsError = {
+    #InsufficientCredentials;
+  };
+
+  func verifyCredentials_(caller: Principal) : Result<(), VerifyCredentialsError> {
+    if (caller != admin_) {
+      return #err(#InsufficientCredentials);
+    };
+    return #ok;
+  };
+
+  type VerifyDimensionError = {
+    #DimensionNotFound;
+  };
+
+  func verifyDimension_(dimension: PoliticalDimension) : Result<(), VerifyDimensionError> {
+    switch(Trie.get(political_categories_, keyText(dimension), Text.equal)){
+      case(null){
+        return #err(#DimensionNotFound);
+      };
+      case(?categorization){
+        return #ok;
       };
     };
   };
