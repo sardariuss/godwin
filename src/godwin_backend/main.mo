@@ -2,7 +2,10 @@ import RBT "mo:stableRBT/StableRBTree";
 import Trie "mo:base/Trie";
 import Text "mo:base/Text";
 import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 import Result "mo:base/Result";
+import TrieSet "mo:base/TrieSet";
+import Principal "mo:base/Principal";
 
 actor {
   
@@ -23,7 +26,8 @@ actor {
     author: Principal;
     title: Text;
     text: Text;
-    interest: Int;
+    endorsements: Nat;
+    votes: Trie<Opinion, Nat>;
     status: QuestionStatus;
     category: ?(Text, ?Direction);
   };
@@ -38,70 +42,94 @@ actor {
 
   type User = {
     principal: Principal;
-    name: Text;
-    profile: RBT.Tree<PoliticalDimension, Float>;
+    name: ?Text;
+    profile: Trie<PoliticalDimension, Float>;
   };
-
-  type Opinion = Text;
-
-  type Ballot = {
-    id: Nat;
-    user: Principal;
-    question_id: Nat;
-    opinion: Opinion;
-  };
-
-  type Interest = {
-    id: Nat;
-    user: Principal;
-    question_id: Nat;
-    vote: InterestVote;
-  };
-
-  type InterestVote = Text;
 
   type Trie<K, V> = Trie.Trie<K, V>;
   type Key<K> = Trie.Key<K>;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Principal = Principal.Principal;
+  type Set<K> = TrieSet.Set<K>;
 
-  func key(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
+  func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
+  func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
+  func keyPrincipal(p: Principal) : Key<Principal> { { key = p; hash = Principal.hash(p) } };
+  func keyOpinion(o: Opinion) : Key<Opinion> { 
+    switch(o){
+      case(#ABS_AGREE){
+        { key = #ABS_AGREE; hash = Int.hash(0); }
+      };
+      case(#RATHER_AGREE){
+        { key = #RATHER_AGREE; hash = Int.hash(1); }
+      };
+      case(#NEUTRAL){
+        { key = #NEUTRAL; hash = Int.hash(2); }
+      };
+      case(#RATHER_DISAGREE){
+        { key = #RATHER_DISAGREE; hash = Int.hash(3); }
+      };
+      case(#ABS_DISAGREE){
+        { key = #ABS_DISAGREE; hash = Int.hash(4); }
+      };
+    };
+  };
 
-  private stable var interest_parameters_ = Trie.empty<InterestVote, Float>();
-  interest_parameters_ := Trie.put(interest_parameters_, key("UPVOTE"), Text.equal, 1.0).0;
-  interest_parameters_ := Trie.put(interest_parameters_, key("DOWNVOTE"), Text.equal, -1.0).0;
+  func equalOpinion(a: Opinion, b:Opinion) : Bool {
+    return a == b;
+  };
+
+  type Opinion = {
+    #ABS_AGREE;
+    #RATHER_AGREE;
+    #NEUTRAL;
+    #RATHER_DISAGREE;
+    #ABS_DISAGREE;
+  };
 
   private stable var opinion_parameters_ = Trie.empty<Opinion, Float>();
-  opinion_parameters_ := Trie.put(opinion_parameters_, key("ABS_AGREE"), Text.equal, 1.0).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, key("RATHER_AGREE"), Text.equal, 0.5).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, key("NEUTRAL"), Text.equal, 0.0).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, key("RATHER_DISAGREE"), Text.equal, -0.5).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, key("ABS_DISAGREE"), Text.equal, -1.0).0;
+  opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#ABS_AGREE), equalOpinion, 1.0).0;
+  opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#RATHER_AGREE), equalOpinion, 0.5).0;
+  opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#NEUTRAL), equalOpinion, 0.0).0;
+  opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#RATHER_DISAGREE), equalOpinion, -0.5).0;
+  opinion_parameters_ := Trie.put(opinion_parameters_, keyOpinion(#ABS_DISAGREE), equalOpinion, -1.0).0;
 
   private stable var political_categories_ = Trie.empty<PoliticalDimension, PoliticalSides>();
-  political_categories_ := Trie.put(political_categories_, key("IDENTITY"), Text.equal, ("CONSTRUCTIVISM","ESSENTIALISM")).0;
-  political_categories_ := Trie.put(political_categories_, key("COOPERATION"), Text.equal, ("INTERNATIONALISM","NATIONALISM")).0;
-  political_categories_ := Trie.put(political_categories_, key("PROPERTY"), Text.equal, ("COMMUNISM","CAPITALISM")).0;
-  political_categories_ := Trie.put(political_categories_, key("ECONOMY"), Text.equal, ("REGULATION","LAISSEZFAIRE")).0;
-  political_categories_ := Trie.put(political_categories_, key("CULTURE"), Text.equal, ("PROGRESSIVISM","CONSERVATISM")).0;
-  political_categories_ := Trie.put(political_categories_, key("TECHNOLOGY"), Text.equal, ("ECOLOGY","PRODUCTION")).0;
-  political_categories_ := Trie.put(political_categories_, key("JUSTICE"), Text.equal, ("REHABILITATION","PUNITION")).0;
-  political_categories_ := Trie.put(political_categories_, key("CHANGE"), Text.equal, ("REVOLUTION","REFORM")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("IDENTITY"), Text.equal, ("CONSTRUCTIVISM", "ESSENTIALISM")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("COOPERATION"), Text.equal, ("INTERNATIONALISM", "NATIONALISM")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("PROPERTY"), Text.equal, ("COMMUNISM", "CAPITALISM")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("ECONOMY"), Text.equal, ("REGULATION", "LAISSEZFAIRE")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("CULTURE"), Text.equal, ("PROGRESSIVISM", "CONSERVATISM")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("TECHNOLOGY"), Text.equal, ("ECOLOGY", "PRODUCTION")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("JUSTICE"), Text.equal, ("REHABILITATION", "PUNITION")).0;
+  political_categories_ := Trie.put(political_categories_, keyText("CHANGE"), Text.equal, ("REVOLUTION", "REFORM")).0;
 
-  private stable var list_questions_ = RBT.init<Nat, Question>();
+  // key = question_id, value = question
+  private stable var questions_ = RBT.init<Nat, Question>();
   private stable var question_index_ : Nat = 0;
 
-  private stable var ballots_ = RBT.init<Nat, Ballot>();
-  private stable var ballot_index_ : Nat = 0;
+  // key = user_id, value = map( key = question_id, value = opinion )
+  private stable var votes_ = Trie.empty<Principal, Trie<Nat, Opinion>>();
 
-  private stable var list_interests_ = RBT.init<Nat, Interest>();
-  private stable var interest_index_ : Nat = 0;
+  // key = user_id, value = set( question_id )
+  private stable var endorsements_ = Trie.empty<Principal, Set<Nat>>();
 
   public func getQuestion(index: Nat) : async ?Question {
-    return RBT.get<Nat, Question>(list_questions_, Nat.compare, index);
+    return RBT.get<Nat, Question>(questions_, Nat.compare, index);
   };
 
   public func getQuestions() : async RBT.ScanLimitResult<Nat, Question> {
-    return RBT.scanLimit<Nat, Question>(list_questions_, Nat.compare, 0, 10, #fwd, 10);
+    return RBT.scanLimit<Nat, Question>(questions_, Nat.compare, 0, 10, #fwd, 10);
+  };
+
+  func initVotes() : Trie<Opinion, Nat> {
+    var votes = Trie.empty<Opinion, Nat>();
+    votes := Trie.put(votes, keyOpinion(#ABS_AGREE), equalOpinion, 0).0;
+    votes := Trie.put(votes, keyOpinion(#RATHER_AGREE), equalOpinion, 0).0;
+    votes := Trie.put(votes, keyOpinion(#NEUTRAL), equalOpinion, 0).0;
+    votes := Trie.put(votes, keyOpinion(#RATHER_DISAGREE), equalOpinion, 0).0;
+    votes := Trie.put(votes, keyOpinion(#ABS_DISAGREE), equalOpinion, 0).0;
+    return votes;
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
@@ -110,68 +138,129 @@ actor {
       author = caller;
       title = title;
       text = text;
-      interest = 0;
+      endorsements = 0;
+      votes = initVotes();
       status = #CREATED;
       category = null;
     };
-    list_questions_ := RBT.put(list_questions_, Nat.compare, question_index_, question);
+    questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
     question_index_ := question_index_ + 1;
     return question;
   };
 
-  type InterestVoteError = {
+  type EndorsementError = {
     #QuestionNotFound;
+    #AlreadyEndorsed;
   };
 
-  public shared({caller}) func setInterest(question_id: Nat, interest_vote: InterestVote) : async Result<Interest, InterestVoteError> {
-    switch(RBT.get<Nat, Question>(list_questions_, Nat.compare, question_id)){
+  // @todo: maybe one shall be able to remove endorsement
+  public shared({caller}) func endorse(question_id: Nat) : async Result<(), EndorsementError> {
+    switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
       case(null){
         return #err(#QuestionNotFound);
       };
       case(?question){
-        // @todo: check the interest is in the map
-        // @todo: check if the user has already given its interest
-        let interest = {
-          id = interest_index_;
-          user = caller;
-          question_id = question_id;
-          vote = interest_vote;
+        // Get the user endorsements (initialized with an empty set if none is found)
+        var user_endorsements = TrieSet.empty<Nat>();
+        switch(Trie.get(endorsements_, keyPrincipal(caller), Principal.equal)){
+          case(null){};
+          case(?endorsements){
+            user_endorsements := endorsements;
+          };
         };
-        list_interests_ := RBT.put(list_interests_, Nat.compare, interest_index_, interest);
-        interest_index_ := interest_index_ + 1;
-        return #ok(interest);
+        // Check if the question has already been endorsed
+        switch(Trie.get(user_endorsements, keyNat(question_id), Nat.equal)){
+          case(?question_id){
+            // The user has already given its endorsement
+            return #err(#AlreadyEndorsed);
+          };
+          case(null){
+            // Add the question to the user endorsements
+            user_endorsements := TrieSet.put(user_endorsements, question_id, Int.hash(question_id), Nat.equal);
+            endorsements_ := Trie.put(endorsements_, keyPrincipal(caller), Principal.equal, user_endorsements).0;
+            // Increase the question's endorsements
+            let updated_question = {
+              id = question.id;
+              author = question.author;
+              title = question.title;
+              text = question.text;
+              endorsements = question.endorsements + 1;
+              votes = question.votes;
+              status = question.status;
+              category = question.category;
+            };
+            questions_ := RBT.put(questions_, Nat.compare, question_index_, updated_question);
+            // Success
+            return #ok;
+          };
+        };
       };
     };
   };
 
   type VoteError = {
     #QuestionNotFound;
-    #WrongStatus;
+    #QuestionNotOpen;
+    #AlreadyVoted;
   };
 
-  public shared({caller}) func vote(question_id: Nat, opinion: Text) : async Result<Ballot, VoteError> {
-    switch(RBT.get<Nat, Question>(list_questions_, Nat.compare, question_id)){
+  func addVote(question: Question, opinion: Opinion) : Question {
+    // Get the current number of votes for this opinion
+    var opinion_votes : Nat = 0;
+    switch(Trie.get(question.votes, keyOpinion(opinion), equalOpinion)){
+      case(null){};
+      case(?total){
+        opinion_votes := total;
+      };
+    };
+    // Update the question
+    return {
+      id = question.id;
+      author = question.author;
+      title = question.title;
+      text = question.text;
+      endorsements = question.endorsements;
+      votes = Trie.put(question.votes, keyOpinion(opinion), equalOpinion, opinion_votes).0;
+      status = question.status;
+      category = question.category;
+    };
+  };
+
+  public shared({caller}) func vote(question_id: Nat, opinion: Opinion) : async Result<(), VoteError> {
+    switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
       case(null){
         return #err(#QuestionNotFound);
       };
       case(?question){
-        if (question.status != #CAN_VOTE){
-          return #err(#WrongStatus);
+        if (question.status == #CREATED){
+          return #err(#QuestionNotOpen);
         };
-        // @todo: check opinion is in the map
-        // @todo: check if user has already voted
-        let ballot = {
-          id = ballot_index_;
-          user = caller;
-          question_id = question_id;
-          opinion = opinion;
+        // Get the user votes (initialized with an empty list if none is found)
+        var user_votes = Trie.empty<Nat, Opinion>();
+        switch(Trie.get(votes_, keyPrincipal(caller), Principal.equal)){
+          case(null){};
+          case(?votes){
+            user_votes := votes;
+          };
         };
-        ballots_ := RBT.put(ballots_, Nat.compare, ballot_index_, ballot);
-        ballot_index_ := ballot_index_ + 1;
-        return #ok(ballot);
+        // Check if the user has already vote on this question
+        switch(Trie.get(user_votes, keyNat(question_id), Nat.equal)){
+          case(?id){
+            // The user has already voted
+            return #err(#AlreadyVoted);
+          };
+          case(null){
+            // Add the vote
+            user_votes := Trie.put(user_votes, keyNat(question_id), Nat.equal, opinion).0;
+            votes_ := Trie.put(votes_, keyPrincipal(caller), Principal.equal, user_votes).0;
+            // Add the vote to the question
+            questions_ := RBT.put(questions_, Nat.compare, question_index_, addVote(question, opinion));
+            // Success
+            return #ok;
+          };
+        };
       };
     };
   };
-  
 
 };
