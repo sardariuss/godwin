@@ -11,25 +11,41 @@ import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Hash "mo:base/Hash";
 import Option "mo:base/Option";
+import Time "mo:base/Time";
 
 shared({ caller = initializer }) actor class Godwin() = {
 
-  type SelectionStatus = {
-    #TO_CATEGORIZE;
-    #CATEGORIZED;
-  };
-  
-  type QuestionStatus = {
-    #CREATED;
-    #SELECTED: SelectionStatus;
-  };
+  // For convenience
+  type Trie<K, V> = Trie.Trie<K, V>;
+  type Key<K> = Trie.Key<K>;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Principal = Principal.Principal;
+  type Hash = Hash.Hash;
+  type Register<B> = Register.Register<B>;
+  type Time = Time.Time;
 
   type Question = {
     id: Nat;
+    date: Time;
     author: Principal;
     title: Text;
     text: Text;
-    status: QuestionStatus;
+    selected: ?Selection;
+  };
+
+  type Selection = {
+    date: Time;
+    categorization: Categorization;
+  };
+
+  type Categorization = {
+    date: Time;
+    status: CategorizationStatus;
+  };
+
+  type CategorizationStatus = {
+    #TO_CATEGORIZE;
+    #CATEGORIZED;
   };
 
   type Dimension = Text;
@@ -44,15 +60,6 @@ shared({ caller = initializer }) actor class Godwin() = {
     dimension: Dimension;
     direction: Direction;
   };
-
-  type Trie<K, V> = Trie.Trie<K, V>;
-  type Key<K> = Trie.Key<K>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Principal = Principal.Principal;
-  type Hash = Hash.Hash;
-
-  // For convenience
-  type Register<B> = Register.Register<B>;
 
   func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
   func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
@@ -92,11 +99,11 @@ shared({ caller = initializer }) actor class Godwin() = {
   };
 
   func hashOpinion(opinion: Opinion) : Hash.Hash { 
-    return Text.hash(toTextOpinion(opinion));
+    Text.hash(toTextOpinion(opinion));
   };
 
   func equalOpinion(a: Opinion, b:Opinion) : Bool {
-    return a == b;
+    a == b;
   };
 
   type Opinion = {
@@ -136,24 +143,25 @@ shared({ caller = initializer }) actor class Godwin() = {
   private stable var categories_ = Register.empty<Category>();
 
   public func getQuestion(question_id: Nat) : async ?Question {
-    return RBT.get<Nat, Question>(questions_, Nat.compare, question_id);
+    RBT.get<Nat, Question>(questions_, Nat.compare, question_id);
   };
 
   public func getQuestions() : async RBT.ScanLimitResult<Nat, Question> {
-    return RBT.scanLimit<Nat, Question>(questions_, Nat.compare, 0, 10, #fwd, 10);
+    RBT.scanLimit<Nat, Question>(questions_, Nat.compare, 0, 10, #fwd, 10);
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
     let question = {
       id = question_index_;
+      date = Time.now();
       author = caller;
       title = title;
       text = text;
-      status = #CREATED;
+      selected = null;
     };
     questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
     question_index_ := question_index_ + 1;
-    return question;
+    question;
   };
 
   type GetQuestionError = {
@@ -163,10 +171,10 @@ shared({ caller = initializer }) actor class Godwin() = {
   func getQuestion_(question_id: Nat) : Result<Question, GetQuestionError> {
     switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
       case(null){
-        return #err(#QuestionNotFound);
+        #err(#QuestionNotFound);
       };
       case(?question){
-        return #ok(question);
+        #ok(question);
       };
     };
   };
@@ -175,13 +183,31 @@ shared({ caller = initializer }) actor class Godwin() = {
     #WrongStatus;
   };
 
-  func verifyQuestionStatus_(question: Question, list_status: [QuestionStatus]) : Result<(), VerifyStatusError> {
-    switch(Array.find<QuestionStatus>(list_status, func(status) { status == question.status; })){
+  func canCategorize_(question: Question) : Result<(), VerifyStatusError> {
+    switch(question.selected) {
       case(null){
-        return #err(#WrongStatus);
+        #err(#WrongStatus);
       };
-      case(?status){
-        return #ok;
+      case(?selected){
+        switch(selected.categorization.status){
+          case(#CATEGORIZED){
+            #err(#WrongStatus);
+          };
+          case(#TO_CATEGORIZE){
+            #ok;
+          };
+        };
+      };
+    };
+  };
+
+  func isSelected_(question: Question) :  Result<(), VerifyStatusError> {
+    switch(question.selected) {
+      case(null){
+        #err(#WrongStatus);
+      };
+      case(?selected){
+        #ok;
       };
     };
   };
@@ -221,7 +247,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
     Result.chain<Question, (), OpinionError>(getQuestion_(question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(verifyQuestionStatus_(question, [#SELECTED(#TO_CATEGORIZE), #SELECTED(#CATEGORIZED)]), func() {
+      Result.mapOk<(), (), OpinionError>(isSelected_(question), func() {
         opinions_ := Register.putBallot(opinions_, caller, question_id, hashOpinion, equalOpinion, opinion).0;
       })
     });
@@ -243,7 +269,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   public shared({caller}) func setCategory(question_id: Nat, category: Category) : async Result<(), CategoryError> {
     Result.chain<(), (), CategoryError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), CategoryError>(getQuestion_(question_id), func(question) {
-        Result.chain<(), (), CategoryError>(verifyQuestionStatus_(question, [#SELECTED(#TO_CATEGORIZE)]), func() {
+        Result.chain<(), (), CategoryError>(canCategorize_(question), func() {
           Result.mapOk<(), (), CategoryError>(verifyCategory_(category), func () {
             categories_ := Register.putBallot(categories_, caller, question_id, hashCategory, equalCategory, category).0;
           })
@@ -258,9 +284,10 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   func verifyCredentials_(caller: Principal) : Result<(), VerifyCredentialsError> {
     if (caller != admin_) {
-      return #err(#InsufficientCredentials);
-    };
-    return #ok;
+      #err(#InsufficientCredentials);
+    } else {
+      #ok;
+    }
   };
 
   type VerifyCategoryError = {
@@ -270,10 +297,10 @@ shared({ caller = initializer }) actor class Godwin() = {
   func verifyCategory_(category: Category) : Result<(), VerifyCategoryError> {
     switch(Trie.get(political_categories_, keyText(category.dimension), Text.equal)){
       case(null){
-        return #err(#CategoryNotFound);
+        #err(#CategoryNotFound);
       };
       case(?category){
-        return #ok;
+        #ok;
       };
     };
   };
