@@ -1,3 +1,5 @@
+import Register "register";
+
 import RBT "mo:stableRBT/StableRBTree";
 import Trie "mo:base/Trie";
 import Text "mo:base/Text";
@@ -6,6 +8,7 @@ import Int "mo:base/Int";
 import Result "mo:base/Result";
 import TrieSet "mo:base/TrieSet";
 import Principal "mo:base/Principal";
+import Debug "mo:base/Debug";
 
 shared({ caller = initializer }) actor class Godwin() = {
   
@@ -123,7 +126,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   private stable var votes_ = Trie.empty<Principal, Trie<Nat, Opinion>>();
 
   // key = user_id, value = map ( key = question_id, value = categorization_vote )
-  private stable var categorization_ = Trie.empty<Principal, Trie<Nat, CategorizationVote>>();
+  private stable var categorizations_ = Trie.empty<Principal, Trie<Nat, CategorizationVote>>();
 
   public func getQuestion(question_id: Nat) : async ?Question {
     return RBT.get<Nat, Question>(questions_, Nat.compare, question_id);
@@ -258,8 +261,7 @@ shared({ caller = initializer }) actor class Godwin() = {
       };
       // Check if the user has already vote on this question
       switch(Trie.get(user_votes, keyNat(question_id), Nat.equal)){
-        case(?id){
-          // The user has already voted
+        case(?opinion){
           return #err(#AlreadyVoted);
         };
         case(null){
@@ -279,16 +281,44 @@ shared({ caller = initializer }) actor class Godwin() = {
     #InsufficientCredentials;
     #DimensionNotFound;
     #QuestionNotFound;
+    #AlreadyCategorized;
+  };
+
+  func getUserCategorizations_(user: Principal) :Trie<Nat, CategorizationVote> {
+    var user_categorizations = Trie.empty<Nat, CategorizationVote>();
+    switch(Trie.get(categorizations_, keyPrincipal(user), Principal.equal)){
+      case(null){};
+      case(?categorizations){
+        user_categorizations := categorizations;
+      };
+    };
+    return user_categorizations;
   };
 
   public shared({caller}) func categorize(
     question_id: Nat,
-    dimension: PoliticalDimension,
-    direction: Direction
+    categorization_vote: CategorizationVote
   ) : async Result<(), CategorizeError> {
     Result.chain<(), (), CategorizeError>(verifyCredentials_(caller), func () {
-      Result.chain<(), (), CategorizeError>(verifyDimension_(dimension), func () {
-        Result.chain<Question, (), CategorizeError>(getQuestion_(question_id), func(question) {
+      Result.chain<(), (), CategorizeError>(verifyDimension_(categorization_vote.dimension), func () {
+        Result.chain<Question, (), CategorizeError>(getQuestion_(question_id), func(question) {     
+          // Get the user categorizations     
+          var user_categorizations = getUserCategorizations_(caller);
+          // Check if the user has already categorized on this question
+          switch(Trie.get(user_categorizations, keyNat(question_id), Nat.equal)){
+            case(?id){
+              return #err(#AlreadyCategorized);
+            };
+            case(null){
+              // Add the vote
+              user_categorizations := Trie.put(user_categorizations, keyNat(question_id), Nat.equal, categorization_vote).0;
+              categorizations_ := Trie.put(categorizations_, keyPrincipal(caller), Principal.equal, user_categorizations).0;
+              // Add the vote to the question
+              //questions_ := RBT.put(questions_, Nat.compare, question_index_, addVote_(question, opinion));
+              // Success
+              return #ok;
+            };
+          };
           return #ok; // @todo
         })
       })
