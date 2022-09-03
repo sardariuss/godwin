@@ -38,7 +38,9 @@ shared({ caller = initializer }) actor class Godwin() = {
   type Pool = Types.Pool;
   type PoolParameters = Types.PoolParameters;
 
-  private stable var admin_ = initializer;  
+  private stable var admin_ = initializer;
+
+  private stable var max_endorsement_ : Nat = 0;
 
   private stable var change_pool_parameters_ = Trie.empty<Pool, PoolParameters>();
   change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #SPAWN; hash = Types.hashPool(#SPAWN) }, Types.equalPool, {
@@ -203,15 +205,28 @@ shared({ caller = initializer }) actor class Godwin() = {
     };
   };
 
-  func getMaxEndorsement_() : Nat {
-    var max_endorsement : Nat = 0;
-    Iter.iterate<(Nat, Question)>(RBT.entries(questions_), func((question_id, _), _) {
-      let question_endorsement = Register.getTotal(endorsements_, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
-      if (question_endorsement > max_endorsement) {
+  public shared func update() {
+    var max_endorsement = max_endorsement_;
+    Iter.iterate<(Nat, Question)>(RBT.entries(questions_), func((_, question), _) {
+      let question_endorsement = Register.getTotal(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
+      switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
+        case(#err(_)){};
+        case(#ok(updated_question)){
+          switch(updated_question){
+            case(null){};
+            case(?question){
+              questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
+            };
+          };
+        };
+      };
+      if (max_endorsement < question_endorsement) {
         max_endorsement := question_endorsement;
       };
     });
-    return max_endorsement;
+    max_endorsement_ := max_endorsement;
   };
+
+
 
 };
