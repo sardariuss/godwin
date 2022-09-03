@@ -14,6 +14,7 @@ import Debug "mo:base/Debug";
 import Hash "mo:base/Hash";
 import Option "mo:base/Option";
 import Time "mo:base/Time";
+import Iter "mo:base/Iter";
 
 shared({ caller = initializer }) actor class Godwin() = {
 
@@ -200,6 +201,17 @@ shared({ caller = initializer }) actor class Godwin() = {
         #ok;
       };
     };
+  };
+
+  func getMaxEndorsement_() : Nat {
+    var max_endorsement : Nat = 0;
+    Iter.iterate<(Nat, Question)>(RBT.entries(questions_), func((question_id, _), _) {
+      let question_endorsement = Register.getTotal(endorsements_, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
+      if (question_endorsement > max_endorsement) {
+        max_endorsement := question_endorsement;
+      };
+    });
+    return max_endorsement;
   };
 
 };
