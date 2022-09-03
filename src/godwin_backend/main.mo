@@ -41,11 +41,11 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   private stable var change_pool_parameters_ = Trie.empty<Pool, PoolParameters>();
   change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #SPAWN; hash = Types.hashPool(#SPAWN) }, Types.equalPool, {
-    ratio_maximum_endorsement = 0.5; time_elapsed_in_pool = 0;}).0;
+    ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = #FISSION;}).0;
   change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #FISSION; hash = Types.hashPool(#FISSION) }, Types.equalPool, {
-    ratio_maximum_endorsement = 0.0; time_elapsed_in_pool = 1 * 24 * 60 * 60 * 1_000_000_000;}).0;
+    ratio_max_endorsement = 0.0; time_elapsed_in_pool = 1 * 24 * 60 * 60 * 1_000_000_000; next_pool = #ARCHIVE; }).0;
   change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #ARCHIVE; hash = Types.hashPool(#ARCHIVE) }, Types.equalPool, {
-    ratio_maximum_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000;}).0;
+    ratio_max_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000; next_pool = #FISSION; }).0;
 
   private stable var opinion_parameters_ = Trie.empty<Opinion, Float>();
   opinion_parameters_ := Trie.put(opinion_parameters_, { key = #ABS_AGREE; hash = Types.hashOpinion(#ABS_AGREE) }, Types.equalOpinion, 1.0).0;

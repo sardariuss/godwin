@@ -118,7 +118,8 @@ module {
   };
 
   public type PoolParameters = {
-    ratio_maximum_endorsement: Float;
+    ratio_max_endorsement: Float;
     time_elapsed_in_pool: Time;
+    next_pool: Pool;
   };
 }
