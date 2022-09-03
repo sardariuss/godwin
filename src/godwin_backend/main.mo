@@ -1,5 +1,6 @@
 import Register "register";
 import Types "types";
+import Pool "pool";
 
 import RBT "mo:stableRBT/StableRBTree";
 import Array "mo:base/Array";
@@ -27,22 +28,24 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Selection = Types.Selection;
-  type Categorization = Types.Categorization;
-  type CategorizationStatus = Types.CategorizationStatus;
   type Dimension = Types.Dimension;
   type Sides = Types.Sides;
   type Direction = Types.Direction;
   type Category = Types.Category;
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
-  type SelectionParams = Types.SelectionParams;
-  type CategorizationParams = Types.CategorizationParams;
+  type Pool = Types.Pool;
+  type PoolParameters = Types.PoolParameters;
 
-  private stable var admin_ = initializer;
+  private stable var admin_ = initializer;  
 
-  //private stable var categorization_params;
-  //private stable var selection_params;
+  private stable var change_pool_parameters_ = Trie.empty<Pool, PoolParameters>();
+  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #SPAWN; hash = Types.hashPool(#SPAWN) }, Types.equalPool, {
+    ratio_maximum_endorsement = 0.5; time_elapsed_in_pool = 0;}).0;
+  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #FISSION; hash = Types.hashPool(#FISSION) }, Types.equalPool, {
+    ratio_maximum_endorsement = 0.0; time_elapsed_in_pool = 1 * 24 * 60 * 60 * 1_000_000_000;}).0;
+  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #ARCHIVE; hash = Types.hashPool(#ARCHIVE) }, Types.equalPool, {
+    ratio_maximum_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000;}).0;
 
   private stable var opinion_parameters_ = Trie.empty<Opinion, Float>();
   opinion_parameters_ := Trie.put(opinion_parameters_, { key = #ABS_AGREE; hash = Types.hashOpinion(#ABS_AGREE) }, Types.equalOpinion, 1.0).0;
@@ -81,11 +84,10 @@ shared({ caller = initializer }) actor class Godwin() = {
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
     let question = {
       id = question_index_;
-      date = Time.now();
       author = caller;
       title = title;
       text = text;
-      selected = null;
+      pool_history = Pool.initPoolHistory();
     };
     questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
     question_index_ := question_index_ + 1;
@@ -103,39 +105,6 @@ shared({ caller = initializer }) actor class Godwin() = {
       };
       case(?question){
         #ok(question);
-      };
-    };
-  };
-
-  type VerifyStatusError = {
-    #WrongStatus;
-  };
-
-  func canCategorize_(question: Question) : Result<(), VerifyStatusError> {
-    switch(question.selected) {
-      case(null){
-        #err(#WrongStatus);
-      };
-      case(?selected){
-        switch(selected.categorization.status){
-          case(#CATEGORIZED){
-            #err(#WrongStatus);
-          };
-          case(#TO_CATEGORIZE){
-            #ok;
-          };
-        };
-      };
-    };
-  };
-
-  func isSelected_(question: Question) :  Result<(), VerifyStatusError> {
-    switch(question.selected) {
-      case(null){
-        #err(#WrongStatus);
-      };
-      case(?selected){
-        #ok;
       };
     };
   };
@@ -164,7 +133,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   type OpinionError = {
     #QuestionNotFound;
-    #WrongStatus;
+    #WrongPool;
   };
 
   public shared({caller}) func getOpinion(question_id: Nat) : async Result<?Opinion, OpinionError> {
@@ -175,7 +144,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
     Result.chain<Question, (), OpinionError>(getQuestion_(question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(isSelected_(question), func() {
+      Result.mapOk<(), (), OpinionError>(Pool.verifyCurrentPool(question, [#FISSION, #ARCHIVE]), func() {
         opinions_ := Register.putBallot(opinions_, caller, question_id, Types.hashOpinion, Types.equalOpinion, opinion).0;
       })
     });
@@ -185,7 +154,7 @@ shared({ caller = initializer }) actor class Godwin() = {
     #InsufficientCredentials;
     #CategoryNotFound;
     #QuestionNotFound;
-    #WrongStatus;
+    #WrongPool;
   };
 
   public shared({caller}) func getCategory(question_id: Nat) : async Result<?Category, CategoryError> {
@@ -197,7 +166,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   public shared({caller}) func setCategory(question_id: Nat, category: Category) : async Result<(), CategoryError> {
     Result.chain<(), (), CategoryError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), CategoryError>(getQuestion_(question_id), func(question) {
-        Result.chain<(), (), CategoryError>(canCategorize_(question), func() {
+        Result.chain<(), (), CategoryError>(Pool.verifyCurrentPool(question, [#FISSION]), func() {
           Result.mapOk<(), (), CategoryError>(verifyCategory_(category), func () {
             categories_ := Register.putBallot(categories_, caller, question_id, Types.hashCategory, Types.equalCategory, category).0;
           })

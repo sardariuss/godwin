@@ -16,26 +16,17 @@ module {
 
   public type Question = {
     id: Nat;
-    date: Time;
     author: Principal;
     title: Text;
     text: Text;
-    selected: ?Selection;
+    pool_history: PoolHistory;
   };
 
-  public type Selection = {
+  public type PoolHistory = [DatedPool];
+
+  public type DatedPool = {
     date: Time;
-    categorization: Categorization;
-  };
-
-  public type Categorization = {
-    date: Time;
-    status: CategorizationStatus;
-  };
-
-  public type CategorizationStatus = {
-    #TO_CATEGORIZE;
-    #CATEGORIZED;
+    pool: Pool;
   };
 
   public type Dimension = Text;
@@ -78,6 +69,14 @@ module {
     (a.dimension == b.dimension) and (a.direction == b.direction);
   };
 
+  public type Opinion = {
+    #ABS_AGREE;
+    #RATHER_AGREE;
+    #NEUTRAL;
+    #RATHER_DISAGREE;
+    #ABS_DISAGREE;
+  };
+
   public func toTextOpinion(opinion: Opinion) : Text {
     switch(opinion){
       case(#ABS_AGREE){ "ABS_AGREE"; };
@@ -96,22 +95,30 @@ module {
     a == b;
   };
 
-  public type Opinion = {
-    #ABS_AGREE;
-    #RATHER_AGREE;
-    #NEUTRAL;
-    #RATHER_DISAGREE;
-    #ABS_DISAGREE;
+  public type Pool = {
+    #SPAWN;
+    #FISSION;
+    #ARCHIVE;
   };
 
-  public type SelectionParams = {
-    time_interval: Time;
-    number_questions: Nat;
+  public func toTextPool(pool: Pool) : Text {
+    switch(pool){
+      case(#SPAWN){ "SPAWN"; };
+      case(#FISSION){ "FISSION"; };
+      case(#ARCHIVE){ "ARCHIVE"; };
+    };
   };
 
-  public type CategorizationParams = {
-    time_interval: Time;
-    number_questions: Nat;
-    min_time_elapsed: Time;
+  public func hashPool(pool: Pool) : Hash.Hash { 
+    Text.hash(toTextPool(pool));
+  };
+
+  public func equalPool(a: Pool, b:Pool) : Bool {
+    a == b;
+  };
+
+  public type PoolParameters = {
+    ratio_maximum_endorsement: Float;
+    time_elapsed_in_pool: Time;
   };
 }
