@@ -2,7 +2,6 @@ import Register "register";
 import Types "types";
 import Pool "pool";
 
-import RBT "mo:stableRBT/StableRBTree";
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
 import Text "mo:base/Text";
@@ -67,7 +66,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   political_categories_ := Trie.put(political_categories_, Types.keyText("JUSTICE"), Text.equal, ("REHABILITATION", "PUNITION")).0;
   political_categories_ := Trie.put(political_categories_, Types.keyText("CHANGE"), Text.equal, ("REVOLUTION", "REFORM")).0;
 
-  private stable var questions_ = RBT.init<Nat, Question>();
+  private stable var questions_ = Trie.empty<Nat, Question>();
   private stable var question_index_ : Nat = 0;
 
   private stable var endorsements_ = Register.empty<Endorsement>();
@@ -77,11 +76,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   private stable var categories_ = Register.empty<Category>();
 
   public func getQuestion(question_id: Nat) : async ?Question {
-    RBT.get<Nat, Question>(questions_, Nat.compare, question_id);
-  };
-
-  public func getQuestions() : async RBT.ScanLimitResult<Nat, Question> {
-    RBT.scanLimit<Nat, Question>(questions_, Nat.compare, 0, 10, #fwd, 10);
+    Trie.get<Nat, Question>(questions_, Types.keyNat(question_id), Nat.equal);
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
@@ -92,7 +87,7 @@ shared({ caller = initializer }) actor class Godwin() = {
       text = text;
       pool_history = Pool.initPoolHistory();
     };
-    questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
+    questions_ := Trie.put(questions_, Types.keyNat(question.id), Nat.equal, question).0;
     question_index_ := question_index_ + 1;
     question;
   };
@@ -102,7 +97,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   };
   
   func getQuestion_(question_id: Nat) : Result<Question, GetQuestionError> {
-    switch(RBT.get<Nat, Question>(questions_, Nat.compare, question_id)){
+    switch(Trie.get<Nat, Question>(questions_, Types.keyNat(question_id), Nat.equal)){
       case(null){
         #err(#QuestionNotFound);
       };
@@ -207,7 +202,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   public shared func update() {
     var max_endorsement = max_endorsement_;
-    Iter.iterate<(Nat, Question)>(RBT.entries(questions_), func((_, question), _) {
+    Iter.iterate<(Nat, Question)>(Trie.iter(questions_), func((_, question), _) {
       let question_endorsement = Register.getTotal(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
       switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
         case(#err(_)){};
@@ -215,7 +210,7 @@ shared({ caller = initializer }) actor class Godwin() = {
           switch(updated_question){
             case(null){};
             case(?question){
-              questions_ := RBT.put(questions_, Nat.compare, question_index_, question);
+              questions_ := Trie.put(questions_, Types.keyNat(question.id), Nat.equal, question).0;
             };
           };
         };
@@ -226,7 +221,5 @@ shared({ caller = initializer }) actor class Godwin() = {
     });
     max_endorsement_ := max_endorsement;
   };
-
-
 
 };

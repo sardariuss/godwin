@@ -29,7 +29,7 @@ module {
   public func empty<B>() : Register<B> {
     {
       ballots = Trie.empty<Principal, Trie<Item, B>>();
-      totals = Trie.empty<Item, Trie<B, Nat>>();
+      totals = Trie.empty<Item, Trie<B, Nat>>(); // @todo: add total of ballots, whichever it is, not only subtotals
     }
   };
 
