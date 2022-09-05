@@ -1,6 +1,9 @@
 import Register "register";
 import Types "types";
 import Pool "pool";
+import Questions "questions";
+
+import RBT "mo:stableRBT/StableRBTree";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
@@ -14,6 +17,7 @@ import Hash "mo:base/Hash";
 import Option "mo:base/Option";
 import Time "mo:base/Time";
 import Iter "mo:base/Iter";
+import Order "mo:base/Order";
 
 shared({ caller = initializer }) actor class Godwin() = {
 
@@ -25,6 +29,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   type Hash = Hash.Hash;
   type Register<B> = Register.Register<B>;
   type Time = Time.Time;
+  type Order = Order.Order;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -66,8 +71,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   political_categories_ := Trie.put(political_categories_, Types.keyText("JUSTICE"), Text.equal, ("REHABILITATION", "PUNITION")).0;
   political_categories_ := Trie.put(political_categories_, Types.keyText("CHANGE"), Text.equal, ("REVOLUTION", "REFORM")).0;
 
-  private stable var questions_ = Trie.empty<Nat, Question>();
-  private stable var question_index_ : Nat = 0;
+  private stable var questions_ = Questions.empty();
 
   private stable var endorsements_ = Register.empty<Endorsement>();
 
@@ -75,36 +79,12 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   private stable var categories_ = Register.empty<Category>();
 
-  public func getQuestion(question_id: Nat) : async ?Question {
-    Trie.get<Nat, Question>(questions_, Types.keyNat(question_id), Nat.equal);
+  public shared func getQuestion(question_id: Nat) : async Result<Question, Questions.GetQuestionError> {
+    return Questions.getQuestion(questions_, question_id);
   };
 
-  public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
-    let question = {
-      id = question_index_;
-      author = caller;
-      title = title;
-      text = text;
-      pool_history = Pool.initPoolHistory();
-    };
-    questions_ := Trie.put(questions_, Types.keyNat(question.id), Nat.equal, question).0;
-    question_index_ := question_index_ + 1;
-    question;
-  };
-
-  type GetQuestionError = {
-    #QuestionNotFound;
-  };
-  
-  func getQuestion_(question_id: Nat) : Result<Question, GetQuestionError> {
-    switch(Trie.get<Nat, Question>(questions_, Types.keyNat(question_id), Nat.equal)){
-      case(null){
-        #err(#QuestionNotFound);
-      };
-      case(?question){
-        #ok(question);
-      };
-    };
+  public shared({caller}) func createQuestion(title: Text, text: Text) : async () {
+    questions_ := Questions.createQuestion(questions_, caller, title, text).0;
   };
 
   type EndorsementError = {
@@ -112,19 +92,19 @@ shared({ caller = initializer }) actor class Godwin() = {
   };
 
   public shared({caller}) func getEndorsement(question_id: Nat) : async Result<?Endorsement, EndorsementError> {
-    Result.mapOk<Question, ?Endorsement, EndorsementError>(getQuestion_(question_id), func(question) {
+    Result.mapOk<Question, ?Endorsement, EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
       Register.getBallot(endorsements_, caller, question_id);
     });
   };
 
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(getQuestion_(question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Register.putBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE).0;
     });
   };
 
   public shared({caller}) func removeEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(getQuestion_(question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Register.removeBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement).0;
     });
   };
@@ -135,13 +115,13 @@ shared({ caller = initializer }) actor class Godwin() = {
   };
 
   public shared({caller}) func getOpinion(question_id: Nat) : async Result<?Opinion, OpinionError> {
-    Result.mapOk<Question, ?Opinion, OpinionError>(getQuestion_(question_id), func(question) {
+    Result.mapOk<Question, ?Opinion, OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
       Register.getBallot(opinions_, caller, question_id);
     });
   };
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
-    Result.chain<Question, (), OpinionError>(getQuestion_(question_id), func(question) {
+    Result.chain<Question, (), OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
       Result.mapOk<(), (), OpinionError>(Pool.verifyCurrentPool(question, [#FISSION, #ARCHIVE]), func() {
         opinions_ := Register.putBallot(opinions_, caller, question_id, Types.hashOpinion, Types.equalOpinion, opinion).0;
       })
@@ -156,14 +136,14 @@ shared({ caller = initializer }) actor class Godwin() = {
   };
 
   public shared({caller}) func getCategory(question_id: Nat) : async Result<?Category, CategoryError> {
-    Result.mapOk<Question, ?Category, CategoryError>(getQuestion_(question_id), func(question) {
+    Result.mapOk<Question, ?Category, CategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
       Register.getBallot(categories_, caller, question_id);
     });
   };
 
   public shared({caller}) func setCategory(question_id: Nat, category: Category) : async Result<(), CategoryError> {
     Result.chain<(), (), CategoryError>(verifyCredentials_(caller), func () {
-      Result.chain<Question, (), CategoryError>(getQuestion_(question_id), func(question) {
+      Result.chain<Question, (), CategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), CategoryError>(Pool.verifyCurrentPool(question, [#FISSION]), func() {
           Result.mapOk<(), (), CategoryError>(verifyCategory_(category), func () {
             categories_ := Register.putBallot(categories_, caller, question_id, Types.hashCategory, Types.equalCategory, category).0;
@@ -202,7 +182,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   public shared func update() {
     var max_endorsement = max_endorsement_;
-    Iter.iterate<(Nat, Question)>(Trie.iter(questions_), func((_, question), _) {
+    Iter.iterate<(Nat, Question)>(Questions.iter(questions_), func((_, question), _) {
       let question_endorsement = Register.getTotal(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
       switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
         case(#err(_)){};
@@ -210,7 +190,7 @@ shared({ caller = initializer }) actor class Godwin() = {
           switch(updated_question){
             case(null){};
             case(?question){
-              questions_ := Trie.put(questions_, Types.keyNat(question.id), Nat.equal, question).0;
+              questions_ := Questions.replaceQuestion(questions_, question).0;
             };
           };
         };
