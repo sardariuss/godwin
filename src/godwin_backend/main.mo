@@ -183,7 +183,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   public shared func update() {
     var max_endorsement = max_endorsement_;
     Iter.iterate<(Nat, Question)>(Questions.iter(questions_), func((_, question), _) {
-      let question_endorsement = Register.getTotal(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
+      let question_endorsement = Register.getTotalForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
       switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
         case(#err(_)){};
         case(#ok(updated_question)){
