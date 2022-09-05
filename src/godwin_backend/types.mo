@@ -122,4 +122,10 @@ module {
     time_elapsed_in_pool: Time;
     next_pool: Pool;
   };
-}
+
+  public type CategoryAggregationParameters = {
+    direction_threshold: Float;
+    dimension_threshold: Float;
+  };
+
+};

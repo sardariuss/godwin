@@ -2,6 +2,7 @@ import Register "register";
 import Types "types";
 import Pool "pool";
 import Questions "questions";
+import Categories "categories";
 
 import RBT "mo:stableRBT/StableRBTree";
 
@@ -18,6 +19,8 @@ import Option "mo:base/Option";
 import Time "mo:base/Time";
 import Iter "mo:base/Iter";
 import Order "mo:base/Order";
+import Float "mo:base/Float";
+import Buffer "mo:base/Buffer";
 
 shared({ caller = initializer }) actor class Godwin() = {
 
@@ -41,6 +44,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   type Opinion = Types.Opinion;
   type Pool = Types.Pool;
   type PoolParameters = Types.PoolParameters;
+  type CategoryAggregationParameters = Types.CategoryAggregationParameters;
 
   private stable var admin_ = initializer;
 
@@ -70,6 +74,11 @@ shared({ caller = initializer }) actor class Godwin() = {
   political_categories_ := Trie.put(political_categories_, Types.keyText("TECHNOLOGY"), Text.equal, ("ECOLOGY", "PRODUCTION")).0;
   political_categories_ := Trie.put(political_categories_, Types.keyText("JUSTICE"), Text.equal, ("REHABILITATION", "PUNITION")).0;
   political_categories_ := Trie.put(political_categories_, Types.keyText("CHANGE"), Text.equal, ("REVOLUTION", "REFORM")).0;
+
+  private stable var category_aggregation_params_ = {
+    direction_threshold = 0.65;
+    dimension_threshold = 0.35;
+  };
 
   private stable var questions_ = Questions.empty();
 
@@ -145,7 +154,7 @@ shared({ caller = initializer }) actor class Godwin() = {
     Result.chain<(), (), CategoryError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), CategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), CategoryError>(Pool.verifyCurrentPool(question, [#FISSION]), func() {
-          Result.mapOk<(), (), CategoryError>(verifyCategory_(category), func () {
+          Result.mapOk<(), (), CategoryError>(Categories.verifyCategory(political_categories_, category), func () {
             categories_ := Register.putBallot(categories_, caller, question_id, Types.hashCategory, Types.equalCategory, category).0;
           })
         })
@@ -165,24 +174,9 @@ shared({ caller = initializer }) actor class Godwin() = {
     }
   };
 
-  type VerifyCategoryError = {
-    #CategoryNotFound;
-  };
-
-  func verifyCategory_(category: Category) : Result<(), VerifyCategoryError> {
-    switch(Trie.get(political_categories_, Types.keyText(category.dimension), Text.equal)){
-      case(null){
-        #err(#CategoryNotFound);
-      };
-      case(?category){
-        #ok;
-      };
-    };
-  };
-
   public shared func update() {
     var max_endorsement = max_endorsement_;
-    Iter.iterate<(Nat, Question)>(Questions.iter(questions_), func((_, question), _) {
+    for ((_, question) in Questions.iter(questions_)) {
       let question_endorsement = Register.getTotalForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
       switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
         case(#err(_)){};
@@ -198,8 +192,12 @@ shared({ caller = initializer }) actor class Godwin() = {
       if (max_endorsement < question_endorsement) {
         max_endorsement := question_endorsement;
       };
-    });
+    };
     max_endorsement_ := max_endorsement;
+  };
+
+  func computeCategoriesAggregation(question_id: Nat) : [Category] {
+    return Categories.computeCategoriesAggregation(political_categories_, category_aggregation_params_, categories_, question_id);
   };
 
 };
