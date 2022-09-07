@@ -77,6 +77,7 @@ shared({ caller = initializer }) actor class Godwin() = {
     dimension_threshold = 0.35;
   };
 
+  // @todo: verify that caller is not anonymous (to not store an anomymous user)
   private stable var users_ = Users.empty();
 
   private stable var questions_ = Questions.empty();
@@ -87,7 +88,7 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   private stable var categories_ = Register.empty<Category>();
 
-  public shared func getQuestion(question_id: Nat) : async Result<Question, Questions.GetQuestionError> {
+  public shared query func getQuestion(question_id: Nat) : async Result<Question, Questions.GetQuestionError> {
     return Questions.getQuestion(questions_, question_id);
   };
 
@@ -99,9 +100,9 @@ shared({ caller = initializer }) actor class Godwin() = {
     #QuestionNotFound;
   };
 
-  public shared({caller}) func getEndorsement(question_id: Nat) : async Result<?Endorsement, EndorsementError> {
+  public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
     Result.mapOk<Question, ?Endorsement, EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
-      Register.getBallot(endorsements_, caller, question_id);
+      Register.getBallot(endorsements_, principal, question_id);
     });
   };
 
@@ -122,9 +123,9 @@ shared({ caller = initializer }) actor class Godwin() = {
     #WrongPool;
   };
 
-  public shared({caller}) func getOpinion(question_id: Nat) : async Result<?Opinion, OpinionError> {
+  public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Opinion, OpinionError> {
     Result.mapOk<Question, ?Opinion, OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
-      Register.getBallot(opinions_, caller, question_id);
+      Register.getBallot(opinions_, principal, question_id);
     });
   };
 
@@ -143,9 +144,9 @@ shared({ caller = initializer }) actor class Godwin() = {
     #WrongPool;
   };
 
-  public shared({caller}) func getCategory(question_id: Nat) : async Result<?Category, CategoryError> {
+  public shared query func getCategory(principal: Principal, question_id: Nat) : async Result<?Category, CategoryError> {
     Result.mapOk<Question, ?Category, CategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
-      Register.getBallot(categories_, caller, question_id);
+      Register.getBallot(categories_, principal, question_id);
     });
   };
 
@@ -212,20 +213,32 @@ shared({ caller = initializer }) actor class Godwin() = {
     };
   };
 
+  public shared query func getUser(principal: Principal) : async Result<User, Users.GetUserError> {
+    return Users.getUser(users_, principal);
+  };
+
   // Watchout: O(n)
-  func computeUserConvictions(principal: Principal) : Trie<Dimension, Conviction> {
-    var convictions = Trie.empty<Dimension, Conviction>();
-    for ((question_id, opinion) in Trie.iter(Register.getUserBallots(opinions_, principal))){
-      switch(Questions.getQuestion(questions_, question_id)){
-        case(#err(_)){};
-        case(#ok(question)){
-          for (category in Array.vals(question.categories)){
-            convictions := Convictions.addConviction(convictions, category, opinion, moderate_opinion_coef_);
-          };
+  public shared func computeUserConvictions(principal: Principal) : async Result<User, Users.GetUserError> {
+    Result.mapOk<User, User, Users.GetUserError>(Users.getUser(users_, principal), func(user){
+      if (user.convictions.to_update){
+        var convictions = Trie.empty<Dimension, Conviction>();
+        for ((question_id, opinion) in Trie.iter(Register.getUserBallots(opinions_, principal))){
+          switch(Questions.getQuestion(questions_, question_id)){
+            case(#err(_)){};
+            case(#ok(question)){
+              for (category in Array.vals(question.categories)){
+                convictions := Convictions.addConviction(convictions, category, opinion, moderate_opinion_coef_);
+              };
+            };
+          }
         };
+        let updated_user = Users.setConvictions(user, convictions);
+        users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
+        updated_user;
+      } else {
+        user;
       }
-    };
-    convictions;
+    });
   };
 
 };
