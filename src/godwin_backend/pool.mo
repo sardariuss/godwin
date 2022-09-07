@@ -76,6 +76,7 @@ module {
             author = question.author;
             title = question.title;
             text = question.text;
+            categories = question.categories;
             pool_history = Array.append(question.pool_history, [{date = now; pool = parameters.next_pool;}]);
           };
           #ok(?updated_question);

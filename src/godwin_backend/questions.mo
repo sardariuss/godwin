@@ -51,7 +51,7 @@ module {
     questions_by_date: RBT.Tree<DateEntry, ()>;
   };
 
-   public func empty() : QuestionRegister {
+  public func empty() : QuestionRegister {
     {
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
@@ -65,6 +65,7 @@ module {
       author = author;
       title = title;
       text = text;
+      categories = [];
       pool_history = Pool.initPoolHistory();
     };
     (

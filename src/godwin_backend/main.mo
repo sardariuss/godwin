@@ -3,6 +3,8 @@ import Types "types";
 import Pool "pool";
 import Questions "questions";
 import Categories "categories";
+import Users "users";
+import Convictions "convictions";
 
 import RBT "mo:stableRBT/StableRBTree";
 
@@ -45,6 +47,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   type Pool = Types.Pool;
   type PoolParameters = Types.PoolParameters;
   type CategoryAggregationParameters = Types.CategoryAggregationParameters;
+  type Conviction = Types.Conviction;
 
   private stable var admin_ = initializer;
 
@@ -58,12 +61,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #ARCHIVE; hash = Types.hashPool(#ARCHIVE) }, Types.equalPool, {
     ratio_max_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000; next_pool = #FISSION; }).0;
 
-  private stable var opinion_parameters_ = Trie.empty<Opinion, Float>();
-  opinion_parameters_ := Trie.put(opinion_parameters_, { key = #ABS_AGREE; hash = Types.hashOpinion(#ABS_AGREE) }, Types.equalOpinion, 1.0).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, { key = #RATHER_AGREE; hash = Types.hashOpinion(#RATHER_AGREE) }, Types.equalOpinion, 0.5).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, { key = #NEUTRAL; hash = Types.hashOpinion(#NEUTRAL) }, Types.equalOpinion, 0.0).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, { key = #RATHER_DISAGREE; hash = Types.hashOpinion(#RATHER_DISAGREE) }, Types.equalOpinion, -0.5).0;
-  opinion_parameters_ := Trie.put(opinion_parameters_, { key = #ABS_DISAGREE; hash = Types.hashOpinion(#ABS_DISAGREE) }, Types.equalOpinion, -1.0).0;
+  private stable var moderate_opinion_coef_ = 0.5;
 
   private stable var political_categories_ = Trie.empty<Dimension, Sides>();
   political_categories_ := Trie.put(political_categories_, Types.keyText("IDENTITY"), Text.equal, ("CONSTRUCTIVISM", "ESSENTIALISM")).0;
@@ -79,6 +77,8 @@ shared({ caller = initializer }) actor class Godwin() = {
     direction_threshold = 0.65;
     dimension_threshold = 0.35;
   };
+
+  private stable var users_ = Users.empty();
 
   private stable var questions_ = Questions.empty();
 
@@ -198,6 +198,22 @@ shared({ caller = initializer }) actor class Godwin() = {
 
   func computeCategoriesAggregation(question_id: Nat) : [Category] {
     return Categories.computeCategoriesAggregation(political_categories_, category_aggregation_params_, categories_, question_id);
+  };
+
+  // Watchout: O(n)
+  func computeUserConvictions(principal: Principal) : Trie<Dimension, Conviction> {
+    var convictions = Trie.empty<Dimension, Conviction>();
+    for ((question_id, opinion) in Trie.iter(Register.getUserBallots(opinions_, principal))){
+      switch(Questions.getQuestion(questions_, question_id)){
+        case(#err(_)){};
+        case(#ok(question)){
+          for (category in Array.vals(question.categories)){
+            convictions := Convictions.addConviction(convictions, category, opinion, moderate_opinion_coef_);
+          };
+        };
+      }
+    };
+    convictions;
   };
 
 };

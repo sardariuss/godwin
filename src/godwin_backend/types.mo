@@ -10,6 +10,7 @@ module {
 
   // For convenience: from base module
   type Key<K> = Trie.Key<K>;
+  type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
   type Hash = Hash.Hash;
   type Time = Time.Time;
@@ -19,6 +20,7 @@ module {
     author: Principal;
     title: Text;
     text: Text;
+    categories: [Category];
     pool_history: PoolHistory;
   };
 
@@ -69,21 +71,38 @@ module {
     (a.dimension == b.dimension) and (a.direction == b.direction);
   };
 
+   public type AgreementDegree = {
+    #ABSOLUTE;
+    #MODERATE;
+  };
+
   public type Opinion = {
-    #ABS_AGREE;
-    #RATHER_AGREE;
+    #AGREE: AgreementDegree;
     #NEUTRAL;
-    #RATHER_DISAGREE;
-    #ABS_DISAGREE;
+    #DISAGREE: AgreementDegree;
+  };
+
+  public type Conviction = {
+    left: Float;
+    center: Float;
+    right: Float;
   };
 
   public func toTextOpinion(opinion: Opinion) : Text {
     switch(opinion){
-      case(#ABS_AGREE){ "ABS_AGREE"; };
-      case(#RATHER_AGREE){ "RATHER_AGREE"; };
-      case(#NEUTRAL){ "NEUTRAL"; };
-      case(#RATHER_DISAGREE){ "RATHER_DISAGREE"; };
-      case(#ABS_DISAGREE){ "ABS_DISAGREE"; };
+      case(#AGREE(conviction)){
+        switch(conviction){
+          case(#ABSOLUTE){"ABS_AGREE";};
+          case(#MODERATE){"RATHER_AGREE";};
+        };
+      };
+      case(#NEUTRAL){"NEUTRAL";};
+      case(#DISAGREE(conviction)){
+        switch(conviction){
+          case(#ABSOLUTE){"ABS_DISAGREE";};
+          case(#MODERATE){"RATHER_DISAGREE";};
+        };
+      };
     };
   };
 
@@ -93,6 +112,10 @@ module {
 
   public func equalOpinion(a: Opinion, b:Opinion) : Bool {
     a == b;
+  };
+
+  public func keyOpinion(opinion: Opinion) : Key<Opinion> {
+    return { key = opinion; hash = hashOpinion(opinion);}
   };
 
   public type Pool = {
@@ -126,6 +149,15 @@ module {
   public type CategoryAggregationParameters = {
     direction_threshold: Float;
     dimension_threshold: Float;
+  };
+
+  public type User = {
+    principal: Principal;
+    name: ?Text;
+    convictions: {
+      to_update: Bool;
+      trie: Trie<Dimension, Conviction>;
+    };
   };
 
 };
