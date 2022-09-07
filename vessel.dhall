@@ -1,4 +1,4 @@
 {
   dependencies = [ "base", "matchers", "stableRBT" ],
-  compiler = None Text
+  compiler = Some "0.6.29"
 }

@@ -15,10 +15,6 @@ module {
   type Hash = Hash.Hash;
   type Time = Time.Time;
 
-  public func keyPrincipal(p: Principal) : Key<Principal> {
-    { key = p; hash = Principal.hash(p); };
-  };
-
   public type Question = {
     id: Nat;
     author: Principal;
@@ -50,11 +46,13 @@ module {
 
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
-  public func hashEndorsement(e : Endorsement) : Hash { Int.hash(0); };
-
+  public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
+  
   public type Endorsement = {
     #ENDORSE;
   };
+
+  public func hashEndorsement(e : Endorsement) : Hash { Int.hash(0); };
 
   public func equalEndorsement(a: Endorsement, b: Endorsement) : Bool { 
     a == b;
@@ -168,6 +166,18 @@ module {
       to_update: Bool;
       trie: Trie<Dimension, Conviction>;
     };
+  };
+
+  public type Register<B> = {
+    // map<user, map<item, ballot>>
+    ballots: Trie<Principal, Trie<Nat, B>>;
+    // map<item, map<ballot, sum>>
+    totals: Trie<Nat, Totals<B>>;
+  };
+
+  public type Totals<B> = {
+    all: Nat;
+    per_ballot: Trie<B, Nat>;
   };
 
 };

@@ -32,7 +32,7 @@ shared({ caller = initializer }) actor class Godwin() = {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Hash = Hash.Hash;
-  type Register<B> = Register.Register<B>;
+  type Register<B> = Types.Register<B>;
   type Time = Time.Time;
   type Order = Order.Order;
 
