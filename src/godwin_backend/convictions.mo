@@ -58,9 +58,7 @@ module {
     };
   };
 
-  type ConvictionTrie = Trie<Dimension, Conviction>;
-
-  public func addConviction(trie: ConvictionTrie, category: Category, opinion: Opinion, moderate_coef: Float) : ConvictionTrie {
+  public func addConviction(trie: Trie<Dimension, Conviction>, category: Category, opinion: Opinion, moderate_coef: Float) : Trie<Dimension, Conviction> {
     var updated_conviction = { left = 0.0; center = 0.0; right = 0.0; };
     switch(Trie.get(trie, Types.keyText(category.dimension), Text.equal)){
       case(null){};

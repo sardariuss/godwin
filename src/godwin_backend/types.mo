@@ -15,6 +15,10 @@ module {
   type Hash = Hash.Hash;
   type Time = Time.Time;
 
+  public func keyPrincipal(p: Principal) : Key<Principal> {
+    { key = p; hash = Principal.hash(p); };
+  };
+
   public type Question = {
     id: Nat;
     author: Principal;
@@ -144,6 +148,12 @@ module {
     ratio_max_endorsement: Float;
     time_elapsed_in_pool: Time;
     next_pool: Pool;
+  };
+
+  public type PoolsParameters = {
+    spawn: PoolParameters;
+    fission: PoolParameters;
+    archive: PoolParameters;
   };
 
   public type CategoryAggregationParameters = {

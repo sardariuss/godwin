@@ -20,6 +20,7 @@ module {
   type PoolHistory = Types.PoolHistory;
   type DatedPool = Types.DatedPool;
   type PoolParameters = Types.PoolParameters;
+  type PoolsParameters = Types.PoolsParameters;
 
   // Watchout: traps if pool history is empty
   public func getCurrentPool(question: Question) : Pool {
@@ -56,35 +57,31 @@ module {
     #ParametersNotFound;
   };
 
-  public func updateCurrentPool(
-    question: Question,
-    parameters: Trie<Pool, PoolParameters>,
-    question_endorsement: Nat,
-    max_endorsement: Nat
-  ) : Result<?Question, UpdatePoolError> {
-    let current_pool = getCurrentPool(question);
-    switch(Trie.get(parameters, { key = current_pool; hash = Types.hashPool(current_pool) }, Types.equalPool)){
-      case(null){
-        #err(#ParametersNotFound);
-      };
-      case(?parameters){
-        let now = Time.now();
-        if ((Float.fromInt(question_endorsement) > parameters.ratio_max_endorsement * Float.fromInt(max_endorsement)) and 
-            (getLastUpdate(question) + parameters.time_elapsed_in_pool < now)){
-          let updated_question = {
-            id = question.id;
-            author = question.author;
-            title = question.title;
-            text = question.text;
-            categories = question.categories;
-            pool_history = Array.append(question.pool_history, [{date = now; pool = parameters.next_pool;}]);
-          };
-          #ok(?updated_question);
-        } else {
-          #ok(null);
+  func getPoolParameters(poolsParameters: PoolsParameters, pool: Pool) : PoolParameters {
+    switch(pool){
+      case(#SPAWN) { poolsParameters.spawn; };
+      case(#FISSION) { poolsParameters.fission; };
+      case(#ARCHIVE) { poolsParameters.archive; };
+    };
+  };
+
+  public func updateCurrentPool(question: Question, pools_parameters: PoolsParameters, question_endorsement: Nat, max_endorsement: Nat) : ?Question {
+    let now = Time.now();
+    let pool_parameters = getPoolParameters(pools_parameters, getCurrentPool(question));
+    if ((Float.fromInt(question_endorsement) > pool_parameters.ratio_max_endorsement * Float.fromInt(max_endorsement))){
+      if (getLastUpdate(question) + pool_parameters.time_elapsed_in_pool < now) {
+        let updated_question = {
+          id = question.id;
+          author = question.author;
+          title = question.title;
+          text = question.text;
+          categories = question.categories;
+          pool_history = Array.append(question.pool_history, [{date = now; pool = pool_parameters.next_pool;}]);
         };
+        return ?updated_question;
       };
     };
+    return null;
   };
 
 };

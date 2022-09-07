@@ -48,18 +48,17 @@ shared({ caller = initializer }) actor class Godwin() = {
   type PoolParameters = Types.PoolParameters;
   type CategoryAggregationParameters = Types.CategoryAggregationParameters;
   type Conviction = Types.Conviction;
+  type User = Types.User;
 
   private stable var admin_ = initializer;
 
   private stable var max_endorsement_ : Nat = 0;
 
-  private stable var change_pool_parameters_ = Trie.empty<Pool, PoolParameters>();
-  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #SPAWN; hash = Types.hashPool(#SPAWN) }, Types.equalPool, {
-    ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = #FISSION;}).0;
-  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #FISSION; hash = Types.hashPool(#FISSION) }, Types.equalPool, {
-    ratio_max_endorsement = 0.0; time_elapsed_in_pool = 1 * 24 * 60 * 60 * 1_000_000_000; next_pool = #ARCHIVE; }).0;
-  change_pool_parameters_ := Trie.put(change_pool_parameters_, { key = #ARCHIVE; hash = Types.hashPool(#ARCHIVE) }, Types.equalPool, {
-    ratio_max_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000; next_pool = #FISSION; }).0;
+  private stable var pools_parameters_ = {
+    spawn = { ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = #FISSION; };
+    fission = { ratio_max_endorsement = 0.0; time_elapsed_in_pool = 1 * 24 * 60 * 60 * 1_000_000_000; next_pool = #ARCHIVE; };
+    archive = { ratio_max_endorsement = 0.8; time_elapsed_in_pool = 3 * 24 * 60 * 60 * 1_000_000_000; next_pool = #FISSION; };
+  };
 
   private stable var moderate_opinion_coef_ = 0.5;
 
@@ -174,19 +173,15 @@ shared({ caller = initializer }) actor class Godwin() = {
     }
   };
 
-  public shared func update() {
+  public shared func run() {
     var max_endorsement = max_endorsement_;
     for ((_, question) in Questions.iter(questions_)) {
       let question_endorsement = Register.getTotalForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
-      switch (Pool.updateCurrentPool(question, change_pool_parameters_, question_endorsement, max_endorsement_)){
-        case(#err(_)){};
-        case(#ok(updated_question)){
-          switch(updated_question){
-            case(null){};
-            case(?question){
-              questions_ := Questions.replaceQuestion(questions_, question).0;
-            };
-          };
+      switch (Pool.updateCurrentPool(question, pools_parameters_, question_endorsement, max_endorsement_)){
+        case(null){};
+        case(?updated_question){
+          questions_ := Questions.replaceQuestion(questions_, updated_question).0;
+          onPoolChanged(updated_question);
         };
       };
       if (max_endorsement < question_endorsement) {
@@ -196,8 +191,25 @@ shared({ caller = initializer }) actor class Godwin() = {
     max_endorsement_ := max_endorsement;
   };
 
-  func computeCategoriesAggregation(question_id: Nat) : [Category] {
-    return Categories.computeCategoriesAggregation(political_categories_, category_aggregation_params_, categories_, question_id);
+  func onPoolChanged(question: Question) {
+    switch(Pool.getCurrentPool(question)){
+      case(#SPAWN){};
+      case(#FISSION){};
+      case(#ARCHIVE){
+        let categories = Categories.computeCategoriesAggregation(political_categories_, category_aggregation_params_, categories_, question.id);
+        // @todo: verify if new computed categories are the same as the old ones
+        var users_to_update = Trie.empty<Principal, User>();
+        for ((principal, user) in Users.iter(users_)){
+          switch(Register.getBallot(opinions_, principal, question.id)){
+            case(null){};
+            case(?opinion){
+              users_to_update := Trie.put(users_to_update, Types.keyPrincipal(user.principal), Principal.equal, Users.setConvictionToUpdate(user)).0;
+            };
+          };
+        };
+        users_ := Trie.merge(users_, users_to_update, Principal.equal);
+      };
+    };
   };
 
   // Watchout: O(n)
