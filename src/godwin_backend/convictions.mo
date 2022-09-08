@@ -13,8 +13,8 @@ module {
   type Opinion = Types.Opinion;
   type Conviction = Types.Conviction;
   type Direction = Types.Direction;
-  type Dimension = Types.Dimension;
   type Category = Types.Category;
+  type OrientedCategory = Types.OrientedCategory;
 
   func convictionMatrix(opinion: Opinion, moderate_coef: Float) : Conviction {
     switch(opinion){
@@ -58,16 +58,16 @@ module {
     };
   };
 
-  public func addConviction(trie: Trie<Dimension, Conviction>, category: Category, opinion: Opinion, moderate_coef: Float) : Trie<Dimension, Conviction> {
+  public func addConviction(trie: Trie<Category, Conviction>, category: OrientedCategory, opinion: Opinion, moderate_coef: Float) : Trie<Category, Conviction> {
     var updated_conviction = { left = 0.0; center = 0.0; right = 0.0; };
-    switch(Trie.get(trie, Types.keyText(category.dimension), Text.equal)){
+    switch(Trie.get(trie, Types.keyText(category.category), Text.equal)){
       case(null){};
       case(?conviction){
         updated_conviction := conviction;
       };
     };
     updated_conviction := sumConvictions(updated_conviction, getConviction(opinion, category.direction, moderate_coef));
-    Trie.put(trie, Types.keyText(category.dimension), Text.equal, updated_conviction).0;
+    Trie.put(trie, Types.keyText(category.category), Text.equal, updated_conviction).0;
   };
 
 };

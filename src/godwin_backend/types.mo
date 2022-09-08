@@ -15,12 +15,26 @@ module {
   type Hash = Hash.Hash;
   type Time = Time.Time;
 
+  public type InstallArguments = {
+    moderate_opinion_coef: Float;
+    pools_parameters: PoolsParameters;
+    categories_definition: [{category: Category; sides: Sides}];
+    aggregation_parameters: AggregationParameters;
+  };
+
+  public type Parameters = {
+    moderate_opinion_coef: Float;
+    pools_parameters: PoolsParameters;
+    categories_definition: CategoriesDefinition;
+    aggregation_parameters: AggregationParameters;
+  };
+
   public type Question = {
     id: Nat;
     author: Principal;
     title: Text;
     text: Text;
-    categories: [Category];
+    categories: [OrientedCategory];
     pool_history: PoolHistory;
   };
 
@@ -31,16 +45,22 @@ module {
     pool: Pool;
   };
 
-  public type Dimension = Text;
-  public type Sides = (Text, Text);
+  public type Category = Text;
+
+  public type Sides = {
+    left: Text;
+    right: Text;
+  };
+
+  public type CategoriesDefinition = Trie<Category, Sides>;
 
   public type Direction = {
     #LR;
     #RL;
   };
 
-  public type Category = {
-    dimension: Dimension;
+  public type OrientedCategory = {
+    category: Category;
     direction: Direction;
   };
 
@@ -65,12 +85,12 @@ module {
     };
   };
 
-  public func hashCategory(c: Category) : Hash {
-    Text.hash(c.dimension # toTextDir(c.direction));
+  public func hashOrientedCategory(c: OrientedCategory) : Hash {
+    Text.hash(c.category # toTextDir(c.direction));
   };
 
-  public func equalCategory(a: Category, b: Category) : Bool {
-    (a.dimension == b.dimension) and (a.direction == b.direction);
+  public func equalOrientedCategory(a: OrientedCategory, b: OrientedCategory) : Bool {
+    (a.category == b.category) and (a.direction == b.direction);
   };
 
    public type AgreementDegree = {
@@ -144,7 +164,7 @@ module {
 
   public type PoolParameters = {
     ratio_max_endorsement: Float;
-    time_elapsed_in_pool: Time;
+    time_elapsed_in_pool: Time; // @todo: put the time in human readable unit (here assumed it is in nano seconds)
     next_pool: Pool;
   };
 
@@ -154,9 +174,9 @@ module {
     archive: PoolParameters;
   };
 
-  public type CategoryAggregationParameters = {
+  public type AggregationParameters = {
     direction_threshold: Float;
-    dimension_threshold: Float;
+    category_threshold: Float;
   };
 
   public type User = {
@@ -164,18 +184,18 @@ module {
     name: ?Text;
     convictions: {
       to_update: Bool;
-      trie: Trie<Dimension, Conviction>;
+      trie: Trie<Category, Conviction>;
     };
   };
 
-  public type Register<B> = {
+  public type VoteRegister<B> = {
     // map<user, map<item, ballot>>
     ballots: Trie<Principal, Trie<Nat, B>>;
     // map<item, map<ballot, sum>>
-    totals: Trie<Nat, Totals<B>>;
+    totals: Trie<Nat, TotalVotes<B>>;
   };
 
-  public type Totals<B> = {
+  public type TotalVotes<B> = {
     all: Nat;
     per_ballot: Trie<B, Nat>;
   };

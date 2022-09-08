@@ -1,7 +1,6 @@
 import Types "types";
 
 import Hash "mo:base/Hash";
-import Int "mo:base/Int";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Trie "mo:base/Trie";
@@ -11,24 +10,23 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Hash = Hash.Hash;
-  type Key<K> = Trie.Key<K>;
   type Principal = Principal.Principal;
 
   // For convenience: from types module
-  type Register<B> = Types.Register<B>;
-  type Totals<B> = Types.Totals<B>;
+  type VoteRegister<B> = Types.VoteRegister<B>;
+  type TotalVotes<B> = Types.TotalVotes<B>;
 
   // For clarity
   type Item = Nat;
 
-  public func empty<B>() : Register<B> {
+  public func empty<B>() : VoteRegister<B> {
     {
       ballots = Trie.empty<Principal, Trie<Item, B>>();
-      totals = Trie.empty<Item, Totals<B>>();
+      totals = Trie.empty<Item, TotalVotes<B>>();
     }
   };
 
-  public func getUserBallots<B>(register: Register<B>, user: Principal) : Trie<Item, B> {
+  public func getUserBallots<B>(register: VoteRegister<B>, user: Principal) : Trie<Item, B> {
     var user_ballots = Trie.empty<Item, B>();
     switch(Trie.get(register.ballots, Types.keyPrincipal(user), Principal.equal)){
       case(null){};
@@ -39,11 +37,11 @@ module {
     user_ballots;
   };
 
-  public func getBallot<B>(register: Register<B>, user: Principal, item: Item) : ?B {
+  public func getBallot<B>(register: VoteRegister<B>, user: Principal, item: Item) : ?B {
     Trie.get(getUserBallots<B>(register, user), Types.keyNat(item), Nat.equal);
   };
 
-  public func getTotals<B>(register: Register<B>, item: Item) : Totals<B> {
+  public func getTotalVotes<B>(register: VoteRegister<B>, item: Item) : TotalVotes<B> {
     var item_totals = {
       all = 0;
       per_ballot = Trie.empty<B, Nat>();
@@ -57,8 +55,8 @@ module {
     item_totals;
   };
 
-  public func getTotalForBallot<B>(register: Register<B>, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool, ballot: B) : Nat {
-    switch (Trie.get(getTotals<B>(register, item).per_ballot, { key = ballot; hash = hash(ballot); }, equal)){
+  public func getTotalVotesForBallot<B>(register: VoteRegister<B>, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool, ballot: B) : Nat {
+    switch (Trie.get(getTotalVotes<B>(register, item).per_ballot, { key = ballot; hash = hash(ballot); }, equal)){
       case(?total){
         return total;
       };
@@ -68,11 +66,11 @@ module {
     };
   };
 
-  public func putBallot<B>(register: Register<B>, user: Principal, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool, ballot: B) : (Register<B>, ?B) {
+  public func putBallot<B>(register: VoteRegister<B>, user: Principal, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool, ballot: B) : (VoteRegister<B>, ?B) {
     // Put the ballot in the user's ballots
     let (user_ballots, removed_ballot) = Trie.put(getUserBallots<B>(register, user), Types.keyNat(item), Nat.equal, ballot);
     // Get the total of ballots for this item
-    let totals = getTotals(register, item);
+    let totals = getTotalVotes(register, item);
     var totals_all = totals.all;
     var totals_per_ballot = totals.per_ballot;
     // Decrement the total of the removed ballot if any
@@ -80,13 +78,13 @@ module {
       case(null){};
       case(?old_ballot){
         totals_all := totals_all - 1;
-        let total_for_ballot = getTotalForBallot(register, item, hash, equal, old_ballot) - 1;
+        let total_for_ballot = getTotalVotesForBallot(register, item, hash, equal, old_ballot) - 1;
         totals_per_ballot := Trie.put(totals_per_ballot, { key = old_ballot; hash = hash(old_ballot); }, equal, total_for_ballot).0;
       };
     };
     // Increment the total for the new ballot
     totals_all := totals_all + 1;
-    let total_for_ballot = getTotalForBallot(register, item, hash, equal, ballot) + 1;
+    let total_for_ballot = getTotalVotesForBallot(register, item, hash, equal, ballot) + 1;
     totals_per_ballot := Trie.put(totals_per_ballot, { key = ballot; hash = hash(ballot); }, equal, total_for_ballot).0;
     // Return the updated register and the removed ballot if any
     (
@@ -98,11 +96,11 @@ module {
     );
   };
 
-  public func removeBallot<B>(register: Register<B>, user: Principal, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool) : (Register<B>, ?B) {
+  public func removeBallot<B>(register: VoteRegister<B>, user: Principal, item: Item, hash: (B) -> Hash, equal: (B, B) -> Bool) : (VoteRegister<B>, ?B) {
     // Remove the ballot from the user's ballots
     let (user_ballots, removed_ballot) = Trie.remove(getUserBallots<B>(register, user), Types.keyNat(item), Nat.equal);
     // Get the total of ballots for this item
-    let totals = getTotals(register, item);
+    let totals = getTotalVotes(register, item);
     var totals_all = totals.all;
     var totals_per_ballot = totals.per_ballot;
     // Decrement the total by one if a vote was already given
@@ -110,7 +108,7 @@ module {
       case(null){};
       case(?old_ballot){
         totals_all := totals_all - 1;
-        let total_for_ballot = getTotalForBallot(register, item, hash, equal, old_ballot) - 1;
+        let total_for_ballot = getTotalVotesForBallot(register, item, hash, equal, old_ballot) - 1;
         totals_per_ballot := Trie.put(totals_per_ballot, { key = old_ballot; hash = hash(old_ballot); }, equal, total_for_ballot).0;
       };
     };

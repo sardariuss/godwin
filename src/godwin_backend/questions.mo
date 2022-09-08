@@ -45,7 +45,7 @@ module {
     question_id: Nat;
   };
 
-  public type QuestionRegister = {
+  type QuestionRegister = {
     questions: Trie<Nat, Question>;
     question_index: Nat;
     questions_by_date: RBT.Tree<DateEntry, ()>;

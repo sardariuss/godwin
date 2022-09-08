@@ -16,7 +16,7 @@ module {
   // For convenience: from types module
   type User = Types.User;
   type Conviction = Types.Conviction;
-  type Dimension = Types.Dimension;
+  type Category = Types.Category;
 
   public type UserRegister = Trie<Principal, User>;
 
@@ -39,7 +39,7 @@ module {
     };
   };
 
-  public func setConvictions(user: User, trie_convictions: Trie<Dimension, Conviction>) : User {
+  public func setConvictions(user: User, trie_convictions: Trie<Category, Conviction>) : User {
     {
       principal = user.principal;
       name = user.name;
@@ -54,6 +54,7 @@ module {
     #UserNotFound;
   };
   
+  // @todo: create new user when not found, if principal is not anonymous
   public func getUser(register: UserRegister, principal: Principal) : Result<User, GetUserError> {
     switch(Trie.get(register, Types.keyPrincipal(principal), Principal.equal)){
       case(null){

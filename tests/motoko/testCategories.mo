@@ -15,19 +15,19 @@ type Result<Ok, Err> = Result.Result<Ok, Err>;
 // For convenience: from matchers module
 let { run;test;suite; } = Suite;
 // For convenience: from types module
-type Dimension = Types.Dimension;
-type Sides = Types.Sides;
 type Category = Types.Category;
-type CategoryAggregationParameters = Types.CategoryAggregationParameters;
+type Sides = Types.Sides;
+type OrientedCategory = Types.OrientedCategory;
+type AggregationParameters = Types.AggregationParameters;
 
-type VerifyCategoryError = {
+type VerifyOrientedCategoryError = {
   #CategoryNotFound;
 };
 
-var political_categories = Trie.empty<Dimension, Sides>();
-political_categories := Trie.put(political_categories, Types.keyText("IDENTITY"), Text.equal, ("CONSTRUCTIVISM", "ESSENTIALISM")).0;
-political_categories := Trie.put(political_categories, Types.keyText("COOPERATION"), Text.equal, ("INTERNATIONALISM", "NATIONALISM")).0;
-political_categories := Trie.put(political_categories, Types.keyText("PROPERTY"), Text.equal, ("COMMUNISM", "CAPITALISM")).0;
+var political_categories = Trie.empty<Category, Sides>();
+political_categories := Trie.put(political_categories, Types.keyText("IDENTITY"), Text.equal, { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; }).0;
+political_categories := Trie.put(political_categories, Types.keyText("COOPERATION"), Text.equal, { left = "INTERNATIONALISM"; right = "NATIONALISM"; }).0;
+political_categories := Trie.put(political_categories, Types.keyText("PROPERTY"), Text.equal, { left = "COMMUNISM"; right = "CAPITALISM"; }).0;
 
 func testableResult<Ok, Err>(result: Result<Ok, Err>) : Testable.TestableItem<Result<Ok, Err>> {
   {
@@ -42,17 +42,17 @@ func testableResult<Ok, Err>(result: Result<Ok, Err>) : Testable.TestableItem<Re
   };
 };
 
-type TestableVerifyCategory = Testable.TestableItem<Result<(), VerifyCategoryError>>;
+type TestableVerifyOrientedCategory = Testable.TestableItem<Result<(), VerifyOrientedCategoryError>>;
 
-func testVerifyCategory(political_categories: Trie<Dimension, Sides>, category: Category) : TestableVerifyCategory {
-  testableResult<(), VerifyCategoryError>(Categories.verifyCategory(political_categories, category));
+func testVerifyOrientedCategory(political_categories: Trie<Category, Sides>, category: OrientedCategory) : TestableVerifyOrientedCategory {
+  testableResult<(), VerifyOrientedCategoryError>(Categories.verifyOrientedCategory(political_categories, category));
 };
 
 let suiteCategories = suite("Categories", [
-  test("Category exists (1)", #ok, Matchers.equals(testVerifyCategory(political_categories,{ dimension = "IDENTITY"; direction = #LR; }))),
-  test("Category exists (2)", #ok, Matchers.equals(testVerifyCategory(political_categories,{ dimension = "IDENTITY"; direction = #RL; }))),
-  test("Category does not exist (1)", #err(#CategoryNotFound), Matchers.equals(testVerifyCategory(political_categories,{ dimension = "JUSTICE"; direction = #LR; }))),
-  test("Category does not exist (2)", #err(#CategoryNotFound), Matchers.equals(testVerifyCategory(political_categories,{ dimension = "JUSTICE"; direction = #RL; })))
+  test("OrientedCategory exists (1)", #ok, Matchers.equals(testVerifyOrientedCategory(political_categories,{ category = "IDENTITY"; direction = #LR; }))),
+  test("OrientedCategory exists (2)", #ok, Matchers.equals(testVerifyOrientedCategory(political_categories,{ category = "IDENTITY"; direction = #RL; }))),
+  test("OrientedCategory does not exist (1)", #err(#CategoryNotFound), Matchers.equals(testVerifyOrientedCategory(political_categories,{ category = "JUSTICE"; direction = #LR; }))),
+  test("OrientedCategory does not exist (2)", #err(#CategoryNotFound), Matchers.equals(testVerifyOrientedCategory(political_categories,{ category = "JUSTICE"; direction = #RL; })))
 ]);
 
 run(suiteCategories);
