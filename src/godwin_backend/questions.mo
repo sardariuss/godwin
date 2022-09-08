@@ -23,6 +23,7 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
+  type OrientedCategory = Types.OrientedCategory;
 
   func compareDateEntry(a: DateEntry, b: DateEntry) : Order {
     if (a.date < b.date) {
@@ -66,7 +67,10 @@ module {
       title = title;
       text = text;
       categories = [];
-      pool_history = Pool.initPoolHistory();
+      pool = {
+        current = {date = Time.now(); pool = #SPAWN;};
+        history = [];
+      };
     };
     (
       {
@@ -107,6 +111,18 @@ module {
       },
       put_result.1
     );
+  };
+
+  public func updateCategories(register: QuestionRegister, question: Question, categories: [OrientedCategory]) : (QuestionRegister, ?Question) {
+    let updated_question = {
+      id = question.id;
+      author = question.author;
+      title = question.title;
+      text = question.text;
+      categories = categories;
+      pool = question.pool;
+    };
+    replaceQuestion(register, updated_question);
   };
 
 };

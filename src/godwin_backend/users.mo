@@ -50,20 +50,17 @@ module {
     };
   };
 
-  public type GetUserError = {
-    #UserNotFound;
+  public func getUser(register: UserRegister, principal: Principal) : ?User {
+    Trie.get(register, Types.keyPrincipal(principal), Principal.equal);
   };
-  
-  // @todo: create new user when not found, if principal is not anonymous
-  public func getUser(register: UserRegister, principal: Principal) : Result<User, GetUserError> {
-    switch(Trie.get(register, Types.keyPrincipal(principal), Principal.equal)){
-      case(null){
-        #err(#UserNotFound);
-      };
-      case(?user){
-        #ok(user);
-      };
-    };
+
+  public func putUser(register: UserRegister, user: User) : (UserRegister, ?User) {
+    Trie.put(register, Types.keyPrincipal(user.principal), Principal.equal, user);
+  };
+
+  public func newUser(principal: Principal) : User {
+    // Important: set convictions.to_update to true, because the associated principal could have voted actually creating the user
+    { principal = principal; name = null; convictions = { to_update = true; trie = Trie.empty<Category, Conviction>(); } };
   };
 
 };

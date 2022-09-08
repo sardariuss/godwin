@@ -15,9 +15,9 @@ function install(wasm, args, cycle) {
   S
 };
 
-function installGodwin(){
+function installBackend(arguments){
   import interface = "2vxsx-fae" as "../../.dfx/local/canisters/godwin_backend/godwin_backend.did";
-  let args = encode interface.__init_args();
+  let args = encode interface.__init_args(arguments);
   let wasm = file("../../.dfx/local/canisters/godwin_backend/godwin_backend.wasm");
   install(wasm, args, 0);
 };

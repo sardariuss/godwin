@@ -22,27 +22,13 @@ module {
   type PoolParameters = Types.PoolParameters;
   type PoolsParameters = Types.PoolsParameters;
 
-  // Watchout: traps if pool history is empty
-  public func getCurrentPool(question: Question) : Pool {
-    question.pool_history[question.pool_history.size() - 1].pool;
-  };
-  
-  // Watchout: traps if pool history is empty
-  public func getLastUpdate(question: Question) : Time {
-    question.pool_history[question.pool_history.size() - 1].date;
-  };
-
-  public func initPoolHistory() : PoolHistory {
-    [{date = Time.now(); pool = #SPAWN;}];
-  };
-
   public type VerifyPoolError = {
     #WrongPool;
   };
 
   public func verifyCurrentPool(question: Question, pools: [Pool]) : Result<(), VerifyPoolError> {
     let set_pools = TrieSet.fromArray<Pool>(pools, Types.hashPool, Types.equalPool);
-    let current_pool = getCurrentPool(question);
+    let current_pool = question.pool.current.pool;
     switch(Trie.get(set_pools, { key = current_pool; hash = Types.hashPool(current_pool) }, Types.equalPool)){
       case(null){
         #err(#WrongPool);
@@ -67,16 +53,19 @@ module {
 
   public func updateCurrentPool(question: Question, pools_parameters: PoolsParameters, question_endorsement: Nat, max_endorsement: Nat) : ?Question {
     let now = Time.now();
-    let pool_parameters = getPoolParameters(pools_parameters, getCurrentPool(question));
+    let pool_parameters = getPoolParameters(pools_parameters, question.pool.current.pool);
     if ((Float.fromInt(question_endorsement) > pool_parameters.ratio_max_endorsement * Float.fromInt(max_endorsement))){
-      if (getLastUpdate(question) + pool_parameters.time_elapsed_in_pool < now) {
+      if (question.pool.current.date + pool_parameters.time_elapsed_in_pool < now) {
         let updated_question = {
           id = question.id;
           author = question.author;
           title = question.title;
           text = question.text;
           categories = question.categories;
-          pool_history = Array.append(question.pool_history, [{date = now; pool = pool_parameters.next_pool;}]);
+          pool = {
+            current = { date = now; pool = pool_parameters.next_pool; };
+            history = Array.append(question.pool.history, [ question.pool.current ]);
+          };
         };
         return ?updated_question;
       };

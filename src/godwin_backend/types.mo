@@ -35,7 +35,10 @@ module {
     title: Text;
     text: Text;
     categories: [OrientedCategory];
-    pool_history: PoolHistory;
+    pool: {
+      current: DatedPool;
+      history: PoolHistory;
+    };
   };
 
   public type PoolHistory = [DatedPool];

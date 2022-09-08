@@ -56,8 +56,10 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
     return Questions.getQuestion(questions_, question_id);
   };
 
-  public shared({caller}) func createQuestion(title: Text, text: Text) : async () {
-    questions_ := Questions.createQuestion(questions_, caller, title, text).0;
+  public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
+    let (questions, question) = Questions.createQuestion(questions_, caller, title, text);
+    questions_ := questions;
+    question;
   };
 
   type EndorsementError = {
@@ -157,12 +159,15 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
   };
 
   func onPoolChanged(question: Question) {
-    switch(Pool.getCurrentPool(question)){
+    switch(question.pool.current.pool){
       case(#SPAWN){};
       case(#FISSION){};
       case(#ARCHIVE){
         let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
-        // @todo: verify if new computed categories are not the same as the old ones
+        // @todo: check if the old categories were the same
+        // Update the question with the new categories
+        questions_ := Questions.updateCategories(questions_, question, categories).0;
+        // The users that gave their opinion on this questions have to have their convictions updated
         var users_to_update = Trie.empty<Principal, User>();
         for ((principal, user) in Users.iter(users_)){
           switch(Votes.getBallot(opinions_, principal, question.id)){
@@ -177,13 +182,38 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
     };
   };
 
-  public shared query func getUser(principal: Principal) : async Result<User, Users.GetUserError> {
-    return Users.getUser(users_, principal);
+  public type GetOrCreateUserError = {
+    #IsAnonymous;
+  };
+
+  func getOrCreateUser_(principal: Principal) : Result<User, GetOrCreateUserError> {
+    if (Principal.isAnonymous(principal)){
+      #err(#IsAnonymous);
+    } else {
+      switch(Users.getUser(users_, principal)){
+        case(?user){
+          #ok(user);
+        };
+        case(null){
+          let new_user = Users.newUser(principal);
+          users_ := Users.putUser(users_, new_user).0;
+          #ok(new_user);
+        };
+      };
+    };
+  };
+
+  public shared func getOrCreateUser(principal: Principal) : async Result<User, GetOrCreateUserError> {
+    getOrCreateUser_(principal);
+  };
+
+  public shared query func getUser(principal: Principal) : async ?User {
+    Users.getUser(users_, principal);
   };
 
   // Watchout: O(n)
-  public shared func computeUserConvictions(principal: Principal) : async Result<User, Users.GetUserError> {
-    Result.mapOk<User, User, Users.GetUserError>(Users.getUser(users_, principal), func(user){
+  public shared func computeUserConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
+    Result.mapOk<User, User, GetOrCreateUserError>(getOrCreateUser_(principal), func(user){
       if (user.convictions.to_update){
         var convictions = Trie.empty<Category, Conviction>();
         for ((question_id, opinion) in Trie.iter(Votes.getUserBallots(opinions_, principal))){
