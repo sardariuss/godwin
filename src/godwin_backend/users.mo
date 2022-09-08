@@ -17,6 +17,7 @@ module {
   type User = Types.User;
   type Conviction = Types.Conviction;
   type Category = Types.Category;
+  type ArrayConvictions = Types.ArrayConvictions;
 
   public type UserRegister = Trie<Principal, User>;
 
@@ -32,21 +33,15 @@ module {
     {
       principal = user.principal;
       name = user.name;
-      convictions = {
-        to_update = true;
-        trie = user.convictions.trie;
-      };
+      convictions = { to_update = true; array = user.convictions.array; };
     };
   };
 
-  public func setConvictions(user: User, trie_convictions: Trie<Category, Conviction>) : User {
+  public func setConvictions(user: User, array: ArrayConvictions) : User {
     {
       principal = user.principal;
       name = user.name;
-      convictions = {
-        to_update = false;
-        trie = trie_convictions;
-      };
+      convictions = { to_update = false; array = array;};
     };
   };
 
@@ -60,7 +55,7 @@ module {
 
   public func newUser(principal: Principal) : User {
     // Important: set convictions.to_update to true, because the associated principal could have voted actually creating the user
-    { principal = principal; name = null; convictions = { to_update = true; trie = Trie.empty<Category, Conviction>(); } };
+    { principal = principal; name = null; convictions = { to_update = true; array = []; } };
   };
 
 };

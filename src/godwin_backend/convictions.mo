@@ -2,6 +2,7 @@ import Types "types";
 
 import Trie "mo:base/Trie";
 import Text "mo:base/Text";
+import Buffer "mo:base/Buffer";
 
 module {
 
@@ -15,6 +16,8 @@ module {
   type Direction = Types.Direction;
   type Category = Types.Category;
   type OrientedCategory = Types.OrientedCategory;
+  type ArrayConvictions = Types.ArrayConvictions;
+  type CategoryConviction = Types.CategoryConviction;
 
   func convictionMatrix(opinion: Opinion, moderate_coef: Float) : Conviction {
     switch(opinion){
@@ -68,6 +71,14 @@ module {
     };
     updated_conviction := sumConvictions(updated_conviction, getConviction(opinion, category.direction, moderate_coef));
     Trie.put(trie, Types.keyText(category.category), Text.equal, updated_conviction).0;
+  };
+
+  public func toArray(trie: Trie<Category, Conviction>) : ArrayConvictions {
+    var buffer : Buffer.Buffer<CategoryConviction> = Buffer.Buffer<CategoryConviction>(0);
+    for ((category, conviction) in Trie.iter(trie)){
+      buffer.add({category = category; conviction = conviction;});
+    };
+    buffer.toArray();
   };
 
 };

@@ -12,7 +12,7 @@ import Text "mo:base/Text";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 
-shared({ caller = initializer }) actor class Godwin(install_arguments: Types.InstallArguments) = {
+shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters) = {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
@@ -33,23 +33,20 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
   type User = Types.User;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type Sides = Types.Sides;
+  type Parameters = Types.Parameters;
 
+  // Members
   private stable var admin_ = initializer;
   private stable var max_endorsement_ : Nat = 0;
-  private stable var parameters_ = {
-    moderate_opinion_coef = install_arguments.moderate_opinion_coef;
-    pools_parameters = install_arguments.pools_parameters;
-    categories_definition = Categories.fromArray(install_arguments.categories_definition);
-    aggregation_parameters = install_arguments.aggregation_parameters;
-  };
+  private stable var parameters_ = parameters;
   private stable var users_ = Users.empty();
   private stable var questions_ = Questions.empty();
   private stable var endorsements_ = Votes.empty<Endorsement>();
   private stable var opinions_ = Votes.empty<Opinion>();
   private stable var categories_ = Votes.empty<OrientedCategory>();
 
-  public shared query func getCategories() : async Trie<Category, Sides> {
-    return parameters_.categories_definition;
+  public shared query func getParameters() : async Parameters {
+    return parameters_;
   };
 
   public shared query func getQuestion(question_id: Nat) : async Result<Question, Questions.GetQuestionError> {
@@ -110,13 +107,13 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
     #WrongPool;
   };
 
-  public shared query func getOrientedCategory(principal: Principal, question_id: Nat) : async Result<?OrientedCategory, OrientedCategoryError> {
+  public shared query func getCategory(principal: Principal, question_id: Nat) : async Result<?OrientedCategory, OrientedCategoryError> {
     Result.mapOk<Question, ?OrientedCategory, OrientedCategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
       Votes.getBallot(categories_, principal, question_id);
     });
   };
 
-  public shared({caller}) func setOrientedCategory(question_id: Nat, category: OrientedCategory) : async Result<(), OrientedCategoryError> {
+  public shared({caller}) func setCategory(question_id: Nat, category: OrientedCategory) : async Result<(), OrientedCategoryError> {
     Result.chain<(), (), OrientedCategoryError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), OrientedCategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), OrientedCategoryError>(Pool.verifyCurrentPool(question, [#FISSION]), func() {
@@ -226,7 +223,7 @@ shared({ caller = initializer }) actor class Godwin(install_arguments: Types.Ins
             };
           }
         };
-        let updated_user = Users.setConvictions(user, convictions);
+        let updated_user = Users.setConvictions(user, Convictions.toArray(convictions));
         users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
         updated_user;
       } else {

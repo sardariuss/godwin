@@ -21,21 +21,14 @@ module {
   type AggregationParameters = Types.AggregationParameters;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type CategoriesDefinition = Types.CategoriesDefinition;
+  type CategoryDefinition = Types.CategoryDefinition;
 
   type VerifyOrientedCategoryError = {
     #CategoryNotFound;
   };
 
-  public func fromArray(definition_array: [{category: Category; sides: Sides}]) : CategoriesDefinition {
-    var definition_trie = Trie.empty<Category, Sides>();
-    for (elem in Array.vals(definition_array)){
-      definition_trie := Trie.put(definition_trie, Types.keyText(elem.category), Text.equal, elem.sides).0;
-    };
-    definition_trie;
-  };
-
-  public func verifyOrientedCategory(definition: CategoriesDefinition, category: OrientedCategory) : Result<(), VerifyOrientedCategoryError> {
-    switch(Trie.get(definition, Types.keyText(category.category), Text.equal)){
+  public func verifyOrientedCategory(definitions: CategoriesDefinition, oriented_category: OrientedCategory) : Result<(), VerifyOrientedCategoryError> {
+    switch(Array.find(definitions, func(definition: CategoryDefinition) : Bool { definition.category == oriented_category.category; })){
       case(null){
         #err(#CategoryNotFound);
       };
@@ -46,16 +39,16 @@ module {
   };
 
   public func computeCategoriesAggregation(
-    definition: CategoriesDefinition,
+    definitions: CategoriesDefinition,
     aggregation_params: AggregationParameters,
     register_categories: VoteRegister<OrientedCategory>,
     question_id: Nat)
   : [OrientedCategory] {
     var categories : Buffer.Buffer<OrientedCategory> = Buffer.Buffer<OrientedCategory>(0);
     let total_all = Float.fromInt(Votes.getTotalVotes<OrientedCategory>(register_categories, question_id).all);
-    for ((category, _) in Trie.iter(definition)){
-      let category_a = { category = category; direction = #LR; };
-      let category_b = { category = category; direction = #RL; };
+    for (definition in Array.vals(definitions)){
+      let category_a = { category = definition.category; direction = #LR; };
+      let category_b = { category = definition.category; direction = #RL; };
       let total_a = Float.fromInt(Votes.getTotalVotesForBallot(register_categories, question_id, Types.hashOrientedCategory, Types.equalOrientedCategory, category_a));
       let total_b = Float.fromInt(Votes.getTotalVotesForBallot(register_categories, question_id, Types.hashOrientedCategory, Types.equalOrientedCategory, category_b));
       if (((total_a + total_b) / total_all) > aggregation_params.category_threshold){
@@ -67,7 +60,7 @@ module {
         };
       };
     };
-    return categories.toArray();
+    categories.toArray();
   };
 
 };

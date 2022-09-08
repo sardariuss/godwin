@@ -15,13 +15,6 @@ module {
   type Hash = Hash.Hash;
   type Time = Time.Time;
 
-  public type InstallArguments = {
-    moderate_opinion_coef: Float;
-    pools_parameters: PoolsParameters;
-    categories_definition: [{category: Category; sides: Sides}];
-    aggregation_parameters: AggregationParameters;
-  };
-
   public type Parameters = {
     moderate_opinion_coef: Float;
     pools_parameters: PoolsParameters;
@@ -55,7 +48,12 @@ module {
     right: Text;
   };
 
-  public type CategoriesDefinition = Trie<Category, Sides>;
+  public type CategoryDefinition = {
+    category: Category;
+    sides: Sides;
+  };
+
+  public type CategoriesDefinition = [CategoryDefinition];
 
   public type Direction = {
     #LR;
@@ -187,8 +185,15 @@ module {
     name: ?Text;
     convictions: {
       to_update: Bool;
-      trie: Trie<Category, Conviction>;
+      array: ArrayConvictions;
     };
+  };
+
+  public type ArrayConvictions = [CategoryConviction];
+
+  public type CategoryConviction = {
+    category: Category;
+    conviction: Conviction;
   };
 
   public type VoteRegister<B> = {
