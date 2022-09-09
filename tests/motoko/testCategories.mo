@@ -11,6 +11,7 @@ import Text "mo:base/Text";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
 
 class TestCategories() = {
 
@@ -52,7 +53,12 @@ class TestCategories() = {
 
   func testableResult<Ok, Err>(result: Result<Ok, Err>) : Testable.TestableItem<Result<Ok, Err>> {
     {
-      display = func (result: Result<Ok, Err>) : Text = "The two results are not equal";
+      display = func (result: Result<Ok, Err>) : Text {
+        switch(result){
+          case(#ok(_)){"Ok";};
+          case(#err(_)){"Err";};
+        };
+      };
       equals = func (r1: Result<Ok, Err>, r2: Result<Ok, Err>) : Bool { Result.equal(
         func(ok1: Ok, ok2: Ok) : Bool { return true; },
         func(err1: Err, err2: Err) : Bool { return true; },
@@ -71,7 +77,18 @@ class TestCategories() = {
 
   func testableAggregation(aggregation: [OrientedCategory]) : Testable.TestableItem<[OrientedCategory]> {
     {
-      display = func (aggregation: [OrientedCategory]) : Text = "The two aggregations are not equal";
+      display = func (aggregation: [OrientedCategory]) : Text {
+        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for (item in Array.vals(aggregation)) {
+          buffer.add(item.category # ": ");
+          switch(item.direction){
+            case(#LR) { buffer.add("LR"); };
+            case(#RL) { buffer.add("RL"); };
+          };
+          buffer.add(" - ");
+        };
+        Text.join("", buffer.vals());
+      };
       equals = func (a1: [OrientedCategory], a2: [OrientedCategory]) : Bool { 
         Array.equal(a1, a2, func(a1: OrientedCategory, a2: OrientedCategory) : Bool {
           Text.equal(a1.category, a2.category) and a1.direction == a2.direction;
