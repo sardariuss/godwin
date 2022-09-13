@@ -1,5 +1,6 @@
 import TestCategories "testCategories";
 import TestConvictions "testConvictions";
+import TestTotalVotes "testTotalVotes";
 
 import Suite "mo:matchers/Suite";
 
@@ -9,3 +10,6 @@ Suite.run(testCategories.suiteComputeCategoriesAggregation);
 
 let testConvictions = TestConvictions.TestConvictions();
 Suite.run(testConvictions.suiteAddConviction);
+
+let testTotalVotes = TestTotalVotes.TestTotalVotes();
+Suite.run(testTotalVotes.suiteTotalVotes);

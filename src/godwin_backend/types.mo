@@ -139,7 +139,7 @@ module {
   };
 
   public func keyOpinion(opinion: Opinion) : Key<Opinion> {
-    return { key = opinion; hash = hashOpinion(opinion);}
+    return { key = opinion; hash = hashOpinion(opinion); }
   };
 
   public type Pool = {
