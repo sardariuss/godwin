@@ -27,6 +27,7 @@ module {
     author: Principal;
     title: Text;
     text: Text;
+    endorsements: Nat;
     categories: [OrientedCategory];
     pool: {
       current: DatedPool;

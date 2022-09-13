@@ -11,6 +11,7 @@ import Trie "mo:base/Trie";
 import Text "mo:base/Text";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
+import Time "mo:base/Time";
 
 shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters) = {
 
@@ -72,12 +73,34 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
     Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Votes.putBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE).0;
+      // Update the question endorsements
+      let updated_question = {
+        id = question.id;
+        author = question.author;
+        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
+        title = question.title;
+        text = question.text;
+        categories = question.categories;
+        pool = question.pool;
+      };
+      questions_ := Questions.replaceQuestion(questions_, updated_question).0;
     });
   };
 
   public shared({caller}) func removeEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
     Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Votes.removeBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement).0;
+      // Update the question endorsements
+      let updated_question = {
+        id = question.id;
+        author = question.author;
+        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
+        title = question.title;
+        text = question.text;
+        categories = question.categories;
+        pool = question.pool;
+      };
+      questions_ := Questions.replaceQuestion(questions_, updated_question).0;
     });
   };
 
@@ -139,9 +162,10 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   public shared func run() {
     var max_endorsement = max_endorsement_;
+    let time_now = Time.now();
     for ((_, question) in Questions.iter(questions_)) {
       let question_endorsement = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
-      switch (Pool.updateCurrentPool(question, parameters_.pools_parameters, question_endorsement, max_endorsement_)){
+      switch (Pool.updateCurrentPool(question, parameters_.pools_parameters, question_endorsement, max_endorsement_, time_now)){
         case(null){};
         case(?updated_question){
           questions_ := Questions.replaceQuestion(questions_, updated_question).0;
@@ -160,6 +184,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
       case(#SPAWN){};
       case(#FISSION){};
       case(#ARCHIVE){
+        // @todo: could directly return the updated question
         let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
         // @todo: check if the old categories were the same
         // Update the question with the new categories

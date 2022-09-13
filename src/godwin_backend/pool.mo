@@ -51,19 +51,26 @@ module {
     };
   };
 
-  public func updateCurrentPool(question: Question, pools_parameters: PoolsParameters, question_endorsement: Nat, max_endorsement: Nat) : ?Question {
-    let now = Time.now();
+  // @todo: could always return the question
+  public func updateCurrentPool(
+    question: Question,
+    pools_parameters: PoolsParameters,
+    question_endorsement: Nat,
+    max_endorsement: Nat,
+    time_now: Time
+  ) : ?Question {
     let pool_parameters = getPoolParameters(pools_parameters, question.pool.current.pool);
     if ((Float.fromInt(question_endorsement) > pool_parameters.ratio_max_endorsement * Float.fromInt(max_endorsement))){
-      if (question.pool.current.date + pool_parameters.time_elapsed_in_pool < now) {
+      if (question.pool.current.date + pool_parameters.time_elapsed_in_pool < time_now) {
         let updated_question = {
           id = question.id;
           author = question.author;
           title = question.title;
           text = question.text;
+          endorsements = question.endorsements;
           categories = question.categories;
           pool = {
-            current = { date = now; pool = pool_parameters.next_pool; };
+            current = { date = time_now; pool = pool_parameters.next_pool; };
             history = Array.append(question.pool.history, [ question.pool.current ]);
           };
         };

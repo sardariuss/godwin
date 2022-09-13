@@ -40,7 +40,7 @@ call backend.setEndorsement(0);
 assert _ == variant { ok };
 call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
 assert _ == variant { err = variant { WrongPool } };
-call backend.setOrientedCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
+call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
 assert _ == variant { err = variant { WrongPool } };
 
 call backend.run();
@@ -49,7 +49,7 @@ assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = re
 
 call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
 assert _ == variant { ok };
-call backend.setOrientedCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
+call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
 assert _ == variant { ok };
 
 call backend.run();
@@ -61,18 +61,18 @@ assert _ ~= variant { ok = record {
 }};
 
 call backend.getOrCreateUser(default);
-assert _ == variant { ok = record { "principal" = default; name = null : opt record{}; convictions = record { to_update = true; trie = variant { empty }; }}};
+assert _ == variant { ok = record { "principal" = default; name = null : opt record{}; convictions = record { to_update = true; array = vec {}; }}};
 
 call backend.computeUserConvictions(default);
-assert _ ~= variant { ok = record { 
+assert _ == variant { ok = record { 
   "principal" = default; 
   name = null : opt record{};
   convictions = record { 
+    array = vec { record { 
+      category = "IDENTITY"; 
+      conviction = record { left = 1.0 : float64; center = 0.0 : float64; right = 0.0 : float64;};
+    };};
     to_update = false; 
-    trie = variant { leaf = record { size = 1 : nat; keyvals = opt record { record { 
-      record { key = "IDENTITY"; };
-      record { center = 0.0 : float64; left = 1.0 : float64; right = 0.0 : float64; };
-    };};}}; 
   };
 }};
 
