@@ -27,7 +27,6 @@ module {
   type Categorization = Types.Categorization;
   type Pool = Types.Pool;
 
-
   func compareDateEntry(a: DateEntry, b: DateEntry) : Order {
     if (a.date < b.date) {
       return #less;
@@ -95,7 +94,7 @@ module {
       endorsements = 0;
       pool = {
         current = {date = Time.now(); pool = #SPAWN;};
-        history = [];
+        history = [{date = Time.now(); pool = #SPAWN;}];
       };
       categorization = #PENDING;
     };
