@@ -46,7 +46,7 @@ module {
   func getPoolParameters(poolsParameters: PoolsParameters, pool: Pool) : PoolParameters {
     switch(pool){
       case(#SPAWN) { poolsParameters.spawn; };
-      case(#FISSION) { poolsParameters.fission; };
+      case(#REWARD) { poolsParameters.fission; };
       case(#ARCHIVE) { poolsParameters.archive; };
     };
   };
@@ -68,11 +68,11 @@ module {
           title = question.title;
           text = question.text;
           endorsements = question.endorsements;
-          categories = question.categories;
           pool = {
             current = { date = time_now; pool = pool_parameters.next_pool; };
             history = Array.append(question.pool.history, [ question.pool.current ]);
           };
+          categorization = question.categorization;
         };
         return ?updated_question;
       };

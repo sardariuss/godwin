@@ -38,8 +38,9 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   // Members
   private stable var admin_ = initializer;
-  private stable var max_endorsement_ : Nat = 0;
+  private stable var max_endorsement_ : Nat = 0; // @todo: remove
   private stable var parameters_ = parameters;
+  private stable var last_selection_date_ : Int = 0; // @check: could be Time.now
   private stable var users_ = Users.empty();
   private stable var questions_ = Questions.empty();
   private stable var endorsements_ = Votes.empty<Endorsement>();
@@ -80,8 +81,8 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         title = question.title;
         text = question.text;
-        categories = question.categories;
         pool = question.pool;
+        categorization = question.categorization;
       };
       questions_ := Questions.replaceQuestion(questions_, updated_question).0;
     });
@@ -97,8 +98,8 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         title = question.title;
         text = question.text;
-        categories = question.categories;
         pool = question.pool;
+        categorization = question.categorization;
       };
       questions_ := Questions.replaceQuestion(questions_, updated_question).0;
     });
@@ -117,7 +118,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
     Result.chain<Question, (), OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(Pool.verifyCurrentPool(question, [#FISSION, #ARCHIVE]), func() {
+      Result.mapOk<(), (), OpinionError>(Pool.verifyCurrentPool(question, [#REWARD, #ARCHIVE]), func() {
         opinions_ := Votes.putBallot(opinions_, caller, question_id, Types.hashOpinion, Types.equalOpinion, opinion).0;
       })
     });
@@ -127,7 +128,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
     #InsufficientCredentials;
     #CategoryNotFound;
     #QuestionNotFound;
-    #WrongPool;
+    #WrongCategorizationState;
   };
 
   public shared query func getCategory(principal: Principal, question_id: Nat) : async Result<?OrientedCategory, OrientedCategoryError> {
@@ -139,7 +140,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   public shared({caller}) func setCategory(question_id: Nat, category: OrientedCategory) : async Result<(), OrientedCategoryError> {
     Result.chain<(), (), OrientedCategoryError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), OrientedCategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
-        Result.chain<(), (), OrientedCategoryError>(Pool.verifyCurrentPool(question, [#FISSION]), func() {
+        Result.chain<(), (), OrientedCategoryError>(Categories.canCategorize(question), func() {
           Result.mapOk<(), (), OrientedCategoryError>(Categories.verifyOrientedCategory(parameters_.categories_definition, category), func () {
             categories_ := Votes.putBallot(categories_, caller, question_id, Types.hashOrientedCategory, Types.equalOrientedCategory, category).0;
           })
@@ -157,7 +158,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
       #err(#InsufficientCredentials);
     } else {
       #ok;
-    }
+    };
   };
 
   public shared func run() {
@@ -182,13 +183,13 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   func onPoolChanged(question: Question) {
     switch(question.pool.current.pool){
       case(#SPAWN){};
-      case(#FISSION){};
+      case(#REWARD){};
       case(#ARCHIVE){
-        // @todo: could directly return the updated question
-        let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
+        // @todo
+        //let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
         // @todo: check if the old categories were the same
         // Update the question with the new categories
-        questions_ := Questions.updateCategories(questions_, question, categories).0;
+        questions_ := Questions.updateCategorization(questions_, question, #ONGOING).0;
         // The users that gave their opinion on this questions have to have their convictions updated
         var users_to_update = Trie.empty<Principal, User>();
         for ((principal, user) in Users.iter(users_)){
@@ -242,8 +243,13 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
           switch(Questions.getQuestion(questions_, question_id)){
             case(#err(_)){};
             case(#ok(question)){
-              for (category in Array.vals(question.categories)){
-                convictions := Convictions.addConviction(convictions, category, opinion, parameters_.moderate_opinion_coef);
+              switch(question.categorization){
+                case (#DONE(oriented_categories)){
+                  for (oriented_category in Array.vals(oriented_categories)){
+                    convictions := Convictions.addConviction(convictions, oriented_category, opinion, parameters_.moderate_opinion_coef);
+                  };
+                };
+                case(_){};
               };
             };
           }

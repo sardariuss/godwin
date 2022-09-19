@@ -10,6 +10,7 @@ import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Iter "mo:base/Iter";
 import Order "mo:base/Order";
+import Debug "mo:base/Debug";
 
 module {
 
@@ -23,8 +24,9 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type OrientedCategory = Types.OrientedCategory;
+  type Categorization = Types.Categorization;
   type Pool = Types.Pool;
+
 
   func compareDateEntry(a: DateEntry, b: DateEntry) : Order {
     if (a.date < b.date) {
@@ -91,11 +93,11 @@ module {
       title = title;
       text = text;
       endorsements = 0;
-      categories = [];
       pool = {
         current = {date = Time.now(); pool = #SPAWN;};
         history = [];
       };
+      categorization = #PENDING;
     };
     (
       {
@@ -150,15 +152,15 @@ module {
     );
   };
 
-  public func updateCategories(register: QuestionRegister, question: Question, categories: [OrientedCategory]) : (QuestionRegister, ?Question) {
+  public func updateCategorization(register: QuestionRegister, question: Question, categorization: Categorization) : (QuestionRegister, ?Question) {
     let updated_question = {
       id = question.id;
       author = question.author;
       endorsements = question.endorsements;
       title = question.title;
       text = question.text;
-      categories = categories;
       pool = question.pool;
+      categorization = categorization;
     };
     replaceQuestion(register, updated_question);
   };
@@ -167,7 +169,7 @@ module {
     for ((endorsement_entry, _) in RBT.entriesRev(register.questions_by_endorsement)){
       switch(Trie.get<Nat, Question>(register.questions, Types.keyNat(endorsement_entry.question_id), Nat.equal)){
         case(null){ 
-          return null;
+          Debug.trap("Cannot find question in questions_by_endorsement linked to EndorsementEntry");
         };
         case(?question){
           if (question.pool.current.pool == pool) {

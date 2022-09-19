@@ -22,6 +22,7 @@ module {
   type VoteRegister<B> = Types.VoteRegister<B>;
   type CategoriesDefinition = Types.CategoriesDefinition;
   type CategoryDefinition = Types.CategoryDefinition;
+  type Question = Types.Question;
 
   type VerifyOrientedCategoryError = {
     #CategoryNotFound;
@@ -61,6 +62,18 @@ module {
       };
     };
     categories.toArray();
+  };
+
+  type CanCategorizeError = {
+    #WrongCategorizationState;
+  };
+
+  public func canCategorize(question: Question) : Result<(), CanCategorizeError> {
+    if(question.categorization == #ONGOING) {
+      #ok;
+    } else {
+      #err(#WrongCategorizationState);
+    };
   };
 
 };

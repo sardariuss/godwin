@@ -8,9 +8,9 @@ identity default;
 let arguments = record {
   moderate_opinion_coef = 0.5;
   pools_parameters = record {
-    spawn = record { ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = variant { FISSION }; };
+    spawn = record { ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = variant { REWARD }; };
     fission = record { ratio_max_endorsement = 0.0; time_elapsed_in_pool = 0; next_pool = variant { ARCHIVE }; };
-    archive = record { ratio_max_endorsement = 0.8; time_elapsed_in_pool = 0; next_pool = variant { FISSION }; };
+    archive = record { ratio_max_endorsement = 0.8; time_elapsed_in_pool = 0; next_pool = variant { REWARD }; };
   };
   categories_definition = vec {
     record { category = "IDENTITY"; sides = record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
@@ -45,7 +45,7 @@ assert _ == variant { err = variant { WrongPool } };
 
 call backend.run();
 call backend.getQuestion(0);
-assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = record { pool = variant { FISSION } }}}};
+assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = record { pool = variant { REWARD } }}}};
 
 call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
 assert _ == variant { ok };

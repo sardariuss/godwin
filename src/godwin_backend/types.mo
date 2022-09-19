@@ -16,8 +16,10 @@ module {
   type Time = Time.Time;
 
   public type Parameters = {
+    question_selection_freq_sec: Nat;
+    reward_duration_sec: Nat;
     moderate_opinion_coef: Float;
-    pools_parameters: PoolsParameters;
+    pools_parameters: PoolsParameters; // @todo: remove
     categories_definition: CategoriesDefinition;
     aggregation_parameters: AggregationParameters;
   };
@@ -28,11 +30,11 @@ module {
     title: Text;
     text: Text;
     endorsements: Nat;
-    categories: [OrientedCategory];
     pool: {
       current: DatedPool;
       history: PoolHistory;
     };
+    categorization: Categorization;
   };
 
   public type PoolHistory = [DatedPool];
@@ -144,14 +146,20 @@ module {
 
   public type Pool = {
     #SPAWN;
-    #FISSION;
+    #REWARD;
     #ARCHIVE;
+  };
+
+  public type Categorization = {
+    #PENDING;
+    #ONGOING;
+    #DONE: [OrientedCategory];
   };
 
   public func toTextPool(pool: Pool) : Text {
     switch(pool){
       case(#SPAWN){ "SPAWN"; };
-      case(#FISSION){ "FISSION"; };
+      case(#REWARD){ "REWARD"; };
       case(#ARCHIVE){ "ARCHIVE"; };
     };
   };
