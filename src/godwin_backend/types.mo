@@ -217,4 +217,15 @@ module {
     per_ballot: Trie<B, Nat>;
   };
 
+  public type OrderBy = {
+    #AUTHOR;
+    #TITLE;
+    #TEXT;
+    #ENDORSEMENTS;
+    #CREATION_DATE;
+    #POOL_DATE;
+  };
+
+  public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
+
 };

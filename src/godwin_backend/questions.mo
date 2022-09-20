@@ -1,5 +1,6 @@
 import Types "types";
 import Pool "pool";
+import Queries "queries";
 
 import RBT "mo:stableRBT/StableRBTree";
 

@@ -5,7 +5,6 @@ import Questions "questions";
 import Categories "categories";
 import Users "users";
 import Convictions "convictions";
-import Scan "scan";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
