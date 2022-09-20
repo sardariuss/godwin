@@ -11,6 +11,7 @@ import Text "mo:base/Text";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Hash "mo:base/Hash";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -21,6 +22,7 @@ module {
   type Order = Order.Order;
   type Hash = Hash.Hash;
   type Key<K> = Trie.Key<K>;
+  type Iter<T> = Iter.Iter<T>;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -36,6 +38,7 @@ module {
   type QuestionKey = {
     id: Nat;
     data: {
+      #ID;
       #AUTHOR: TextEntry;
       #TITLE: TextEntry;
       #TEXT: TextEntry;
@@ -44,11 +47,12 @@ module {
       #POOL_DATE: PoolEntry;
     };
   };
-  type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
+  public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
 
   // To be able to use OrderBy as key in a Trie
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
+      case(#ID){ "ID"; };
       case(#AUTHOR){ "AUTHOR"; };
       case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
@@ -64,6 +68,7 @@ module {
   // Init functions
   func initQuestionKey(question: Question, order_by: OrderBy) : QuestionKey {
     switch(order_by){
+      case(#ID){ { id = question.id; data = #ID; } };
       case(#AUTHOR){ { id = question.id; data = #AUTHOR(initAuthorEntry(question)); } };
       case(#TITLE){ { id = question.id; data = #TITLE(initTitleEntry(question)); } };
       case(#TEXT){ { id = question.id; data = #TEXT(initTextEntry(question)); } };
@@ -83,6 +88,12 @@ module {
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
     let default_order = compareIds(a.id, b.id);
     switch(a.data){
+      case(#ID){
+        switch(b.data){
+          case(#ID){ default_order; };
+          case(_){Debug.trap("Cannot compare entries of different types")};
+        };
+      };
       case(#AUTHOR(entry_a)){
         switch(b.data){
           case(#AUTHOR(entry_b)){ compareTextEntry(entry_a, entry_b, default_order); };
@@ -165,7 +176,11 @@ module {
 
   // Public functions
 
-  public func init() : QuestionRBTs { Trie.empty<OrderBy, RBT.Tree<QuestionKey, ()>>();};
+  public func init() : QuestionRBTs { 
+    var rbts = Trie.empty<OrderBy, RBT.Tree<QuestionKey, ()>>();
+    rbts := addOrderBy(rbts, #ID);
+    rbts;
+  };
 
   public func addOrderBy(rbts: QuestionRBTs, order_by: OrderBy) : QuestionRBTs {
     Trie.put(rbts, keyOrderBy(order_by), equalOrderBy, RBT.init<QuestionKey, ()>()).0;
@@ -203,6 +218,7 @@ module {
     new_rbts;
   };
 
+  // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
   public func query_questions(
     rbts: QuestionRBTs,
     order_by: OrderBy,
@@ -210,25 +226,33 @@ module {
     upper_bound: ?QuestionKey,
     direction: RBT.Direction,
     limit: Nat
-  ) : ?QueryQuestionsResult {
+  ) : QueryQuestionsResult {
     switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
-      case(null){ null; };
+      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
       case(?rbt){
         switch(RBT.entries(rbt).next()){
-          case(null){ ?{ ids = []; next_id = null; } };
+          case(null){ { ids = []; next_id = null; } };
           case(?first){
             switch(RBT.entriesRev(rbt).next()){
-              case(null){ ?{ ids = []; next_id = null; } };
+              case(null){ { ids = []; next_id = null; } };
               case(?last){
                 let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
-                let ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat { key_value.0.id; });
-                let next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
-                ?{ ids; next_id; };
+                {
+                  ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat { key_value.0.id; });
+                  next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
+                }
               };
             };
           };
         };
       };
+    };
+  };
+
+  public func entries(rbts: QuestionRBTs, order_by: OrderBy) : Iter<(QuestionKey, ())> {
+    switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
+      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
+      case(?rbt){ RBT.entries(rbt); };
     };
   };
 

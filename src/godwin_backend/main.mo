@@ -5,6 +5,7 @@ import Questions "questions";
 import Categories "categories";
 import Users "users";
 import Convictions "convictions";
+import Queries "queries";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
@@ -84,7 +85,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         pool = question.pool;
         categorization = question.categorization;
       };
-      questions_ := Questions.replaceQuestion(questions_, updated_question).0;
+      questions_ := Questions.replaceQuestion(questions_, updated_question);
     });
   };
 
@@ -101,7 +102,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         pool = question.pool;
         categorization = question.categorization;
       };
-      questions_ := Questions.replaceQuestion(questions_, updated_question).0;
+      questions_ := Questions.replaceQuestion(questions_, updated_question);
     });
   };
 
@@ -162,22 +163,34 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   };
 
   public shared func run() {
-    var max_endorsement = max_endorsement_;
+    //var max_endorsement = max_endorsement_;
     let time_now = Time.now();
-    for ((_, question) in Questions.iter(questions_)) {
-      let question_endorsement = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
-      switch (Pool.updateCurrentPool(question, parameters_.pools_parameters, question_endorsement, max_endorsement_, time_now)){
+    // If enough time has passed since last selection, select the most endorsed question from the spawning pool
+    if (last_selection_date_ + parameters_.question_selection_freq_sec > time_now) {
+      switch (Queries.entries(questions_.pools.spawn_rbts, #ENDORSEMENTS).next()){
         case(null){};
-        case(?updated_question){
-          questions_ := Questions.replaceQuestion(questions_, updated_question).0;
-          onPoolChanged(updated_question);
+        case(?key_val){
+          switch(Questions.getQuestion(questions_, key_val.0.id)){
+            case(#err(_)){};
+            case(#ok(question)){
+              let updated_question = {
+                id = question.id;
+                author = question.author;
+                title = question.title;
+                text = question.text;
+                endorsements = question.endorsements;
+                pool = {
+                  current = { date = time_now; pool = #REWARD; };
+                  history = Array.append(question.pool.history, [ question.pool.current ]);
+                };
+                categorization = question.categorization;
+              };
+              questions_ := Questions.replaceQuestion(questions_, updated_question);
+            };
+          };
         };
       };
-      if (max_endorsement < question_endorsement) {
-        max_endorsement := question_endorsement;
-      };
     };
-    max_endorsement_ := max_endorsement;
   };
 
   func onPoolChanged(question: Question) {
@@ -185,11 +198,18 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
       case(#SPAWN){};
       case(#REWARD){};
       case(#ARCHIVE){
-        // @todo
         //let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
         // @todo: check if the old categories were the same
-        // Update the question with the new categories
-        questions_ := Questions.updateCategorization(questions_, question, #ONGOING).0;
+        let updated_question = {
+          id = question.id;
+          author = question.author;
+          endorsements = question.endorsements;
+          title = question.title;
+          text = question.text;
+          pool = question.pool;
+          categorization = #ONGOING;
+        };
+        questions_ := Questions.replaceQuestion(questions_, updated_question);
         // The users that gave their opinion on this questions have to have their convictions updated
         var users_to_update = Trie.empty<Principal, User>();
         for ((principal, user) in Users.iter(users_)){

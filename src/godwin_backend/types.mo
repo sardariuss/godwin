@@ -172,6 +172,10 @@ module {
     a == b;
   };
 
+  public func keyPool(pool: Pool) : Key<Pool> {
+    return { key = pool; hash = hashPool(pool); }
+  };
+
   public type PoolParameters = {
     ratio_max_endorsement: Float;
     time_elapsed_in_pool: Time; // @todo: put the time in human readable unit (here assumed it is in nano seconds)
@@ -218,6 +222,7 @@ module {
   };
 
   public type OrderBy = {
+    #ID;
     #AUTHOR;
     #TITLE;
     #TEXT;
