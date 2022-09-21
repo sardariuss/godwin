@@ -1,11 +1,11 @@
+import Questions "questions/questions";
+import Queries "questions/queries";
 import Votes "votes";
 import Types "types";
-import Pool "pool";
-import Questions "questions";
 import Aggregation "aggregation";
 import Users "users";
 import Convictions "convictions";
-import Queries "queries";
+
 import Utils "utils";
 
 import Array "mo:base/Array";

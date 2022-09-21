@@ -1,4 +1,4 @@
-import Types "types";
+import Types "../types";
 import Queries "queries";
 
 import Debug "mo:base/Debug";

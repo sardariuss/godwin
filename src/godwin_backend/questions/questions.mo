@@ -1,6 +1,6 @@
-import Types "types";
-import Pool "pool";
-import Categorization "categorization";
+import Types "../types";
+import PerPool "perPool";
+import PerCategorization "perCategorization";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -19,8 +19,8 @@ module {
   type Question = Types.Question;
 
   // For convenience: from other modules
-  type QuestionsPerPool = Pool.QuestionsPerPool;
-  type QuestionsPerCategorization = Categorization.QuestionsPerCategorization;
+  type QuestionsPerPool = PerPool.QuestionsPerPool;
+  type QuestionsPerCategorization = PerCategorization.QuestionsPerCategorization;
 
   public type QuestionRegister = {
     questions: Trie<Nat, Question>;
@@ -33,8 +33,8 @@ module {
     {
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
-      per_pool = Pool.empty();
-      per_categorization = Categorization.empty();
+      per_pool = PerPool.empty();
+      per_categorization = PerCategorization.empty();
     };
   };
 
@@ -58,8 +58,8 @@ module {
       {
         questions = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register.question_index + 1;
-        per_pool = Pool.addQuestion(register.per_pool, question);
-        per_categorization = Categorization.addQuestion(register.per_categorization, question);
+        per_pool = PerPool.addQuestion(register.per_pool, question);
+        per_categorization = PerCategorization.addQuestion(register.per_categorization, question);
       },
       question
     );
@@ -73,8 +73,8 @@ module {
         {
           questions = questions;
           question_index = register.question_index;
-          per_pool = Pool.replaceQuestion(register.per_pool, old_question, question);
-          per_categorization = Categorization.replaceQuestion(register.per_categorization, old_question, question);
+          per_pool = PerPool.replaceQuestion(register.per_pool, old_question, question);
+          per_categorization = PerCategorization.replaceQuestion(register.per_categorization, old_question, question);
         };
       };
     };

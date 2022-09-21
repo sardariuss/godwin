@@ -1,4 +1,4 @@
-import Types "types";
+import Types "../types";
 
 import RBT "mo:stableRBT/StableRBTree";
 

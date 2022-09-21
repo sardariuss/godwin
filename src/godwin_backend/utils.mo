@@ -1,5 +1,5 @@
 import Types "types";
-import Questions "questions";
+import Questions "questions/questions";
 
 import Result "mo:base/Result";
 import Array "mo:base/Array";
