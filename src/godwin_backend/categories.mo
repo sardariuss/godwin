@@ -69,11 +69,8 @@ module {
   };
 
   public func canCategorize(question: Question) : Result<(), CanCategorizeError> {
-    if(question.categorization == #ONGOING) {
-      #ok;
-    } else {
-      #err(#WrongCategorizationState);
-    };
+    if(question.categorization.current.categorization == #ONGOING) { #ok;} 
+    else { #err(#WrongCategorizationState); };
   };
 
 };

@@ -1,5 +1,6 @@
 import Types "types";
-import Pools "pools";
+import Pool "pool";
+import Categorization "categorization";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -19,20 +20,23 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
 
-  // @todo
-  type QuestionPools = Pools.QuestionPools;
+  // For convenience: from other modules
+  type QuestionsPerPool = Pool.QuestionsPerPool;
+  type QuestionsPerCategorization = Categorization.QuestionsPerCategorization;
 
   type QuestionRegister = {
     questions: Trie<Nat, Question>;
     question_index: Nat;
-    pools: QuestionPools;
+    per_pool: QuestionsPerPool;
+    per_categorization : QuestionsPerCategorization;
   };
 
   public func empty() : QuestionRegister {
     {
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
-      pools = Pools.empty();
+      per_pool = Pool.empty();
+      per_categorization = Categorization.empty();
     };
   };
 
@@ -47,13 +51,17 @@ module {
         current = {date = Time.now(); pool = #SPAWN;};
         history = [{date = Time.now(); pool = #SPAWN;}];
       };
-      categorization = #PENDING;
+      categorization = {
+        current = {date = Time.now(); categorization = #PENDING;};
+        history = [{date = Time.now(); categorization = #PENDING;}];
+      };
     };
     (
       {
         questions = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register.question_index + 1;
-        pools = Pools.addQuestion(register.pools, question);
+        per_pool = Pool.addQuestion(register.per_pool, question);
+        per_categorization = Categorization.addQuestion(register.per_categorization, question);
       },
       question
     );
@@ -78,7 +86,8 @@ module {
         {
           questions = questions;
           question_index = register.question_index;
-          pools = Pools.replaceQuestion(register.pools, old_question, question);
+          per_pool = Pool.replaceQuestion(register.per_pool, old_question, question);
+          per_categorization = Categorization.replaceQuestion(register.per_categorization, old_question, question);
         };
       };
     };

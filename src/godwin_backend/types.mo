@@ -16,8 +16,9 @@ module {
   type Time = Time.Time;
 
   public type Parameters = {
-    question_selection_freq_sec: Nat;
-    reward_duration_sec: Nat;
+    question_selection_freq_sec: Nat; // @todo: convert
+    reward_duration_sec: Nat; // @todo: convert
+    categorization_duration_sec: Nat; // @todo: convert
     moderate_opinion_coef: Float;
     pools_parameters: PoolsParameters; // @todo: remove
     categories_definition: CategoriesDefinition;
@@ -34,10 +35,14 @@ module {
       current: DatedPool;
       history: PoolHistory;
     };
-    categorization: Categorization;
+    categorization: {
+      current: DatedCategorization;
+      history: CategorizationHistory;
+    };
   };
 
   public type PoolHistory = [DatedPool];
+  public type CategorizationHistory = [DatedCategorization];
 
   public type DatedPool = {
     date: Time;
@@ -154,6 +159,11 @@ module {
     #PENDING;
     #ONGOING;
     #DONE: [OrientedCategory];
+  };
+
+  public type DatedCategorization = {
+    date: Time;
+    categorization: Categorization;
   };
 
   public func toTextPool(pool: Pool) : Text {

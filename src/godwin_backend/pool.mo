@@ -1,8 +1,7 @@
 import Types "types";
+import Queries "queries";
 
-import Time "mo:base/Time";
-import Float "mo:base/Float";
-import Array "mo:base/Array";
+import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
 import TrieSet "mo:base/TrieSet";
 import Result "mo:base/Result";
@@ -12,13 +11,10 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Time = Time.Time;
 
   // For convenience: from types module
   type Question = Types.Question;
   type Pool = Types.Pool;
-  type PoolHistory = Types.PoolHistory;
-  type DatedPool = Types.DatedPool;
   type PoolParameters = Types.PoolParameters;
   type PoolsParameters = Types.PoolsParameters;
 
@@ -30,54 +26,79 @@ module {
     let set_pools = TrieSet.fromArray<Pool>(pools, Types.hashPool, Types.equalPool);
     let current_pool = question.pool.current.pool;
     switch(Trie.get(set_pools, { key = current_pool; hash = Types.hashPool(current_pool) }, Types.equalPool)){
-      case(null){
-        #err(#WrongPool);
-      };
-      case(?pool){
-        #ok;
-      };
+      case(null){ #err(#WrongPool); };
+      case(?pool){ #ok; };
     };
   };
 
-  public type UpdatePoolError = {
-    #ParametersNotFound;
+  public type QuestionsPerPool = {
+    spawn_rbts: Queries.QuestionRBTs;
+    reward_rbts: Queries.QuestionRBTs;
+    archive_rbts: Queries.QuestionRBTs;
   };
 
-  func getPoolParameters(poolsParameters: PoolsParameters, pool: Pool) : PoolParameters {
+  public func empty() : QuestionsPerPool {
+    var spawn_rbts = Queries.init();
+    spawn_rbts := Queries.addOrderBy(spawn_rbts, #ENDORSEMENTS);
+    let reward_rbts = Queries.init();
+    let archive_rbts = Queries.init();
+    { spawn_rbts; reward_rbts; archive_rbts; };
+  };
+
+  func getPoolRBTs(per_pool: QuestionsPerPool, pool: Pool) : Queries.QuestionRBTs {
     switch(pool){
-      case(#SPAWN) { poolsParameters.spawn; };
-      case(#REWARD) { poolsParameters.fission; };
-      case(#ARCHIVE) { poolsParameters.archive; };
+      case(#SPAWN){ per_pool.spawn_rbts; };
+      case(#REWARD){ per_pool.reward_rbts; };
+      case(#ARCHIVE){ per_pool.archive_rbts; };
     };
   };
 
-  // @todo: could always return the question
-  public func updateCurrentPool(
-    question: Question,
-    pools_parameters: PoolsParameters,
-    question_endorsement: Nat,
-    max_endorsement: Nat,
-    time_now: Time
-  ) : ?Question {
-    let pool_parameters = getPoolParameters(pools_parameters, question.pool.current.pool);
-    if ((Float.fromInt(question_endorsement) > pool_parameters.ratio_max_endorsement * Float.fromInt(max_endorsement))){
-      if (question.pool.current.date + pool_parameters.time_elapsed_in_pool < time_now) {
-        let updated_question = {
-          id = question.id;
-          author = question.author;
-          title = question.title;
-          text = question.text;
-          endorsements = question.endorsements;
-          pool = {
-            current = { date = time_now; pool = pool_parameters.next_pool; };
-            history = Array.append(question.pool.history, [ question.pool.current ]);
-          };
-          categorization = question.categorization;
-        };
-        return ?updated_question;
-      };
+  func setPoolRBTs(per_pool: QuestionsPerPool, pool: Pool, rbts: Queries.QuestionRBTs) : QuestionsPerPool {
+    switch(pool){
+      case(#SPAWN){   { spawn_rbts = rbts;             reward_rbts = per_pool.reward_rbts; archive_rbts = per_pool.archive_rbts; }; };
+      case(#REWARD){  { spawn_rbts = per_pool.spawn_rbts; reward_rbts = rbts;        archive_rbts = per_pool.archive_rbts;       }; };
+      case(#ARCHIVE){ { spawn_rbts = per_pool.spawn_rbts; reward_rbts = per_pool.reward_rbts; archive_rbts = rbts;               }; };
     };
-    return null;
+  };
+
+  public func addQuestion(per_pool: QuestionsPerPool, question: Question) : QuestionsPerPool {
+    if (question.pool.current.pool != #SPAWN) {
+      Debug.trap("Cannot add a question which current pool is different from #SPAWN");
+    };
+    {
+      spawn_rbts = Queries.add(per_pool.spawn_rbts, question);
+      reward_rbts = per_pool.reward_rbts;
+      archive_rbts = per_pool.archive_rbts;
+    };
+  };
+
+  public func replaceQuestion(per_pool: QuestionsPerPool, old_question: Question, new_question: Question) : QuestionsPerPool {
+    var updated_per_pool = per_pool;
+    let old_pool = old_question.pool.current.pool;
+    let new_pool = new_question.pool.current.pool;
+    if (old_pool == new_pool) {
+      // Replace in current pool
+      var rbts = getPoolRBTs(updated_per_pool, old_pool);
+      rbts := Queries.replace(rbts, old_question, new_question);
+      updated_per_pool := setPoolRBTs(updated_per_pool, old_pool, rbts);
+    } else {
+      // Remove from previous pool
+      var rbts_1 = getPoolRBTs(updated_per_pool, old_pool);
+      rbts_1 := Queries.remove(rbts_1, old_question);
+      updated_per_pool := setPoolRBTs(updated_per_pool, old_pool, rbts_1);
+      // Add in new pool
+      var rbts_2 = getPoolRBTs(updated_per_pool, new_pool);
+      rbts_2 := Queries.add(rbts_2, new_question);
+      updated_per_pool := setPoolRBTs(updated_per_pool, new_pool, rbts_2);
+    };
+    updated_per_pool;
+  };
+
+  public func removeQuestion(per_pool: QuestionsPerPool, question: Question) : QuestionsPerPool {
+    let current_pool = question.pool.current.pool;
+    var rbts = getPoolRBTs(per_pool, current_pool);
+    rbts := Queries.remove(rbts, question);
+    setPoolRBTs(per_pool, current_pool, rbts);
   };
 
 };

@@ -162,17 +162,18 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
     };
   };
 
-  public shared func run() {
-    //var max_endorsement = max_endorsement_;
+  public shared func runPool() {
     let time_now = Time.now();
     // If enough time has passed since last selection, select the most endorsed question from the spawning pool
     if (last_selection_date_ + parameters_.question_selection_freq_sec > time_now) {
-      switch (Queries.entries(questions_.pools.spawn_rbts, #ENDORSEMENTS).next()){
-        case(null){};
+      last_selection_date_ := time_now;
+      switch (Queries.entries(questions_.per_pool.spawn_rbts, #ENDORSEMENTS).next()){
+        case(null){}; // @todo: think about conditions that could lead here
         case(?key_val){
           switch(Questions.getQuestion(questions_, key_val.0.id)){
-            case(#err(_)){};
+            case(#err(_)){}; // @todo: think about conditions that could lead here
             case(#ok(question)){
+              // Put the question in the reward pool
               let updated_question = {
                 id = question.id;
                 author = question.author;
@@ -191,36 +192,71 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         };
       };
     };
-  };
-
-  func onPoolChanged(question: Question) {
-    switch(question.pool.current.pool){
-      case(#SPAWN){};
-      case(#REWARD){};
-      case(#ARCHIVE){
-        //let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
-        // @todo: check if the old categories were the same
-        let updated_question = {
-          id = question.id;
-          author = question.author;
-          endorsements = question.endorsements;
-          title = question.title;
-          text = question.text;
-          pool = question.pool;
-          categorization = #ONGOING;
-        };
-        questions_ := Questions.replaceQuestion(questions_, updated_question);
-        // The users that gave their opinion on this questions have to have their convictions updated
-        var users_to_update = Trie.empty<Principal, User>();
-        for ((principal, user) in Users.iter(users_)){
-          switch(Votes.getBallot(opinions_, principal, question.id)){
-            case(null){};
-            case(?opinion){
-              users_to_update := Trie.put(users_to_update, Types.keyPrincipal(user.principal), Principal.equal, Users.setConvictionToUpdate(user)).0;
+    // Iterate over currently rewarded questions 
+    for (key_val in Queries.entries(questions_.per_pool.reward_rbts, #ID)){
+      switch(Questions.getQuestion(questions_, key_val.0.id)){
+        case(#err(_)){};
+        case(#ok(question)){
+          // If the reward time is over, put the question in the archive and start categorization
+          if (question.pool.current.date + parameters_.reward_duration_sec > time_now) {
+            let updated_question = {
+              id = question.id;
+              author = question.author;
+              title = question.title;
+              text = question.text;
+              endorsements = question.endorsements;
+              pool = {
+                current = { date = time_now; pool = #ARCHIVE; };
+                history = Array.append(question.pool.history, [ question.pool.current ]);
+              };
+              categorization = {
+                current = { date = time_now; categorization = #ONGOING; };
+                history = Array.append(question.categorization.history, [ question.categorization.current ]);
+              };
             };
+            questions_ := Questions.replaceQuestion(questions_, updated_question);
           };
         };
-        users_ := Trie.merge(users_, users_to_update, Principal.equal);
+      };
+    };
+  };
+
+  public shared func runCategorization() {
+    let time_now = Time.now();
+    // Iterate over the questions with ongoing categorization
+    for (key_val in Queries.entries(questions_.per_categorization.ongoing_rbts, #ID)){
+      switch(Questions.getQuestion(questions_, key_val.0.id)){
+        case(#err(_)){};
+        case(#ok(question)){
+          if (question.categorization.current.date + parameters_.categorization_duration_sec > time_now) {
+            // Mark the categorization as done with the winning categories
+            let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
+            let updated_question = {
+              id = question.id;
+              author = question.author;
+              endorsements = question.endorsements;
+              title = question.title;
+              text = question.text;
+              pool = question.pool;
+              categorization = {
+                current = { date = time_now; categorization = #DONE(categories); };
+                history = Array.append(question.categorization.history, [ question.categorization.current ]);
+              };
+            };
+            questions_ := Questions.replaceQuestion(questions_, updated_question);
+            // The users that gave their opinion on this questions have to have their convictions updated
+            var users_to_update = Trie.empty<Principal, User>();
+            for ((principal, user) in Users.iter(users_)){
+              switch(Votes.getBallot(opinions_, principal, question.id)){
+                case(null){};
+                case(?opinion){
+                  users_to_update := Trie.put(users_to_update, Types.keyPrincipal(user.principal), Principal.equal, Users.setConvictionToUpdate(user)).0;
+                };
+              };
+            };
+            users_ := Trie.merge(users_, users_to_update, Principal.equal);
+          };
+        };
       };
     };
   };
@@ -263,7 +299,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
           switch(Questions.getQuestion(questions_, question_id)){
             case(#err(_)){};
             case(#ok(question)){
-              switch(question.categorization){
+              switch(question.categorization.current.categorization){
                 case (#DONE(oriented_categories)){
                   for (oriented_category in Array.vals(oriented_categories)){
                     convictions := Convictions.addConviction(convictions, oriented_category, opinion, parameters_.moderate_opinion_coef);
@@ -279,7 +315,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         updated_user;
       } else {
         user;
-      }
+      };
     });
   };
 
