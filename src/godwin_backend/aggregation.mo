@@ -1,45 +1,19 @@
 import Votes "votes";
 import Types "types";
 
-import Trie "mo:base/Trie";
-import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
-import Result "mo:base/Result";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
 
 module {
 
-  // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-
   // For convenience: from types module
-  type Category = Types.Category;
-  type Sides = Types.Sides;
   type OrientedCategory = Types.OrientedCategory;
   type AggregationParameters = Types.AggregationParameters;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type CategoriesDefinition = Types.CategoriesDefinition;
-  type CategoryDefinition = Types.CategoryDefinition;
-  type Question = Types.Question;
 
-  type VerifyOrientedCategoryError = {
-    #CategoryNotFound;
-  };
-
-  public func verifyOrientedCategory(definitions: CategoriesDefinition, oriented_category: OrientedCategory) : Result<(), VerifyOrientedCategoryError> {
-    switch(Array.find(definitions, func(definition: CategoryDefinition) : Bool { definition.category == oriented_category.category; })){
-      case(null){
-        #err(#CategoryNotFound);
-      };
-      case(?category){
-        #ok;
-      };
-    };
-  };
-
-  public func computeCategoriesAggregation(
+  public func computeAggregation(
     definitions: CategoriesDefinition,
     aggregation_params: AggregationParameters,
     register_categories: VoteRegister<OrientedCategory>,
@@ -62,15 +36,6 @@ module {
       };
     };
     categories.toArray();
-  };
-
-  type CanCategorizeError = {
-    #WrongCategorizationState;
-  };
-
-  public func canCategorize(question: Question) : Result<(), CanCategorizeError> {
-    if(question.categorization.current.categorization == #ONGOING) { #ok;} 
-    else { #err(#WrongCategorizationState); };
   };
 
 };

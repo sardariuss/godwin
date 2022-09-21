@@ -2,7 +2,6 @@ import Types "types";
 
 import Trie "mo:base/Trie";
 import Iter "mo:base/Iter";
-import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 
 module {
@@ -10,13 +9,10 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Iter<T> = Iter.Iter<T>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
 
   // For convenience: from types module
   type User = Types.User;
-  type Conviction = Types.Conviction;
-  type Category = Types.Category;
   type ArrayConvictions = Types.ArrayConvictions;
 
   public type UserRegister = Trie<Principal, User>;

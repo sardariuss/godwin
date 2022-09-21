@@ -10,7 +10,6 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
 
   // For convenience: from types module
-  type AgreementDegree = Types.AgreementDegree;
   type Opinion = Types.Opinion;
   type Conviction = Types.Conviction;
   type Direction = Types.Direction;

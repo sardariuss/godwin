@@ -2,10 +2,11 @@ import Votes "votes";
 import Types "types";
 import Pool "pool";
 import Questions "questions";
-import Categories "categories";
+import Aggregation "aggregation";
 import Users "users";
 import Convictions "convictions";
 import Queries "queries";
+import Utils "utils";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
@@ -29,7 +30,6 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
   type Pool = Types.Pool;
-  type PoolParameters = Types.PoolParameters;
   type AggregationParameters = Types.AggregationParameters;
   type Conviction = Types.Conviction;
   type User = Types.User;
@@ -39,9 +39,8 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   // Members
   private stable var admin_ = initializer;
-  private stable var max_endorsement_ : Nat = 0; // @todo: remove
   private stable var parameters_ = parameters;
-  private stable var last_selection_date_ : Int = 0; // @check: could be Time.now
+  private stable var last_selection_date_ : Int = 0; // @todo: maybe Time.now makes more sense
   private stable var users_ = Users.empty();
   private stable var questions_ = Questions.empty();
   private stable var endorsements_ = Votes.empty<Endorsement>();
@@ -52,8 +51,12 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
     return parameters_;
   };
 
-  public shared query func getQuestion(question_id: Nat) : async Result<Question, Questions.GetQuestionError> {
-    return Questions.getQuestion(questions_, question_id);
+  public type GetQuestionError = {
+    #QuestionNotFound;
+  };
+
+  public shared query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
+    return Utils.getQuestion(questions_, question_id);
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
@@ -67,13 +70,13 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   };
 
   public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
-    Result.mapOk<Question, ?Endorsement, EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, ?Endorsement, EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
       Votes.getBallot(endorsements_, principal, question_id);
     });
   };
 
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Votes.putBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE).0;
       // Update the question endorsements
       let updated_question = {
@@ -90,7 +93,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   };
 
   public shared({caller}) func removeEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Questions.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
       endorsements_ := Votes.removeBallot(endorsements_, caller, question_id, Types.hashEndorsement, Types.equalEndorsement).0;
       // Update the question endorsements
       let updated_question = {
@@ -112,14 +115,14 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   };
 
   public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Opinion, OpinionError> {
-    Result.mapOk<Question, ?Opinion, OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, ?Opinion, OpinionError>(Utils.getQuestion(questions_, question_id), func(question) {
       Votes.getBallot(opinions_, principal, question_id);
     });
   };
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
-    Result.chain<Question, (), OpinionError>(Questions.getQuestion(questions_, question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(Pool.verifyCurrentPool(question, [#REWARD, #ARCHIVE]), func() {
+    Result.chain<Question, (), OpinionError>(Utils.getQuestion(questions_, question_id), func(question) {
+      Result.mapOk<(), (), OpinionError>(Utils.verifyCurrentPool(question, [#REWARD, #ARCHIVE]), func() {
         opinions_ := Votes.putBallot(opinions_, caller, question_id, Types.hashOpinion, Types.equalOpinion, opinion).0;
       })
     });
@@ -133,16 +136,16 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   };
 
   public shared query func getCategory(principal: Principal, question_id: Nat) : async Result<?OrientedCategory, OrientedCategoryError> {
-    Result.mapOk<Question, ?OrientedCategory, OrientedCategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, ?OrientedCategory, OrientedCategoryError>(Utils.getQuestion(questions_, question_id), func(question) {
       Votes.getBallot(categories_, principal, question_id);
     });
   };
 
   public shared({caller}) func setCategory(question_id: Nat, category: OrientedCategory) : async Result<(), OrientedCategoryError> {
     Result.chain<(), (), OrientedCategoryError>(verifyCredentials_(caller), func () {
-      Result.chain<Question, (), OrientedCategoryError>(Questions.getQuestion(questions_, question_id), func(question) {
-        Result.chain<(), (), OrientedCategoryError>(Categories.canCategorize(question), func() {
-          Result.mapOk<(), (), OrientedCategoryError>(Categories.verifyOrientedCategory(parameters_.categories_definition, category), func () {
+      Result.chain<Question, (), OrientedCategoryError>(Utils.getQuestion(questions_, question_id), func(question) {
+        Result.chain<(), (), OrientedCategoryError>(Utils.canCategorize(question), func() {
+          Result.mapOk<(), (), OrientedCategoryError>(Utils.verifyOrientedCategory(parameters_.categories_definition, category), func () {
             categories_ := Votes.putBallot(categories_, caller, question_id, Types.hashOrientedCategory, Types.equalOrientedCategory, category).0;
           })
         })
@@ -170,7 +173,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
       switch (Queries.entries(questions_.per_pool.spawn_rbts, #ENDORSEMENTS).next()){
         case(null){}; // @todo: think about conditions that could lead here
         case(?key_val){
-          switch(Questions.getQuestion(questions_, key_val.0.id)){
+          switch(Utils.getQuestion(questions_, key_val.0.id)){
             case(#err(_)){}; // @todo: think about conditions that could lead here
             case(#ok(question)){
               // Put the question in the reward pool
@@ -192,9 +195,10 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
         };
       };
     };
-    // Iterate over currently rewarded questions 
+    // Iterate over currently rewarded questions
+    // @todo: if questions are ordered by pool time, could just take the first one
     for (key_val in Queries.entries(questions_.per_pool.reward_rbts, #ID)){
-      switch(Questions.getQuestion(questions_, key_val.0.id)){
+      switch(Utils.getQuestion(questions_, key_val.0.id)){
         case(#err(_)){};
         case(#ok(question)){
           // If the reward time is over, put the question in the archive and start categorization
@@ -224,13 +228,14 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   public shared func runCategorization() {
     let time_now = Time.now();
     // Iterate over the questions with ongoing categorization
+    // @todo: if questions are ordered by categorization time, could just take the first one
     for (key_val in Queries.entries(questions_.per_categorization.ongoing_rbts, #ID)){
-      switch(Questions.getQuestion(questions_, key_val.0.id)){
+      switch(Utils.getQuestion(questions_, key_val.0.id)){
         case(#err(_)){};
         case(#ok(question)){
           if (question.categorization.current.date + parameters_.categorization_duration_sec > time_now) {
             // Mark the categorization as done with the winning categories
-            let categories = Categories.computeCategoriesAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
+            let categories = Aggregation.computeAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
             let updated_question = {
               id = question.id;
               author = question.author;
@@ -292,11 +297,13 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   // Watchout: O(n)
   public shared func computeUserConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
+    // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
+    // and so on before "creating" a profile (User). So here we have to create it if not already created.
     Result.mapOk<User, User, GetOrCreateUserError>(getOrCreateUser_(principal), func(user){
       if (user.convictions.to_update){
         var convictions = Trie.empty<Category, Conviction>();
         for ((question_id, opinion) in Trie.iter(Votes.getUserBallots(opinions_, principal))){
-          switch(Questions.getQuestion(questions_, question_id)){
+          switch(Utils.getQuestion(questions_, question_id)){
             case(#err(_)){};
             case(#ok(question)){
               switch(question.categorization.current.categorization){

@@ -4,7 +4,6 @@ import Categorization "categorization";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
-import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Debug "mo:base/Debug";
@@ -13,7 +12,6 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Time = Time.Time;
 
@@ -24,7 +22,7 @@ module {
   type QuestionsPerPool = Pool.QuestionsPerPool;
   type QuestionsPerCategorization = Categorization.QuestionsPerCategorization;
 
-  type QuestionRegister = {
+  public type QuestionRegister = {
     questions: Trie<Nat, Question>;
     question_index: Nat;
     per_pool: QuestionsPerPool;
@@ -65,17 +63,6 @@ module {
       },
       question
     );
-  };
-
-  public type GetQuestionError = {
-    #QuestionNotFound;
-  };
-  
-  public func getQuestion(register: QuestionRegister, question_id: Nat) : Result<Question, GetQuestionError> {
-    switch(Trie.get(register.questions, Types.keyNat(question_id), Nat.equal)){
-      case(null){ #err(#QuestionNotFound); };
-      case(?question){ #ok(question); };
-    };
   };
 
   public func replaceQuestion(register: QuestionRegister, question: Question) : QuestionRegister {

@@ -61,7 +61,7 @@ module {
       case(#POOL_DATE){ "POOL_DATE"; };
     };
   };
-  func hashOrderBy(order_by: OrderBy) : Hash.Hash { Text.hash(toTextOrderBy(order_by)); };
+  func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
   func equalOrderBy(a: OrderBy, b: OrderBy) : Bool { a == b; };
   func keyOrderBy(order_by: OrderBy) : Key<OrderBy> { { key = order_by; hash = hashOrderBy(order_by); } };
 

@@ -20,7 +20,6 @@ module {
     reward_duration_sec: Nat; // @todo: convert
     categorization_duration_sec: Nat; // @todo: convert
     moderate_opinion_coef: Float;
-    pools_parameters: PoolsParameters; // @todo: remove
     categories_definition: CategoriesDefinition;
     aggregation_parameters: AggregationParameters;
   };
@@ -184,18 +183,6 @@ module {
 
   public func keyPool(pool: Pool) : Key<Pool> {
     return { key = pool; hash = hashPool(pool); }
-  };
-
-  public type PoolParameters = {
-    ratio_max_endorsement: Float;
-    time_elapsed_in_pool: Time; // @todo: put the time in human readable unit (here assumed it is in nano seconds)
-    next_pool: Pool;
-  };
-
-  public type PoolsParameters = {
-    spawn: PoolParameters;
-    fission: PoolParameters;
-    archive: PoolParameters;
   };
 
   public type AggregationParameters = {

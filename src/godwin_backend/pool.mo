@@ -2,34 +2,12 @@ import Types "types";
 import Queries "queries";
 
 import Debug "mo:base/Debug";
-import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
-import Result "mo:base/Result";
 
 module {
-
-  // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   // For convenience: from types module
   type Question = Types.Question;
   type Pool = Types.Pool;
-  type PoolParameters = Types.PoolParameters;
-  type PoolsParameters = Types.PoolsParameters;
-
-  public type VerifyPoolError = {
-    #WrongPool;
-  };
-
-  public func verifyCurrentPool(question: Question, pools: [Pool]) : Result<(), VerifyPoolError> {
-    let set_pools = TrieSet.fromArray<Pool>(pools, Types.hashPool, Types.equalPool);
-    let current_pool = question.pool.current.pool;
-    switch(Trie.get(set_pools, { key = current_pool; hash = Types.hashPool(current_pool) }, Types.equalPool)){
-      case(null){ #err(#WrongPool); };
-      case(?pool){ #ok; };
-    };
-  };
 
   public type QuestionsPerPool = {
     spawn_rbts: Queries.QuestionRBTs;
