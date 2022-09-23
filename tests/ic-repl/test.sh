@@ -6,12 +6,10 @@ identity default;
 
 // Install the backend canister
 let arguments = record {
+  selection_interval = variant { SECONDS = 0 };
+  reward_duration = variant { SECONDS = 1 };
+  categorization_duration = variant { SECONDS = 1 };
   moderate_opinion_coef = 0.5;
-  pools_parameters = record {
-    spawn = record { ratio_max_endorsement = 0.5; time_elapsed_in_pool = 0; next_pool = variant { REWARD }; };
-    fission = record { ratio_max_endorsement = 0.0; time_elapsed_in_pool = 0; next_pool = variant { ARCHIVE }; };
-    archive = record { ratio_max_endorsement = 0.8; time_elapsed_in_pool = 0; next_pool = variant { REWARD }; };
-  };
   categories_definition = vec {
     record { category = "IDENTITY"; sides = record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
     record { category = "COOPERATION"; sides = record { left = "INTERNATIONALISM"; right = "NATIONALISM"; } };
@@ -32,7 +30,6 @@ let backend = installBackend(arguments);
 call backend.createQuestion("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society.", "");
 assert _ ~= record { id = (0 : nat); pool = record { current = record { pool = variant { SPAWN } }}};
 
-call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = record { pool = variant { SPAWN } }}}};
 
@@ -41,23 +38,41 @@ assert _ == variant { ok };
 call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
 assert _ == variant { err = variant { WrongPool } };
 call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
-assert _ == variant { err = variant { WrongPool } };
-
-call backend.run();
-call backend.getQuestion(0);
-assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = record { pool = variant { REWARD } }}}};
-
-call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
-assert _ == variant { ok };
-call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
-assert _ == variant { ok };
-
+assert _ == variant { err = variant { WrongCategorizationState } };
 call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  pool = record { current = record { pool = variant { ARCHIVE }}};
-  categories = vec { record { category = "IDENTITY"; direction = variant { LR }}}
+  pool = record { current = record { pool = variant { REWARD } }};
+  categorization = record { 
+    current = record { categorization = variant { PENDING } };
+  };
+}};
+
+call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
+assert _ == variant { ok };
+call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
+assert _ == variant { err = variant { WrongCategorizationState } };
+call backend.run();
+call backend.getQuestion(0);
+assert _ ~= variant { ok = record { 
+  id = (0 : nat);
+  pool = record { current = record { pool = variant { ARCHIVE } }};
+  categorization = record { 
+    current = record { categorization = variant { ONGOING } };
+  };
+}};
+
+call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
+assert _ == variant { ok };
+call backend.run();
+call backend.getQuestion(0);
+assert _ ~= variant { ok = record { 
+  id = (0 : nat);
+  pool = record { current = record { pool = variant { ARCHIVE } }};
+  categorization = record { 
+    current = record { categorization = variant { DONE = vec { record { category = "IDENTITY"; direction = variant { LR }} } } };
+  };
 }};
 
 call backend.getOrCreateUser(default);

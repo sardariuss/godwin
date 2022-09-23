@@ -45,14 +45,8 @@ module {
       title = title;
       text = text;
       endorsements = 0;
-      pool = {
-        current = {date = Time.now(); pool = #SPAWN;};
-        history = [{date = Time.now(); pool = #SPAWN;}];
-      };
-      categorization = {
-        current = {date = Time.now(); categorization = #PENDING;};
-        history = [{date = Time.now(); categorization = #PENDING;}];
-      };
+      pool = { current = { date = Time.now(); pool = #SPAWN;}; history = []; };
+      categorization = { current = {date = Time.now(); categorization = #PENDING;}; history = []; };
     };
     (
       {

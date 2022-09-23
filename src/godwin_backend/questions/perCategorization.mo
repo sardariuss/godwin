@@ -16,8 +16,9 @@ module {
   };
 
   public func empty() : QuestionsPerCategorization {
-    var pending_rbts = Queries.init();
-    let ongoing_rbts = Queries.init();
+    let pending_rbts = Queries.init();
+    var ongoing_rbts = Queries.init();
+    ongoing_rbts := Queries.addOrderBy(ongoing_rbts, #CATEGORIZATION_DATE);
     let done_rbts = Queries.init();
     { pending_rbts; ongoing_rbts; done_rbts; };
   };

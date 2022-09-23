@@ -29,12 +29,14 @@ module {
   type Pool = Types.Pool;
   type OrderBy = Types.OrderBy;
   type QueryQuestionsResult = Types.QueryQuestionsResult;
+  type Categorization = Types.Categorization;
 
   // Private types
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
   type PoolEntry = { pool: Pool; date: Time; };
   type EndorsementsEntry = { endorsements: Nat; date: Time; };
+  type CategorizationEntry = { categorization: Categorization; date: Time; };
   type QuestionKey = {
     id: Nat;
     data: {
@@ -45,6 +47,7 @@ module {
       #ENDORSEMENTS: EndorsementsEntry;
       #CREATION_DATE: DateEntry;
       #POOL_DATE: PoolEntry;
+      #CATEGORIZATION_DATE: CategorizationEntry;
     };
   };
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
@@ -59,6 +62,7 @@ module {
       case(#ENDORSEMENTS){ "ENDORSEMENTS"; };
       case(#CREATION_DATE){ "CREATION_DATE"; };
       case(#POOL_DATE){ "POOL_DATE"; };
+      case(#CATEGORIZATION_DATE){ "CATEGORIZATION"; };
     };
   };
   func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -75,6 +79,7 @@ module {
       case(#ENDORSEMENTS){ { id = question.id; data = #ENDORSEMENTS(initEndorsementsEntry(question)); } };
       case(#CREATION_DATE){ { id = question.id; data = #CREATION_DATE(initDateEntry(question)); } };
       case(#POOL_DATE){ { id = question.id; data = #POOL_DATE(initPoolEntry(question)); } };
+      case(#CATEGORIZATION_DATE){ { id = question.id; data = #CATEGORIZATION_DATE(initCategorizationEntry(question)); } };
     };
   };
   func initDateEntry(question: Question) : DateEntry { {date = question.pool.history[0].date;}; };
@@ -83,6 +88,12 @@ module {
   func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.pool.history[0].date; };};
   func initPoolEntry(question: Question) : PoolEntry { { pool = question.pool.current.pool; date = question.pool.current.date; }; };
   func initEndorsementsEntry(question: Question) : EndorsementsEntry { { endorsements = question.endorsements; date = question.pool.current.date; }; };
+  func initCategorizationEntry(question: Question) : CategorizationEntry { 
+    { 
+      categorization = question.categorization.current.categorization;
+      date = question.categorization.current.date;
+    };
+  };
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
@@ -130,6 +141,12 @@ module {
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
+      case(#CATEGORIZATION_DATE(entry_a)){
+        switch(b.data){
+          case(#CATEGORIZATION_DATE(entry_b)){ compareCategorizationEntry(entry_a, entry_b, default_order); };
+          case(_){Debug.trap("Cannot compare entries of different types")};
+        };
+      };
     };
   };
   func compareIds(first_id: Nat, second_id: Nat) : Order {
@@ -173,6 +190,25 @@ module {
     else if (a.endorsements > b.endorsements){ #greater;}
     else { compareDateEntry(a, b, default_order); };
   };
+  func compareCategorizationEntry(a: CategorizationEntry, b: CategorizationEntry, default_order: Order) : Order {
+    switch(a.categorization){
+      case(#PENDING){
+        switch(b.categorization){
+          case(#PENDING){ compareDateEntry(a, b, default_order); }; case(#ONGOING){ #less; }; case(#DONE(_)){ #less; };
+        };
+      };
+      case(#ONGOING){
+        switch(b.categorization){
+          case(#PENDING){ #greater; }; case(#ONGOING){ compareDateEntry(a, b, default_order); }; case(#DONE(_)){ #less; };
+        };
+      };
+      case(#DONE(_)){
+        switch(b.categorization){
+          case(#PENDING){ #greater; }; case(#ONGOING){ #greater; }; case(#DONE(_)){ compareDateEntry(a, b, default_order); };
+        };
+      };
+    };
+  };
 
   // Public functions
 
@@ -182,6 +218,9 @@ module {
     rbts;
   };
 
+  // @todo: this is done for optimization (mostly to reduce memory usage) but brings some issues:
+  // (queryQuestions and entries can trap). Alternative would be to init with every OrderBy
+  // possible in init method.
   public func addOrderBy(rbts: QuestionRBTs, order_by: OrderBy) : QuestionRBTs {
     Trie.put(rbts, keyOrderBy(order_by), equalOrderBy, RBT.init<QuestionKey, ()>()).0;
   };
@@ -219,7 +258,7 @@ module {
   };
 
   // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
-  public func query_questions(
+  public func queryQuestions(
     rbts: QuestionRBTs,
     order_by: OrderBy,
     lower_bound: ?QuestionKey,
@@ -253,6 +292,13 @@ module {
     switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
       case(null){ Debug.trap("Cannot find rbt for this order_by"); };
       case(?rbt){ RBT.entries(rbt); };
+    };
+  };
+
+  public func entriesRev(rbts: QuestionRBTs, order_by: OrderBy) : Iter<(QuestionKey, ())> {
+    switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
+      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
+      case(?rbt){ RBT.entriesRev(rbt); };
     };
   };
 

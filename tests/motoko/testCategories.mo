@@ -1,6 +1,7 @@
 import Categories "../../src/godwin_backend/categories";
 import Types "../../src/godwin_backend/types";
 import Votes "../../src/godwin_backend/votes";
+import Utils "../../src/godwin_backend/utils";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -72,7 +73,7 @@ class TestCategories() = {
   type TestableVerifyOrientedCategory = Testable.TestableItem<Result<(), VerifyOrientedCategoryError>>;
 
   func testVerifyOrientedCategory(definitions: CategoriesDefinition, category: OrientedCategory) : TestableVerifyOrientedCategory {
-    testableResult<(), VerifyOrientedCategoryError>(Categories.verifyOrientedCategory(definitions, category));
+    testableResult<(), VerifyOrientedCategoryError>(Utils.verifyOrientedCategory(definitions, category));
   };
 
   func testableAggregation(aggregation: [OrientedCategory]) : Testable.TestableItem<[OrientedCategory]> {
@@ -110,7 +111,7 @@ class TestCategories() = {
     categories := Votes.putBallot(categories, principal_7, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "COOPERATION"; direction = #LR; }).0;
     categories := Votes.putBallot(categories, principal_8, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "PROPERTY"; direction = #LR; }).0;
     categories := Votes.putBallot(categories, principal_9, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "PROPERTY"; direction = #RL; }).0;
-    let aggregation = Categories.computeCategoriesAggregation(definitions, aggregation_params, categories, 0);
+    let aggregation = Categories.computeAggregation(definitions, aggregation_params, categories, 0);
     testableAggregation(aggregation);
   };
 
@@ -126,7 +127,7 @@ class TestCategories() = {
     categories := Votes.putBallot(categories, principal_7, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "COOPERATION"; direction = #LR; }).0;
     categories := Votes.putBallot(categories, principal_8, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "PROPERTY"; direction = #LR; }).0;
     categories := Votes.putBallot(categories, principal_9, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "PROPERTY"; direction = #RL; }).0;
-    let aggregation = Categories.computeCategoriesAggregation(definitions, aggregation_params, categories, 0);
+    let aggregation = Categories.computeAggregation(definitions, aggregation_params, categories, 0);
     testableAggregation(aggregation);
   };
 
@@ -142,7 +143,7 @@ class TestCategories() = {
     categories := Votes.putBallot(categories, principal_7, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "COOPERATION"; direction = #RL; }).0;
     categories := Votes.putBallot(categories, principal_8, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "COOPERATION"; direction = #RL; }).0;
     categories := Votes.putBallot(categories, principal_9, 0, Types.hashOrientedCategory, Types.equalOrientedCategory, { category = "COOPERATION"; direction = #LR; }).0;
-    let aggregation = Categories.computeCategoriesAggregation(definitions, aggregation_params, categories, 0);
+    let aggregation = Categories.computeAggregation(definitions, aggregation_params, categories, 0);
     testableAggregation(aggregation);
   };
 
@@ -153,7 +154,7 @@ class TestCategories() = {
     test("OrientedCategory does not exist (2)", #err(#CategoryNotFound), Matchers.equals(testVerifyOrientedCategory(definitions,{ category = "JUSTICE"; direction = #RL; })))
   ]);
 
-  public let suiteComputeCategoriesAggregation = suite("computeCategoriesAggregation", [
+  public let suiteComputeCategoriesAggregation = suite("computeAggregation", [
     test("no winner", [], Matchers.equals(testAggregationNoWinner(definitions, aggregation_params))),
     test("single winner", [{ category = "IDENTITY"; direction = #LR; }], Matchers.equals(testAggregationSingleWinner(definitions, aggregation_params))),
     test("two winners", [{ category = "IDENTITY"; direction = #LR; }, { category = "COOPERATION"; direction = #RL; }], Matchers.equals(testAggregationTwoWinners(definitions, aggregation_params)))

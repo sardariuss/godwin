@@ -15,13 +15,49 @@ module {
   type Hash = Hash.Hash;
   type Time = Time.Time;
 
-  public type Parameters = {
-    question_selection_freq_sec: Nat; // @todo: convert
-    reward_duration_sec: Nat; // @todo: convert
-    categorization_duration_sec: Nat; // @todo: convert
+  public type Duration = {
+    #DAYS: Nat;
+    #HOURS: Nat;
+    #MINUTES: Nat;
+    #SECONDS: Nat;
+  };
+
+  public type InputParameters = {
+    selection_interval: Duration;
+    reward_duration: Duration;
+    categorization_duration: Duration;
     moderate_opinion_coef: Float;
     categories_definition: CategoriesDefinition;
     aggregation_parameters: AggregationParameters;
+  };
+
+  public type Parameters = {
+    selection_interval: Time;
+    reward_duration: Time;
+    categorization_duration: Time;
+    moderate_opinion_coef: Float;
+    categories_definition: CategoriesDefinition;
+    aggregation_parameters: AggregationParameters;
+  };
+
+  func toTime(duration: Duration) : Time {
+    switch(duration) {
+      case(#DAYS(days)){ days * 24 * 60 * 60 * 1_000_000_000; };
+      case(#HOURS(hours)){ hours * 60 * 60 * 1_000_000_000; };
+      case(#MINUTES(minutes)){ minutes * 60 * 1_000_000_000; };
+      case(#SECONDS(seconds)){ seconds * 1_000_000_000; };
+    };
+  };
+
+  public func getParameters(input: InputParameters) : Parameters {
+    {
+      selection_interval = toTime(input.selection_interval);
+      reward_duration = toTime(input.reward_duration);
+      categorization_duration = toTime(input.categorization_duration);
+      moderate_opinion_coef = input.moderate_opinion_coef;
+      categories_definition = input.categories_definition;
+      aggregation_parameters = input.aggregation_parameters;
+    }
   };
 
   public type Question = {
@@ -226,6 +262,7 @@ module {
     #ENDORSEMENTS;
     #CREATION_DATE;
     #POOL_DATE;
+    #CATEGORIZATION_DATE;
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };

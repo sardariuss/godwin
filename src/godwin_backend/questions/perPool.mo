@@ -18,7 +18,8 @@ module {
   public func empty() : QuestionsPerPool {
     var spawn_rbts = Queries.init();
     spawn_rbts := Queries.addOrderBy(spawn_rbts, #ENDORSEMENTS);
-    let reward_rbts = Queries.init();
+    var reward_rbts = Queries.init();
+    reward_rbts := Queries.addOrderBy(spawn_rbts, #POOL_DATE);
     let archive_rbts = Queries.init();
     { spawn_rbts; reward_rbts; archive_rbts; };
   };
@@ -33,9 +34,9 @@ module {
 
   func setPoolRBTs(per_pool: QuestionsPerPool, pool: Pool, rbts: Queries.QuestionRBTs) : QuestionsPerPool {
     switch(pool){
-      case(#SPAWN){   { spawn_rbts = rbts;             reward_rbts = per_pool.reward_rbts; archive_rbts = per_pool.archive_rbts; }; };
-      case(#REWARD){  { spawn_rbts = per_pool.spawn_rbts; reward_rbts = rbts;        archive_rbts = per_pool.archive_rbts;       }; };
-      case(#ARCHIVE){ { spawn_rbts = per_pool.spawn_rbts; reward_rbts = per_pool.reward_rbts; archive_rbts = rbts;               }; };
+      case(#SPAWN){   { spawn_rbts = rbts;                reward_rbts = per_pool.reward_rbts; archive_rbts = per_pool.archive_rbts; }; };
+      case(#REWARD){  { spawn_rbts = per_pool.spawn_rbts; reward_rbts = rbts;                 archive_rbts = per_pool.archive_rbts; }; };
+      case(#ARCHIVE){ { spawn_rbts = per_pool.spawn_rbts; reward_rbts = per_pool.reward_rbts; archive_rbts = rbts;                  }; };
     };
   };
 

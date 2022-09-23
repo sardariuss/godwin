@@ -1,21 +1,16 @@
 import Questions "questions/questions";
-import Queries "questions/queries";
 import Votes "votes";
 import Types "types";
-import Aggregation "aggregation";
 import Users "users";
-import Convictions "convictions";
-
+import Scheduler "scheduler";
 import Utils "utils";
 
-import Array "mo:base/Array";
 import Trie "mo:base/Trie";
-import Text "mo:base/Text";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 
-shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters) = {
+shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParameters) = {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
@@ -31,7 +26,6 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
   type Opinion = Types.Opinion;
   type Pool = Types.Pool;
   type AggregationParameters = Types.AggregationParameters;
-  type Conviction = Types.Conviction;
   type User = Types.User;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type Sides = Types.Sides;
@@ -39,8 +33,8 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
 
   // Members
   private stable var admin_ = initializer;
-  private stable var parameters_ = parameters;
-  private stable var last_selection_date_ : Int = 0; // @todo: maybe Time.now makes more sense
+  private stable var parameters_ = Types.getParameters(parameters);
+  private stable var last_selection_date_ = Time.now();
   private stable var users_ = Users.empty();
   private stable var questions_ = Questions.empty();
   private stable var endorsements_ = Votes.empty<Endorsement>();
@@ -165,103 +159,30 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
     };
   };
 
-  public shared func runPool() {
+  public shared func run() {
     let time_now = Time.now();
-    // If enough time has passed since last selection, select the most endorsed question from the spawning pool
-    if (last_selection_date_ + parameters_.question_selection_freq_sec > time_now) {
-      last_selection_date_ := time_now;
-      switch (Queries.entries(questions_.per_pool.spawn_rbts, #ENDORSEMENTS).next()){
-        case(null){}; // @todo: think about conditions that could lead here
-        case(?key_val){
-          switch(Utils.getQuestion(questions_, key_val.0.id)){
-            case(#err(_)){}; // @todo: think about conditions that could lead here
-            case(#ok(question)){
-              // Put the question in the reward pool
-              let updated_question = {
-                id = question.id;
-                author = question.author;
-                title = question.title;
-                text = question.text;
-                endorsements = question.endorsements;
-                pool = {
-                  current = { date = time_now; pool = #REWARD; };
-                  history = Array.append(question.pool.history, [ question.pool.current ]);
-                };
-                categorization = question.categorization;
-              };
-              questions_ := Questions.replaceQuestion(questions_, updated_question);
-            };
-          };
-        };
+    // To reward
+    switch(Scheduler.selectQuestion(questions_, last_selection_date_, parameters_.selection_interval, time_now)){
+      case(null){};
+      case(?question){
+        questions_ := Questions.replaceQuestion(questions_, question);
+        last_selection_date_ := time_now;
       };
     };
-    // Iterate over currently rewarded questions
-    // @todo: if questions are ordered by pool time, could just take the first one
-    for (key_val in Queries.entries(questions_.per_pool.reward_rbts, #ID)){
-      switch(Utils.getQuestion(questions_, key_val.0.id)){
-        case(#err(_)){};
-        case(#ok(question)){
-          // If the reward time is over, put the question in the archive and start categorization
-          if (question.pool.current.date + parameters_.reward_duration_sec > time_now) {
-            let updated_question = {
-              id = question.id;
-              author = question.author;
-              title = question.title;
-              text = question.text;
-              endorsements = question.endorsements;
-              pool = {
-                current = { date = time_now; pool = #ARCHIVE; };
-                history = Array.append(question.pool.history, [ question.pool.current ]);
-              };
-              categorization = {
-                current = { date = time_now; categorization = #ONGOING; };
-                history = Array.append(question.categorization.history, [ question.categorization.current ]);
-              };
-            };
-            questions_ := Questions.replaceQuestion(questions_, updated_question);
-          };
-        };
+    // To archive
+    switch(Scheduler.archiveQuestion(questions_, parameters_.reward_duration, time_now)){
+      case(null){};
+      case(?question){
+        questions_ := Questions.replaceQuestion(questions_, question);
       };
     };
-  };
-
-  public shared func runCategorization() {
-    let time_now = Time.now();
-    // Iterate over the questions with ongoing categorization
-    // @todo: if questions are ordered by categorization time, could just take the first one
-    for (key_val in Queries.entries(questions_.per_categorization.ongoing_rbts, #ID)){
-      switch(Utils.getQuestion(questions_, key_val.0.id)){
-        case(#err(_)){};
-        case(#ok(question)){
-          if (question.categorization.current.date + parameters_.categorization_duration_sec > time_now) {
-            // Mark the categorization as done with the winning categories
-            let categories = Aggregation.computeAggregation(parameters_.categories_definition, parameters_.aggregation_parameters, categories_, question.id);
-            let updated_question = {
-              id = question.id;
-              author = question.author;
-              endorsements = question.endorsements;
-              title = question.title;
-              text = question.text;
-              pool = question.pool;
-              categorization = {
-                current = { date = time_now; categorization = #DONE(categories); };
-                history = Array.append(question.categorization.history, [ question.categorization.current ]);
-              };
-            };
-            questions_ := Questions.replaceQuestion(questions_, updated_question);
-            // The users that gave their opinion on this questions have to have their convictions updated
-            var users_to_update = Trie.empty<Principal, User>();
-            for ((principal, user) in Users.iter(users_)){
-              switch(Votes.getBallot(opinions_, principal, question.id)){
-                case(null){};
-                case(?opinion){
-                  users_to_update := Trie.put(users_to_update, Types.keyPrincipal(user.principal), Principal.equal, Users.setConvictionToUpdate(user)).0;
-                };
-              };
-            };
-            users_ := Trie.merge(users_, users_to_update, Principal.equal);
-          };
-        };
+    // Categorization to close
+    switch(Scheduler.closeCategorization(questions_, parameters_.categorization_duration, time_now, parameters_.categories_definition, parameters_.aggregation_parameters, categories_)){
+      case(null){};
+      case(?question){
+        questions_ := Questions.replaceQuestion(questions_, question);
+        // The users that gave their opinion on this questions have to have their convictions updated
+        users_ := Trie.merge(users_, Users.pruneConvictions(users_, opinions_, question), Principal.equal);
       };
     };
   };
@@ -295,34 +216,13 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.Parameters
     Users.getUser(users_, principal);
   };
 
-  // Watchout: O(n)
   public shared func computeUserConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a profile (User). So here we have to create it if not already created.
     Result.mapOk<User, User, GetOrCreateUserError>(getOrCreateUser_(principal), func(user){
-      if (user.convictions.to_update){
-        var convictions = Trie.empty<Category, Conviction>();
-        for ((question_id, opinion) in Trie.iter(Votes.getUserBallots(opinions_, principal))){
-          switch(Utils.getQuestion(questions_, question_id)){
-            case(#err(_)){};
-            case(#ok(question)){
-              switch(question.categorization.current.categorization){
-                case (#DONE(oriented_categories)){
-                  for (oriented_category in Array.vals(oriented_categories)){
-                    convictions := Convictions.addConviction(convictions, oriented_category, opinion, parameters_.moderate_opinion_coef);
-                  };
-                };
-                case(_){};
-              };
-            };
-          }
-        };
-        let updated_user = Users.setConvictions(user, Convictions.toArray(convictions));
-        users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
-        updated_user;
-      } else {
-        user;
-      };
+      let updated_user = Users.computeUserConvictions(user, questions_, opinions_, parameters_.moderate_opinion_coef);
+      users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
+      updated_user;
     });
   };
 
