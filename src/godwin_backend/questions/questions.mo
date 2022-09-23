@@ -39,14 +39,16 @@ module {
   };
 
   public func createQuestion(register: QuestionRegister, author: Principal, title: Text, text: Text) : (QuestionRegister, Question) {
+    let time_now = Time.now();
     let question = {
       id = register.question_index;
       author = author;
       title = title;
       text = text;
+      date = time_now;
       endorsements = 0;
-      pool = { current = { date = Time.now(); pool = #SPAWN;}; history = []; };
-      categorization = { current = {date = Time.now(); categorization = #PENDING;}; history = []; };
+      pool = { current = { date = time_now; pool = #SPAWN;}; history = []; };
+      categorization = { current = {date = time_now; categorization = #PENDING;}; history = []; };
     };
     (
       {

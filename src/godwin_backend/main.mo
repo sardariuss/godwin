@@ -76,9 +76,10 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
       let updated_question = {
         id = question.id;
         author = question.author;
-        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         title = question.title;
         text = question.text;
+        date = question.date;
+        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         pool = question.pool;
         categorization = question.categorization;
       };
@@ -93,9 +94,10 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
       let updated_question = {
         id = question.id;
         author = question.author;
-        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         title = question.title;
         text = question.text;
+        date = question.date;
+        endorsements = Votes.getTotalVotesForBallot(endorsements_, question.id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE);
         pool = question.pool;
         categorization = question.categorization;
       };

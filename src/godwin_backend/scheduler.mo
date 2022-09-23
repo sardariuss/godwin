@@ -37,6 +37,7 @@ module {
               author = question.author;
               title = question.title;
               text = question.text;
+              date = question.date;
               endorsements = question.endorsements;
               pool = {
                 current = { date = time_now; pool = #REWARD; };
@@ -64,6 +65,7 @@ module {
                 author = question.author;
                 title = question.title;
                 text = question.text;
+                date = question.date;
                 endorsements = question.endorsements;
                 pool = {
                   current = { date = time_now; pool = #ARCHIVE; };
@@ -101,9 +103,10 @@ module {
               ?{
                 id = question.id;
                 author = question.author;
-                endorsements = question.endorsements;
                 title = question.title;
                 text = question.text;
+                date = question.date;
+                endorsements = question.endorsements;
                 pool = question.pool;
                 categorization = {
                   current = { date = time_now; categorization = #DONE(categories); };

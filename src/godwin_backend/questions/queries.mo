@@ -82,10 +82,10 @@ module {
       case(#CATEGORIZATION_DATE){ { id = question.id; data = #CATEGORIZATION_DATE(initCategorizationEntry(question)); } };
     };
   };
-  func initDateEntry(question: Question) : DateEntry { {date = question.pool.history[0].date;}; };
-  func initAuthorEntry(question: Question) : TextEntry { { text = Principal.toText(question.author); date = question.pool.history[0].date; }; };
-  func initTitleEntry(question: Question) : TextEntry { { text = question.title; date = question.pool.history[0].date; }; };
-  func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.pool.history[0].date; };};
+  func initDateEntry(question: Question) : DateEntry { {date = question.date; }; };
+  func initAuthorEntry(question: Question) : TextEntry { { text = Principal.toText(question.author); date = question.date; }; };
+  func initTitleEntry(question: Question) : TextEntry { { text = question.title; date = question.date; }; };
+  func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.date; };};
   func initPoolEntry(question: Question) : PoolEntry { { pool = question.pool.current.pool; date = question.pool.current.date; }; };
   func initEndorsementsEntry(question: Question) : EndorsementsEntry { { endorsements = question.endorsements; date = question.pool.current.date; }; };
   func initCategorizationEntry(question: Question) : CategorizationEntry { 

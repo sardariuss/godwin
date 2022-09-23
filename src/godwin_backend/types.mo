@@ -65,6 +65,7 @@ module {
     author: Principal;
     title: Text;
     text: Text;
+    date: Time;
     endorsements: Nat;
     pool: {
       current: DatedPool;

@@ -1,6 +1,7 @@
 import TestCategories "testCategories";
 import TestConvictions "testConvictions";
 import TestTotalVotes "testTotalVotes";
+import TestQueries "questions/testQueries";
 
 import Suite "mo:matchers/Suite";
 
@@ -13,3 +14,8 @@ Suite.run(testConvictions.suiteAddConviction);
 
 let testTotalVotes = TestTotalVotes.TestTotalVotes();
 Suite.run(testTotalVotes.suiteTotalVotes);
+
+let testQueries = TestQueries.TestQueries();
+Suite.run(testQueries.suiteAddQuestions);
+Suite.run(testQueries.suiteReplaceQuestions);
+Suite.run(testQueries.suiteRemoveQuestions);
