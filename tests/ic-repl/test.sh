@@ -2,8 +2,6 @@
 
 load "common/install.sh";
 
-identity default;
-
 // Install the backend canister
 let arguments = record {
   selection_interval = variant { SECONDS = 0 };
@@ -26,6 +24,10 @@ let arguments = record {
 };
 
 let backend = installBackend(arguments);
+
+// To use instead if wish to use the deployed backend
+//identity default "~/.config/dfx/identity/default/identity.pem";
+//import backend = "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
 call backend.createQuestion("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society.", "");
 assert _ ~= record { id = (0 : nat); pool = record { current = record { pool = variant { SPAWN } }}};
