@@ -27,7 +27,7 @@ module {
     reward_duration: Duration;
     categorization_duration: Duration;
     moderate_opinion_coef: Float;
-    categories_definition: CategoriesDefinition;
+    categories_definition: InputCategoriesDefinition;
     aggregation_parameters: AggregationParameters;
   };
 
@@ -38,26 +38,6 @@ module {
     moderate_opinion_coef: Float;
     categories_definition: CategoriesDefinition;
     aggregation_parameters: AggregationParameters;
-  };
-
-  func toTime(duration: Duration) : Time {
-    switch(duration) {
-      case(#DAYS(days)){ days * 24 * 60 * 60 * 1_000_000_000; };
-      case(#HOURS(hours)){ hours * 60 * 60 * 1_000_000_000; };
-      case(#MINUTES(minutes)){ minutes * 60 * 1_000_000_000; };
-      case(#SECONDS(seconds)){ seconds * 1_000_000_000; };
-    };
-  };
-
-  public func getParameters(input: InputParameters) : Parameters {
-    {
-      selection_interval = toTime(input.selection_interval);
-      reward_duration = toTime(input.reward_duration);
-      categorization_duration = toTime(input.categorization_duration);
-      moderate_opinion_coef = input.moderate_opinion_coef;
-      categories_definition = input.categories_definition;
-      aggregation_parameters = input.aggregation_parameters;
-    }
   };
 
   public type Question = {
@@ -92,12 +72,9 @@ module {
     right: Text;
   };
 
-  public type CategoryDefinition = {
-    category: Category;
-    sides: Sides;
-  };
-
-  public type CategoriesDefinition = [CategoryDefinition];
+  public type InputCategoriesDefinition = [(Category, Sides)];
+  
+  public type CategoriesDefinition = Trie<Category, Sides>;
 
   public type Direction = {
     #LR;
@@ -191,9 +168,13 @@ module {
     #ARCHIVE;
   };
 
+  public type InputCategorizationProfile = [(Category, Float)];
+
+  public type CategorizationProfile = Trie<Category, Float>;
+
   public type Categorization = {
     #PENDING;
-    #ONGOING;
+    #ONGOING: Trie<Principal, [OrientedCategory]>;
     #DONE: [OrientedCategory];
   };
 

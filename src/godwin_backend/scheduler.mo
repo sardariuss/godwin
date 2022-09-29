@@ -72,7 +72,7 @@ module {
                   history = Array.append(question.pool.history, [ question.pool.current ]);
                 };
                 categorization = {
-                  current = { date = time_now; categorization = #ONGOING; };
+                  current = { date = time_now; categorization = #ONGOING(Trie.empty<Principal, [OrientedCategory]>()); };
                   history = Array.append(question.categorization.history, [ question.categorization.current ]);
                 };
               };
@@ -88,31 +88,38 @@ module {
     categorization_duration: Time,
     time_now: Time,
     definitions: CategoriesDefinition,
-    aggregation_params: AggregationParameters,
-    votes: VoteRegister<OrientedCategory>
+    aggregation_params: AggregationParameters
   ) : ?Question {
+    // Get the oldest question currently being categorized
     switch (Queries.entries(register.per_categorization.ongoing_rbts, #CATEGORIZATION_DATE).next()){
       case(null){ null; };
       case(?key_val){
+        // Find the question from the question ID
         switch(Trie.get(register.questions, Types.keyNat(key_val.0.id), Nat.equal)){
-          case(null){ null; };
+          case(null){ null; }; // @todo: trap instead?
           case(?question){
-            if (question.categorization.current.date + categorization_duration > time_now) { null; }
-            else {
-              let categories = Categories.computeAggregation(definitions, aggregation_params, votes, question.id);
-              ?{
-                id = question.id;
-                author = question.author;
-                title = question.title;
-                text = question.text;
-                date = question.date;
-                endorsements = question.endorsements;
-                pool = question.pool;
-                categorization = {
-                  current = { date = time_now; categorization = #DONE(categories); };
-                  history = Array.append(question.categorization.history, [ question.categorization.current ]);
+            switch(question.categorization.current.categorization){
+              case(#ONGOING(categorizations)){
+                // If enough time has passed (categorization_duration), aggregate the votes and put categorization at done
+                if (question.categorization.current.date + categorization_duration > time_now) { null; }
+                else {
+                  let categories = Categories.computeAggregation(definitions, aggregation_params, categorizations);
+                  ?{
+                    id = question.id;
+                    author = question.author;
+                    title = question.title;
+                    text = question.text;
+                    date = question.date;
+                    endorsements = question.endorsements;
+                    pool = question.pool;
+                    categorization = {
+                      current = { date = time_now; categorization = #DONE(categories); };
+                      history = Array.append(question.categorization.history, [ question.categorization.current ]);
+                    };
+                  };
                 };
               };
+              case(_){ null; }; // @todo: trap instead?
             };
           };
         };
