@@ -1,7 +1,7 @@
 import Types "types";
 import Votes "votes";
 import Questions "questions/questions";
-import Categories "categories";
+import Profile "profile";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -65,7 +65,7 @@ module {
       {
         principal = user.principal;
         name = user.name;
-        convictions = { to_update = false; profile = Categories.computeUserProfile(register, Votes.getUserBallots(votes, user.principal), moderate_opinion_coef); };
+        convictions = { to_update = false; profile = Profile.computeUserProfile(register, Votes.getUserBallots(votes, user.principal), moderate_opinion_coef); };
       };
     } else {
       user;

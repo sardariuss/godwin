@@ -1,7 +1,7 @@
 import Types "types";
 import Questions "questions/questions";
 import Queries "questions/queries";
-import Categories "categories";
+import Profile "profile";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
@@ -105,7 +105,7 @@ module {
                     endorsements = question.endorsements;
                     pool = question.pool;
                     categorization = {
-                      current = { date = time_now; categorization = #DONE(Categories.computeQuestionProfile(categorizations)); };
+                      current = { date = time_now; categorization = #DONE(Profile.computeQuestionProfile(categorizations)); };
                       history = Array.append(question.categorization.history, [ question.categorization.current ]);
                     };
                   };
