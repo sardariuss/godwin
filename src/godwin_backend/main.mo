@@ -20,18 +20,15 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
   // For convenience: from types module
   type Question = Types.Question;
   type Category = Types.Category;
-  type Direction = Types.Direction;
-  type OrientedCategory = Types.OrientedCategory;
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
   type Pool = Types.Pool;
-  type AggregationParameters = Types.AggregationParameters;
   type User = Types.User;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type Sides = Types.Sides;
   type Parameters = Types.Parameters;
-  type InputCategorizationProfile = Types.InputCategorizationProfile; 
-  type CategorizationProfile = Types.CategorizationProfile; 
+  type InputProfile = Types.InputProfile; 
+  type Profile = Types.Profile; 
 
   // Members
   private stable var admin_ = initializer;
@@ -133,12 +130,11 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
     #WrongCategorizationState;
   };
 
-  // @todo: replace [OrientedCategory] by CategorizationProfile
-  public shared({caller}) func setCategorization(question_id: Nat, input_categorization: InputCategorizationProfile) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(question_id: Nat, input_categorization: InputProfile) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials_(caller), func () {
       Result.chain<Question, (), CategorizationError>(Utils.getQuestion(questions_, question_id), func(question) {
-        Result.chain<CategorizationProfile, (), CategorizationError>(Utils.getVerifiedCategorizationProfile(parameters_.categories_definition, input_categorization), func (categorization: CategorizationProfile) {
-          Result.mapOk<Trie<Principal, [OrientedCategory]>, (), CategorizationError>(Utils.getCategorizations(question), func(categorizations: Trie<Principal, [OrientedCategory]>) {
+        Result.chain<Profile, (), CategorizationError>(Utils.getVerifiedProfile(parameters_.categories_definition, input_categorization), func (categorization: Profile) {
+          Result.mapOk<Trie<Principal, Profile>, (), CategorizationError>(Utils.getCategorizations(question), func(categorizations: Trie<Principal, Profile>) {
               // Update the question categorizations
               let updated_question = {
                 id = question.id;
@@ -150,7 +146,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
                 pool = question.pool;
                 categorization = {
                   current = {
-                    categorization = #ONGOING(Trie.put(categorizations, Types.keyPrincipal(caller), Principal.equal, []).0); // @todo: put categorization
+                    categorization = #ONGOING(Trie.put(categorizations, Types.keyPrincipal(caller), Principal.equal, categorization).0);
                     date = question.categorization.current.date;
                   };
                   history = question.categorization.history;
@@ -193,7 +189,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
       };
     };
     // Categorization to close
-    switch(Scheduler.closeCategorization(questions_, parameters_.categorization_duration, time_now, parameters_.categories_definition, parameters_.aggregation_parameters)){
+    switch(Scheduler.closeCategorization(questions_, parameters_.categorization_duration, time_now)){
       case(null){};
       case(?question){
         questions_ := Questions.replaceQuestion(questions_, question);
@@ -232,11 +228,11 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
     Users.getUser(users_, principal);
   };
 
-  public shared func computeUserConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
+  public shared func updateConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a profile (User). So here we have to create it if not already created.
     Result.mapOk<User, User, GetOrCreateUserError>(getOrCreateUser_(principal), func(user){
-      let updated_user = Users.computeUserConvictions(user, questions_, opinions_, parameters_.moderate_opinion_coef);
+      let updated_user = Users.updateConvictions(user, questions_, opinions_, parameters_.moderate_opinion_coef);
       users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
       updated_user;
     });

@@ -28,7 +28,6 @@ module {
     categorization_duration: Duration;
     moderate_opinion_coef: Float;
     categories_definition: InputCategoriesDefinition;
-    aggregation_parameters: AggregationParameters;
   };
 
   public type Parameters = {
@@ -37,7 +36,6 @@ module {
     categorization_duration: Time;
     moderate_opinion_coef: Float;
     categories_definition: CategoriesDefinition;
-    aggregation_parameters: AggregationParameters;
   };
 
   public type Question = {
@@ -76,16 +74,6 @@ module {
   
   public type CategoriesDefinition = Trie<Category, Sides>;
 
-  public type Direction = {
-    #LR;
-    #RL;
-  };
-
-  public type OrientedCategory = {
-    category: Category;
-    direction: Direction;
-  };
-
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
@@ -100,22 +88,7 @@ module {
     a == b;
   };
 
-  public func toTextDir(direction: Direction) : Text {
-    switch(direction){
-      case(#LR){ "LR" };
-      case(#RL){ "RL" };
-    };
-  };
-
-  public func hashOrientedCategory(c: OrientedCategory) : Hash {
-    Text.hash(c.category # toTextDir(c.direction));
-  };
-
-  public func equalOrientedCategory(a: OrientedCategory, b: OrientedCategory) : Bool {
-    (a.category == b.category) and (a.direction == b.direction);
-  };
-
-   public type AgreementDegree = {
+  public type AgreementDegree = {
     #ABSOLUTE;
     #MODERATE;
   };
@@ -124,12 +97,6 @@ module {
     #AGREE: AgreementDegree;
     #NEUTRAL;
     #DISAGREE: AgreementDegree;
-  };
-
-  public type Conviction = {
-    left: Float;
-    center: Float;
-    right: Float;
   };
 
   public func toTextOpinion(opinion: Opinion) : Text {
@@ -168,14 +135,14 @@ module {
     #ARCHIVE;
   };
 
-  public type InputCategorizationProfile = [(Category, Float)];
+  public type InputProfile = [(Category, Float)];
 
-  public type CategorizationProfile = Trie<Category, Float>;
+  public type Profile = Trie<Category, Float>;
 
   public type Categorization = {
     #PENDING;
-    #ONGOING: Trie<Principal, [OrientedCategory]>;
-    #DONE: [OrientedCategory];
+    #ONGOING: Trie<Principal, Profile>; // @todo: should be put out of the enum, because right now it is public (because Question type is public)
+    #DONE: Profile;
   };
 
   public type DatedCategorization = {
@@ -203,25 +170,13 @@ module {
     return { key = pool; hash = hashPool(pool); }
   };
 
-  public type AggregationParameters = {
-    direction_threshold: Float;
-    category_threshold: Float;
-  };
-
   public type User = {
     principal: Principal;
     name: ?Text;
     convictions: {
       to_update: Bool;
-      array: ArrayConvictions;
+      profile: Profile;
     };
-  };
-
-  public type ArrayConvictions = [CategoryConviction];
-
-  public type CategoryConviction = {
-    category: Category;
-    conviction: Conviction;
   };
 
   public type VoteRegister<B> = {

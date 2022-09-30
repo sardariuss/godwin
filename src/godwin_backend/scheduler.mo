@@ -16,10 +16,9 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type OrientedCategory = Types.OrientedCategory;
   type CategoriesDefinition = Types.CategoriesDefinition;
-  type AggregationParameters = Types.AggregationParameters;
   type VoteRegister<B> = Types.VoteRegister<B>;
+  type Profile = Types.Profile;
 
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
@@ -72,7 +71,7 @@ module {
                   history = Array.append(question.pool.history, [ question.pool.current ]);
                 };
                 categorization = {
-                  current = { date = time_now; categorization = #ONGOING(Trie.empty<Principal, [OrientedCategory]>()); };
+                  current = { date = time_now; categorization = #ONGOING(Trie.empty<Principal, Profile>()); };
                   history = Array.append(question.categorization.history, [ question.categorization.current ]);
                 };
               };
@@ -83,13 +82,7 @@ module {
     };
   };
 
-  public func closeCategorization(
-    register: QuestionRegister,
-    categorization_duration: Time,
-    time_now: Time,
-    definitions: CategoriesDefinition,
-    aggregation_params: AggregationParameters
-  ) : ?Question {
+  public func closeCategorization(register: QuestionRegister, categorization_duration: Time, time_now: Time) : ?Question {
     // Get the oldest question currently being categorized
     switch (Queries.entries(register.per_categorization.ongoing_rbts, #CATEGORIZATION_DATE).next()){
       case(null){ null; };
@@ -100,10 +93,9 @@ module {
           case(?question){
             switch(question.categorization.current.categorization){
               case(#ONGOING(categorizations)){
-                // If enough time has passed (categorization_duration), aggregate the votes and put categorization at done
+                // If enough time has passed (categorization_duration), compute the question profile and put categorization at done
                 if (question.categorization.current.date + categorization_duration > time_now) { null; }
                 else {
-                  let categories = Categories.computeAggregation(definitions, aggregation_params, categorizations);
                   ?{
                     id = question.id;
                     author = question.author;
@@ -113,7 +105,7 @@ module {
                     endorsements = question.endorsements;
                     pool = question.pool;
                     categorization = {
-                      current = { date = time_now; categorization = #DONE(categories); };
+                      current = { date = time_now; categorization = #DONE(Categories.computeQuestionProfile(categorizations)); };
                       history = Array.append(question.categorization.history, [ question.categorization.current ]);
                     };
                   };

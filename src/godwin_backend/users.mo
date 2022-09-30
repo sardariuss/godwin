@@ -1,29 +1,24 @@
 import Types "types";
 import Votes "votes";
-import Convictions "convictions";
 import Questions "questions/questions";
+import Categories "categories";
 
 import Trie "mo:base/Trie";
-import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
-import Nat "mo:base/Nat";
-import Array "mo:base/Array";
 
 module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-  type Iter<T> = Iter.Iter<T>;
+
   type Principal = Principal.Principal;
 
   // For convenience: from types module
   type User = Types.User;
-  type ArrayConvictions = Types.ArrayConvictions;
   type Question = Types.Question;
   type VoteRegister<B> = Types.VoteRegister<B>;
   type Opinion = Types.Opinion;
   type Category = Types.Category;
-  type Conviction = Types.Conviction;
 
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
@@ -44,7 +39,7 @@ module {
 
   public func newUser(principal: Principal) : User {
     // Important: set convictions.to_update to true, because the associated principal could have already voted
-    { principal = principal; name = null; convictions = { to_update = true; array = []; } };
+    { principal = principal; name = null; convictions = { to_update = true; profile = Trie.empty<Category, Float>(); } };
   };
 
   public func pruneConvictions(register: UserRegister, votes: VoteRegister<Opinion>, question: Question) : Trie<Principal, User>{
@@ -56,7 +51,7 @@ module {
           let updated_user = {
             principal = user.principal;
             name = user.name;
-            convictions = { to_update = true; array = user.convictions.array; };
+            convictions = { to_update = true; profile = user.convictions.profile; };
           };
           users := Trie.put(users, Types.keyPrincipal(user.principal), Principal.equal, updated_user).0;
         };
@@ -65,32 +60,15 @@ module {
     users;
   };
 
-  // Watchout: O(n) where n is the number of questions
-  // @todo: iter only on categorized questions
-  public func computeUserConvictions(user: User, register: QuestionRegister, votes: VoteRegister<Opinion>, moderate_opinion_coef: Float) : User {
-    if (not user.convictions.to_update){ user; }
-    else {
-      var convictions = Trie.empty<Category, Conviction>();
-      for ((question_id, opinion) in Trie.iter(Votes.getUserBallots(votes, user.principal))){
-        switch(Trie.get(register.questions, Types.keyNat(question_id), Nat.equal)){
-          case(null){};
-          case(?question){
-            switch(question.categorization.current.categorization){
-              case(#DONE(oriented_categories)){
-                for (oriented_category in Array.vals(oriented_categories)){
-                  convictions := Convictions.addConviction(convictions, oriented_category, opinion, moderate_opinion_coef);
-                };
-              };
-              case(_){};
-            };
-          };
-        }
-      };
+  public func updateConvictions(user: User, register: QuestionRegister, votes: VoteRegister<Opinion>, moderate_opinion_coef: Float) : User {
+    if (user.convictions.to_update){
       {
         principal = user.principal;
         name = user.name;
-        convictions = { to_update = false; array = Convictions.toArray(convictions);};
+        convictions = { to_update = false; profile = Categories.computeUserProfile(register, Votes.getUserBallots(votes, user.principal), moderate_opinion_coef); };
       };
+    } else {
+      user;
     };
   };
 

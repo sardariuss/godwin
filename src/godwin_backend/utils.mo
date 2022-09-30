@@ -21,10 +21,9 @@ module {
   // For convenience: from types module
   type Category = Types.Category;
   type Question = Types.Question;
-  type OrientedCategory = Types.OrientedCategory;
   type CategoriesDefinition = Types.CategoriesDefinition;
   type Pool = Types.Pool;
-  type CategorizationProfile = Types.CategorizationProfile;
+  type Profile = Types.Profile;
   type InputParameters = Types.InputParameters;
   type InputCategoriesDefinition = Types.InputCategoriesDefinition;
   type Parameters = Types.Parameters;
@@ -45,12 +44,12 @@ module {
     };
   };
 
-  type CategorizationProfileError = {
+  type ProfileError = {
     #InvalidCategory;
     #CategoriesMissing;
   };
 
-  public func getVerifiedCategorizationProfile(definitions: CategoriesDefinition, profile: [(Text, Float)]) : Result<CategorizationProfile, CategorizationProfileError> {
+  public func getVerifiedProfile(definitions: CategoriesDefinition, profile: [(Text, Float)]) : Result<Profile, ProfileError> {
     var verified_profile = Trie.empty<Category, Float>();
     for ((category, cursor) in Array.vals(profile)){
       switch(Trie.get(definitions, Types.keyText(category), Text.equal)){
@@ -80,7 +79,7 @@ module {
     #WrongCategorizationState;
   };
 
-  public func getCategorizations(question: Question) : Result<Trie<Principal, [OrientedCategory]>, GetCategorizationsError> {
+  public func getCategorizations(question: Question) : Result<Trie<Principal, Profile>, GetCategorizationsError> {
     switch(question.categorization.current.categorization){
       case(#ONGOING(categorizations)){ #ok(categorizations); };
       case(_){ #err(#WrongCategorizationState); };
@@ -107,7 +106,6 @@ module {
       categorization_duration = toTime(input.categorization_duration);
       moderate_opinion_coef = input.moderate_opinion_coef;
       categories_definition = toCategoriesDefinition(input.categories_definition);
-      aggregation_parameters = input.aggregation_parameters;
     }
   };
 
