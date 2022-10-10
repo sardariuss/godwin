@@ -31,11 +31,24 @@ module {
     };
 
     public func putEndorsement(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.putBallot(endorsements_, principal, question_id, Types.hashEndorsement, Types.equalEndorsement, #ENDORSE, addToAggregate).0;
+      endorsements_ := Votes.putBallot(
+        endorsements_,
+        principal,
+        question_id,
+        #ENDORSE,
+        emptyAggregate,
+        addToAggregate,
+        removeFromAggregate
+      ).0;
     };
 
     public func removeEndorsement(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.removeBallot(endorsements_, principal, question_id, Types.hashEndorsement, Types.equalEndorsement, removeFromAggregate).0;
+      endorsements_ := Votes.removeBallot(
+        endorsements_,
+        principal,
+        question_id,
+        removeFromAggregate
+      ).0;
     };
 
     public func getTotalEndorsements(question_id: Nat) : Nat {
@@ -47,31 +60,18 @@ module {
       };
     };
 
-    func addToAggregate(aggregate: ?BallotCount, new_ballot: Endorsement, old_ballot: ?Endorsement) : BallotCount {
-      switch(aggregate){
-        case(null){
-          switch(old_ballot){
-            // It is the first ballot, initialize count to 1
-            case(null){ { count = 1; }; };
-            // It shall be impossible to have no aggregate and somebody already voted
-            case(_){ Debug.trap("If an old ballot has been removed, the aggregate shall already exist."); };
-          };
-        };
-        case(?aggregate){
-          switch(old_ballot){
-            // No old ballot, simply increment the count
-            case(null){{ count = aggregate.count + 1; };};
-            // Old ballot, count is the same
-            case(_) { aggregate; };
-          };
-        };
-      };
-    };
+  };
 
-    func removeFromAggregate(aggregate: BallotCount, ballot: Endorsement) : BallotCount {
-      { count = aggregate.count - 1; };
-    };
+  func emptyAggregate() : BallotCount {
+    { count = 0; };
+  };
 
+  func addToAggregate(aggregate: BallotCount, new_ballot: Endorsement) : BallotCount {
+    { count = aggregate.count + 1; };
+  };
+
+  func removeFromAggregate(aggregate: BallotCount, ballot: Endorsement) : BallotCount {
+    { count = aggregate.count - 1; };
   };
 
 };

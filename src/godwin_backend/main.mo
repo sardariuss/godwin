@@ -1,8 +1,8 @@
 import Questions "questions/questions";
 import Votes "votes";
-import Votes2 "votes/votes2";
-import Endorsements2 "votes/endorsements";
-import Opinions2 "votes/opinions";
+import Endorsements "votes/endorsements";
+import Opinions "votes/opinions";
+import Categorizations "votes/categorizations";
 import Types "types";
 import Users "users";
 import Scheduler "scheduler";

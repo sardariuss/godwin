@@ -16,10 +16,6 @@ module {
     disagree: Float;
   };
 
-  public func emptyOpinionTotals() : OpinionTotals {
-    { agree = 0.0; neutral = 0.0; disagree = 0.0; };
-  };
-
   public func empty() : Opinions {
     Opinions(Votes.empty<Opinion, OpinionTotals>());
   };
@@ -37,80 +33,70 @@ module {
     };
 
     public func putOpinion(principal: Principal, question_id: Nat, opinion: Opinion) {
-      endorsements_ := Votes.putBallot(endorsements_, principal, question_id, Types.hashOpinion, Types.equalOpinion, opinion, addToAggregate).0;
+      endorsements_ := Votes.putBallot(
+        endorsements_,
+        principal,
+        question_id,
+        opinion,
+        emptyTotals,
+        addToTotals,
+        removeFromTotals
+      ).0;
     };
 
     public func removeOpinion(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.removeBallot(endorsements_, principal, question_id, Types.hashOpinion, Types.equalOpinion, removeFromAggregate).0;
+      endorsements_ := Votes.removeBallot(
+        endorsements_,
+        principal,
+        question_id,
+        removeFromTotals
+      ).0;
     };
 
     public func getOpinionTotals(question_id: Nat) : ?OpinionTotals {
       Votes.getAggregation(endorsements_, question_id);
     };
 
-    func addToAggregate(opinion_totals: ?OpinionTotals, new_opinion: Opinion, old_opinion: ?Opinion) : OpinionTotals {
-      switch(opinion_totals){
-        case(null){
-          switch(old_opinion){
-            // It is the first ballot, initialize totals
-            case(null){ addToTotals(emptyOpinionTotals(), new_opinion); };
-            // It shall be impossible to have no aggregate and somebody already voted
-            case(_){ Debug.trap("If an old ballot has been removed, the aggregate shall already exist."); };
-          };
+  };
+
+  func emptyTotals() : OpinionTotals {
+    { agree = 0.0; neutral = 0.0; disagree = 0.0; };
+  };
+
+  func addToTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
+    switch(opinion){
+      case(#AGREE(agreement)){
+        switch(agreement){
+          case(#ABSOLUTE){ { agree = totals.agree + 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
+          case(#MODERATE){ { agree = totals.agree + 0.5; neutral = totals.neutral + 0.5; disagree = totals.disagree      ; } };
         };
-        case(?totals){
-          var new_totals = addToTotals(totals, new_opinion);
-          switch(old_opinion){
-            // No old opinion, nothing to do
-            case(null){};
-            // Old opinion, remove it
-            case(?old){ new_totals := removeFromTotals(new_totals, old); };
-          };
-          new_totals;
+      };
+      case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral + 1.0; disagree = totals.disagree      ; } };
+      case(#DISAGREE(agreement)){
+        switch(agreement){
+          case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral + 0.5; disagree = totals.disagree + 0.5; } };
+          case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree + 1.0; } };
         };
       };
     };
+  };
 
-    func removeFromAggregate(opinion_totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
-      removeFromTotals(opinion_totals, opinion);
-    };
-
-    func addToTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
-      switch(opinion){
-        case(#AGREE(agreement)){
-          switch(agreement){
-            case(#ABSOLUTE){ { agree = totals.agree + 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
-            case(#MODERATE){ { agree = totals.agree + 0.5; neutral = totals.neutral + 0.5; disagree = totals.disagree      ; } };
-          };
+  func removeFromTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
+    switch(opinion){
+      case(#AGREE(agreement)){
+        switch(agreement){
+          case(#ABSOLUTE){ { agree = totals.agree - 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
+          case(#MODERATE){ { agree = totals.agree - 0.5; neutral = totals.neutral - 0.5; disagree = totals.disagree      ; } };
         };
-        case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral + 1.0; disagree = totals.disagree      ; } };
-        case(#DISAGREE(agreement)){
-          switch(agreement){
-            case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral + 0.5; disagree = totals.disagree + 0.5; } };
-            case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree + 1.0; } };
-          };
+      };
+      case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral - 1.0; disagree = totals.disagree      ; } };
+      case(#DISAGREE(agreement)){
+        switch(agreement){
+          case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral - 0.5; disagree = totals.disagree - 0.5; } };
+          case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree - 1.0; } };
         };
       };
     };
-
-    func removeFromTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
-      switch(opinion){
-        case(#AGREE(agreement)){
-          switch(agreement){
-            case(#ABSOLUTE){ { agree = totals.agree - 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
-            case(#MODERATE){ { agree = totals.agree - 0.5; neutral = totals.neutral - 0.5; disagree = totals.disagree      ; } };
-          };
-        };
-        case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral - 1.0; disagree = totals.disagree      ; } };
-        case(#DISAGREE(agreement)){
-          switch(agreement){
-            case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral - 0.5; disagree = totals.disagree - 0.5; } };
-            case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree - 1.0; } };
-          };
-        };
-      };
-    };
-
   };
 
 };

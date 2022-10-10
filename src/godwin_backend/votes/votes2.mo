@@ -53,18 +53,38 @@ module {
     register: VoteRegister<B, A>,
     user: Principal,
     item: Item,
-    hash: (B) -> Hash,
-    equal: (B, B) -> Bool,
     ballot: B,
-    add_to_aggregate: (?A, B, ?B) -> A
+    empty_aggregate: () -> A,
+    add_to_aggregate: (A, B) -> A,
+    remove_from_aggregate: (A, B) -> A
   ) : (VoteRegister<B, A>, ?B) {
     // Put the ballot in the user's ballots
     let (user_ballots, removed_ballot) = Trie.put(getUserBallots<B, A>(register, user), Types.keyNat(item), Nat.equal, ballot);
     // Return the updated register and the removed ballot if any
+    var aggregate = switch(getAggregation(register, item)){
+      case(null){
+        switch(removed_ballot){
+          // It is the first ballot, initialize aggregate
+          case(null){ add_to_aggregate(empty_aggregate(), ballot); };
+          // It is impossible to not have an aggregate if somebody already voted
+          case(_){ Debug.trap("A ballot has been removed, the aggregate shall already exist."); };
+        };
+      };
+      case(?aggregate){
+        var new_aggregate = add_to_aggregate(aggregate, ballot);
+        switch(removed_ballot){
+          // No old ballot, nothing to do
+          case(null){};
+          // Old ballot, remove it from aggregate
+          case(?removed){ new_aggregate := remove_from_aggregate(new_aggregate, removed); };
+        };
+        new_aggregate;
+      };
+    };
     (
       {
         ballots = Trie.put(register.ballots, Types.keyPrincipal(user), Principal.equal, user_ballots).0;
-        aggregations = Trie.put(register.aggregations, Types.keyNat(item), Nat.equal, add_to_aggregate(getAggregation(register, item), ballot, removed_ballot)).0;
+        aggregations = Trie.put(register.aggregations, Types.keyNat(item), Nat.equal, aggregate).0;
       },
       removed_ballot
     );
@@ -74,8 +94,6 @@ module {
     register: VoteRegister<B, A>,
     user: Principal,
     item: Item,
-    hash: (B) -> Hash,
-    equal: (B, B) -> Bool,
     remove_from_aggregate: (A, B) -> A
   ) : (VoteRegister<B, A>, ?B) {
     // Remove the ballot from the user's ballots
@@ -89,14 +107,14 @@ module {
       case(?old_ballot){
         switch(getAggregation(register, item)){
           case(null){ 
-            Debug.trap("If the user had already voted, the aggregation shall exist.");
+            Debug.trap("A ballot has been removed, the aggregate shall already exist.");
           };
-          case(?item_aggregation) {
+          case(?aggregate) {
             // Return the updated register and removed ballot
             return (
               {
                 ballots = Trie.put(register.ballots, Types.keyPrincipal(user), Principal.equal, user_ballots).0;
-                aggregations = Trie.put(register.aggregations, Types.keyNat(item), Nat.equal, remove_from_aggregate(item_aggregation, old_ballot)).0;
+                aggregations = Trie.put(register.aggregations, Types.keyNat(item), Nat.equal, remove_from_aggregate(aggregate, old_ballot)).0;
               },
               removed_ballot
             );
