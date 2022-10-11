@@ -26,7 +26,7 @@ module {
   func getCategorizationRBTs(per_cat: QuestionsPerCategorization, categorization: Categorization) : Queries.QuestionRBTs {
     switch(categorization){
       case(#PENDING){ per_cat.pending_rbts; };
-      case(#ONGOING(_)){ per_cat.ongoing_rbts; };
+      case(#ONGOING){ per_cat.ongoing_rbts; };
       case(#DONE(_)){ per_cat.done_rbts; };
     };
   };
@@ -34,7 +34,7 @@ module {
   func setCategorizationRBTs(per_cat: QuestionsPerCategorization, categorization: Categorization, rbts: Queries.QuestionRBTs) : QuestionsPerCategorization {
     switch(categorization){
       case(#PENDING){ { pending_rbts = rbts;                 ongoing_rbts = per_cat.ongoing_rbts; done_rbts = per_cat.done_rbts; }; };
-      case(#ONGOING(_)){ { pending_rbts = per_cat.pending_rbts; ongoing_rbts = rbts;                 done_rbts = per_cat.done_rbts; }; };
+      case(#ONGOING){ { pending_rbts = per_cat.pending_rbts; ongoing_rbts = rbts;                 done_rbts = per_cat.done_rbts; }; };
       case(#DONE(_)){ { pending_rbts = per_cat.pending_rbts; ongoing_rbts = per_cat.ongoing_rbts; done_rbts = rbts;              }; };
     };
   };

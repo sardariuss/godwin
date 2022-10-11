@@ -1,4 +1,3 @@
-import RBT "mo:stableRBT/StableRBTree";
 import Trie "mo:base/Trie";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
@@ -22,17 +21,25 @@ module {
     #SECONDS: Nat;
   };
 
-  public type InputParameters = {
+  public type SchedulerParams = {
+    selection_interval: Time;
+    reward_duration: Time;
+    categorization_duration: Time;
+  };
+
+  public type InputSchedulerParams = {
     selection_interval: Duration;
     reward_duration: Duration;
     categorization_duration: Duration;
+  };
+
+  public type InputParameters = {
+    scheduler: InputSchedulerParams;
     categories_definition: InputCategoriesDefinition;
   };
 
   public type Parameters = {
-    selection_interval: Time;
-    reward_duration: Time;
-    categorization_duration: Time;
+    scheduler: SchedulerParams;
     categories_definition: CategoriesDefinition;
   };
 
@@ -168,7 +175,7 @@ module {
     switch(pool){
       case(#SPAWN){ "SPAWN"; };
       case(#REWARD){ "REWARD"; };
-      case(#ARCHIVE){ "ARCHIVE"; }; // @todo: put the opinion votes aggregation in archive ?
+      case(#ARCHIVE){ "ARCHIVE"; };
     };
   };
 
@@ -192,23 +199,5 @@ module {
       profile: Profile;
     };
   };
-
-  public type TotalVotes<B> = {
-    all: Nat;
-    per_ballot: Trie<B, Nat>;
-  };
-
-  public type OrderBy = {
-    #ID;
-    #AUTHOR;
-    #TITLE;
-    #TEXT;
-    #ENDORSEMENTS;
-    #CREATION_DATE;
-    #POOL_DATE;
-    #CATEGORIZATION_DATE;
-  };
-
-  public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
 
 };

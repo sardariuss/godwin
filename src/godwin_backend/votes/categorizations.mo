@@ -6,11 +6,13 @@ import Text "mo:base/Text";
 import Trie "mo:base/Trie";
 
 module {
+
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-
-  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
+  // For convenience: from other modules
   type Categorization = Types.Profile;
+  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
+  
   type SummedCategorizations = {
     count: Nat;
     sum: Categorization;

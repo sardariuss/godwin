@@ -7,9 +7,11 @@ import Trie "mo:base/Trie";
 module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-
-  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
+  // For convenience: from types module
   type Endorsement = Types.Endorsement;
+  // For convenience: from other modules
+  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
+  
   type BallotCount = {
     count: Nat;
   };

@@ -1,23 +1,23 @@
 import Types "types";
 import Questions "questions/questions";
+import Users "users";
 
 import Result "mo:base/Result";
 import Array "mo:base/Array";
 import TrieSet "mo:base/TrieSet";
 import Trie "mo:base/Trie";
-import TrieMap "mo:base/TrieMap";
-import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
+import Principal "mo:base/Principal";
+import Buffer "mo:base/Buffer";
 
 module {
 
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Trie<K, V> = Trie.Trie<K, V>;
-  type TrieMap<K, V> = TrieMap.TrieMap<K, V>;
+  //type TrieMap<K, V> = TrieMap.TrieMap<K, V>;
   type Time = Time.Time;
-
   // For convenience: from types module
   type Category = Types.Category;
   type Question = Types.Question;
@@ -30,16 +30,19 @@ module {
   type Duration = Types.Duration;
   type Sides = Types.Sides;
   type Categorization = Types.Categorization;
-
+  type User = Types.User;
+  type InputSchedulerParams = Types.InputSchedulerParams;
+  type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
-  type QuestionRegister = Questions.QuestionRegister;
+  type Questions = Questions.Questions;
+  type Users = Users.Users;
 
   type GetQuestionError = {
     #QuestionNotFound;
   };
   
-  public func getQuestion(register: QuestionRegister, question_id: Nat) : Result<Question, GetQuestionError> {
-    switch(Trie.get(register.questions, Types.keyNat(question_id), Nat.equal)){
+  public func getQuestion(questions: Questions, question_id: Nat) : Result<Question, GetQuestionError> {
+    switch(questions.findQuestion(question_id)){
       case(null){ #err(#QuestionNotFound); };
       case(?question){ #ok(question); };
     };
@@ -91,13 +94,12 @@ module {
     };
   };
 
-  public func getParameters(input: InputParameters) : Parameters {
+  public func toSchedulerParams(input_params: InputSchedulerParams) : SchedulerParams {
     {
-      selection_interval = toTime(input.selection_interval);
-      reward_duration = toTime(input.reward_duration);
-      categorization_duration = toTime(input.categorization_duration);
-      categories_definition = toCategoriesDefinition(input.categories_definition);
-    }
+      selection_interval = toTime(input_params.selection_interval);
+      reward_duration = toTime(input_params.reward_duration);
+      categorization_duration = toTime(input_params.categorization_duration);
+    };
   };
 
   func toTime(duration: Duration) : Time {
@@ -109,12 +111,38 @@ module {
     };
   };
 
-  func toCategoriesDefinition(input: InputCategoriesDefinition) : CategoriesDefinition {
+  public func toCategoriesDefinition(input: InputCategoriesDefinition) : CategoriesDefinition {
     var categories_definition = Trie.empty<Category, Sides>();
     for ((category, side) in Array.vals(input)){
       categories_definition := Trie.put(categories_definition, Types.keyText(category), Text.equal, side).0;
     };
     categories_definition;
+  };
+
+  public type GetOrCreateUserError = {
+    #IsAnonymous;
+  };
+
+  public func getOrCreateUser(users: Users, principal: Principal) : Result<User, GetOrCreateUserError> {
+    if (Principal.isAnonymous(principal)){
+      #err(#IsAnonymous);
+    } else {
+      switch(users.getUser(principal)){
+        case(?user){ #ok(user); };
+        case(null){ #ok(users.createUser(principal)); };
+      };
+    };
+  };
+
+  public func append<T>(left: [T], right: [T]) : [T] {
+    let buffer = Buffer.Buffer<T>(left.size());
+    for(val in left.vals()){
+      buffer.add(val);
+    };
+    for(val in right.vals()){
+      buffer.add(val);
+    };
+    return buffer.toArray();
   };
 
 };

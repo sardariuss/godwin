@@ -27,17 +27,28 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Pool = Types.Pool;
-  type OrderBy = Types.OrderBy;
-  type QueryQuestionsResult = Types.QueryQuestionsResult;
+  //type OrderBy = Types.OrderBy;
+  //type QueryQuestionsResult = Types.QueryQuestionsResult;
   type Categorization = Types.Categorization;
 
-  // Private types
-  type DateEntry = { date: Time; };
-  type TextEntry = { text: Text; date: Time; };
-  type PoolEntry = { pool: Pool; date: Time; };
-  type EndorsementsEntry = { endorsements: Nat; date: Time; };
-  type CategorizationEntry = { categorization: Categorization; date: Time; };
-  type QuestionKey = {
+  // Public types
+  public type OrderBy = {
+    #ID;
+    #AUTHOR;
+    #TITLE;
+    #TEXT;
+    #ENDORSEMENTS;
+    #CREATION_DATE;
+    #POOL_DATE;
+    #CATEGORIZATION_DATE;
+  };
+
+  public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
+  public type QueryDirection = {
+    #FWD;
+    #BWD;
+  };
+  public type QuestionKey = {
     id: Nat;
     data: {
       #ID;
@@ -50,6 +61,13 @@ module {
       #CATEGORIZATION_DATE: CategorizationEntry;
     };
   };
+
+  // Private types
+  type DateEntry = { date: Time; };
+  type TextEntry = { text: Text; date: Time; };
+  type PoolEntry = { pool: Pool; date: Time; };
+  type EndorsementsEntry = { endorsements: Nat; date: Time; };
+  type CategorizationEntry = { categorization: Categorization; date: Time; };
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
 
   // To be able to use OrderBy as key in a Trie
@@ -288,17 +306,15 @@ module {
     };
   };
 
-  public func entries(rbts: QuestionRBTs, order_by: OrderBy) : Iter<(QuestionKey, ())> {
+  public func entries(rbts: QuestionRBTs, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
     switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
       case(null){ Debug.trap("Cannot find rbt for this order_by"); };
-      case(?rbt){ RBT.entries(rbt); };
-    };
-  };
-
-  public func entriesRev(rbts: QuestionRBTs, order_by: OrderBy) : Iter<(QuestionKey, ())> {
-    switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
-      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
-      case(?rbt){ RBT.entriesRev(rbt); };
+      case(?rbt){ 
+        switch(direction){
+          case(#FWD) { RBT.entries(rbt); };
+          case(#BWD) { RBT.entriesRev(rbt); };
+        };
+      };
     };
   };
 

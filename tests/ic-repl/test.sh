@@ -4,9 +4,11 @@ load "common/install.sh";
 
 // Install the backend canister
 let arguments = record {
-  selection_interval = variant { SECONDS = 0 };
-  reward_duration = variant { SECONDS = 1 };
-  categorization_duration = variant { SECONDS = 1 };
+  scheduler = record {
+    selection_interval = variant { SECONDS = 0 };
+    reward_duration = variant { SECONDS = 1 };
+    categorization_duration = variant { SECONDS = 1 };
+  };
   categories_definition = vec {
     record { category = "IDENTITY"; sides = record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
     record { category = "COOPERATION"; sides = record { left = "INTERNATIONALISM"; right = "NATIONALISM"; } };
@@ -15,10 +17,7 @@ let arguments = record {
     record { category = "CULTURE"; sides = record { left = "PROGRESSIVISM"; right = "CONSERVATISM"; } };
     record { category = "TECHNOLOGY"; sides = record { left = "ECOLOGY"; right = "PRODUCTION"; } };
     record { category = "JUSTICE"; sides = record { left = "REHABILITATION"; right = "PUNITION"; } };
-    record { category = "CHANGE"; sides = record { left = "REVOLUTION"; right = "REFORM"; } } };
-  aggregation_parameters = record {
-    direction_threshold = 0.65;
-    category_threshold = 0.35;
+    record { category = "CHANGE"; sides = record { left = "REVOLUTION"; right = "REFORM"; } } 
   };
 };
 

@@ -7,15 +7,13 @@ import Users "users";
 import Scheduler "scheduler";
 import Utils "utils";
 
-import Trie "mo:base/Trie";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 
-shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParameters) = {
+shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters) = {
 
   // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
 
@@ -23,43 +21,38 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
   type Question = Types.Question;
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
-  type Pool = Types.Pool;
   type User = Types.User;
-  type Parameters = Types.Parameters;
   type InputProfile = Types.InputProfile; 
   type Profile = Types.Profile; 
 
   // Members
-  private stable var admin_ = initializer;
-  private stable var parameters_ = Utils.getParameters(parameters);
-  private stable var last_selection_date_ = Time.now();
-  private stable var users_ = Users.empty();
-  private stable var questions_ = Questions.empty();
-  private var endorsements_ = Endorsements.empty();
-  private var opinions_ = Opinions.empty();
-  private var categorizations_ = Categorizations.empty();
+  var users_ = Users.empty();
+  var questions_ = Questions.empty();
+  var endorsements_ = Endorsements.empty();
+  var opinions_ = Opinions.empty();
+  var categorizations_ = Categorizations.empty();
+  var scheduler_ = Scheduler.Scheduler(Utils.toSchedulerParams(parameters.scheduler), Time.now());
+  stable var categories_definition_ = Utils.toCategoriesDefinition(parameters.categories_definition);
 
   // For upgrades
-  private stable var endorsements_register_ = Endorsements.emptyRegister();
-  private stable var opinions_register_ = Opinions.emptyRegister();
-  private stable var categorizations_register_ = Categorizations.emptyRegister();
-
-  public shared query func getParameters() : async Parameters {
-    return parameters_;
-  };
+  stable var users_register_ = Users.emptyRegister();
+  stable var questions_register_ = Questions.emptyRegister();
+  stable var endorsements_register_ = Endorsements.emptyRegister();
+  stable var opinions_register_ = Opinions.emptyRegister();
+  stable var categorizations_register_ = Categorizations.emptyRegister();
+  stable var scheduler = scheduler_.getParams();
+  stable var scheduler_last_selection_date = scheduler_.getLastSelectionDate();
 
   public type GetQuestionError = {
     #QuestionNotFound;
   };
 
   public shared query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
-    return Utils.getQuestion(questions_, question_id);
+    Utils.getQuestion(questions_, question_id);
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
-    let (questions, question) = Questions.createQuestion(questions_, caller, title, text);
-    questions_ := questions;
-    question;
+    questions_.createQuestion(caller, title, text);
   };
 
   type EndorsementError = {
@@ -86,7 +79,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
         pool = question.pool;
         categorization = question.categorization;
       };
-      questions_ := Questions.replaceQuestion(questions_, updated_question);
+      questions_.replaceQuestion(updated_question);
     });
   };
 
@@ -104,7 +97,7 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
         pool = question.pool;
         categorization = question.categorization;
       };
-      questions_ := Questions.replaceQuestion(questions_, updated_question);
+      questions_.replaceQuestion(updated_question);
     });
   };
 
@@ -136,10 +129,10 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
   };
 
   public shared({caller}) func setCategorization(question_id: Nat, input_categorization: InputProfile) : async Result<(), CategorizationError> {
-    Result.chain<(), (), CategorizationError>(verifyCredentials_(caller), func () {
+    Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Utils.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), CategorizationError>(Utils.verifyCategorizationStage(question, [#ONGOING]), func() { 
-          Result.mapOk<Profile, (), CategorizationError>(Utils.getVerifiedProfile(parameters_.categories_definition, input_categorization), func (categorization: Profile) {
+          Result.mapOk<Profile, (), CategorizationError>(Utils.getVerifiedProfile(categories_definition_, input_categorization), func (categorization: Profile) {
             categorizations_.put(caller, question_id, categorization);
           })
         })
@@ -151,94 +144,60 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
     #InsufficientCredentials;
   };
 
-  func verifyCredentials_(caller: Principal) : Result<(), VerifyCredentialsError> {
-    if (caller != admin_) {
-      #err(#InsufficientCredentials);
-    } else {
-      #ok;
-    };
+  func verifyCredentials(caller: Principal) : Result<(), VerifyCredentialsError> {
+    if (caller != admin_) { #err(#InsufficientCredentials); }
+    else { #ok; };
   };
 
   public shared func run() {
     let time_now = Time.now();
-    // To reward
-    switch(Scheduler.selectQuestion(questions_, last_selection_date_, parameters_.selection_interval, time_now)){
-      case(null){};
-      case(?question){
-        questions_ := Questions.replaceQuestion(questions_, question);
-        last_selection_date_ := time_now;
-      };
-    };
-    // To archive
-    switch(Scheduler.archiveQuestion(questions_, parameters_.reward_duration, time_now)){
-      case(null){};
-      case(?question){
-        questions_ := Questions.replaceQuestion(questions_, question);
-      };
-    };
-    // Categorization to close
-    switch(Scheduler.closeCategorization(questions_, categorizations_, parameters_.categorization_duration, time_now)){
-      case(null){};
-      case(?question){
-        questions_ := Questions.replaceQuestion(questions_, question);
-        // The users that gave their opinion on this questions have to have their convictions updated
-        users_ := Trie.merge(users_, Users.pruneConvictions(users_, opinions_, question), Principal.equal);
-      };
-    };
+    scheduler_.selectQuestion(questions_, time_now);
+    scheduler_.archiveQuestion(questions_, time_now);
+    scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
   };
 
   public type GetOrCreateUserError = {
     #IsAnonymous;
   };
 
-  func getOrCreateUser_(principal: Principal) : Result<User, GetOrCreateUserError> {
-    if (Principal.isAnonymous(principal)){
-      #err(#IsAnonymous);
-    } else {
-      switch(Users.getUser(users_, principal)){
-        case(?user){
-          #ok(user);
-        };
-        case(null){
-          let new_user = Users.newUser(principal);
-          users_ := Users.putUser(users_, new_user).0;
-          #ok(new_user);
-        };
-      };
-    };
-  };
-
   public shared func getOrCreateUser(principal: Principal) : async Result<User, GetOrCreateUserError> {
-    getOrCreateUser_(principal);
+    Utils.getOrCreateUser(users_, principal);
   };
 
   public shared query func getUser(principal: Principal) : async ?User {
-    Users.getUser(users_, principal);
+    users_.getUser(principal);
   };
 
   public shared func updateConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a profile (User). So here we have to create it if not already created.
-    Result.mapOk<User, User, GetOrCreateUserError>(getOrCreateUser_(principal), func(user){
-      let updated_user = Users.updateConvictions(user, questions_, opinions_);
-      users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
-      updated_user;
+    Result.mapOk<User, User, GetOrCreateUserError>(Utils.getOrCreateUser(users_, principal), func(user){
+      users_.updateConvictions(user, questions_, opinions_);
     });
   };
 
   system func preupgrade(){
+    users_register_ := users_.getRegister();
+    questions_register_ := questions_.getRegister();
     endorsements_register_ := endorsements_.getRegister();
     opinions_register_ := opinions_.getRegister();
     categorizations_register_ := categorizations_.getRegister();
+    scheduler := scheduler_.getParams();
+    scheduler_last_selection_date := scheduler_.getLastSelectionDate();
   };
 
   system func postupgrade(){
+    users_ := Users.Users(users_register_);
+    users_register_ := Users.emptyRegister();
+    questions_ := Questions.Questions(questions_register_);
+    questions_register_ := Questions.emptyRegister();
     endorsements_ := Endorsements.Endorsements(endorsements_register_);
     endorsements_register_ := Endorsements.emptyRegister();
     opinions_ := Opinions.Opinions(opinions_register_);
     opinions_register_ := Opinions.emptyRegister();
     categorizations_ := Categorizations.Categorizations(categorizations_register_);
     categorizations_register_ := Categorizations.emptyRegister();
+    scheduler_ := Scheduler.Scheduler(scheduler, scheduler_last_selection_date);
   };
 
 };

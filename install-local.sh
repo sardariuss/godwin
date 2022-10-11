@@ -3,9 +3,11 @@ dfx start --background --clean
 
 # Deploy the backend
 dfx deploy godwin_backend --argument '(record {
-  selection_interval = variant { HOURS = 4 };
-  reward_duration = variant { DAYS = 5 };
-  categorization_duration = variant { DAYS = 5 };
+  scheduler = record {
+    selection_interval = variant { HOURS = 4 };
+    reward_duration = variant { DAYS = 5 };
+    categorization_duration = variant { DAYS = 5 };
+  };
   categories_definition = vec {
     record { "IDENTITY"; record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
     record { "COOPERATION"; record { left = "INTERNATIONALISM"; right = "NATIONALISM"; } };
