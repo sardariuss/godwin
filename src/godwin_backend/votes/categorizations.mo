@@ -1,5 +1,5 @@
 import Types "../types";
-import Votes "votes2";
+import Votes "votes";
 
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
@@ -24,15 +24,15 @@ module {
 
     var categorizations_ = register;
 
-    public func getUserCategorization(principal: Principal) : Trie<Nat, Categorization> {
+    public func getForUser(principal: Principal) : Trie<Nat, Categorization> {
       Votes.getUserBallots(categorizations_, principal);
     };
 
-    public func getCategorization(principal: Principal, question_id: Nat) : ?Categorization {
+    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Categorization {
       Votes.getBallot(categorizations_, principal, question_id);
     };
 
-    public func putCategorization(principal: Principal, question_id: Nat, categorization: Categorization) {
+    public func put(principal: Principal, question_id: Nat, categorization: Categorization) {
       categorizations_ := Votes.putBallot(
         categorizations_,
         principal,
@@ -44,7 +44,7 @@ module {
       ).0;
     };
 
-    public func removeCategorization(principal: Principal, question_id: Nat) {
+    public func remove(principal: Principal, question_id: Nat) {
       categorizations_ := Votes.removeBallot(
         categorizations_,
         principal,
@@ -53,11 +53,11 @@ module {
       ).0;
     };
 
-    public func getAggregatedCategorization(question_id: Nat) : ?Categorization {
+    public func getAggregatedCategorization(question_id: Nat) : Categorization {
       switch(Votes.getAggregation(categorizations_, question_id)){
-        case(null) { null; };
+        case(null) { emptySummedCategorization().sum; };
         case(?aggregation) {
-          ?aggregation.sum; // @todo: normalize from count
+          aggregation.sum; // @todo: normalize from count
         };
       };
     };

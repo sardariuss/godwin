@@ -7,7 +7,6 @@ let arguments = record {
   selection_interval = variant { SECONDS = 0 };
   reward_duration = variant { SECONDS = 1 };
   categorization_duration = variant { SECONDS = 1 };
-  moderate_opinion_coef = 0.5;
   categories_definition = vec {
     record { category = "IDENTITY"; sides = record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
     record { category = "COOPERATION"; sides = record { left = "INTERNATIONALISM"; right = "NATIONALISM"; } };

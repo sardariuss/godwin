@@ -29,6 +29,7 @@ module {
   type Parameters = Types.Parameters;
   type Duration = Types.Duration;
   type Sides = Types.Sides;
+  type Categorization = Types.Categorization;
 
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
@@ -64,28 +65,6 @@ module {
     };
   };
 
-  type CanCategorizeError = {
-    #WrongCategorizationState;
-  };
-
-  public func canCategorize(question: Question) : Result<(), CanCategorizeError> {
-    switch(question.categorization.current.categorization){
-      case(#ONGOING(_)){ #ok; };
-      case(_){ #err(#WrongCategorizationState); };
-    };
-  };
-
-  type GetCategorizationsError = {
-    #WrongCategorizationState;
-  };
-
-  public func getCategorizations(question: Question) : Result<Trie<Principal, Profile>, GetCategorizationsError> {
-    switch(question.categorization.current.categorization){
-      case(#ONGOING(categorizations)){ #ok(categorizations); };
-      case(_){ #err(#WrongCategorizationState); };
-    };
-  };
-
   public type VerifyPoolError = {
     #WrongPool;
   };
@@ -99,12 +78,24 @@ module {
     };
   };
 
+  public type VerifyCategorizationError = {
+    #WrongCategorizationStage;
+  };
+
+  public func verifyCategorizationStage(question: Question, stages: [Categorization]) : Result<(), VerifyCategorizationError> {
+    let set_stages = TrieSet.fromArray<Categorization>(stages, Types.hashCategorization, Types.equalCategorization);
+    let current_stage = question.categorization.current.categorization;
+    switch(Trie.get(set_stages, { key = current_stage; hash = Types.hashCategorization(current_stage) }, Types.equalCategorization)){
+      case(null){ #err(#WrongCategorizationStage); };
+      case(?stage){ #ok; };
+    };
+  };
+
   public func getParameters(input: InputParameters) : Parameters {
     {
       selection_interval = toTime(input.selection_interval);
       reward_duration = toTime(input.reward_duration);
       categorization_duration = toTime(input.categorization_duration);
-      moderate_opinion_coef = input.moderate_opinion_coef;
       categories_definition = toCategoriesDefinition(input.categories_definition);
     }
   };

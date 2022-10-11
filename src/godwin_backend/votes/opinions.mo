@@ -1,5 +1,5 @@
 import Types "../types";
-import Votes "votes2";
+import Votes "votes";
 
 import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
@@ -24,15 +24,15 @@ module {
 
     var endorsements_ = register;
 
-    public func getUserOpinions(principal: Principal) : Trie<Nat, Opinion> {
+    public func getForUser(principal: Principal) : Trie<Nat, Opinion> {
       Votes.getUserBallots(endorsements_, principal);
     };
 
-    public func getOpinion(principal: Principal, question_id: Nat) : ?Opinion {
+    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Opinion {
       Votes.getBallot(endorsements_, principal, question_id);
     };
 
-    public func putOpinion(principal: Principal, question_id: Nat, opinion: Opinion) {
+    public func put(principal: Principal, question_id: Nat, opinion: Opinion) {
       endorsements_ := Votes.putBallot(
         endorsements_,
         principal,
@@ -44,7 +44,7 @@ module {
       ).0;
     };
 
-    public func removeOpinion(principal: Principal, question_id: Nat) {
+    public func remove(principal: Principal, question_id: Nat) {
       endorsements_ := Votes.removeBallot(
         endorsements_,
         principal,
@@ -53,7 +53,7 @@ module {
       ).0;
     };
 
-    public func getOpinionTotals(question_id: Nat) : ?OpinionTotals {
+    public func getTotalsForQuestion(question_id: Nat) : ?OpinionTotals {
       Votes.getAggregation(endorsements_, question_id);
     };
 

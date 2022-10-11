@@ -19,18 +19,8 @@ module {
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
 
-  public func computeQuestionProfile(categorization: Trie<Principal, Profile>) : Profile {
-    var question_profile = Trie.empty<Category, Float>();
-    // Add the profiles given by all the users
-    for ((_, given_profile) in Trie.iter(categorization)){
-      question_profile := addProfile(question_profile, given_profile, 1.0);
-    };
-    // Normalize the summed profiles
-    normalizeSummedProfiles(question_profile, Trie.size(categorization));
-  };
-
   // @todo: iter only on categorized questions
-  public func computeUserProfile(register: QuestionRegister, opinions: Trie<Nat, Opinion>, moderate_opinion_coef: Float) : Profile {
+  public func computeUserProfile(register: QuestionRegister, opinions: Trie<Nat, Opinion>) : Profile {
     var user_profile = Trie.empty<Category, Float>();
     var num_questions : Nat = 0;
     // Add the profiles of the questions the user voted on
@@ -40,7 +30,7 @@ module {
         case(?question){
           switch(question.categorization.current.categorization){
             case(#DONE(question_profile)){
-              user_profile := addProfile(user_profile, question_profile, getOpinionCoef(opinion, moderate_opinion_coef));
+              user_profile := addProfile(user_profile, question_profile, getOpinionCoef(opinion));
               num_questions += 1;
             };
             case(_){};
@@ -75,19 +65,19 @@ module {
     normalized_profile;
   };
 
-  func getOpinionCoef(opinion: Opinion, moderate_coef: Float) : Float {
+  func getOpinionCoef(opinion: Opinion) : Float {
     switch(opinion){
       case(#AGREE(agreement)){
         switch(agreement){
-          case(#ABSOLUTE){       1.0;       };
-          case(#MODERATE){  moderate_coef;  };
+          case(#ABSOLUTE){  1.0; };
+          case(#MODERATE){  0.5; };
         };
       };
-      case(#NEUTRAL)     {       0.0;       };
+      case(#NEUTRAL)     {  0.0; };
       case(#DISAGREE(agreement)){
         switch(agreement){
-          case(#MODERATE){  -moderate_coef; };
-          case(#ABSOLUTE){      -1.0;       };
+          case(#MODERATE){ -0.5; };
+          case(#ABSOLUTE){ -1.0; };
         };
       };
     };

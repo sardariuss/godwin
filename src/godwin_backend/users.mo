@@ -1,7 +1,7 @@
 import Types "types";
-import Votes "votes";
 import Questions "questions/questions";
 import Profile "profile";
+import Opinions "votes/opinions";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -10,18 +10,15 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-
   type Principal = Principal.Principal;
-
   // For convenience: from types module
   type User = Types.User;
   type Question = Types.Question;
-  type VoteRegister<B> = Types.VoteRegister<B>;
   type Opinion = Types.Opinion;
   type Category = Types.Category;
-
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
+  type Opinions = Opinions.Opinions;
 
   public type UserRegister = Trie<Principal, User>;
 
@@ -42,10 +39,10 @@ module {
     { principal = principal; name = null; convictions = { to_update = true; profile = Trie.empty<Category, Float>(); } };
   };
 
-  public func pruneConvictions(register: UserRegister, votes: VoteRegister<Opinion>, question: Question) : Trie<Principal, User>{
+  public func pruneConvictions(register: UserRegister, opinions: Opinions, question: Question) : Trie<Principal, User>{
     var users = Trie.empty<Principal, User>();
     for ((principal, user) in Trie.iter(register)){
-      switch(Votes.getBallot(votes, principal, question.id)){
+      switch(opinions.getForUserAndQuestion(principal, question.id)){
         case(null){};
         case(?opinion){
           let updated_user = {
@@ -60,12 +57,12 @@ module {
     users;
   };
 
-  public func updateConvictions(user: User, register: QuestionRegister, votes: VoteRegister<Opinion>, moderate_opinion_coef: Float) : User {
+  public func updateConvictions(user: User, register: QuestionRegister, opinions: Opinions) : User {
     if (user.convictions.to_update){
       {
         principal = user.principal;
         name = user.name;
-        convictions = { to_update = false; profile = Profile.computeUserProfile(register, Votes.getUserBallots(votes, user.principal), moderate_opinion_coef); };
+        convictions = { to_update = false; profile = Profile.computeUserProfile(register, opinions.getForUser(user.principal)); };
       };
     } else {
       user;

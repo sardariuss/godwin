@@ -1,5 +1,5 @@
 import Types "../types";
-import Votes "votes2";
+import Votes "votes";
 
 import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
@@ -22,36 +22,36 @@ module {
 
     var endorsements_ = register;
 
-    public func getUserEndorsements(principal: Principal) : Trie<Nat, Endorsement> {
+    public func getForUser(principal: Principal) : Trie<Nat, Endorsement> {
       Votes.getUserBallots(endorsements_, principal);
     };
 
-    public func getEndorsement(principal: Principal, question_id: Nat) : ?Endorsement {
+    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Endorsement {
       Votes.getBallot(endorsements_, principal, question_id);
     };
 
-    public func putEndorsement(principal: Principal, question_id: Nat) {
+    public func put(principal: Principal, question_id: Nat) {
       endorsements_ := Votes.putBallot(
         endorsements_,
         principal,
         question_id,
         #ENDORSE,
-        emptyAggregate,
-        addToAggregate,
-        removeFromAggregate
+        emptyBallotCount,
+        addToBallotCount,
+        removeFromBallotCount
       ).0;
     };
 
-    public func removeEndorsement(principal: Principal, question_id: Nat) {
+    public func remove(principal: Principal, question_id: Nat) {
       endorsements_ := Votes.removeBallot(
         endorsements_,
         principal,
         question_id,
-        removeFromAggregate
+        removeFromBallotCount
       ).0;
     };
 
-    public func getTotalEndorsements(question_id: Nat) : Nat {
+    public func getTotalForQuestion(question_id: Nat) : Nat {
       switch(Votes.getAggregation(endorsements_, question_id)){
         case(null) { 0; };
         case(?aggregation) {
@@ -62,15 +62,15 @@ module {
 
   };
 
-  func emptyAggregate() : BallotCount {
+  func emptyBallotCount() : BallotCount {
     { count = 0; };
   };
 
-  func addToAggregate(aggregate: BallotCount, new_ballot: Endorsement) : BallotCount {
+  func addToBallotCount(aggregate: BallotCount, new_ballot: Endorsement) : BallotCount {
     { count = aggregate.count + 1; };
   };
 
-  func removeFromAggregate(aggregate: BallotCount, ballot: Endorsement) : BallotCount {
+  func removeFromBallotCount(aggregate: BallotCount, ballot: Endorsement) : BallotCount {
     { count = aggregate.count - 1; };
   };
 

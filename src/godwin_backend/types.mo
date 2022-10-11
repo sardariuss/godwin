@@ -26,7 +26,6 @@ module {
     selection_interval: Duration;
     reward_duration: Duration;
     categorization_duration: Duration;
-    moderate_opinion_coef: Float;
     categories_definition: InputCategoriesDefinition;
   };
 
@@ -34,7 +33,6 @@ module {
     selection_interval: Time;
     reward_duration: Time;
     categorization_duration: Time;
-    moderate_opinion_coef: Float;
     categories_definition: CategoriesDefinition;
   };
 
@@ -141,8 +139,24 @@ module {
 
   public type Categorization = {
     #PENDING;
-    #ONGOING: Trie<Principal, Profile>; // @todo: should be put out of the enum, because right now it is public (because Question type is public)
+    #ONGOING;
     #DONE: Profile;
+  };
+
+  public func toTextCategorization(categorization: Categorization) : Text {
+    switch(categorization){
+      case(#PENDING){ "PENDING"; };
+      case(#ONGOING){ "ONGOING"; };
+      case(#DONE(profile)){ "DONE"; };
+    };
+  };
+
+  public func hashCategorization(categorization: Categorization) : Hash.Hash { 
+    Text.hash(toTextCategorization(categorization));
+  };
+
+  public func equalCategorization(a: Categorization, b:Categorization) : Bool {
+    a == b;
   };
 
   public type DatedCategorization = {
@@ -154,7 +168,7 @@ module {
     switch(pool){
       case(#SPAWN){ "SPAWN"; };
       case(#REWARD){ "REWARD"; };
-      case(#ARCHIVE){ "ARCHIVE"; };
+      case(#ARCHIVE){ "ARCHIVE"; }; // @todo: put the opinion votes aggregation in archive ?
     };
   };
 
@@ -177,13 +191,6 @@ module {
       to_update: Bool;
       profile: Profile;
     };
-  };
-
-  public type VoteRegister<B> = {
-    // map<user, map<item, ballot>>
-    ballots: Trie<Principal, Trie<Nat, B>>;
-    // map<item, map<ballot, sum>>
-    totals: Trie<Nat, TotalVotes<B>>;
   };
 
   public type TotalVotes<B> = {

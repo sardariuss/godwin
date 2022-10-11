@@ -1,6 +1,7 @@
 import Types "types";
 import Questions "questions/questions";
 import Queries "questions/queries";
+import Categorizations "votes/categorizations";
 import Profile "profile";
 
 import Array "mo:base/Array";
@@ -13,15 +14,13 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Time = Time.Time;
-
   // For convenience: from types module
   type Question = Types.Question;
   type CategoriesDefinition = Types.CategoriesDefinition;
-  type VoteRegister<B> = Types.VoteRegister<B>;
   type Profile = Types.Profile;
-
   // For convenience: from other modules
   type QuestionRegister = Questions.QuestionRegister;
+  type Categorizations = Categorizations.Categorizations;
 
   public func selectQuestion(register: QuestionRegister, last_selection_date: Time, selection_frequence: Time, time_now: Time) : ?Question {
     if (last_selection_date + selection_frequence > time_now) { null; }
@@ -71,7 +70,7 @@ module {
                   history = Array.append(question.pool.history, [ question.pool.current ]);
                 };
                 categorization = {
-                  current = { date = time_now; categorization = #ONGOING(Trie.empty<Principal, Profile>()); };
+                  current = { date = time_now; categorization = #ONGOING; };
                   history = Array.append(question.categorization.history, [ question.categorization.current ]);
                 };
               };
@@ -82,7 +81,7 @@ module {
     };
   };
 
-  public func closeCategorization(register: QuestionRegister, categorization_duration: Time, time_now: Time) : ?Question {
+  public func closeCategorization(register: QuestionRegister, categorizations: Categorizations, categorization_duration: Time, time_now: Time) : ?Question {
     // Get the oldest question currently being categorized
     switch (Queries.entries(register.per_categorization.ongoing_rbts, #CATEGORIZATION_DATE).next()){
       case(null){ null; };
@@ -91,27 +90,23 @@ module {
         switch(Trie.get(register.questions, Types.keyNat(key_val.0.id), Nat.equal)){
           case(null){ null; }; // @todo: trap instead?
           case(?question){
-            switch(question.categorization.current.categorization){
-              case(#ONGOING(categorizations)){
-                // If enough time has passed (categorization_duration), compute the question profile and put categorization at done
-                if (question.categorization.current.date + categorization_duration > time_now) { null; }
-                else {
-                  ?{
-                    id = question.id;
-                    author = question.author;
-                    title = question.title;
-                    text = question.text;
-                    date = question.date;
-                    endorsements = question.endorsements;
-                    pool = question.pool;
-                    categorization = {
-                      current = { date = time_now; categorization = #DONE(Profile.computeQuestionProfile(categorizations)); };
-                      history = Array.append(question.categorization.history, [ question.categorization.current ]);
-                    };
-                  };
+            // @todo: assert question.categorization.current.categorization == ONGOING
+            // If enough time has passed (categorization_duration), compute the question profile and put categorization at done
+            if (question.categorization.current.date + categorization_duration > time_now) { null; }
+            else {
+              ?{
+                id = question.id;
+                author = question.author;
+                title = question.title;
+                text = question.text;
+                date = question.date;
+                endorsements = question.endorsements;
+                pool = question.pool;
+                categorization = {
+                  current = { date = time_now; categorization = #DONE(categorizations.getAggregatedCategorization(question.id)); };
+                  history = Array.append(question.categorization.history, [ question.categorization.current ]);
                 };
               };
-              case(_){ null; }; // @todo: trap instead?
             };
           };
         };
