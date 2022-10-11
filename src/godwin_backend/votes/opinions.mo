@@ -16,25 +16,33 @@ module {
     disagree: Float;
   };
 
+  public func emptyRegister() : VoteRegister<Opinion, OpinionTotals> {
+    Votes.empty<Opinion, OpinionTotals>();
+  };
+
   public func empty() : Opinions {
-    Opinions(Votes.empty<Opinion, OpinionTotals>());
+    Opinions(emptyRegister());
   };
 
   public class Opinions(register: VoteRegister<Opinion, OpinionTotals>) {
 
-    var endorsements_ = register;
+    var register_ = register;
+
+    public func getRegister() : VoteRegister<Opinion, OpinionTotals> {
+      register_;
+    };
 
     public func getForUser(principal: Principal) : Trie<Nat, Opinion> {
-      Votes.getUserBallots(endorsements_, principal);
+      Votes.getUserBallots(register_, principal);
     };
 
     public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Opinion {
-      Votes.getBallot(endorsements_, principal, question_id);
+      Votes.getBallot(register_, principal, question_id);
     };
 
     public func put(principal: Principal, question_id: Nat, opinion: Opinion) {
-      endorsements_ := Votes.putBallot(
-        endorsements_,
+      register_ := Votes.putBallot(
+        register_,
         principal,
         question_id,
         opinion,
@@ -45,8 +53,8 @@ module {
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.removeBallot(
-        endorsements_,
+      register_ := Votes.removeBallot(
+        register_,
         principal,
         question_id,
         removeFromTotals
@@ -54,7 +62,7 @@ module {
     };
 
     public func getTotalsForQuestion(question_id: Nat) : ?OpinionTotals {
-      Votes.getAggregation(endorsements_, question_id);
+      Votes.getAggregation(register_, question_id);
     };
 
   };

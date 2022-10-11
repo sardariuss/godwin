@@ -14,25 +14,33 @@ module {
     count: Nat;
   };
 
+  public func emptyRegister() : VoteRegister<Endorsement, BallotCount> {
+    Votes.empty<Endorsement, BallotCount>();
+  };
+
   public func empty() : Endorsements {
-    Endorsements(Votes.empty<Endorsement, BallotCount>());
+    Endorsements(emptyRegister());
   };
 
   public class Endorsements(register: VoteRegister<Endorsement, BallotCount>) {
 
-    var endorsements_ = register;
+    var register_ = register;
+
+    public func getRegister() : VoteRegister<Endorsement, BallotCount> {
+      register_;
+    };
 
     public func getForUser(principal: Principal) : Trie<Nat, Endorsement> {
-      Votes.getUserBallots(endorsements_, principal);
+      Votes.getUserBallots(register_, principal);
     };
 
     public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Endorsement {
-      Votes.getBallot(endorsements_, principal, question_id);
+      Votes.getBallot(register_, principal, question_id);
     };
 
     public func put(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.putBallot(
-        endorsements_,
+      register_ := Votes.putBallot(
+        register_,
         principal,
         question_id,
         #ENDORSE,
@@ -43,8 +51,8 @@ module {
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      endorsements_ := Votes.removeBallot(
-        endorsements_,
+      register_ := Votes.removeBallot(
+        register_,
         principal,
         question_id,
         removeFromBallotCount
@@ -52,7 +60,7 @@ module {
     };
 
     public func getTotalForQuestion(question_id: Nat) : Nat {
-      switch(Votes.getAggregation(endorsements_, question_id)){
+      switch(Votes.getAggregation(register_, question_id)){
         case(null) { 0; };
         case(?aggregation) {
           aggregation.count;

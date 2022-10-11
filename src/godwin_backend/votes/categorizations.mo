@@ -16,25 +16,33 @@ module {
     sum: Categorization;
   };
 
+  public func emptyRegister() : VoteRegister<Categorization, SummedCategorizations> {
+    Votes.empty<Categorization, SummedCategorizations>();
+  };
+
   public func empty() : Categorizations {
-    Categorizations(Votes.empty<Categorization, SummedCategorizations>());
+    Categorizations(emptyRegister());
   };
 
   public class Categorizations(register: VoteRegister<Categorization, SummedCategorizations>) {
 
-    var categorizations_ = register;
+    var register_ = register;
+
+    public func getRegister() : VoteRegister<Categorization, SummedCategorizations> {
+      register_;
+    };
 
     public func getForUser(principal: Principal) : Trie<Nat, Categorization> {
-      Votes.getUserBallots(categorizations_, principal);
+      Votes.getUserBallots(register_, principal);
     };
 
     public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Categorization {
-      Votes.getBallot(categorizations_, principal, question_id);
+      Votes.getBallot(register_, principal, question_id);
     };
 
     public func put(principal: Principal, question_id: Nat, categorization: Categorization) {
-      categorizations_ := Votes.putBallot(
-        categorizations_,
+      register_ := Votes.putBallot(
+        register_,
         principal,
         question_id,
         categorization,
@@ -45,8 +53,8 @@ module {
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      categorizations_ := Votes.removeBallot(
-        categorizations_,
+      register_ := Votes.removeBallot(
+        register_,
         principal,
         question_id,
         removeFromSummedCategorization
@@ -54,7 +62,7 @@ module {
     };
 
     public func getAggregatedCategorization(question_id: Nat) : Categorization {
-      switch(Votes.getAggregation(categorizations_, question_id)){
+      switch(Votes.getAggregation(register_, question_id)){
         case(null) { emptySummedCategorization().sum; };
         case(?aggregation) {
           aggregation.sum; // @todo: normalize from count

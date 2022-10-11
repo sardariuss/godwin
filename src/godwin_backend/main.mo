@@ -35,9 +35,14 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
   private stable var last_selection_date_ = Time.now();
   private stable var users_ = Users.empty();
   private stable var questions_ = Questions.empty();
-  private let endorsements_ = Endorsements.empty(); // @todo: add to preUpdate and postUpdate methods
-  private let opinions_ = Opinions.empty(); // @todo: add to preUpdate and postUpdate methods
-  private let categorizations_ = Categorizations.empty(); // @todo: add to preUpdate and postUpdate methods
+  private var endorsements_ = Endorsements.empty();
+  private var opinions_ = Opinions.empty();
+  private var categorizations_ = Categorizations.empty();
+
+  // For upgrades
+  private stable var endorsements_register_ = Endorsements.emptyRegister();
+  private stable var opinions_register_ = Opinions.emptyRegister();
+  private stable var categorizations_register_ = Categorizations.emptyRegister();
 
   public shared query func getParameters() : async Parameters {
     return parameters_;
@@ -219,6 +224,21 @@ shared({ caller = initializer }) actor class Godwin(parameters: Types.InputParam
       users_ := Trie.put(users_, Types.keyPrincipal(principal), Principal.equal, updated_user).0;
       updated_user;
     });
+  };
+
+  system func preupgrade(){
+    endorsements_register_ := endorsements_.getRegister();
+    opinions_register_ := opinions_.getRegister();
+    categorizations_register_ := categorizations_.getRegister();
+  };
+
+  system func postupgrade(){
+    endorsements_ := Endorsements.Endorsements(endorsements_register_);
+    endorsements_register_ := Endorsements.emptyRegister();
+    opinions_ := Opinions.Opinions(opinions_register_);
+    opinions_register_ := Opinions.emptyRegister();
+    categorizations_ := Categorizations.Categorizations(categorizations_register_);
+    categorizations_register_ := Categorizations.emptyRegister();
   };
 
 };
