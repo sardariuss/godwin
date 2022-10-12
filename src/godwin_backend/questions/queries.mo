@@ -1,4 +1,5 @@
 import Types "../types";
+import StageHistory "../stageHistory";
 
 import RBT "mo:stableRBT/StableRBTree";
 
@@ -26,10 +27,10 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Pool = Types.Pool;
+  type SelectionStage = Types.SelectionStage;
   //type OrderBy = Types.OrderBy;
   //type QueryQuestionsResult = Types.QueryQuestionsResult;
-  type Categorization = Types.Categorization;
+  type CategorizationStage = Types.CategorizationStage;
 
   // Public types
   public type OrderBy = {
@@ -39,8 +40,8 @@ module {
     #TEXT;
     #ENDORSEMENTS;
     #CREATION_DATE;
-    #POOL_DATE;
-    #CATEGORIZATION_DATE;
+    #SELECTION_STAGE_DATE;
+    #CATEGORIZATION_STAGE_DATE;
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
@@ -57,17 +58,17 @@ module {
       #TEXT: TextEntry;
       #ENDORSEMENTS: EndorsementsEntry;
       #CREATION_DATE: DateEntry;
-      #POOL_DATE: PoolEntry;
-      #CATEGORIZATION_DATE: CategorizationEntry;
+      #SELECTION_STAGE_DATE: SelectionStageEntry;
+      #CATEGORIZATION_STAGE_DATE: CategorizationStageEntry;
     };
   };
 
   // Private types
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
-  type PoolEntry = { pool: Pool; date: Time; };
+  type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
   type EndorsementsEntry = { endorsements: Nat; date: Time; };
-  type CategorizationEntry = { categorization: Categorization; date: Time; };
+  type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
 
   // To be able to use OrderBy as key in a Trie
@@ -79,8 +80,8 @@ module {
       case(#TEXT){ "TEXT"; };
       case(#ENDORSEMENTS){ "ENDORSEMENTS"; };
       case(#CREATION_DATE){ "CREATION_DATE"; };
-      case(#POOL_DATE){ "POOL_DATE"; };
-      case(#CATEGORIZATION_DATE){ "CATEGORIZATION"; };
+      case(#SELECTION_STAGE_DATE){ "SELECTION_STAGE_DATE"; };
+      case(#CATEGORIZATION_STAGE_DATE){ "CATEGORIZATION"; };
     };
   };
   func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -96,20 +97,32 @@ module {
       case(#TEXT){ { id = question.id; data = #TEXT(initTextEntry(question)); } };
       case(#ENDORSEMENTS){ { id = question.id; data = #ENDORSEMENTS(initEndorsementsEntry(question)); } };
       case(#CREATION_DATE){ { id = question.id; data = #CREATION_DATE(initDateEntry(question)); } };
-      case(#POOL_DATE){ { id = question.id; data = #POOL_DATE(initPoolEntry(question)); } };
-      case(#CATEGORIZATION_DATE){ { id = question.id; data = #CATEGORIZATION_DATE(initCategorizationEntry(question)); } };
+      case(#SELECTION_STAGE_DATE){ { id = question.id; data = #SELECTION_STAGE_DATE(initSelectionStageEntry(question)); } };
+      case(#CATEGORIZATION_STAGE_DATE){ { id = question.id; data = #CATEGORIZATION_STAGE_DATE(initCategorizationStageEntry(question)); } };
     };
   };
   func initDateEntry(question: Question) : DateEntry { {date = question.date; }; };
   func initAuthorEntry(question: Question) : TextEntry { { text = Principal.toText(question.author); date = question.date; }; };
   func initTitleEntry(question: Question) : TextEntry { { text = question.title; date = question.date; }; };
   func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.date; };};
-  func initPoolEntry(question: Question) : PoolEntry { { pool = question.pool.current.pool; date = question.pool.current.date; }; };
-  func initEndorsementsEntry(question: Question) : EndorsementsEntry { { endorsements = question.endorsements; date = question.pool.current.date; }; };
-  func initCategorizationEntry(question: Question) : CategorizationEntry { 
+  func initSelectionStageEntry(question: Question) : SelectionStageEntry { 
+    let stage_record = StageHistory.getActiveStageRecord(question.selection_stage);
+    {
+      selection_stage = stage_record.stage;
+      date = stage_record.timestamp;
+    }; 
+  };
+  func initEndorsementsEntry(question: Question) : EndorsementsEntry { 
     { 
-      categorization = question.categorization.current.categorization;
-      date = question.categorization.current.date;
+      endorsements = question.endorsements; 
+      date = StageHistory.getActiveTimestamp(question.selection_stage); 
+    }; 
+  };
+  func initCategorizationStageEntry(question: Question) : CategorizationStageEntry {
+    let stage_record = StageHistory.getActiveStageRecord(question.categorization_stage);
+    { 
+      categorization_stage = stage_record.stage;
+      date = stage_record.timestamp;
     };
   };
 
@@ -153,15 +166,15 @@ module {
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
-      case(#POOL_DATE(entry_a)){
+      case(#SELECTION_STAGE_DATE(entry_a)){
         switch(b.data){
-          case(#POOL_DATE(entry_b)){ comparePoolEntry(entry_a, entry_b, default_order); };
+          case(#SELECTION_STAGE_DATE(entry_b)){ compareSelectionStageEntry(entry_a, entry_b, default_order); };
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
-      case(#CATEGORIZATION_DATE(entry_a)){
+      case(#CATEGORIZATION_STAGE_DATE(entry_a)){
         switch(b.data){
-          case(#CATEGORIZATION_DATE(entry_b)){ compareCategorizationEntry(entry_a, entry_b, default_order); };
+          case(#CATEGORIZATION_STAGE_DATE(entry_b)){ compareCategorizationStageEntry(entry_a, entry_b, default_order); };
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
@@ -184,21 +197,21 @@ module {
       case(#equal){ compareDateEntry(a, b, default_order); };
     };
   };
-  func comparePoolEntry(a: PoolEntry, b: PoolEntry, default_order: Order) : Order {
-    switch(a.pool){
-      case(#SPAWN){
-        switch(b.pool){
-          case(#SPAWN){ compareDateEntry(a, b, default_order); }; case(#REWARD){ #less; }; case(#ARCHIVE){ #less; };
+  func compareSelectionStageEntry(a: SelectionStageEntry, b: SelectionStageEntry, default_order: Order) : Order {
+    switch(a.selection_stage){
+      case(#CREATED){
+        switch(b.selection_stage){
+          case(#CREATED){ compareDateEntry(a, b, default_order); }; case(#SELECTED){ #less; }; case(#ARCHIVED){ #less; };
         };
       };
-      case(#REWARD){
-        switch(b.pool){
-          case(#SPAWN){ #greater; }; case(#REWARD){ compareDateEntry(a, b, default_order); }; case(#ARCHIVE){ #less; };
+      case(#SELECTED){
+        switch(b.selection_stage){
+          case(#CREATED){ #greater; }; case(#SELECTED){ compareDateEntry(a, b, default_order); }; case(#ARCHIVED){ #less; };
         };
       };
-      case(#ARCHIVE){
-        switch(b.pool){
-          case(#SPAWN){ #greater; }; case(#REWARD){ #greater; }; case(#ARCHIVE){ compareDateEntry(a, b, default_order); };
+      case(#ARCHIVED){
+        switch(b.selection_stage){
+          case(#CREATED){ #greater; }; case(#SELECTED){ #greater; }; case(#ARCHIVED){ compareDateEntry(a, b, default_order); };
         };
       };
     };
@@ -208,20 +221,20 @@ module {
     else if (a.endorsements > b.endorsements){ #greater;}
     else { compareDateEntry(a, b, default_order); };
   };
-  func compareCategorizationEntry(a: CategorizationEntry, b: CategorizationEntry, default_order: Order) : Order {
-    switch(a.categorization){
+  func compareCategorizationStageEntry(a: CategorizationStageEntry, b: CategorizationStageEntry, default_order: Order) : Order {
+    switch(a.categorization_stage){
       case(#PENDING){
-        switch(b.categorization){
+        switch(b.categorization_stage){
           case(#PENDING){ compareDateEntry(a, b, default_order); }; case(#ONGOING(_)){ #less; }; case(#DONE(_)){ #less; };
         };
       };
       case(#ONGOING(_)){
-        switch(b.categorization){
+        switch(b.categorization_stage){
           case(#PENDING){ #greater; }; case(#ONGOING(_)){ compareDateEntry(a, b, default_order); }; case(#DONE(_)){ #less; };
         };
       };
       case(#DONE(_)){
-        switch(b.categorization){
+        switch(b.categorization_stage){
           case(#PENDING){ #greater; }; case(#ONGOING(_)){ #greater; }; case(#DONE(_)){ compareDateEntry(a, b, default_order); };
         };
       };

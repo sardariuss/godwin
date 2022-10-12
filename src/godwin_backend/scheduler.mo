@@ -4,6 +4,7 @@ import Categorizations "votes/categorizations";
 import Opinions "votes/opinions";
 import Users "users";
 import Utils "utils";
+import StageHistory "stageHistory";
 
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
@@ -19,7 +20,7 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type CategoriesDefinition = Types.CategoriesDefinition;
-  type Profile = Types.Profile;
+  type Categorization = Types.Categorization;
   type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
   type Users = Users.Users;
@@ -43,12 +44,12 @@ module {
 
     public func selectQuestion(questions: Questions, time_now: Time) {
       if (last_selection_date_ + params_.selection_interval < time_now) {
-        switch(Questions.nextQuestion(questions, questions.getQuestionsInPool(#SPAWN, #ENDORSEMENTS, #BWD))){
+        switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){
           case(null){};
           case(?question){
-            // Verify the question is in the spawn pool
-            if (question.pool.current.pool != #SPAWN){
-              Debug.trap("Question is not in the spawn pool.");
+            // Verify the question is in the created selection_stage
+            if (StageHistory.getActiveStage(question.selection_stage) != #CREATED){
+              Debug.trap("Question is not in the created selection_stage.");
             };
             questions.replaceQuestion({
               id = question.id;
@@ -57,11 +58,8 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              pool = {
-                current = { date = time_now; pool = #REWARD; };
-                history = Utils.append(question.pool.history, [ question.pool.current ]);
-              };
-              categorization = question.categorization;
+              selection_stage = StageHistory.setActiveStage(question.selection_stage, #SELECTED);
+              categorization_stage = question.categorization_stage;
             });
             last_selection_date_ := time_now;
           };
@@ -69,16 +67,16 @@ module {
       };
     };
 
-    public func archiveQuestion(questions: Questions, time_now: Time) {
-      switch(Questions.nextQuestion(questions, questions.getQuestionsInPool(#REWARD, #POOL_DATE, #FWD))){
+    public func archivedQuestion(questions: Questions, time_now: Time) {
+      switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){
         case(null){};
         case(?question){
-          // Verify the question is in the reward pool
-          if (question.pool.current.pool != #REWARD){
-            Debug.trap("The question is not in the reward pool.");
+          // Verify the question is in the selected selection_stage
+          if (StageHistory.getActiveStage(question.selection_stage) != #SELECTED){
+            Debug.trap("The question is not in the selected selection_stage.");
           };
-          // If enough time has passed, archive the question
-          if (time_now > question.pool.current.date + params_.reward_duration) {
+          // If enough time has passed, archived the question
+          if (time_now > StageHistory.getActiveTimestamp(question.selection_stage) + params_.selected_duration) {
             questions.replaceQuestion({
               id = question.id;
               author = question.author;
@@ -86,14 +84,8 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              pool = {
-                current = { date = time_now; pool = #ARCHIVE; };
-                history = Utils.append(question.pool.history, [ question.pool.current ]);
-              };
-              categorization = {
-                current = { date = time_now; categorization = #ONGOING; };
-                history = Utils.append(question.categorization.history, [ question.categorization.current ]);
-              };
+              selection_stage = StageHistory.setActiveStage(question.selection_stage, #ARCHIVED);
+              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, #ONGOING);
             });
           };
         };
@@ -102,15 +94,15 @@ module {
 
     public func closeCategorization(questions: Questions, users: Users, opinions: Opinions, categorizations: Categorizations, time_now: Time) {
       // Get the oldest question currently being categorized
-      switch(Questions.nextQuestion(questions, questions.getQuestionsInCategorization(#ONGOING, #CATEGORIZATION_DATE, #FWD))){
-        case(null){}; // If there is no question with ongoing categorization, there is nothing to do
+      switch(Questions.nextQuestion(questions, questions.getInCategorizationStage(#ONGOING, #CATEGORIZATION_STAGE_DATE, #FWD))){
+        case(null){}; // If there is no question with ongoing categorization_stage, there is nothing to do
         case(?question){
-          // Verify the question categorization is ongoing
-          if (question.categorization.current.categorization != #ONGOING){
-            Debug.trap("The question categorization is not ongoing.");
+          // Verify the question categorization_stage is ongoing
+          if (StageHistory.getActiveStage(question.categorization_stage) != #ONGOING){
+            Debug.trap("The question categorization_stage is not ongoing.");
           };
-          // If enough time has passed, put the categorization at done and save its aggregation
-          if (time_now > question.categorization.current.date + params_.categorization_duration) {
+          // If enough time has passed, put the categorization_stage at done and save its aggregation
+          if (time_now > StageHistory.getActiveTimestamp(question.categorization_stage) + params_.categorization_stage_duration) {
             questions.replaceQuestion({
               id = question.id;
               author = question.author;
@@ -118,13 +110,13 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              pool = question.pool;
-              categorization = {
-                current = { date = time_now; categorization = #DONE(categorizations.getAggregatedCategorization(question.id)); };
-                history = Utils.append(question.categorization.history, [ question.categorization.current ]);
-              };
+              selection_stage = question.selection_stage;
+              categorization_stage =  StageHistory.setActiveStage(
+                question.categorization_stage, 
+                #DONE(categorizations.getAggregatedCategorization(question.id))
+              );
             });
-            // Prune convictions of user who give their opinion on this question to force to recompute their profile
+            // Prune convictions of user who give their opinion on this question to force to recompute their categorization
             users.pruneConvictions(opinions, question);
           };
         };

@@ -18,13 +18,13 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 ## Roadmap:
 
 ### V0.1
-- 4 pools of questions: new, to vote, to categorize, *closed*
+- questions can pass into 3 selection stages: created, selected, archived
 - users can ask new questions
 - users can upvote/downvote new questions
 - users can vote on open questions
 - admin is able to assign one category for each side (agree/disagree)
 - user profiles get updated after question categorization
-- question status (NEW/OPEN/CATEGORIZED/CLOSED) gets updated according to the rules
+- question status gets updated according to the rules
 - suport change of parameters as admin:
   - number of questions that are open daily
   - duration question open
@@ -51,6 +51,8 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
  - be able to rare NFTs vs tokens
 
 ### Later
+ - add decay so the older the question (or the vote?) the less change on the user profile
+ - add profile indicators (boldness etc.)
  - add possibility to comment questions (ordered by upvote, like reddit)
  - add moderating features (tag questions as duplicate, hide sensitive questions)
  - be able to follow users

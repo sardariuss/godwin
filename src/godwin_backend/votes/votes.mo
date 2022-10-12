@@ -13,6 +13,7 @@ module {
   type Hash = Hash.Hash;
   type Principal = Principal.Principal;
 
+  // B for ballot, A for aggregation
   public type VoteRegister<B, A> = {
     // map<user, map<item, ballot>>
     ballots: Trie<Principal, Trie<Nat, B>>;

@@ -10,7 +10,7 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from other modules
-  type Categorization = Types.Profile;
+  type Categorization = Types.Categorization;
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
   
   type SummedCategorizations = {
@@ -88,8 +88,8 @@ module {
     for ((category, sum) in Trie.iter(summed_categorization.sum)){
       switch(Trie.get(categorization, Types.keyText(category), Text.equal)){
         case(null) { Debug.trap("@todo"); };
-        case(?profile) {
-          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum + profile).0;
+        case(?categorization) {
+          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum + categorization).0;
         };
       };
     };
@@ -105,8 +105,8 @@ module {
     for ((category, sum) in Trie.iter(summed_categorization.sum)){
       switch(Trie.get(categorization, Types.keyText(category), Text.equal)){
         case(null) { Debug.trap("@todo"); };
-        case(?profile) {
-          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum - profile).0;
+        case(?categorization) {
+          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum - categorization).0;
         };
       };
     };

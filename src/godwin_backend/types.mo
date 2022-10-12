@@ -23,14 +23,14 @@ module {
 
   public type SchedulerParams = {
     selection_interval: Time;
-    reward_duration: Time;
-    categorization_duration: Time;
+    selected_duration: Time;
+    categorization_stage_duration: Time;
   };
 
   public type InputSchedulerParams = {
     selection_interval: Duration;
-    reward_duration: Duration;
-    categorization_duration: Duration;
+    selected_duration: Duration;
+    categorization_stage_duration: Duration;
   };
 
   public type InputParameters = {
@@ -50,23 +50,16 @@ module {
     text: Text;
     date: Time;
     endorsements: Nat;
-    pool: {
-      current: DatedPool;
-      history: PoolHistory;
-    };
-    categorization: {
-      current: DatedCategorization;
-      history: CategorizationHistory;
-    };
+    selection_stage: StageHistory<SelectionStage>;
+    categorization_stage: StageHistory<CategorizationStage>;
   };
 
-  public type PoolHistory = [DatedPool];
-  public type CategorizationHistory = [DatedCategorization];
-
-  public type DatedPool = {
-    date: Time;
-    pool: Pool;
+  public type StageRecord<S> = {
+    timestamp: Time;
+    stage: S;
   };
+
+  public type StageHistory<S> = [StageRecord<S>];
 
   public type Category = Text;
 
@@ -87,12 +80,6 @@ module {
     #ENDORSE;
   };
 
-  public func hashEndorsement(e : Endorsement) : Hash { Int.hash(0); };
-
-  public func equalEndorsement(a: Endorsement, b: Endorsement) : Bool { 
-    a == b;
-  };
-
   public type AgreementDegree = {
     #ABSOLUTE;
     #MODERATE;
@@ -104,91 +91,20 @@ module {
     #DISAGREE: AgreementDegree;
   };
 
-  public func toTextOpinion(opinion: Opinion) : Text {
-    switch(opinion){
-      case(#AGREE(conviction)){
-        switch(conviction){
-          case(#ABSOLUTE){"ABS_AGREE";};
-          case(#MODERATE){"RATHER_AGREE";};
-        };
-      };
-      case(#NEUTRAL){"NEUTRAL";};
-      case(#DISAGREE(conviction)){
-        switch(conviction){
-          case(#ABSOLUTE){"ABS_DISAGREE";};
-          case(#MODERATE){"RATHER_DISAGREE";};
-        };
-      };
-    };
+  public type SelectionStage = {
+    #CREATED;
+    #SELECTED;
+    #ARCHIVED; // @todo: add opinion aggregation here?
   };
 
-  public func hashOpinion(opinion: Opinion) : Hash.Hash { 
-    Text.hash(toTextOpinion(opinion));
-  };
+  public type CategorizationArray = [(Category, Float)];
 
-  public func equalOpinion(a: Opinion, b:Opinion) : Bool {
-    a == b;
-  };
+  public type Categorization = Trie<Category, Float>;
 
-  public func keyOpinion(opinion: Opinion) : Key<Opinion> {
-    return { key = opinion; hash = hashOpinion(opinion); }
-  };
-
-  public type Pool = {
-    #SPAWN;
-    #REWARD;
-    #ARCHIVE;
-  };
-
-  public type InputProfile = [(Category, Float)];
-
-  public type Profile = Trie<Category, Float>;
-
-  public type Categorization = {
+  public type CategorizationStage = {
     #PENDING;
     #ONGOING;
-    #DONE: Profile;
-  };
-
-  public func toTextCategorization(categorization: Categorization) : Text {
-    switch(categorization){
-      case(#PENDING){ "PENDING"; };
-      case(#ONGOING){ "ONGOING"; };
-      case(#DONE(profile)){ "DONE"; };
-    };
-  };
-
-  public func hashCategorization(categorization: Categorization) : Hash.Hash { 
-    Text.hash(toTextCategorization(categorization));
-  };
-
-  public func equalCategorization(a: Categorization, b:Categorization) : Bool {
-    a == b;
-  };
-
-  public type DatedCategorization = {
-    date: Time;
-    categorization: Categorization;
-  };
-
-  public func toTextPool(pool: Pool) : Text {
-    switch(pool){
-      case(#SPAWN){ "SPAWN"; };
-      case(#REWARD){ "REWARD"; };
-      case(#ARCHIVE){ "ARCHIVE"; };
-    };
-  };
-
-  public func hashPool(pool: Pool) : Hash.Hash { 
-    Text.hash(toTextPool(pool));
-  };
-
-  public func equalPool(a: Pool, b:Pool) : Bool {
-    a == b;
-  };
-
-  public func keyPool(pool: Pool) : Key<Pool> {
-    return { key = pool; hash = hashPool(pool); }
+    #DONE: Categorization;
   };
 
   public type User = {
@@ -196,7 +112,7 @@ module {
     name: ?Text;
     convictions: {
       to_update: Bool;
-      profile: Profile;
+      categorization: Categorization;
     };
   };
 

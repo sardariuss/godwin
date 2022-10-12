@@ -1,6 +1,7 @@
 import Types "types";
 import Questions "questions/questions";
 import Users "users";
+import StageHistory "stageHistory";
 
 import Result "mo:base/Result";
 import Array "mo:base/Array";
@@ -22,14 +23,14 @@ module {
   type Category = Types.Category;
   type Question = Types.Question;
   type CategoriesDefinition = Types.CategoriesDefinition;
-  type Pool = Types.Pool;
-  type Profile = Types.Profile;
+  type SelectionStage = Types.SelectionStage;
+  type Categorization = Types.Categorization;
   type InputParameters = Types.InputParameters;
   type InputCategoriesDefinition = Types.InputCategoriesDefinition;
   type Parameters = Types.Parameters;
   type Duration = Types.Duration;
   type Sides = Types.Sides;
-  type Categorization = Types.Categorization;
+  type CategorizationStage = Types.CategorizationStage;
   type User = Types.User;
   type InputSchedulerParams = Types.InputSchedulerParams;
   type SchedulerParams = Types.SchedulerParams;
@@ -48,57 +49,55 @@ module {
     };
   };
 
-  type ProfileError = {
+  type CategorizationError = {
     #InvalidCategory;
     #CategoriesMissing;
   };
 
-  public func getVerifiedProfile(definitions: CategoriesDefinition, profile: [(Text, Float)]) : Result<Profile, ProfileError> {
-    var verified_profile = Trie.empty<Category, Float>();
-    for ((category, cursor) in Array.vals(profile)){
+  public func getVerifiedCategorization(definitions: CategoriesDefinition, categorization: [(Text, Float)]) : Result<Categorization, CategorizationError> {
+    var verified_categorization = Trie.empty<Category, Float>();
+    for ((category, cursor) in Array.vals(categorization)){
       switch(Trie.get(definitions, Types.keyText(category), Text.equal)){
         case(null) { return #err(#InvalidCategory); };
-        case(_) { verified_profile := Trie.put(verified_profile, Types.keyText(category), Text.equal, cursor).0;}
+        case(_) { verified_categorization := Trie.put(verified_categorization, Types.keyText(category), Text.equal, cursor).0;}
       };
     };
-    if (Trie.size(verified_profile) != Trie.size(definitions)){
+    if (Trie.size(verified_categorization) != Trie.size(definitions)){
       #err(#CategoriesMissing);
     } else {
-      #ok(verified_profile); 
+      #ok(verified_categorization); 
     };
   };
 
-  public type VerifyPoolError = {
-    #WrongPool;
+  public type VerifySelectionStageError = {
+    #WrongSelectionStage;
   };
 
-  public func verifyCurrentPool(question: Question, pools: [Pool]) : Result<(), VerifyPoolError> {
-    let set_pools = TrieSet.fromArray<Pool>(pools, Types.hashPool, Types.equalPool);
-    let current_pool = question.pool.current.pool;
-    switch(Trie.get(set_pools, { key = current_pool; hash = Types.hashPool(current_pool) }, Types.equalPool)){
-      case(null){ #err(#WrongPool); };
-      case(?pool){ #ok; };
+  public func verifyCurrentSelectionStage(question: Question, stages: [SelectionStage]) : Result<(), VerifySelectionStageError> {
+    let current_stage = StageHistory.getActiveStage(question.selection_stage);
+    for (stage in Array.vals(stages)){
+      if (stage == current_stage) { return #ok; };        
     };
+    #err(#WrongSelectionStage);
   };
 
-  public type VerifyCategorizationError = {
+  public type VerifyCategorizationStageError = {
     #WrongCategorizationStage;
   };
 
-  public func verifyCategorizationStage(question: Question, stages: [Categorization]) : Result<(), VerifyCategorizationError> {
-    let set_stages = TrieSet.fromArray<Categorization>(stages, Types.hashCategorization, Types.equalCategorization);
-    let current_stage = question.categorization.current.categorization;
-    switch(Trie.get(set_stages, { key = current_stage; hash = Types.hashCategorization(current_stage) }, Types.equalCategorization)){
-      case(null){ #err(#WrongCategorizationStage); };
-      case(?stage){ #ok; };
+  public func verifyCategorizationStage(question: Question, stages: [CategorizationStage]) : Result<(), VerifyCategorizationStageError> {
+    let current_stage = StageHistory.getActiveStage(question.categorization_stage);
+    for (stage in Array.vals(stages)){
+      if (stage == current_stage) { return #ok; };        
     };
+    #err(#WrongCategorizationStage);
   };
 
   public func toSchedulerParams(input_params: InputSchedulerParams) : SchedulerParams {
     {
       selection_interval = toTime(input_params.selection_interval);
-      reward_duration = toTime(input_params.reward_duration);
-      categorization_duration = toTime(input_params.categorization_duration);
+      selected_duration = toTime(input_params.selected_duration);
+      categorization_stage_duration = toTime(input_params.categorization_stage_duration);
     };
   };
 

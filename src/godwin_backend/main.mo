@@ -22,8 +22,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
   type User = Types.User;
-  type InputProfile = Types.InputProfile; 
-  type Profile = Types.Profile; 
+  type CategorizationArray = Types.CategorizationArray; 
+  type Categorization = Types.Categorization; 
 
   // Members
   var users_ = Users.empty();
@@ -76,8 +76,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
         text = question.text;
         date = question.date;
         endorsements = endorsements_.getTotalForQuestion(question.id);
-        pool = question.pool;
-        categorization = question.categorization;
+        selection_stage = question.selection_stage;
+        categorization_stage = question.categorization_stage;
       };
       questions_.replaceQuestion(updated_question);
     });
@@ -94,8 +94,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
         text = question.text;
         date = question.date;
         endorsements = endorsements_.getTotalForQuestion(question.id);
-        pool = question.pool;
-        categorization = question.categorization;
+        selection_stage = question.selection_stage;
+        categorization_stage = question.categorization_stage;
       };
       questions_.replaceQuestion(updated_question);
     });
@@ -103,7 +103,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   type OpinionError = {
     #QuestionNotFound;
-    #WrongPool;
+    #WrongSelectionStage;
   };
 
   public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Opinion, OpinionError> {
@@ -114,7 +114,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
     Result.chain<Question, (), OpinionError>(Utils.getQuestion(questions_, question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(Utils.verifyCurrentPool(question, [#REWARD, #ARCHIVE]), func() {
+      Result.mapOk<(), (), OpinionError>(Utils.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), func() {
         opinions_.put(caller, question_id, opinion);
       })
     });
@@ -128,11 +128,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     #WrongCategorizationStage;
   };
 
-  public shared({caller}) func setCategorization(question_id: Nat, input_categorization: InputProfile) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(question_id: Nat, input_categorization: CategorizationArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Utils.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), CategorizationError>(Utils.verifyCategorizationStage(question, [#ONGOING]), func() { 
-          Result.mapOk<Profile, (), CategorizationError>(Utils.getVerifiedProfile(categories_definition_, input_categorization), func (categorization: Profile) {
+          Result.mapOk<Categorization, (), CategorizationError>(Utils.getVerifiedCategorization(categories_definition_, input_categorization), func (categorization: Categorization) {
             categorizations_.put(caller, question_id, categorization);
           })
         })
@@ -152,7 +152,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   public shared func run() {
     let time_now = Time.now();
     scheduler_.selectQuestion(questions_, time_now);
-    scheduler_.archiveQuestion(questions_, time_now);
+    scheduler_.archivedQuestion(questions_, time_now);
     scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
   };
 
@@ -170,7 +170,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   public shared func updateConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
-    // and so on before "creating" a profile (User). So here we have to create it if not already created.
+    // and so on before "creating" a categorization (User). So here we have to create it if not already created.
     Result.mapOk<User, User, GetOrCreateUserError>(Utils.getOrCreateUser(users_, principal), func(user){
       users_.updateConvictions(user, questions_, opinions_);
     });

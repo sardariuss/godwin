@@ -28,22 +28,22 @@ let backend = installBackend(arguments);
 //import backend = "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
 call backend.createQuestion("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society.", "");
-assert _ ~= record { id = (0 : nat); pool = record { current = record { pool = variant { SPAWN } }}};
+assert _ ~= record { id = (0 : nat); selection_stage = record { current = record { selection_stage = variant { SPAWN } }}};
 
 call backend.getQuestion(0);
-assert _ ~= variant { ok = record { id = (0 : nat); pool = record { current = record { pool = variant { SPAWN } }}}};
+assert _ ~= variant { ok = record { id = (0 : nat); selection_stage = record { current = record { selection_stage = variant { SPAWN } }}}};
 
 call backend.setEndorsement(0);
 assert _ == variant { ok };
 call backend.setOpinion(0, variant { AGREE = variant { ABSOLUTE } });
-assert _ == variant { err = variant { WrongPool } };
+assert _ == variant { err = variant { WrongSelectionStage } };
 call backend.setCategory(0, record { category = "IDENTITY"; direction = variant { LR }});
 assert _ == variant { err = variant { WrongCategorizationState } };
 call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  pool = record { current = record { pool = variant { REWARD } }};
+  selection_stage = record { current = record { selection_stage = variant { REWARD } }};
   categorization = record { 
     current = record { categorization = variant { PENDING } };
   };
@@ -57,7 +57,7 @@ call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  pool = record { current = record { pool = variant { ARCHIVE } }};
+  selection_stage = record { current = record { selection_stage = variant { ARCHIVE } }};
   categorization = record { 
     current = record { categorization = variant { ONGOING } };
   };
@@ -69,7 +69,7 @@ call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  pool = record { current = record { pool = variant { ARCHIVE } }};
+  selection_stage = record { current = record { selection_stage = variant { ARCHIVE } }};
   categorization = record { 
     current = record { categorization = variant { DONE = vec { record { category = "IDENTITY"; direction = variant { LR }} } } };
   };

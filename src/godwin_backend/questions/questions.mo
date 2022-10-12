@@ -1,7 +1,8 @@
 import Types "../types";
-import PerPool "perPool";
-import PerCategorization "perCategorization";
+import PerSelectionStage "perSelectionStage";
+import PerCategorizationStage "perCategorizationStage";
 import Queries "queries";
+import StageHistory "../stageHistory";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -19,11 +20,11 @@ module {
   type Iter<T> = Iter.Iter<T>;
   // For convenience: from types module
   type Question = Types.Question;
-  type Pool = Types.Pool;
-  type Categorization = Types.Categorization;
+  type SelectionStage = Types.SelectionStage;
+  type CategorizationStage = Types.CategorizationStage;
   // For convenience: from other modules
-  type QuestionsPerPool = PerPool.QuestionsPerPool;
-  type QuestionsPerCategorization = PerCategorization.QuestionsPerCategorization;
+  type PerSelectionStage = PerSelectionStage.PerSelectionStage;
+  type PerCategorizationStage = PerCategorizationStage.PerCategorizationStage;
   type QuestionKey = Queries.QuestionKey;
   type OrderBy = Queries.OrderBy;
   type QueryDirection = Queries.QueryDirection;
@@ -31,16 +32,16 @@ module {
   type Register = {
     questions: Trie<Nat, Question>;
     question_index: Nat;
-    per_pool: QuestionsPerPool;
-    per_categorization : QuestionsPerCategorization;
+    per_selection_stage: PerSelectionStage;
+    per_categorization_stage : PerCategorizationStage;
   };
 
   public func emptyRegister() : Register {
     {
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
-      per_pool = PerPool.empty();
-      per_categorization = PerCategorization.empty();
+      per_selection_stage = PerSelectionStage.empty();
+      per_categorization_stage = PerCategorizationStage.empty();
     };
   };
 
@@ -67,19 +68,19 @@ module {
       Trie.get(register_.questions, Types.keyNat(question_id), Nat.equal);
     };
 
-    public func getQuestionsInPool(pool: Pool, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
-      switch(pool){
-        case(#SPAWN){ Queries.entries(register_.per_pool.spawn_rbts, order_by, direction); };
-        case(#REWARD){ Queries.entries(register_.per_pool.reward_rbts, order_by, direction); };
-        case(#ARCHIVE){ Queries.entries(register_.per_pool.archive_rbts, order_by, direction); };
+    public func getInSelectionStage(selection_stage: SelectionStage, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+      switch(selection_stage){
+        case(#CREATED){ Queries.entries(register_.per_selection_stage.created_rbts, order_by, direction); };
+        case(#SELECTED){ Queries.entries(register_.per_selection_stage.selected_rbts, order_by, direction); };
+        case(#ARCHIVED){ Queries.entries(register_.per_selection_stage.archived_rbts, order_by, direction); };
       };
     };
 
-    public func getQuestionsInCategorization(categorization: Categorization, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
-      switch(categorization){
-        case(#PENDING) { Queries.entries(register_.per_categorization.pending_rbts, order_by, direction); }; 
-        case(#ONGOING) { Queries.entries(register_.per_categorization.ongoing_rbts, order_by, direction); }; 
-        case(#DONE(_)) { Queries.entries(register_.per_categorization.done_rbts, order_by, direction); }; 
+    public func getInCategorizationStage(categorization_stage: CategorizationStage, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+      switch(categorization_stage){
+        case(#PENDING) { Queries.entries(register_.per_categorization_stage.pending_rbts, order_by, direction); }; 
+        case(#ONGOING) { Queries.entries(register_.per_categorization_stage.ongoing_rbts, order_by, direction); }; 
+        case(#DONE(_)) { Queries.entries(register_.per_categorization_stage.done_rbts, order_by, direction); }; 
       };
     };
 
@@ -92,14 +93,14 @@ module {
         text = text;
         date = time_now;
         endorsements = 0;
-        pool = { current = { date = time_now; pool = #SPAWN;}; history = []; };
-        categorization = { current = {date = time_now; categorization = #PENDING;}; history = []; };
+        selection_stage = StageHistory.initStageHistory(#CREATED);
+        categorization_stage =  StageHistory.initStageHistory(#PENDING);
       };
       register_ := {
         questions = Trie.put(register_.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register_.question_index + 1;
-        per_pool = PerPool.addQuestion(register_.per_pool, question);
-        per_categorization = PerCategorization.addQuestion(register_.per_categorization, question);
+        per_selection_stage = PerSelectionStage.addQuestion(register_.per_selection_stage, question);
+        per_categorization_stage = PerCategorizationStage.addQuestion(register_.per_categorization_stage, question);
       };
       question;
     };
@@ -112,8 +113,8 @@ module {
           register_ := {
             questions = questions;
             question_index = register_.question_index;
-            per_pool = PerPool.replaceQuestion(register_.per_pool, old_question, question);
-            per_categorization = PerCategorization.replaceQuestion(register_.per_categorization, old_question, question);
+            per_selection_stage = PerSelectionStage.replaceQuestion(register_.per_selection_stage, old_question, question);
+            per_categorization_stage = PerCategorizationStage.replaceQuestion(register_.per_categorization_stage, old_question, question);
           };
         };
       };

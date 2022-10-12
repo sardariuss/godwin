@@ -23,10 +23,9 @@ class TestQueries() = {
   let { run;test;suite; } = Suite;
   // For convenience: from types module
   type Question = Types.Question;
-  type OrderBy = Types.OrderBy;
-  type QueryQuestionsResult = Types.QueryQuestionsResult;
   // For convenience: from queries module
   type QuestionRBTs = Queries.QuestionRBTs;
+  type QueryQuestionsResult = Queries.QueryQuestionsResult;
 
   type TestableQueryQuestionsResult = Testable.TestableItem<QueryQuestionsResult>;
 
@@ -75,16 +74,16 @@ class TestQueries() = {
   let principal_3 = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe");
   let principal_4 = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae");
 
-  let question_0 =                           { id = 0; author = principal_0; title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; endorsements = 13; pool = { current = { date = 8493; pool = #SPAWN;};   history = []; }; categorization = { current = {date = 1283; categorization = #PENDING;};  history = []; }};
-  let question_0_text_update =               { id = 0; author = principal_0; title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; endorsements = 13; pool = { current = { date = 8493; pool = #SPAWN;};   history = []; }; categorization = { current = {date = 1283; categorization = #PENDING;};  history = []; }};
-  let question_1 =                           { id = 1; author = principal_1; title = "Patents should not exist.";                                                        text = ""; date = 2432; endorsements = 2;  pool = { current = { date = 2432; pool = #ARCHIVE;}; history = []; }; categorization = { current = {date = 9372; categorization = #ONGOING;};  history = []; }};
-  let question_1_date_update =               { id = 1; author = principal_1; title = "Patents should not exist.";                                                        text = ""; date = 5123; endorsements = 2;  pool = { current = { date = 2432; pool = #ARCHIVE;}; history = []; }; categorization = { current = {date = 9372; categorization = #ONGOING;};  history = []; }};
-  let question_2 =                           { id = 2; author = principal_2; title = "Marriage should be abolished.";                                                    text = ""; date = 3132; endorsements = 43; pool = { current = { date = 3132; pool = #REWARD;};  history = []; }; categorization = { current = {date = 3610; categorization = #DONE([]);}; history = []; }};
-  let question_2_endorsements_update =       { id = 2; author = principal_2; title = "Marriage should be abolished.";                                                    text = ""; date = 3132; endorsements = 9;  pool = { current = { date = 3132; pool = #REWARD;};  history = []; }; categorization = { current = {date = 3610; categorization = #DONE([]);}; history = []; }};
-  let question_3 =                           { id = 3; author = principal_3; title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; endorsements = 21; pool = { current = { date = 4213; pool = #SPAWN;};   history = []; }; categorization = { current = {date = 4721; categorization = #PENDING;};  history = []; }};
-  let question_3_pool_update =               { id = 3; author = principal_3; title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; endorsements = 21; pool = { current = { date = 4213; pool = #ARCHIVE;}; history = []; }; categorization = { current = {date = 4721; categorization = #PENDING;};  history = []; }};
-  let question_4 =                           { id = 4; author = principal_4; title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; endorsements = 20; pool = { current = { date = 9711; pool = #REWARD;};  history = []; }; categorization = { current = {date = 9473; categorization = #DONE([]);}; history = []; }};
-  let question_4_categorization_update =     { id = 4; author = principal_4; title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; endorsements = 20; pool = { current = { date = 9711; pool = #REWARD;};  history = []; }; categorization = { current = {date = 9473; categorization = #PENDING;};  history = []; }};
+  let question_0 =                           { id = 0; author = principal_0; title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; endorsements = 13; selection_stage = { current = { date = 8493; selection_stage = #CREATED;};   history = []; }; categorization = { current = {date = 1283; categorization = #PENDING;};  history = []; }};
+  let question_0_text_update =               { id = 0; author = principal_0; title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; endorsements = 13; selection_stage = { current = { date = 8493; selection_stage = #CREATED;};   history = []; }; categorization = { current = {date = 1283; categorization = #PENDING;};  history = []; }};
+  let question_1 =                           { id = 1; author = principal_1; title = "Patents should not exist.";                                                        text = ""; date = 2432; endorsements = 2;  selection_stage = { current = { date = 2432; selection_stage = #ARCHIVED;}; history = []; }; categorization = { current = {date = 9372; categorization = #ONGOING;};  history = []; }};
+  let question_1_date_update =               { id = 1; author = principal_1; title = "Patents should not exist.";                                                        text = ""; date = 5123; endorsements = 2;  selection_stage = { current = { date = 2432; selection_stage = #ARCHIVED;}; history = []; }; categorization = { current = {date = 9372; categorization = #ONGOING;};  history = []; }};
+  let question_2 =                           { id = 2; author = principal_2; title = "Marriage should be abolished.";                                                    text = ""; date = 3132; endorsements = 43; selection_stage = { current = { date = 3132; selection_stage = #SELECTED;};  history = []; }; categorization = { current = {date = 3610; categorization = #DONE([]);}; history = []; }};
+  let question_2_endorsements_update =       { id = 2; author = principal_2; title = "Marriage should be abolished.";                                                    text = ""; date = 3132; endorsements = 9;  selection_stage = { current = { date = 3132; selection_stage = #SELECTED;};  history = []; }; categorization = { current = {date = 3610; categorization = #DONE([]);}; history = []; }};
+  let question_3 =                           { id = 3; author = principal_3; title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; endorsements = 21; selection_stage = { current = { date = 4213; selection_stage = #CREATED;};   history = []; }; categorization = { current = {date = 4721; categorization = #PENDING;};  history = []; }};
+  let question_3_selection_stage_update =               { id = 3; author = principal_3; title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; endorsements = 21; selection_stage = { current = { date = 4213; selection_stage = #ARCHIVED;}; history = []; }; categorization = { current = {date = 4721; categorization = #PENDING;};  history = []; }};
+  let question_4 =                           { id = 4; author = principal_4; title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; endorsements = 20; selection_stage = { current = { date = 9711; selection_stage = #SELECTED;};  history = []; }; categorization = { current = {date = 9473; categorization = #DONE([]);}; history = []; }};
+  let question_4_categorization_update =     { id = 4; author = principal_4; title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; endorsements = 20; selection_stage = { current = { date = 9711; selection_stage = #SELECTED;};  history = []; }; categorization = { current = {date = 9473; categorization = #PENDING;};  history = []; }};
 
   func addQuestions(_rbts: QuestionRBTs) : QuestionRBTs {
     var rbts = _rbts;
@@ -101,7 +100,7 @@ class TestQueries() = {
     rbts := Queries.replace(rbts, question_0, question_0_text_update);
     rbts := Queries.replace(rbts, question_1, question_1_date_update);
     rbts := Queries.replace(rbts, question_2, question_2_endorsements_update);
-    rbts := Queries.replace(rbts, question_3, question_3_pool_update);
+    rbts := Queries.replace(rbts, question_3, question_3_selection_stage_update);
     rbts := Queries.replace(rbts, question_4, question_4_categorization_update);
     rbts;
   };
@@ -117,8 +116,8 @@ class TestQueries() = {
   rbts_ := Queries.addOrderBy(rbts_, #TITLE);
   rbts_ := Queries.addOrderBy(rbts_, #ENDORSEMENTS);
   rbts_ := Queries.addOrderBy(rbts_, #CREATION_DATE);
-  rbts_ := Queries.addOrderBy(rbts_, #POOL_DATE);
-  rbts_ := Queries.addOrderBy(rbts_, #CATEGORIZATION_DATE);
+  rbts_ := Queries.addOrderBy(rbts_, #SELECTION_STAGE_DATE);
+  rbts_ := Queries.addOrderBy(rbts_, #CATEGORIZATION_STAGE_DATE);
   let rbts_add_scenario_ = addQuestions(rbts_);
   let rbts_replace_scenario = replaceQuestions(rbts_add_scenario_);
   let rbts_remove_scenario = removeQuestions(rbts_add_scenario_);
@@ -128,8 +127,8 @@ class TestQueries() = {
     test("Query by #TITLE",               { ids = [4, 3, 2];       next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #TITLE,               null, null, #fwd, 3 )))),
     test("Query by #CREATION_DATE",       { ids = [4, 0, 3, 2];    next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #CREATION_DATE,       null, null, #bwd, 4 )))),
     test("Query by #ENDORSEMENTS",        { ids = [2, 3, 4, 0, 1]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #ENDORSEMENTS,        null, null, #bwd, 5 )))),
-    test("Query by #POOL_DATE",           { ids = [3, 0, 2, 4];    next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #POOL_DATE,           null, null, #fwd, 4 )))),
-    test("Query by #CATEGORIZATION_DATE", { ids = [0, 3, 1, 2];    next_id = ?4;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #CATEGORIZATION_DATE, null, null, #fwd, 4 )))),
+    test("Query by #SELECTION_STAGE_DATE",           { ids = [3, 0, 2, 4];    next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #SELECTION_STAGE_DATE,           null, null, #fwd, 4 )))),
+    test("Query by #CATEGORIZATION_STAGE_DATE", { ids = [0, 3, 1, 2];    next_id = ?4;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_add_scenario_, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))),
   ]);
 
   public let suiteReplaceQuestions = suite("Queries after questions have been added and replaced", [
@@ -137,8 +136,8 @@ class TestQueries() = {
     test("Query by #TITLE",               { ids = [0, 4, 3];       next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #TITLE,               null, null, #fwd, 3 )))),
     test("Query by #CREATION_DATE",       { ids = [4, 0, 1, 3];    next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #CREATION_DATE,       null, null, #bwd, 4 )))),
     test("Query by #ENDORSEMENTS",        { ids = [3, 4, 0, 2, 1]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #ENDORSEMENTS,        null, null, #bwd, 5 )))),
-    test("Query by #POOL_DATE",           { ids = [0, 2, 4, 1];    next_id = ?3;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #POOL_DATE,           null, null, #fwd, 4 )))),
-    test("Query by #CATEGORIZATION_DATE", { ids = [0, 3, 4, 1];    next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #CATEGORIZATION_DATE, null, null, #fwd, 4 )))),
+    test("Query by #SELECTION_STAGE_DATE",           { ids = [0, 2, 4, 1];    next_id = ?3;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #SELECTION_STAGE_DATE,           null, null, #fwd, 4 )))),
+    test("Query by #CATEGORIZATION_STAGE_DATE", { ids = [0, 3, 4, 1];    next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replace_scenario, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))),
   ]);
 
   public let suiteRemoveQuestions = suite("Queries after questions have been added and some removed", [
@@ -146,8 +145,8 @@ class TestQueries() = {
     test("Query by #TITLE",               { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #TITLE,               null, null, #fwd, 3 )))),
     test("Query by #CREATION_DATE",       { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #CREATION_DATE,       null, null, #bwd, 4 )))),
     test("Query by #ENDORSEMENTS",        { ids = [2, 3, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #ENDORSEMENTS,        null, null, #bwd, 5 )))),
-    test("Query by #POOL_DATE",           { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #POOL_DATE,           null, null, #fwd, 4 )))),
-    test("Query by #CATEGORIZATION_DATE", { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #CATEGORIZATION_DATE, null, null, #fwd, 4 )))),
+    test("Query by #SELECTION_STAGE_DATE",           { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #SELECTION_STAGE_DATE,           null, null, #fwd, 4 )))),
+    test("Query by #CATEGORIZATION_STAGE_DATE", { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_remove_scenario, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))),
   ]);
 
 };
