@@ -7,6 +7,7 @@ import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Float "mo:base/Float";
+import Array "mo:base/Array";
 
 module {
 
@@ -19,6 +20,7 @@ module {
   type Category = Types.Category;
   type Categorization = Types.Categorization;
   type Opinion = Types.Opinion;
+  type CategorizationArray = Types.CategorizationArray;
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Opinions = Opinions.Opinions;
@@ -99,7 +101,7 @@ module {
     // Add the categorizations of the questions the user voted on
     for ((question_id, opinion) in Trie.iter(user_opinions)){
       let question = questions.getQuestion(question_id);
-      switch(StageHistory.getActiveStage(question.categorization_stage)){
+      switch(StageHistory.getActiveStage(question.categorization_stage).stage){
         case(#DONE(question_categorization)){
           user_categorization := sumCategorization(user_categorization, question_categorization, getOpinionCoef(opinion));
           num_questions += 1;
@@ -111,10 +113,10 @@ module {
     normalizeSummedCategorizations(user_categorization, num_questions);
   };
 
-  func sumCategorization(summed_categorization: Categorization, categorization: Categorization, coef: Float) : Categorization {
+  func sumCategorization(summed_categorization: Categorization, question_categorization: CategorizationArray, coef: Float) : Categorization {
     // @todo: what if they don't have the same size and keys ?
     var new_summed_categorization = summed_categorization;
-    for ((category, cursor) in Trie.iter(categorization)){
+    for ((category, cursor) in Array.vals(question_categorization)){
       let summed_cursor = switch (Trie.get(summed_categorization, Types.keyText(category), Text.equal)){
         case(null) { 0.0; };
         case(?old_cursor) { old_cursor; };

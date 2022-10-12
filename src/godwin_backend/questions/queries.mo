@@ -106,7 +106,7 @@ module {
   func initTitleEntry(question: Question) : TextEntry { { text = question.title; date = question.date; }; };
   func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.date; };};
   func initSelectionStageEntry(question: Question) : SelectionStageEntry { 
-    let stage_record = StageHistory.getActiveStageRecord(question.selection_stage);
+    let stage_record = StageHistory.getActiveStage(question.selection_stage);
     {
       selection_stage = stage_record.stage;
       date = stage_record.timestamp;
@@ -115,11 +115,11 @@ module {
   func initEndorsementsEntry(question: Question) : EndorsementsEntry { 
     { 
       endorsements = question.endorsements; 
-      date = StageHistory.getActiveTimestamp(question.selection_stage); 
+      date = StageHistory.getActiveStage(question.selection_stage).timestamp;
     }; 
   };
   func initCategorizationStageEntry(question: Question) : CategorizationStageEntry {
-    let stage_record = StageHistory.getActiveStageRecord(question.categorization_stage);
+    let stage_record = StageHistory.getActiveStage(question.categorization_stage);
     { 
       categorization_stage = stage_record.stage;
       date = stage_record.timestamp;

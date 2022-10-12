@@ -42,7 +42,7 @@ module {
   };
 
   public func addQuestion(per_selection_stage: PerSelectionStage, question: Question) : PerSelectionStage {
-    if (StageHistory.getActiveStage(question.selection_stage) != #CREATED) {
+    if (StageHistory.getActiveStage(question.selection_stage).stage != #CREATED) {
       Debug.trap("Cannot add a question which current selection_stage is different from #CREATED");
     };
     {
@@ -54,8 +54,8 @@ module {
 
   public func replaceQuestion(per_selection_stage: PerSelectionStage, old_question: Question, new_question: Question) : PerSelectionStage {
     var updated_per_selection_stage = per_selection_stage;
-    let old_selection_stage = StageHistory.getActiveStage(old_question.selection_stage);
-    let new_selection_stage = StageHistory.getActiveStage(new_question.selection_stage);
+    let old_selection_stage = StageHistory.getActiveStage(old_question.selection_stage).stage;
+    let new_selection_stage = StageHistory.getActiveStage(new_question.selection_stage).stage;
     if (old_selection_stage == new_selection_stage) {
       // Replace in current selection_stage
       var rbts = getSelectionStageRBTs(updated_per_selection_stage, old_selection_stage);
@@ -75,7 +75,7 @@ module {
   };
 
   public func removeQuestion(per_selection_stage: PerSelectionStage, question: Question) : PerSelectionStage {
-    let current_selection_stage = StageHistory.getActiveStage(question.selection_stage);
+    let current_selection_stage = StageHistory.getActiveStage(question.selection_stage).stage;
     var rbts = getSelectionStageRBTs(per_selection_stage, current_selection_stage);
     rbts := Queries.remove(rbts, question);
     setSelectionStageRBTs(per_selection_stage, current_selection_stage, rbts);

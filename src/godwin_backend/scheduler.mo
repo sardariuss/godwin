@@ -48,7 +48,7 @@ module {
           case(null){};
           case(?question){
             // Verify the question is in the created selection_stage
-            if (StageHistory.getActiveStage(question.selection_stage) != #CREATED){
+            if (StageHistory.getActiveStage(question.selection_stage).stage != #CREATED){
               Debug.trap("Question is not in the created selection_stage.");
             };
             questions.replaceQuestion({
@@ -58,7 +58,7 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              selection_stage = StageHistory.setActiveStage(question.selection_stage, #SELECTED);
+              selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #SELECTED; timestamp = time_now; });
               categorization_stage = question.categorization_stage;
             });
             last_selection_date_ := time_now;
@@ -72,11 +72,12 @@ module {
         case(null){};
         case(?question){
           // Verify the question is in the selected selection_stage
-          if (StageHistory.getActiveStage(question.selection_stage) != #SELECTED){
+          let selection_stage = StageHistory.getActiveStage(question.selection_stage);
+          if (selection_stage.stage != #SELECTED){
             Debug.trap("The question is not in the selected selection_stage.");
           };
           // If enough time has passed, archived the question
-          if (time_now > StageHistory.getActiveTimestamp(question.selection_stage) + params_.selected_duration) {
+          if (time_now > selection_stage.timestamp + params_.selected_duration) {
             questions.replaceQuestion({
               id = question.id;
               author = question.author;
@@ -84,8 +85,8 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              selection_stage = StageHistory.setActiveStage(question.selection_stage, #ARCHIVED);
-              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, #ONGOING);
+              selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #ARCHIVED; timestamp = time_now; });
+              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #ONGOING; timestamp = time_now; });
             });
           };
         };
@@ -98,11 +99,13 @@ module {
         case(null){}; // If there is no question with ongoing categorization_stage, there is nothing to do
         case(?question){
           // Verify the question categorization_stage is ongoing
-          if (StageHistory.getActiveStage(question.categorization_stage) != #ONGOING){
+          let categorization_stage = StageHistory.getActiveStage(question.categorization_stage);
+          if (categorization_stage.stage != #ONGOING){
             Debug.trap("The question categorization_stage is not ongoing.");
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregation
-          if (time_now > StageHistory.getActiveTimestamp(question.categorization_stage) + params_.categorization_stage_duration) {
+          if (time_now > categorization_stage.timestamp + params_.categorization_stage_duration) {
+            let categorization = Utils.toArray(categorizations.getAggregatedCategorization(question.id));
             questions.replaceQuestion({
               id = question.id;
               author = question.author;
@@ -111,10 +114,7 @@ module {
               date = question.date;
               endorsements = question.endorsements;
               selection_stage = question.selection_stage;
-              categorization_stage =  StageHistory.setActiveStage(
-                question.categorization_stage, 
-                #DONE(categorizations.getAggregatedCategorization(question.id))
-              );
+              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization); timestamp = time_now; });
             });
             // Prune convictions of user who give their opinion on this question to force to recompute their categorization
             users.pruneConvictions(opinions, question);

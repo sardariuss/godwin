@@ -15,20 +15,13 @@ module {
     [{timestamp = Time.now(); stage;}];
   };
 
-  public func setActiveStage<S>(stage_records: StageHistory<S>, stage: S) : StageHistory<S> {
-    append(stage_records, [{timestamp = Time.now(); stage;}]);
+  public func setActiveStage<S>(history: StageHistory<S>, record: StageRecord<S>) : StageHistory<S> {
+    assert(record.timestamp > getActiveStage(history).timestamp);
+    append(history, [record]);
   };
 
-  public func getActiveStageRecord<S>(stage_records: StageHistory<S>) : StageRecord<S> {
-    stage_records[stage_records.size() - 1];
-  };
-
-  public func getActiveStage<S>(stage_records: StageHistory<S>) : S {
-    stage_records[stage_records.size() - 1].stage;
-  };
-
-  public func getActiveTimestamp<S>(stage_records: StageHistory<S>) : Time {
-    stage_records[stage_records.size() - 1].timestamp;
+  public func getActiveStage<S>(history: StageHistory<S>) : StageRecord<S> {
+    history[history.size() - 1];
   };
 
   // It is not possible to use the append function from Utils because Utils imports StageHistory

@@ -34,6 +34,7 @@ module {
   type User = Types.User;
   type InputSchedulerParams = Types.InputSchedulerParams;
   type SchedulerParams = Types.SchedulerParams;
+  type CategorizationArray = Types.CategorizationArray;
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
@@ -54,7 +55,15 @@ module {
     #CategoriesMissing;
   };
 
-  public func getVerifiedCategorization(definitions: CategoriesDefinition, categorization: [(Text, Float)]) : Result<Categorization, CategorizationError> {
+  public func toArray(categorization: Categorization) : CategorizationArray {
+    let buffer = Buffer.Buffer<(Category, Float)>(Trie.size(categorization));
+    for (key_val in Trie.iter(categorization)) {
+      buffer.add(key_val);
+    };
+    buffer.toArray();
+  };
+
+  public func getVerifiedCategorization(definitions: CategoriesDefinition, categorization: CategorizationArray) : Result<Categorization, CategorizationError> {
     var verified_categorization = Trie.empty<Category, Float>();
     for ((category, cursor) in Array.vals(categorization)){
       switch(Trie.get(definitions, Types.keyText(category), Text.equal)){
@@ -74,7 +83,7 @@ module {
   };
 
   public func verifyCurrentSelectionStage(question: Question, stages: [SelectionStage]) : Result<(), VerifySelectionStageError> {
-    let current_stage = StageHistory.getActiveStage(question.selection_stage);
+    let current_stage = StageHistory.getActiveStage(question.selection_stage).stage;
     for (stage in Array.vals(stages)){
       if (stage == current_stage) { return #ok; };        
     };
@@ -86,7 +95,7 @@ module {
   };
 
   public func verifyCategorizationStage(question: Question, stages: [CategorizationStage]) : Result<(), VerifyCategorizationStageError> {
-    let current_stage = StageHistory.getActiveStage(question.categorization_stage);
+    let current_stage = StageHistory.getActiveStage(question.categorization_stage).stage;
     for (stage in Array.vals(stages)){
       if (stage == current_stage) { return #ok; };        
     };

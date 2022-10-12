@@ -41,7 +41,7 @@ module {
   };
 
   public func addQuestion(per_cat: PerCategorizationStage, question: Question) : PerCategorizationStage {
-    if (StageHistory.getActiveStage(question.categorization_stage) != #PENDING) {
+    if (StageHistory.getActiveStage(question.categorization_stage).stage != #PENDING) {
       Debug.trap("Cannot add a question which categorization_stage is different from #PENDING");
     };
     {
@@ -53,8 +53,8 @@ module {
 
   public func replaceQuestion(per_cat: PerCategorizationStage, old_question: Question, new_question: Question) : PerCategorizationStage {
     var updated_per_cat = per_cat;
-    let old_stage = StageHistory.getActiveStage(old_question.categorization_stage);
-    let new_stage = StageHistory.getActiveStage(new_question.categorization_stage);
+    let old_stage = StageHistory.getActiveStage(old_question.categorization_stage).stage;
+    let new_stage = StageHistory.getActiveStage(new_question.categorization_stage).stage;
     if (old_stage == new_stage) {
       // Replace in current categorization_stage
       var rbts = getCategorizationStageRBTs(updated_per_cat, old_stage);
@@ -74,7 +74,7 @@ module {
   };
 
   public func removeQuestion(per_cat: PerCategorizationStage, question: Question) : PerCategorizationStage {
-    let current_stage = StageHistory.getActiveStage(question.categorization_stage);
+    let current_stage = StageHistory.getActiveStage(question.categorization_stage).stage;
     var rbts = getCategorizationStageRBTs(per_cat, current_stage);
     rbts := Queries.remove(rbts, question);
     setCategorizationStageRBTs(per_cat, current_stage, rbts);

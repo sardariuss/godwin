@@ -104,7 +104,7 @@ module {
   public type CategorizationStage = {
     #PENDING;
     #ONGOING;
-    #DONE: Categorization;
+    #DONE: CategorizationArray;
   };
 
   public type User = {
