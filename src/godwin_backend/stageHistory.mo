@@ -11,8 +11,8 @@ module {
   type StageRecord<S> = Types.StageRecord<S>;
   type StageHistory<S> = Types.StageHistory<S>;
 
-  public func initStageHistory<S>(stage: S) : StageHistory<S> {
-    [{timestamp = Time.now(); stage;}];
+  public func initStageHistory<S>(record: StageRecord<S>) : StageHistory<S> {
+    [record];
   };
 
   public func setActiveStage<S>(history: StageHistory<S>, record: StageRecord<S>) : StageHistory<S> {

@@ -59,7 +59,7 @@ module {
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
-        case(null) { Debug.trap("@todo"); };
+        case(null) { Debug.trap("The question does not exist."); };
         case(?question) { question; };
       };
     };
@@ -84,17 +84,16 @@ module {
       };
     };
 
-    public func createQuestion(author: Principal, title: Text, text: Text) : Question {
-      let time_now = Time.now();
+    public func createQuestion(author: Principal, date: Time, title: Text, text: Text) : Question {
       let question = {
         id = register_.question_index;
         author = author;
         title = title;
         text = text;
-        date = time_now;
+        date = date;
         endorsements = 0;
-        selection_stage = StageHistory.initStageHistory(#CREATED);
-        categorization_stage =  StageHistory.initStageHistory(#PENDING);
+        selection_stage = StageHistory.initStageHistory({ timestamp = date; stage = #CREATED; });
+        categorization_stage =  StageHistory.initStageHistory({ timestamp = date; stage = #PENDING; });
       };
       register_ := {
         questions = Trie.put(register_.questions, Types.keyNat(question.id), Nat.equal, question).0;

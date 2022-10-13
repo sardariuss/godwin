@@ -1,7 +1,8 @@
 //import TestCategories "testCategories";
 //import TestConvictions "testConvictions";
-//import TestTotalVotes "testTotalVotes";
+import TestOpinions "votes/testOpinions";
 import TestQueries "questions/testQueries";
+import TestQuestions "questions/testQuestions";
 
 import Suite "mo:matchers/Suite";
 
@@ -26,11 +27,6 @@ import Suite "mo:matchers/Suite";
 //let testConvictions = TestConvictions.TestConvictions();
 //Suite.run(testConvictions.suiteAddConviction);
 
-// @todo: rename testTotalVotes into testOpinions and use new aggregation
-//let testTotalVotes = TestTotalVotes.TestTotalVotes();
-//Suite.run(testTotalVotes.suiteTotalVotes);
-
-let testQueries = TestQueries.TestQueries();
-Suite.run(testQueries.suiteAddQuestions);
-Suite.run(testQueries.suiteReplaceQuestions);
-Suite.run(testQueries.suiteRemoveQuestions);
+Suite.run(TestQueries.TestQueries().getSuite());
+Suite.run(TestQuestions.TestQuestions().getSuite());
+Suite.run(TestOpinions.TestOpinions().getSuite());

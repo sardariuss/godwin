@@ -103,7 +103,7 @@ module {
       let question = questions.getQuestion(question_id);
       switch(StageHistory.getActiveStage(question.categorization_stage).stage){
         case(#DONE(question_categorization)){
-          user_categorization := sumCategorization(user_categorization, question_categorization, getOpinionCoef(opinion));
+          user_categorization := addCategorization(user_categorization, question_categorization, getOpinionCoef(opinion));
           num_questions += 1;
         };
         case(_){};
@@ -113,7 +113,7 @@ module {
     normalizeSummedCategorizations(user_categorization, num_questions);
   };
 
-  func sumCategorization(summed_categorization: Categorization, question_categorization: CategorizationArray, coef: Float) : Categorization {
+  func addCategorization(summed_categorization: Categorization, question_categorization: CategorizationArray, coef: Float) : Categorization {
     // @todo: what if they don't have the same size and keys ?
     var new_summed_categorization = summed_categorization;
     for ((category, cursor) in Array.vals(question_categorization)){
@@ -126,6 +126,7 @@ module {
     new_summed_categorization;
   };
 
+  // @todo: normalization shoud be done taking account of the "total" of cursors' absolute values for each category, not the number of elements
   func normalizeSummedCategorizations(summed_categorization: Categorization, num_elements: Nat) : Categorization {
     var normalized_categorization = summed_categorization;
     if (num_elements > 0) {

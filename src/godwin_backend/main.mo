@@ -52,7 +52,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
-    questions_.createQuestion(caller, title, text);
+    questions_.createQuestion(caller, Time.now(), title, text);
   };
 
   type EndorsementError = {
