@@ -97,6 +97,17 @@ module {
 
   func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Opinion>) : Categorization {
     var user_categorization = Trie.empty<Category, Float>();
+    // @todo: 
+//    type CursorMean = {
+//      dividend: Float;
+//      divisor: Float;
+//    };
+//    type MeanCategorizations = Trie<Category, CursorMean>;
+//let updated_cursor_mean = {
+//            dividend = cursor_mean.dividend + 
+//            divisor
+//          };
+
     var num_questions : Nat = 0;
     // Add the categorizations of the questions the user voted on
     for ((question_id, opinion) in Trie.iter(user_opinions)){

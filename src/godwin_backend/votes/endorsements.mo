@@ -12,23 +12,21 @@ module {
   // For convenience: from other modules
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
   
-  type BallotCount = {
-    count: Nat;
-  };
+  public type EndorsementsTotal = Nat;
 
-  public func emptyRegister() : VoteRegister<Endorsement, BallotCount> {
-    Votes.empty<Endorsement, BallotCount>();
+  public func emptyRegister() : VoteRegister<Endorsement, EndorsementsTotal> {
+    Votes.empty<Endorsement, EndorsementsTotal>();
   };
 
   public func empty() : Endorsements {
     Endorsements(emptyRegister());
   };
 
-  public class Endorsements(register: VoteRegister<Endorsement, BallotCount>) {
+  public class Endorsements(register: VoteRegister<Endorsement, EndorsementsTotal>) {
 
     var register_ = register;
 
-    public func getRegister() : VoteRegister<Endorsement, BallotCount> {
+    public func getRegister() : VoteRegister<Endorsement, EndorsementsTotal> {
       register_;
     };
 
@@ -41,47 +39,32 @@ module {
     };
 
     public func put(principal: Principal, question_id: Nat) {
-      register_ := Votes.putBallot(
-        register_,
-        principal,
-        question_id,
-        #ENDORSE,
-        emptyBallotCount,
-        addToBallotCount,
-        removeFromBallotCount
-      ).0;
+      register_ := Votes.putBallot(register_, principal, question_id, #ENDORSE, emptyTotal, addToTotal, removeFromTotal).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(
-        register_,
-        principal,
-        question_id,
-        removeFromBallotCount
-      ).0;
+      register_ := Votes.removeBallot(register_, principal, question_id, removeFromTotal).0;
     };
 
-    public func getTotalForQuestion(question_id: Nat) : Nat {
+    public func getTotalForQuestion(question_id: Nat) : EndorsementsTotal {
       switch(Votes.getAggregation(register_, question_id)){
         case(null) { 0; };
-        case(?aggregation) {
-          aggregation.count;
-        };
+        case(?total) { total; };
       };
     };
 
   };
 
-  func emptyBallotCount() : BallotCount {
-    { count = 0; };
+  func emptyTotal() : EndorsementsTotal {
+    0;
   };
 
-  func addToBallotCount(aggregate: BallotCount, new_ballot: Endorsement) : BallotCount {
-    { count = aggregate.count + 1; };
+  func addToTotal(total: EndorsementsTotal, new_ballot: Endorsement) : EndorsementsTotal {
+    total + 1;
   };
 
-  func removeFromBallotCount(aggregate: BallotCount, ballot: Endorsement) : BallotCount {
-    { count = aggregate.count - 1; };
+  func removeFromTotal(total: EndorsementsTotal, ballot: Endorsement) : EndorsementsTotal {
+    total - 1;
   };
 
 };

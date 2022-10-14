@@ -4,33 +4,39 @@ import Votes "votes";
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";
+import Float "mo:base/Float";
+import Option "mo:base/Option";
 
 module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-  // For convenience: from other modules
+  // For convenience: from types modules
   type Categorization = Types.Categorization;
+  type Category = Types.Category;
+  type CategoriesDefinition = Types.CategoriesDefinition;
+  // For convenience: from other modules
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
   
-  type SummedCategorizations = {
+  type CategorizationsSum = {
     count: Nat;
-    sum: Categorization;
+    categorization: Categorization;
   };
 
-  public func emptyRegister() : VoteRegister<Categorization, SummedCategorizations> {
-    Votes.empty<Categorization, SummedCategorizations>();
+  public func emptyRegister() : VoteRegister<Categorization, CategorizationsSum> {
+    Votes.empty<Categorization, CategorizationsSum>();
   };
 
-  public func empty() : Categorizations {
-    Categorizations(emptyRegister());
+  public func empty(definitions: CategoriesDefinition) : Categorizations {
+    Categorizations(emptyRegister(), definitions);
   };
 
-  public class Categorizations(register: VoteRegister<Categorization, SummedCategorizations>) {
+  public class Categorizations(register: VoteRegister<Categorization, CategorizationsSum>, definitions: CategoriesDefinition) {
 
     var register_ = register;
+    let definitions_ = definitions;
 
-    public func getRegister() : VoteRegister<Categorization, SummedCategorizations> {
+    public func getRegister() : VoteRegister<Categorization, CategorizationsSum> {
       register_;
     };
 
@@ -43,76 +49,85 @@ module {
     };
 
     public func put(principal: Principal, question_id: Nat, categorization: Categorization) {
-      register_ := Votes.putBallot(
-        register_,
-        principal,
-        question_id,
-        categorization,
-        emptySummedCategorization,
-        addToSummedCategorization,
-        removeFromSummedCategorization
-      ).0;
+      if (not isAcceptableCategorization(categorization)){
+        Debug.trap("The categorization is malformed.");
+      };
+      register_ := Votes.putBallot(register_, principal, question_id, categorization, emptySum, addToSum, removeFromSum).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(
-        register_,
-        principal,
-        question_id,
-        removeFromSummedCategorization
-      ).0;
+      register_ := Votes.removeBallot(register_, principal, question_id, removeFromSum).0;
     };
 
-    public func getAggregatedCategorization(question_id: Nat) : Categorization {
-      switch(Votes.getAggregation(register_, question_id)){
-        case(null) { emptySummedCategorization().sum; };
-        case(?aggregation) {
-          aggregation.sum; // @todo: normalize from count
+    public func getMeanForQuestion(question_id: Nat) : Categorization {
+      var mean = emptyCategorization();
+      Option.iterate(Votes.getAggregation(register_, question_id), func(sum: CategorizationsSum){
+        if (sum.count > 0){
+          for ((category, sum_cursors) in Trie.iter(sum.categorization)){
+            mean := Trie.put(mean, Types.keyText(category), Text.equal, sum_cursors / Float.fromInt(sum.count)).0;
+          };
         };
+      });
+      mean;
+    };
+
+    public func isAcceptableCategorization(categorization: Categorization) : Bool {
+      if (Trie.size(categorization) != Trie.size(categorization)){
+        return false;
+      };
+      for ((category, cursor) in Trie.iter(categorization)){
+        if (Float.abs(cursor) > 1.0){
+          return false;
+        };
+        if (Trie.get(definitions_, Types.keyText(category), Text.equal) == null){
+          return false;
+        };
+      };
+      return true;
+    };
+
+    func emptyCategorization() : Categorization {
+      var trie = Trie.empty<Category, Float>();
+      for ((category, _) in Trie.iter(definitions_)){
+        trie := Trie.put(trie, Types.keyText(category), Text.equal, 0.0).0;
+      };
+      trie;
+    };
+
+    func emptySum() : CategorizationsSum {
+      {
+        count = 0;
+        categorization = emptyCategorization();
       };
     };
 
   };
 
-  func emptySummedCategorization() : SummedCategorizations {
+  func addToSum(sum: CategorizationsSum, categorization: Categorization) : CategorizationsSum {
+    var updated_categorization = sum.categorization;
+    for ((category, sum_cursors) in Trie.iter(sum.categorization)){
+      // Assumes that the categorization is not malformed
+      Option.iterate(Trie.get(categorization, Types.keyText(category), Text.equal), func(cursor: Float) {
+        updated_categorization := Trie.put(updated_categorization, Types.keyText(category), Text.equal, sum_cursors + cursor).0;
+      });
+    };
     {
-      count = 0;
-      // @todo: requires to init with the categories from the main
-      sum = Trie.empty<Text, Float>();
+      count = sum.count + 1;
+      categorization = updated_categorization;
     };
   };
 
-  // @todo: requires to verify the categorization is well formed
-  func addToSummedCategorization(summed_categorization: SummedCategorizations, categorization: Categorization) : SummedCategorizations {
-    var updated_sum = summed_categorization.sum;
-    for ((category, sum) in Trie.iter(summed_categorization.sum)){
-      switch(Trie.get(categorization, Types.keyText(category), Text.equal)){
-        case(null) { Debug.trap("@todo"); };
-        case(?categorization) {
-          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum + categorization).0;
-        };
-      };
+  func removeFromSum(sum: CategorizationsSum, categorization: Categorization) : CategorizationsSum {
+    var updated_categorization = sum.categorization;
+    for ((category, sum_cursors) in Trie.iter(sum.categorization)){
+      // Assumes that the categorization is not malformed
+      Option.iterate(Trie.get(categorization, Types.keyText(category), Text.equal), func(cursor: Float) {
+        updated_categorization := Trie.put(updated_categorization, Types.keyText(category), Text.equal, sum_cursors - cursor).0;
+      });
     };
     {
-      count = summed_categorization.count + 1;
-      sum = updated_sum;
-    };
-  };
-
-  // @todo: requires to verify the categorization is well formed
-  func removeFromSummedCategorization(summed_categorization: SummedCategorizations, categorization: Categorization) : SummedCategorizations {
-    var updated_sum = summed_categorization.sum;
-    for ((category, sum) in Trie.iter(summed_categorization.sum)){
-      switch(Trie.get(categorization, Types.keyText(category), Text.equal)){
-        case(null) { Debug.trap("@todo"); };
-        case(?categorization) {
-          updated_sum := Trie.put(updated_sum, Types.keyText(category), Text.equal, sum - categorization).0;
-        };
-      };
-    };
-    {
-      count = summed_categorization.count - 1;
-      sum = updated_sum;
+      count = sum.count - 1;
+      categorization = updated_categorization;
     };
   };
 

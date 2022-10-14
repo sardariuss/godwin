@@ -2,6 +2,7 @@ import Types "types";
 import Questions "questions/questions";
 import Users "users";
 import StageHistory "stageHistory";
+import Categorizations "votes/categorizations";
 
 import Result "mo:base/Result";
 import Array "mo:base/Array";
@@ -12,11 +13,13 @@ import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 
+// @todo: create a separate module for wrapper functions that purpose is to return a result
 module {
 
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Key<K> = Trie.Key<K>;
   //type TrieMap<K, V> = TrieMap.TrieMap<K, V>;
   type Time = Time.Time;
   // For convenience: from types module
@@ -38,6 +41,7 @@ module {
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
+  type Categorizations = Categorizations.Categorizations;
 
   type GetQuestionError = {
     #QuestionNotFound;
@@ -51,31 +55,31 @@ module {
   };
 
   type CategorizationError = {
-    #InvalidCategory;
-    #CategoriesMissing;
+    #InvalidCategorization;
   };
 
-  public func toArray(categorization: Categorization) : CategorizationArray {
-    let buffer = Buffer.Buffer<(Category, Float)>(Trie.size(categorization));
-    for (key_val in Trie.iter(categorization)) {
+  public func fromArray<K, V>(array: [(K, V)], key: (K) -> Key<K>, equal: (K, K) -> Bool) : Trie<K, V> {
+    var trie = Trie.empty<K, V>();
+    for ((k, v) in Array.vals(array)){
+      trie := Trie.put(trie, key(k), equal, v).0;
+    };
+    trie;
+  };
+
+  public func toArray<K, V>(trie: Trie<K, V>) : [(K, V)] {
+    let buffer = Buffer.Buffer<(K, V)>(Trie.size(trie));
+    for (key_val in Trie.iter(trie)) {
       buffer.add(key_val);
     };
     buffer.toArray();
   };
 
-  public func getVerifiedCategorization(definitions: CategoriesDefinition, categorization: CategorizationArray) : Result<Categorization, CategorizationError> {
-    var verified_categorization = Trie.empty<Category, Float>();
-    for ((category, cursor) in Array.vals(categorization)){
-      switch(Trie.get(definitions, Types.keyText(category), Text.equal)){
-        case(null) { return #err(#InvalidCategory); };
-        case(_) { verified_categorization := Trie.put(verified_categorization, Types.keyText(category), Text.equal, cursor).0;}
-      };
+  public func getVerifiedCategorization(categorizations: Categorizations, array: CategorizationArray) : Result<Categorization, CategorizationError> {
+    var trie = fromArray(array, Types.keyText, Text.equal);
+    if (not categorizations.isAcceptableCategorization(trie)){
+      return #err(#InvalidCategorization);
     };
-    if (Trie.size(verified_categorization) != Trie.size(definitions)){
-      #err(#CategoriesMissing);
-    } else {
-      #ok(verified_categorization); 
-    };
+    return #ok(trie);
   };
 
   public type VerifySelectionStageError = {
@@ -117,14 +121,6 @@ module {
       case(#MINUTES(minutes)){ minutes * 60 * 1_000_000_000; };
       case(#SECONDS(seconds)){ seconds * 1_000_000_000; };
     };
-  };
-
-  public func toCategoriesDefinition(input: InputCategoriesDefinition) : CategoriesDefinition {
-    var categories_definition = Trie.empty<Category, Sides>();
-    for ((category, side) in Array.vals(input)){
-      categories_definition := Trie.put(categories_definition, Types.keyText(category), Text.equal, side).0;
-    };
-    categories_definition;
   };
 
   public type GetOrCreateUserError = {

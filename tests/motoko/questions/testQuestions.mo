@@ -1,5 +1,6 @@
 import Types "../../../src/godwin_backend/types";
 import Questions "../../../src/godwin_backend/questions/questions";
+import TestableItemExtension "../testableItemExtension";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -22,10 +23,7 @@ module {
   type Question = Types.Question;
   // For convenience: from other modules
   type Questions = Questions.Questions;
-  // For convenience: for this module
-  type TestableQuestion = Testable.TestableItem<Question>;
-  type TestableOptQuestion = Testable.TestableItem<?Question>;
-
+  
   public class TestQuestions() = {
 
     func questionToText(question: Question) : Text {
@@ -51,44 +49,8 @@ module {
          // @todo
     };
 
-    func testOptQuestion(question: ?Question) : TestableOptQuestion {
-      {
-        display = func(question: ?Question) : Text {
-          switch(question){
-            case(null) { "(null)"; };
-            case(?question) { questionToText(question); };
-          };
-        };
-        equals = func (q1: ?Question, q2: ?Question) : Bool {
-          switch(q1){
-            case(null) {
-              switch(q2){
-                case(null) { true; };
-                case(_) { false; };
-              };
-            };
-            case(?question1) {
-              switch(q2){
-                case(null) { false; };
-                case(?question2) { questionEqual(question1, question2); };
-              };
-            };
-          };
-        };
-        item = question;
-      }
-    };
-
-    func testQuestion(question: Question) : TestableQuestion {
-      {
-        display = func (question) : Text {
-          questionToText(question);
-        };
-        equals = func (q1: Question, q2: Question) : Bool { 
-          questionEqual(q1, q2);
-        };
-        item = question;
-      };
+    func testOptQuestion(question: ?Question) : Testable.TestableItem<?Question> {
+      TestableItemExtension.testOptItem(question, questionToText, questionEqual);
     };
 
     let array_originals_ = [
@@ -127,8 +89,8 @@ module {
         let question = array_originals_[index];
         tests.add(test(
           "Create question " # Nat.toText(index),
-          questions.createQuestion(question.author, question.date, question.title, question.text),
-          Matchers.equals(testQuestion(question))));
+          ?questions.createQuestion(question.author, question.date, question.title, question.text),
+          Matchers.equals(testOptQuestion(?question))));
       };
       
       // Test replacing the questions

@@ -1,5 +1,6 @@
 import Types "../../../src/godwin_backend/types";
 import Opinions "../../../src/godwin_backend/votes/opinions";
+import TestableItemExtension "../testableItemExtension";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -7,10 +8,8 @@ import Testable "mo:matchers/Testable";
 
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
-import Array "mo:base/Array";
-import Nat "mo:base/Nat";
-import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
+import Float "mo:base/Float";
 
 module {
 
@@ -22,34 +21,7 @@ module {
   type Opinion = Types.Opinion;
   // For convenience: from other modules
   type Opinions = Opinions.Opinions;
-
-  func testOptItem<T>(item: ?T, to_text: T -> Text, equal: (T, T) -> Bool) : Testable.TestableItem<?T> {
-    {
-      display = func(item: ?T) : Text {
-        switch(item){
-          case(null) { "(null)"; };
-          case(?item) { to_text(item); };
-        };
-      };
-      equals = func (q1: ?T, q2: ?T) : Bool {
-        switch(q1){
-          case(null) {
-            switch(q2){
-              case(null) { true; };
-              case(_) { false; };
-            };
-          };
-          case(?item1) {
-            switch(q2){
-              case(null) { false; };
-              case(?item2) { equal(item1, item2); };
-            };
-          };
-        };
-      };
-      item = item;
-    }
-  };
+  type OpinionsTotal = Opinions.OpinionsTotal;
 
   func toTextOpinion(opinion: Opinion) : Text {
     switch(opinion){
@@ -74,7 +46,21 @@ module {
   };
 
   func testOptOpinion(opinion: ?Opinion) : Testable.TestableItem<?Opinion> {
-    testOptItem(opinion, toTextOpinion, equalOpinions);
+    TestableItemExtension.testOptItem(opinion, toTextOpinion, equalOpinions);
+  };
+
+  func toTextOpinionsTotal(total: OpinionsTotal) : Text {
+    "agree=" # Float.toText(total.agree) # 
+    ", neutral=" # Float.toText(total.neutral) #
+    ", disagree=" # Float.toText(total.disagree);
+  };
+
+  func equalOpinionsTotal(t1: OpinionsTotal, t2: OpinionsTotal) : Bool {
+    t1.agree == t2.agree and t1.neutral == t2.neutral and t1.disagree == t2.disagree;
+  };
+
+  func testOptOpinionsTotal(total: ?OpinionsTotal) : Testable.TestableItem<?OpinionsTotal> {
+    TestableItemExtension.testOptItem(total, toTextOpinionsTotal, equalOpinionsTotal);
   };
 
   public class TestOpinions() = {
@@ -104,8 +90,22 @@ module {
       opinions.remove(principal_0, 0);
       tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(null))));
       
-      // @todo: continue test
-      
+      // Test total
+      opinions.put(principal_0, 1, #AGREE(#ABSOLUTE));
+      opinions.put(principal_1, 1, #AGREE(#MODERATE));
+      opinions.put(principal_2, 1, #AGREE(#MODERATE));
+      opinions.put(principal_3, 1, #AGREE(#MODERATE));
+      opinions.put(principal_4, 1, #AGREE(#MODERATE));
+      opinions.put(principal_5, 1, #AGREE(#MODERATE));
+      opinions.put(principal_6, 1, #NEUTRAL);
+      opinions.put(principal_7, 1, #NEUTRAL);
+      opinions.put(principal_8, 1, #DISAGREE(#ABSOLUTE));
+      opinions.put(principal_9, 1, #DISAGREE(#ABSOLUTE));
+      tests.add(test(
+        "Total opinions",
+        opinions.getTotalForQuestion(1),
+        Matchers.equals(testOptOpinionsTotal(?{ agree = 3.5; neutral = 4.5; disagree = 2.0; }))));
+
       suite("Test Opinions module", tests.toArray());
     };
   };

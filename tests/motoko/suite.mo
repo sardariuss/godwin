@@ -1,14 +1,18 @@
-//import TestCategories "testCategories";
-//import TestConvictions "testConvictions";
-import TestOpinions "votes/testOpinions";
 import TestQueries "questions/testQueries";
 import TestQuestions "questions/testQuestions";
+import TestEndorsements "votes/testEndorsements";
+import TestOpinions "votes/testOpinions";
+import TestCategorizations "votes/testCategorizations";
 
 import Suite "mo:matchers/Suite";
 
-// @todo: test perCategorizationStage and perSelectionStage modules ?
+Suite.run(TestQueries.TestQueries().getSuite());
+Suite.run(TestQuestions.TestQuestions().getSuite());
+Suite.run(TestEndorsements.TestEndorsements().getSuite());
+Suite.run(TestOpinions.TestOpinions().getSuite());
+Suite.run(TestCategorizations.TestCategorizations().getSuite());
 
-// @todo: test questions module
+// @todo: test perCategorizationStage and perSelectionStage modules ?
 
 // @todo: test scheduler module
 
@@ -17,16 +21,3 @@ import Suite "mo:matchers/Suite";
 // @todo: test users module
 
 // @todo: test utils module
-
-// @todo: rename testCategories into testCategorization and update the test with new "continuous" aggregation
-//let testCategories = TestCategories.TestCategories();
-//Suite.run(testCategories.suiteVerifyOrientedCategory);
-//Suite.run(testCategories.suiteComputeCategoriesAggregation);
-
-// @todo: rename testConvictions into testUsers and add the missing function and update on convictions
-//let testConvictions = TestConvictions.TestConvictions();
-//Suite.run(testConvictions.suiteAddConviction);
-
-Suite.run(TestQueries.TestQueries().getSuite());
-Suite.run(TestQuestions.TestQuestions().getSuite());
-Suite.run(TestOpinions.TestOpinions().getSuite());

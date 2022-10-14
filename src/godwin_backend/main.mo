@@ -10,13 +10,13 @@ import Utils "utils";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
+import Text "mo:base/Text";
 
 shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters) = {
 
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
-
   // For convenience: from types module
   type Question = Types.Question;
   type Endorsement = Types.Endorsement;
@@ -30,9 +30,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   var questions_ = Questions.empty();
   var endorsements_ = Endorsements.empty();
   var opinions_ = Opinions.empty();
-  var categorizations_ = Categorizations.empty();
+  var categorizations_ = Categorizations.empty(Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal));
   var scheduler_ = Scheduler.Scheduler(Utils.toSchedulerParams(parameters.scheduler), Time.now());
-  stable var categories_definition_ = Utils.toCategoriesDefinition(parameters.categories_definition);
+  stable var categories_definition_ = Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal); // @todo: remove from here
 
   // For upgrades
   stable var users_register_ = Users.emptyRegister();
@@ -122,8 +122,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   type CategorizationError = {
     #InsufficientCredentials;
-    #InvalidCategory;
-    #CategoriesMissing;
+    #InvalidCategorization;
     #QuestionNotFound;
     #WrongCategorizationStage;
   };
@@ -132,7 +131,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Utils.getQuestion(questions_, question_id), func(question) {
         Result.chain<(), (), CategorizationError>(Utils.verifyCategorizationStage(question, [#ONGOING]), func() { 
-          Result.mapOk<Categorization, (), CategorizationError>(Utils.getVerifiedCategorization(categories_definition_, input_categorization), func (categorization: Categorization) {
+          Result.mapOk<Categorization, (), CategorizationError>(Utils.getVerifiedCategorization(categorizations_, input_categorization), func (categorization: Categorization) {
             categorizations_.put(caller, question_id, categorization);
           })
         })
@@ -195,7 +194,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     endorsements_register_ := Endorsements.emptyRegister();
     opinions_ := Opinions.Opinions(opinions_register_);
     opinions_register_ := Opinions.emptyRegister();
-    categorizations_ := Categorizations.Categorizations(categorizations_register_);
+    categorizations_ := Categorizations.Categorizations(categorizations_register_, categories_definition_);
     categorizations_register_ := Categorizations.emptyRegister();
     scheduler_ := Scheduler.Scheduler(scheduler, scheduler_last_selection_date);
   };

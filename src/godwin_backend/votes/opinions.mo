@@ -12,25 +12,25 @@ module {
   // For convenience: from other modules
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
   
-  type OpinionTotals = {
+  public type OpinionsTotal = {
     agree: Float;
     neutral: Float;
     disagree: Float;
   };
 
-  public func emptyRegister() : VoteRegister<Opinion, OpinionTotals> {
-    Votes.empty<Opinion, OpinionTotals>();
+  public func emptyRegister() : VoteRegister<Opinion, OpinionsTotal> {
+    Votes.empty<Opinion, OpinionsTotal>();
   };
 
   public func empty() : Opinions {
     Opinions(emptyRegister());
   };
 
-  public class Opinions(register: VoteRegister<Opinion, OpinionTotals>) {
+  public class Opinions(register: VoteRegister<Opinion, OpinionsTotal>) {
 
     var register_ = register;
 
-    public func getRegister() : VoteRegister<Opinion, OpinionTotals> {
+    public func getRegister() : VoteRegister<Opinion, OpinionsTotal> {
       register_;
     };
 
@@ -43,67 +43,54 @@ module {
     };
 
     public func put(principal: Principal, question_id: Nat, opinion: Opinion) {
-      register_ := Votes.putBallot(
-        register_,
-        principal,
-        question_id,
-        opinion,
-        emptyTotals,
-        addToTotals,
-        removeFromTotals
-      ).0;
+      register_ := Votes.putBallot(register_, principal, question_id, opinion, emptyTotal, addToTotal, removeFromTotal).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(
-        register_,
-        principal,
-        question_id,
-        removeFromTotals
-      ).0;
+      register_ := Votes.removeBallot(register_, principal, question_id, removeFromTotal).0;
     };
 
-    public func getTotalsForQuestion(question_id: Nat) : ?OpinionTotals {
+    public func getTotalForQuestion(question_id: Nat) : ?OpinionsTotal {
       Votes.getAggregation(register_, question_id);
     };
 
   };
 
-  func emptyTotals() : OpinionTotals {
+  func emptyTotal() : OpinionsTotal {
     { agree = 0.0; neutral = 0.0; disagree = 0.0; };
   };
 
-  func addToTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
+  func addToTotal(total: OpinionsTotal, opinion: Opinion) : OpinionsTotal {
     switch(opinion){
       case(#AGREE(agreement)){
         switch(agreement){
-          case(#ABSOLUTE){ { agree = totals.agree + 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
-          case(#MODERATE){ { agree = totals.agree + 0.5; neutral = totals.neutral + 0.5; disagree = totals.disagree      ; } };
+          case(#ABSOLUTE){ { agree = total.agree + 1.0; neutral = total.neutral      ; disagree = total.disagree      ; } };
+          case(#MODERATE){ { agree = total.agree + 0.5; neutral = total.neutral + 0.5; disagree = total.disagree      ; } };
         };
       };
-      case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral + 1.0; disagree = totals.disagree      ; } };
+      case(#NEUTRAL)     { { agree = total.agree      ; neutral = total.neutral + 1.0; disagree = total.disagree      ; } };
       case(#DISAGREE(agreement)){
         switch(agreement){
-          case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral + 0.5; disagree = totals.disagree + 0.5; } };
-          case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree + 1.0; } };
+          case(#MODERATE){ { agree = total.agree      ; neutral = total.neutral + 0.5; disagree = total.disagree + 0.5; } };
+          case(#ABSOLUTE){ { agree = total.agree      ; neutral = total.neutral      ; disagree = total.disagree + 1.0; } };
         };
       };
     };
   };
 
-  func removeFromTotals(totals: OpinionTotals, opinion: Opinion) : OpinionTotals {
+  func removeFromTotal(total: OpinionsTotal, opinion: Opinion) : OpinionsTotal {
     switch(opinion){
       case(#AGREE(agreement)){
         switch(agreement){
-          case(#ABSOLUTE){ { agree = totals.agree - 1.0; neutral = totals.neutral      ; disagree = totals.disagree      ; } };
-          case(#MODERATE){ { agree = totals.agree - 0.5; neutral = totals.neutral - 0.5; disagree = totals.disagree      ; } };
+          case(#ABSOLUTE){ { agree = total.agree - 1.0; neutral = total.neutral      ; disagree = total.disagree      ; } };
+          case(#MODERATE){ { agree = total.agree - 0.5; neutral = total.neutral - 0.5; disagree = total.disagree      ; } };
         };
       };
-      case(#NEUTRAL)     { { agree = totals.agree      ; neutral = totals.neutral - 1.0; disagree = totals.disagree      ; } };
+      case(#NEUTRAL)     { { agree = total.agree      ; neutral = total.neutral - 1.0; disagree = total.disagree      ; } };
       case(#DISAGREE(agreement)){
         switch(agreement){
-          case(#MODERATE){ { agree = totals.agree      ; neutral = totals.neutral - 0.5; disagree = totals.disagree - 0.5; } };
-          case(#ABSOLUTE){ { agree = totals.agree      ; neutral = totals.neutral      ; disagree = totals.disagree - 1.0; } };
+          case(#MODERATE){ { agree = total.agree      ; neutral = total.neutral - 0.5; disagree = total.disagree - 0.5; } };
+          case(#ABSOLUTE){ { agree = total.agree      ; neutral = total.neutral      ; disagree = total.disagree - 1.0; } };
         };
       };
     };

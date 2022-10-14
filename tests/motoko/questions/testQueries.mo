@@ -29,9 +29,7 @@ module {
     type QuestionRBTs = Queries.QuestionRBTs;
     type QueryQuestionsResult = Queries.QueryQuestionsResult;
 
-    type TestableQueryQuestionsResult = Testable.TestableItem<QueryQuestionsResult>;
-
-    func testQueryQuestionsResult(query_result: QueryQuestionsResult) : TestableQueryQuestionsResult {
+    func testQueryQuestionsResult(query_result: QueryQuestionsResult) : Testable.TestableItem<QueryQuestionsResult> {
       {
         display = func (query_result) : Text {
           var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);

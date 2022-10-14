@@ -105,7 +105,7 @@ module {
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregation
           if (time_now > categorization_stage.timestamp + params_.categorization_stage_duration) {
-            let categorization = Utils.toArray(categorizations.getAggregatedCategorization(question.id));
+            let categorization = Utils.toArray(categorizations.getMeanForQuestion(question.id));
             questions.replaceQuestion({
               id = question.id;
               author = question.author;
