@@ -1,3 +1,4 @@
+import Question "questions/question";
 import Questions "questions/questions";
 import Endorsements "votes/endorsements";
 import Opinions "votes/opinions";
@@ -26,13 +27,13 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   type Categorization = Types.Categorization; 
 
   // Members
+  stable var categories_definition_ = Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal);
   var users_ = Users.empty();
   var questions_ = Questions.empty();
   var endorsements_ = Endorsements.empty();
   var opinions_ = Opinions.empty();
-  var categorizations_ = Categorizations.empty(Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal));
+  var categorizations_ = Categorizations.empty(categories_definition_);
   var scheduler_ = Scheduler.Scheduler(Utils.toSchedulerParams(parameters.scheduler), Time.now());
-  stable var categories_definition_ = Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal); // @todo: remove from here
 
   // For upgrades
   stable var users_register_ = Users.emptyRegister();
@@ -48,79 +49,58 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   };
 
   public shared query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
-    Utils.getQuestion(questions_, question_id);
+    Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
   };
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
     questions_.createQuestion(caller, Time.now(), title, text);
   };
 
-  type EndorsementError = {
+  public type EndorsementError = {
     #QuestionNotFound;
   };
 
   public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
-    Result.mapOk<Question, ?Endorsement, EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, ?Endorsement, EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
       endorsements_.getForUserAndQuestion(principal, question_id);
     });
   };
 
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
       endorsements_.put(caller, question_id);
-      // Update the question endorsements
-      let updated_question = {
-        id = question.id;
-        author = question.author;
-        title = question.title;
-        text = question.text;
-        date = question.date;
-        endorsements = endorsements_.getTotalForQuestion(question.id);
-        selection_stage = question.selection_stage;
-        categorization_stage = question.categorization_stage;
-      };
-      questions_.replaceQuestion(updated_question);
+      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
     });
   };
 
   public shared({caller}) func removeEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Utils.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
       endorsements_.remove(caller, question_id);
-      // Update the question endorsements
-      let updated_question = {
-        id = question.id;
-        author = question.author;
-        title = question.title;
-        text = question.text;
-        date = question.date;
-        endorsements = endorsements_.getTotalForQuestion(question.id);
-        selection_stage = question.selection_stage;
-        categorization_stage = question.categorization_stage;
-      };
-      questions_.replaceQuestion(updated_question);
+      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
     });
   };
 
-  type OpinionError = {
+  public type OpinionError = {
     #QuestionNotFound;
     #WrongSelectionStage;
   };
 
   public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Opinion, OpinionError> {
-    Result.mapOk<Question, ?Opinion, OpinionError>(Utils.getQuestion(questions_, question_id), func(question) {
+    Result.mapOk<Question, ?Opinion, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
       opinions_.getForUserAndQuestion(principal, question_id);
     });
   };
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
-    Result.chain<Question, (), OpinionError>(Utils.getQuestion(questions_, question_id), func(question) {
-      Result.mapOk<(), (), OpinionError>(Utils.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), func() {
+    Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), #WrongSelectionStage);
+      Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
         opinions_.put(caller, question_id, opinion);
       })
     });
   };
 
-  type CategorizationError = {
+  public type CategorizationError = {
     #InsufficientCredentials;
     #InvalidCategorization;
     #QuestionNotFound;
@@ -129,9 +109,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   public shared({caller}) func setCategorization(question_id: Nat, input_categorization: CategorizationArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
-      Result.chain<Question, (), CategorizationError>(Utils.getQuestion(questions_, question_id), func(question) {
-        Result.chain<(), (), CategorizationError>(Utils.verifyCategorizationStage(question, [#ONGOING]), func() { 
-          Result.mapOk<Categorization, (), CategorizationError>(Utils.getVerifiedCategorization(categorizations_, input_categorization), func (categorization: Categorization) {
+      Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
+        Result.chain<Question, (), CategorizationError>(verify_result, func(question) { 
+          let verified_categorization = Result.fromOption(categorizations_.verifyCategorization(input_categorization), #InvalidCategorization);
+          Result.mapOk<Categorization, (), CategorizationError>(verified_categorization, func (categorization: Categorization) {
             categorizations_.put(caller, question_id, categorization);
           })
         })
@@ -139,7 +121,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     });
   };
 
-  type VerifyCredentialsError = {
+  public type VerifyCredentialsError = {
     #InsufficientCredentials;
   };
 
@@ -150,27 +132,23 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
 
   public shared func run() {
     let time_now = Time.now();
-    scheduler_.selectQuestion(questions_, time_now);
-    scheduler_.archivedQuestion(questions_, time_now);
-    scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
+    ignore scheduler_.selectQuestion(questions_, time_now);
+    ignore scheduler_.archiveQuestion(questions_, time_now);
+    ignore scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
   };
 
-  public type GetOrCreateUserError = {
+  public type GetUserError = {
     #IsAnonymous;
   };
 
-  public shared func getOrCreateUser(principal: Principal) : async Result<User, GetOrCreateUserError> {
-    Utils.getOrCreateUser(users_, principal);
+  public shared func getUser(principal: Principal) : async Result<User, GetUserError> {
+    Result.fromOption(users_.getUser(principal), #IsAnonymous);
   };
 
-  public shared query func getUser(principal: Principal) : async ?User {
-    users_.getUser(principal);
-  };
-
-  public shared func updateConvictions(principal: Principal) : async Result<User, GetOrCreateUserError> {
+  public shared func updateConvictions(principal: Principal) : async Result<(), GetUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a categorization (User). So here we have to create it if not already created.
-    Result.mapOk<User, User, GetOrCreateUserError>(Utils.getOrCreateUser(users_, principal), func(user){
+    Result.mapOk<User, (), GetUserError>(Result.fromOption(users_.getUser(principal), #IsAnonymous), func(user){
       users_.updateConvictions(user, questions_, opinions_);
     });
   };

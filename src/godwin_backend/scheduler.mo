@@ -42,8 +42,8 @@ module {
       last_selection_date_;
     };
 
-    public func selectQuestion(questions: Questions, time_now: Time) {
-      if (last_selection_date_ + params_.selection_interval < time_now) {
+    public func selectQuestion(questions: Questions, time_now: Time) : ?Question {
+      if (time_now > last_selection_date_ + params_.selection_interval) {
         switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){
           case(null){};
           case(?question){
@@ -51,7 +51,8 @@ module {
             if (StageHistory.getActiveStage(question.selection_stage).stage != #CREATED){
               Debug.trap("Question is not in the created selection_stage.");
             };
-            questions.replaceQuestion({
+            last_selection_date_ := time_now;
+            let updated_question = {
               id = question.id;
               author = question.author;
               title = question.title;
@@ -60,14 +61,16 @@ module {
               endorsements = question.endorsements;
               selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #SELECTED; timestamp = time_now; });
               categorization_stage = question.categorization_stage;
-            });
-            last_selection_date_ := time_now;
+            };
+            questions.replaceQuestion(updated_question);
+            return ?updated_question;
           };
         };
       };
+      null;
     };
 
-    public func archivedQuestion(questions: Questions, time_now: Time) {
+    public func archiveQuestion(questions: Questions, time_now: Time) : ?Question {
       switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){
         case(null){};
         case(?question){
@@ -78,7 +81,7 @@ module {
           };
           // If enough time has passed, archived the question
           if (time_now > selection_stage.timestamp + params_.selected_duration) {
-            questions.replaceQuestion({
+            let updated_question = {
               id = question.id;
               author = question.author;
               title = question.title;
@@ -87,13 +90,16 @@ module {
               endorsements = question.endorsements;
               selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #ARCHIVED; timestamp = time_now; });
               categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #ONGOING; timestamp = time_now; });
-            });
+            };
+            questions.replaceQuestion(updated_question);
+            return ?updated_question;
           };
         };
       };
+      null;
     };
 
-    public func closeCategorization(questions: Questions, users: Users, opinions: Opinions, categorizations: Categorizations, time_now: Time) {
+    public func closeCategorization(questions: Questions, users: Users, opinions: Opinions, categorizations: Categorizations, time_now: Time) : ?Question {
       // Get the oldest question currently being categorized
       switch(Questions.nextQuestion(questions, questions.getInCategorizationStage(#ONGOING, #CATEGORIZATION_STAGE_DATE, #FWD))){
         case(null){}; // If there is no question with ongoing categorization_stage, there is nothing to do
@@ -106,7 +112,7 @@ module {
           // If enough time has passed, put the categorization_stage at done and save its aggregation
           if (time_now > categorization_stage.timestamp + params_.categorization_stage_duration) {
             let categorization = Utils.toArray(categorizations.getMeanForQuestion(question.id));
-            questions.replaceQuestion({
+            let updated_question = {
               id = question.id;
               author = question.author;
               title = question.title;
@@ -115,12 +121,15 @@ module {
               endorsements = question.endorsements;
               selection_stage = question.selection_stage;
               categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization); timestamp = time_now; });
-            });
+            };
+            questions.replaceQuestion(updated_question);
             // Prune convictions of user who give their opinion on this question to force to recompute their categorization
-            users.pruneConvictions(opinions, question);
+            users.pruneConvictions(opinions, question.id);
+            return ?question;
           };
         };
       };
+      null;
     };
 
   };

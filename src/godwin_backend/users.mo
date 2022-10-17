@@ -8,6 +8,8 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
+import Debug "mo:base/Debug";
+import Option "mo:base/Option";
 
 module {
 
@@ -26,6 +28,11 @@ module {
   type Opinions = Opinions.Opinions;
 
   type Register = Trie<Principal, User>;
+  type CursorMean = {
+    dividend: Float;
+    divisor: Float;
+  };
+  type CategorizationMeans = Trie<Category, CursorMean>;
 
   public func emptyRegister() : Register {
     Trie.empty<Principal, User>();
@@ -43,28 +50,35 @@ module {
       register_;
     };
 
-    public func getUser(principal: Principal) : ?User {
-      Trie.get(register_, Types.keyPrincipal(principal), Principal.equal);
-    };
-
     public func putUser(user: User) {
+      if (Principal.isAnonymous(user.principal)){
+        Debug.trap("Cannot put a user which principal is anonymous.");
+      };
       register_ := Trie.put(register_, Types.keyPrincipal(user.principal), Principal.equal, user).0;
     };
 
-    public func createUser(principal: Principal) : User {
-      let new_user = {
-        principal = principal;
-        name = null;
-        // Important: set convictions.to_update to true, because the associated principal could have already voted
-        convictions = { to_update = true; categorization = Trie.empty<Category, Float>(); } 
+    public func getUser(principal: Principal) : ?User {
+      if (Principal.isAnonymous(principal)){
+        return null;
       };
-      putUser(new_user);
-      new_user;
+      switch(Trie.get(register_, Types.keyPrincipal(principal), Principal.equal)){
+        case(?user){ ?user; };
+        case(null){
+          let new_user = {
+            principal = principal;
+            name = null;
+            // Important: set convictions.to_update to true, because the associated principal could have already voted
+            convictions = { to_update = true; categorization = Trie.empty<Category, Float>(); } 
+          };
+          putUser(new_user);
+          ?new_user;
+        };
+      };
     };
 
-    public func pruneConvictions(opinions: Opinions, question: Question) {
+    public func pruneConvictions(opinions: Opinions, question_id: Nat) {
       for ((principal, user) in Trie.iter(register)){
-        switch(opinions.getForUserAndQuestion(principal, question.id)){
+        switch(opinions.getForUserAndQuestion(principal, question_id)){
           case(null){};
           case(?opinion){
             let updated_user = {
@@ -78,8 +92,7 @@ module {
       };
     };
 
-    // @todo: watchout, user might not exist
-    public func updateConvictions(user: User, questions: Questions, opinions: Opinions) : User {
+    public func updateConvictions(user: User, questions: Questions, opinions: Opinions) {
       if (user.convictions.to_update){
         let updated_user = {
           principal = user.principal;
@@ -87,65 +100,54 @@ module {
           convictions = { to_update = false; categorization = computeCategorization(questions, opinions.getForUser(user.principal)); };
         };
         putUser(updated_user);
-        updated_user;
-      } else {
-        user;
       };
     };
 
   };
 
   func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Opinion>) : Categorization {
-    var user_categorization = Trie.empty<Category, Float>();
-    // @todo: 
-//    type CursorMean = {
-//      dividend: Float;
-//      divisor: Float;
-//    };
-//    type MeanCategorizations = Trie<Category, CursorMean>;
-//let updated_cursor_mean = {
-//            dividend = cursor_mean.dividend + 
-//            divisor
-//          };
-
-    var num_questions : Nat = 0;
-    // Add the categorizations of the questions the user voted on
+    var means = Trie.empty<Category, CursorMean>();
+    // Iterate on the questions the user gave his opinion on
     for ((question_id, opinion) in Trie.iter(user_opinions)){
       let question = questions.getQuestion(question_id);
+      // Check the categorization stage of the question
       switch(StageHistory.getActiveStage(question.categorization_stage).stage){
         case(#DONE(question_categorization)){
-          user_categorization := addCategorization(user_categorization, question_categorization, getOpinionCoef(opinion));
-          num_questions += 1;
+          means := addCategorization(means, question_categorization, getOpinionCoef(opinion));
         };
-        case(_){};
+        case(_){}; // Ignore questions which categorization is not complete
       };
     };
-    // Normalize the summed categorizations
-    normalizeSummedCategorizations(user_categorization, num_questions);
+    // "Aggregate" the means (i.e. compute the mean from accumulated dividend and divisor)
+    aggregateMeans(means);
   };
 
-  func addCategorization(summed_categorization: Categorization, question_categorization: CategorizationArray, coef: Float) : Categorization {
-    // @todo: what if they don't have the same size and keys ?
-    var new_summed_categorization = summed_categorization;
-    for ((category, cursor) in Array.vals(question_categorization)){
-      let summed_cursor = switch (Trie.get(summed_categorization, Types.keyText(category), Text.equal)){
-        case(null) { 0.0; };
-        case(?old_cursor) { old_cursor; };
+  // Note: there is no check if the categorization is well-formed, but normally it should always be at this stage
+  // (even an empty categorization shall have all a cursor for each defined category)
+  // @todo: too risky to not check ?
+  func addCategorization(means: CategorizationMeans, categorization: CategorizationArray, coef: Float) : CategorizationMeans {
+    var updated_means = means;
+    for ((category, cursor) in Array.vals(categorization)){
+      let current_mean = Option.get(Trie.get(means, Types.keyText(category), Text.equal), { dividend = 0.0; divisor = 0.0; });
+      let updated_mean = {
+        dividend = current_mean.dividend + coef * cursor;
+        divisor = current_mean.divisor + Float.abs(cursor);
       };
-      new_summed_categorization := Trie.put(new_summed_categorization, Types.keyText(category), Text.equal, summed_cursor + (cursor * coef)).0;
+      updated_means := Trie.put(updated_means, Types.keyText(category), Text.equal, updated_mean).0;
     };
-    new_summed_categorization;
+    updated_means;
   };
 
-  // @todo: normalization shoud be done taking account of the "total" of cursors' absolute values for each category, not the number of elements
-  func normalizeSummedCategorizations(summed_categorization: Categorization, num_elements: Nat) : Categorization {
-    var normalized_categorization = summed_categorization;
-    if (num_elements > 0) {
-      for ((category, cursor) in Trie.iter(normalized_categorization)){
-        normalized_categorization := Trie.put(normalized_categorization, Types.keyText(category), Text.equal, cursor / Float.fromInt(num_elements)).0;
+  func aggregateMeans(means: CategorizationMeans) : Categorization {
+    var categorization = Trie.empty<Category, Float>();
+    for ((category, mean) in Trie.iter(means)){
+      var aggregate = 0.0;
+      if (mean.divisor > 0.0) {
+        aggregate := mean.dividend / mean.divisor;
       };
+      categorization := Trie.put(categorization, Types.keyText(category), Text.equal, aggregate).0;
     };
-    normalized_categorization;
+    categorization;
   };
 
   func getOpinionCoef(opinion: Opinion) : Float {

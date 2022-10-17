@@ -1,4 +1,5 @@
 import Types "../types";
+import Utils "../utils";
 import Votes "votes";
 
 import Debug "mo:base/Debug";
@@ -15,6 +16,7 @@ module {
   type Categorization = Types.Categorization;
   type Category = Types.Category;
   type CategoriesDefinition = Types.CategoriesDefinition;
+  type CategorizationArray = Types.CategorizationArray;
   // For convenience: from other modules
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
   
@@ -84,6 +86,14 @@ module {
         };
       };
       return true;
+    };
+
+    public func verifyCategorization(array: CategorizationArray) : ?Categorization {
+      var trie = Utils.fromArray(array, Types.keyText, Text.equal);
+      if (isAcceptableCategorization(trie)){
+        return ?trie;
+      };
+      return null;
     };
 
     func emptyCategorization() : Categorization {
