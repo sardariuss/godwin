@@ -22,15 +22,15 @@ module {
   };
 
   public type SchedulerParams = {
-    selection_interval: Time;
-    selected_duration: Time;
-    categorization_stage_duration: Time;
+    selection_rate: Time;
+    selection_duration: Time;
+    categorization_duration: Time;
   };
 
   public type InputSchedulerParams = {
-    selection_interval: Duration;
-    selected_duration: Duration;
-    categorization_stage_duration: Duration;
+    selection_rate: Duration;
+    selection_duration: Duration;
+    categorization_duration: Duration;
   };
 
   public type InputParameters = {
@@ -112,7 +112,7 @@ module {
     name: ?Text;
     convictions: {
       to_update: Bool;
-      categorization: Categorization;
+      categorization: Categorization; // @todo: use CategorizationArray
     };
   };
 

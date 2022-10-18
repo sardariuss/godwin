@@ -141,14 +141,14 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     #IsAnonymous;
   };
 
-  public shared func getUser(principal: Principal) : async Result<User, GetUserError> {
-    Result.fromOption(users_.getUser(principal), #IsAnonymous);
+  public shared func findUser(principal: Principal) : async Result<User, GetUserError> {
+    Result.fromOption(users_.findUser(principal), #IsAnonymous);
   };
 
   public shared func updateConvictions(principal: Principal) : async Result<(), GetUserError> {
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a categorization (User). So here we have to create it if not already created.
-    Result.mapOk<User, (), GetUserError>(Result.fromOption(users_.getUser(principal), #IsAnonymous), func(user){
+    Result.mapOk<User, (), GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(user){
       users_.updateConvictions(user, questions_, opinions_);
     });
   };

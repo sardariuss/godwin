@@ -34,9 +34,9 @@ module {
 
   public func toSchedulerParams(input_params: InputSchedulerParams) : SchedulerParams {
     {
-      selection_interval = toTime(input_params.selection_interval);
-      selected_duration = toTime(input_params.selected_duration);
-      categorization_stage_duration = toTime(input_params.categorization_stage_duration);
+      selection_rate = toTime(input_params.selection_rate);
+      selection_duration = toTime(input_params.selection_duration);
+      categorization_duration = toTime(input_params.categorization_duration);
     };
   };
 

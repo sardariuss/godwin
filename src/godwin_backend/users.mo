@@ -50,14 +50,14 @@ module {
       register_;
     };
 
-    public func putUser(user: User) {
-      if (Principal.isAnonymous(user.principal)){
-        Debug.trap("Cannot put a user which principal is anonymous.");
+    public func getUser(principal: Principal) : User {
+      switch(findUser(principal)){
+        case(null) { Debug.trap("The user does not exist."); };
+        case(?user) { user; };
       };
-      register_ := Trie.put(register_, Types.keyPrincipal(user.principal), Principal.equal, user).0;
     };
 
-    public func getUser(principal: Principal) : ?User {
+    public func findUser(principal: Principal) : ?User {
       if (Principal.isAnonymous(principal)){
         return null;
       };
@@ -77,16 +77,15 @@ module {
     };
 
     public func pruneConvictions(opinions: Opinions, question_id: Nat) {
-      for ((principal, user) in Trie.iter(register)){
+      for ((principal, user) in Trie.iter(register_)){
         switch(opinions.getForUserAndQuestion(principal, question_id)){
           case(null){};
           case(?opinion){
-            let updated_user = {
+            putUser({
               principal = user.principal;
               name = user.name;
               convictions = { to_update = true; categorization = user.convictions.categorization; };
-            };
-            putUser(updated_user);
+            });
           };
         };
       };
@@ -94,13 +93,19 @@ module {
 
     public func updateConvictions(user: User, questions: Questions, opinions: Opinions) {
       if (user.convictions.to_update){
-        let updated_user = {
+        putUser({
           principal = user.principal;
           name = user.name;
           convictions = { to_update = false; categorization = computeCategorization(questions, opinions.getForUser(user.principal)); };
-        };
-        putUser(updated_user);
+        });
       };
+    };
+
+    func putUser(user: User) {
+      if (Principal.isAnonymous(user.principal)){
+        Debug.trap("User's principal cannot be anonymous.");
+      };
+      register_ := Trie.put(register_, Types.keyPrincipal(user.principal), Principal.equal, user).0;
     };
 
   };

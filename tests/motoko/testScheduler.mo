@@ -2,7 +2,9 @@ import Types "../../src/godwin_backend/types";
 import Questions "../../src/godwin_backend/questions/questions";
 import Question "../../src/godwin_backend/questions/question";
 import Scheduler "../../src/godwin_backend/scheduler";
-import TestableItemExtension "testableItemExtension";
+import Users "../../src/godwin_backend/users";
+import Opinions "../../src/godwin_backend/votes/opinions";
+import Categorizations "../../src/godwin_backend/votes/categorizations";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -11,17 +13,20 @@ import Testable "mo:matchers/Testable";
 import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
+import Trie "mo:base/Trie";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Time = Time.Time;
+  type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from types module
   type Question = Types.Question;
-  type SchedulerParams = Types.SchedulerParams;
+  type Sides = Types.Sides;
+  type Category = Types.Category;
   // For convenience: from other modules
   type Questions = Questions.Questions;
   
@@ -42,8 +47,12 @@ module {
 
     public func getSuite() : Suite.Suite {
       
+      let users = Users.empty();
+      let opinions = Opinions.empty();
+      let categorizations = Categorizations.empty(Trie.empty<Category, Sides>());
       let questions = Questions.empty();
-      // Create the questions
+      
+      // Add some questions
       for (index in Array.keys(question_inputs_)){
         let question = question_inputs_[index];
         ignore questions.createQuestion(question.author, question.date, question.title, question.text);
@@ -61,54 +70,106 @@ module {
       questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(9), 31));
 
       let scheduler = Scheduler.Scheduler({
-        selection_interval = 150;
-        selected_duration = 300;
-        categorization_stage_duration = 500;
+        selection_rate = 150;
+        selection_duration = 300;
+        categorization_duration = 500;
       }, 1000); // last_selection_date
 
       // 1.1 Select a first question
-      // No question shall be selected if time_now is before the selection date
-      var selected_question = scheduler.selectQuestion(questions, 900);
-      assert(selected_question == null);
-      // No question shall be selected if time_now >= last_selection_date + selection_interval
-      selected_question := scheduler.selectQuestion(questions, 1100);
-      assert(selected_question == null);
-      // Else the most endorsed question shall be selected
-      selected_question := scheduler.selectQuestion(questions, 1200);
-      switch(selected_question){
+      var question = scheduler.selectQuestion(questions, 900);
+      assert(question == null);
+      question := scheduler.selectQuestion(questions, 1100);
+      assert(question == null);
+      question := scheduler.selectQuestion(questions, 1200);
+      switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
+
       // 1.2 Select a second question
-      selected_question := scheduler.selectQuestion(questions, 1300);
-      assert(selected_question == null);
-      selected_question := scheduler.selectQuestion(questions, 1400);
-      switch(selected_question){
+      question := scheduler.selectQuestion(questions, 1300);
+      assert(question == null);
+      question := scheduler.selectQuestion(questions, 1400);
+      switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
+
       // 1.3 Select a third question
-      selected_question := scheduler.selectQuestion(questions, 1450);
-      assert(selected_question == null);
-      selected_question := scheduler.selectQuestion(questions, 2000);
-      switch(selected_question){
+      question := scheduler.selectQuestion(questions, 1450);
+      assert(question == null);
+      question := scheduler.selectQuestion(questions, 2000);
+      switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };
       };
+
       // 1.4 Select a fourth question
-      selected_question := scheduler.selectQuestion(questions, 2200);
-      switch(selected_question){
+      question := scheduler.selectQuestion(questions, 2200);
+      switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 7); };
       };
+
       // 1.5 Select a third question
-      selected_question := scheduler.selectQuestion(questions, 2400);
-      switch(selected_question){
+      question := scheduler.selectQuestion(questions, 2400);
+      switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 8); };
       };
 
-      // @todo: test archiveQuestion and closeCategorization
+      // 5 questions have been selected at timestamp: 1200, 1400, 2000, 2200, 2400
+      // and selection duration is 300.
+
+      // 2.1 Archive a first question
+      question := scheduler.archiveQuestion(questions, 900);
+      assert(question == null);
+      question := scheduler.archiveQuestion(questions, 1300);
+      assert(question == null);
+      question := scheduler.archiveQuestion(questions, 1501);
+      switch(question){
+        case(null) { assert(false); };
+        case(?question) { assert(question.id == 3); };
+      };
+
+      // 2.2 Archive a second question
+      question := scheduler.archiveQuestion(questions, 1600);
+      assert(question == null);
+      question := scheduler.archiveQuestion(questions, 1750);
+      switch(question){
+        case(null) { assert(false); };
+        case(?question) { assert(question.id == 6); };
+      };
+      
+      // 2.3 Archive a third question
+      question := scheduler.archiveQuestion(questions, 2400);
+      switch(question){
+        case(null) { assert(false); };
+        case(?question) { assert(question.id == 2); };
+      };
+
+      // 3 questions have been archived at timestamp: 1501, 1750, 2400
+      // and categorization duration is 500.
+
+      // 3.1 Close categorization of a first question
+      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 1501);
+      assert(question == null);
+      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 1900);
+      assert(question == null);
+      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2050);
+      switch(question){
+        case(null) { assert(false); };
+        case(?question) { assert(question.id == 3); };
+      };
+
+      // 3.2 Close categorization of a second question
+      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2200);
+      assert(question == null);
+      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2260);
+      switch(question){
+        case(null) { assert(false); };
+        case(?question) { assert(question.id == 6); };
+      };
       
       suite("Test Scheduler module", []);
     };

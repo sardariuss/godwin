@@ -225,17 +225,17 @@ module {
     switch(a.categorization_stage){
       case(#PENDING){
         switch(b.categorization_stage){
-          case(#PENDING){ compareDateEntry(a, b, default_order); }; case(#ONGOING(_)){ #less; }; case(#DONE(_)){ #less; };
+          case(#PENDING){ compareDateEntry(a, b, default_order); }; case(#ONGOING){ #less; }; case(#DONE(_)){ #less; };
         };
       };
-      case(#ONGOING(_)){
+      case(#ONGOING){
         switch(b.categorization_stage){
-          case(#PENDING){ #greater; }; case(#ONGOING(_)){ compareDateEntry(a, b, default_order); }; case(#DONE(_)){ #less; };
+          case(#PENDING){ #greater; }; case(#ONGOING){ compareDateEntry(a, b, default_order); }; case(#DONE(_)){ #less; };
         };
       };
       case(#DONE(_)){
         switch(b.categorization_stage){
-          case(#PENDING){ #greater; }; case(#ONGOING(_)){ #greater; }; case(#DONE(_)){ compareDateEntry(a, b, default_order); };
+          case(#PENDING){ #greater; }; case(#ONGOING){ #greater; }; case(#DONE(_)){ compareDateEntry(a, b, default_order); };
         };
       };
     };

@@ -43,7 +43,7 @@ module {
     };
 
     public func selectQuestion(questions: Questions, time_now: Time) : ?Question {
-      if (time_now > last_selection_date_ + params_.selection_interval) {
+      if (time_now > last_selection_date_ + params_.selection_rate) {
         switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){
           case(null){};
           case(?question){
@@ -80,7 +80,7 @@ module {
             Debug.trap("The question is not in the selected selection_stage.");
           };
           // If enough time has passed, archived the question
-          if (time_now > selection_stage.timestamp + params_.selected_duration) {
+          if (time_now > selection_stage.timestamp + params_.selection_duration) {
             let updated_question = {
               id = question.id;
               author = question.author;
@@ -110,7 +110,7 @@ module {
             Debug.trap("The question categorization_stage is not ongoing.");
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregation
-          if (time_now > categorization_stage.timestamp + params_.categorization_stage_duration) {
+          if (time_now > categorization_stage.timestamp + params_.categorization_duration) {
             let categorization = Utils.toArray(categorizations.getMeanForQuestion(question.id));
             let updated_question = {
               id = question.id;

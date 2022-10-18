@@ -5,8 +5,8 @@ load "common/install.sh";
 // Install the backend canister
 let arguments = record {
   scheduler = record {
-    selection_interval = variant { SECONDS = 0 };
-    reward_duration = variant { SECONDS = 1 };
+    selection_rate = variant { SECONDS = 0 };
+    selection_duration = variant { SECONDS = 1 };
     categorization_duration = variant { SECONDS = 1 };
   };
   categories_definition = vec {
