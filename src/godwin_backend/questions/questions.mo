@@ -20,8 +20,8 @@ module {
   type Iter<T> = Iter.Iter<T>;
   // For convenience: from types module
   type Question = Types.Question;
-  type SelectionStage = Types.SelectionStage;
-  type CategorizationStage = Types.CategorizationStage;
+  type SelectionStageEnum = Types.SelectionStageEnum;
+  type CategorizationStageEnum = Types.CategorizationStageEnum;
   // For convenience: from other modules
   type PerSelectionStage = PerSelectionStage.PerSelectionStage;
   type PerCategorizationStage = PerCategorizationStage.PerCategorizationStage;
@@ -68,7 +68,7 @@ module {
       Trie.get(register_.questions, Types.keyNat(question_id), Nat.equal);
     };
 
-    public func getInSelectionStage(selection_stage: SelectionStage, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+    public func getInSelectionStage(selection_stage: SelectionStageEnum, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
       switch(selection_stage){
         case(#CREATED){ Queries.entries(register_.per_selection_stage.created_rbts, order_by, direction); };
         case(#SELECTED){ Queries.entries(register_.per_selection_stage.selected_rbts, order_by, direction); };
@@ -76,11 +76,11 @@ module {
       };
     };
 
-    public func getInCategorizationStage(categorization_stage: CategorizationStage, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+    public func getInCategorizationStage(categorization_stage: CategorizationStageEnum, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
       switch(categorization_stage){
         case(#PENDING) { Queries.entries(register_.per_categorization_stage.pending_rbts, order_by, direction); }; 
         case(#ONGOING) { Queries.entries(register_.per_categorization_stage.ongoing_rbts, order_by, direction); }; 
-        case(#DONE(_)) { Queries.entries(register_.per_categorization_stage.done_rbts, order_by, direction); }; 
+        case(#DONE) { Queries.entries(register_.per_categorization_stage.done_rbts, order_by, direction); }; 
       };
     };
 

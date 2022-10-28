@@ -29,7 +29,7 @@ module {
     switch(selection_stage){
       case(#CREATED){ per_selection_stage.created_rbts; };
       case(#SELECTED){ per_selection_stage.selected_rbts; };
-      case(#ARCHIVED){ per_selection_stage.archived_rbts; };
+      case(#ARCHIVED(_)){ per_selection_stage.archived_rbts; };
     };
   };
 
@@ -37,7 +37,7 @@ module {
     switch(selection_stage){
       case(#CREATED){   { created_rbts = rbts;                selected_rbts = per_selection_stage.selected_rbts; archived_rbts = per_selection_stage.archived_rbts; }; };
       case(#SELECTED){  { created_rbts = per_selection_stage.created_rbts; selected_rbts = rbts;                 archived_rbts = per_selection_stage.archived_rbts; }; };
-      case(#ARCHIVED){ { created_rbts = per_selection_stage.created_rbts; selected_rbts = per_selection_stage.selected_rbts; archived_rbts = rbts;                  }; };
+      case(#ARCHIVED(_)){ { created_rbts = per_selection_stage.created_rbts; selected_rbts = per_selection_stage.selected_rbts; archived_rbts = rbts;                  }; };
     };
   };
 

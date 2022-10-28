@@ -201,17 +201,17 @@ module {
     switch(a.selection_stage){
       case(#CREATED){
         switch(b.selection_stage){
-          case(#CREATED){ compareDateEntry(a, b, default_order); }; case(#SELECTED){ #less; }; case(#ARCHIVED){ #less; };
+          case(#CREATED){ compareDateEntry(a, b, default_order); }; case(#SELECTED){ #less; }; case(#ARCHIVED(_)){ #less; };
         };
       };
       case(#SELECTED){
         switch(b.selection_stage){
-          case(#CREATED){ #greater; }; case(#SELECTED){ compareDateEntry(a, b, default_order); }; case(#ARCHIVED){ #less; };
+          case(#CREATED){ #greater; }; case(#SELECTED){ compareDateEntry(a, b, default_order); }; case(#ARCHIVED(_)){ #less; };
         };
       };
-      case(#ARCHIVED){
+      case(#ARCHIVED(_)){
         switch(b.selection_stage){
-          case(#CREATED){ #greater; }; case(#SELECTED){ #greater; }; case(#ARCHIVED){ compareDateEntry(a, b, default_order); };
+          case(#CREATED){ #greater; }; case(#SELECTED){ #greater; }; case(#ARCHIVED(_)){ compareDateEntry(a, b, default_order); };
         };
       };
     };

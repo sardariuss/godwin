@@ -56,7 +56,7 @@ module {
             assert(user.principal == principal);
             assert(user.name == null);
             assert(user.convictions.to_update);
-            assert(Trie.size(user.convictions.categorization) == 0);
+            assert(user.convictions.categorization.size() == 0);
           };
         };
       };
@@ -69,7 +69,7 @@ module {
             assert(user.principal == principal);
             assert(user.name == null);
             assert(user.convictions.to_update);
-            assert(Trie.size(user.convictions.categorization) == 0);
+            assert(user.convictions.categorization.size() == 0);
           };
         };
       };
@@ -91,7 +91,7 @@ module {
           case(?user) {
             assert(not user.convictions.to_update);
             // The convictions are still empty because no opinion has been given
-            assert(Trie.size(user.convictions.categorization) == 0);
+            assert(user.convictions.categorization.size() == 0);
           };
         };
       };
@@ -131,15 +131,15 @@ module {
       user := users.getUser(principals[0]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[0]);
-      assert(user.convictions.categorization == Utils.fromArray([("IDENTITY", 0.0), ("ECONOMY", 0.0), ("CULTURE", 0.0)], Types.keyText, Text.equal));
+      assert(user.convictions.categorization == [("IDENTITY", 0.0), ("ECONOMY", 0.0), ("CULTURE", 0.0)]);
       user := users.getUser(principals[1]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[1]);
-      assert(user.convictions.categorization == Utils.fromArray([("IDENTITY", 1.0), ("ECONOMY", 1.0), ("CULTURE", 0.0)], Types.keyText, Text.equal));
+      assert(user.convictions.categorization == [("IDENTITY", 1.0), ("ECONOMY", 1.0), ("CULTURE", 0.0)]);
       user := users.getUser(principals[2]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[2]);
-      assert(Trie.size(user.convictions.categorization) == 0);
+      assert(user.convictions.categorization.size() == 0);
 
       // @todo: need to have a more complete test on categorization computation
 

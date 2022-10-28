@@ -19,9 +19,9 @@ module {
   let { run;test;suite; } = Suite;
   // For convenience: from types modules
   type Opinion = Types.Opinion;
+  type OpinionsTotal = Types.OpinionsTotal;
   // For convenience: from other modules
   type Opinions = Opinions.Opinions;
-  type OpinionsTotal = Opinions.OpinionsTotal;
 
   func toTextOpinion(opinion: Opinion) : Text {
     switch(opinion){
@@ -59,8 +59,12 @@ module {
     t1.agree == t2.agree and t1.neutral == t2.neutral and t1.disagree == t2.disagree;
   };
 
-  func testOptOpinionsTotal(total: ?OpinionsTotal) : Testable.TestableItem<?OpinionsTotal> {
-    TestableItemExtension.testOptItem(total, toTextOpinionsTotal, equalOpinionsTotal);
+  func testOpinionsTotal(total: OpinionsTotal) : Testable.TestableItem<OpinionsTotal> {
+    {
+      display = toTextOpinionsTotal;
+      equals = equalOpinionsTotal;
+      item = total;
+    };
   };
 
   public class TestOpinions() = {
@@ -104,7 +108,7 @@ module {
       tests.add(test(
         "Total opinions",
         opinions.getTotalForQuestion(1),
-        Matchers.equals(testOptOpinionsTotal(?{ agree = 3.5; neutral = 4.5; disagree = 2.0; }))));
+        Matchers.equals(testOpinionsTotal({ agree = 3.5; neutral = 4.5; disagree = 2.0; }))));
 
       suite("Test Opinions module", tests.toArray());
     };

@@ -70,7 +70,7 @@ module {
       null;
     };
 
-    public func archiveQuestion(questions: Questions, time_now: Time) : ?Question {
+    public func archiveQuestion(questions: Questions, opinions: Opinions, time_now: Time) : ?Question {
       switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){
         case(null){};
         case(?question){
@@ -88,8 +88,14 @@ module {
               text = question.text;
               date = question.date;
               endorsements = question.endorsements;
-              selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #ARCHIVED; timestamp = time_now; });
-              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #ONGOING; timestamp = time_now; });
+              selection_stage = StageHistory.setActiveStage(
+                question.selection_stage,
+                { stage = #ARCHIVED(opinions.getTotalForQuestion(question.id)); timestamp = time_now; }
+              );
+              categorization_stage = StageHistory.setActiveStage(
+                question.categorization_stage,
+                { stage = #ONGOING; timestamp = time_now; }
+              );
             };
             questions.replaceQuestion(updated_question);
             return ?updated_question;
@@ -109,7 +115,7 @@ module {
           if (categorization_stage.stage != #ONGOING){
             Debug.trap("The question categorization_stage is not ongoing.");
           };
-          // If enough time has passed, put the categorization_stage at done and save its aggregation
+          // If enough time has passed, put the categorization_stage at done and save its aggregate
           if (time_now > categorization_stage.timestamp + params_.categorization_duration) {
             let categorization = Utils.toArray(categorizations.getMeanForQuestion(question.id));
             let updated_question = {

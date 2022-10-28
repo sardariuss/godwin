@@ -91,10 +91,22 @@ module {
     #DISAGREE: AgreementDegree;
   };
 
+  public type OpinionsTotal = {
+    agree: Float;
+    neutral: Float;
+    disagree: Float;
+  };
+
   public type SelectionStage = {
     #CREATED;
     #SELECTED;
-    #ARCHIVED; // @todo: add opinion aggregation here?
+    #ARCHIVED: OpinionsTotal;
+  };
+
+  public type SelectionStageEnum = {
+    #CREATED;
+    #SELECTED;
+    #ARCHIVED;
   };
 
   public type CategorizationArray = [(Category, Float)];
@@ -107,12 +119,18 @@ module {
     #DONE: CategorizationArray;
   };
 
+  public type CategorizationStageEnum = {
+    #PENDING;
+    #ONGOING;
+    #DONE;
+  };
+
   public type User = {
     principal: Principal;
     name: ?Text;
     convictions: {
       to_update: Bool;
-      categorization: Categorization; // @todo: use CategorizationArray
+      categorization: CategorizationArray;
     };
   };
 

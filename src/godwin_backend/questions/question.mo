@@ -8,21 +8,30 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type SelectionStage = Types.SelectionStage;
+  type SelectionStageEnum = Types.SelectionStageEnum;
   type CategorizationStage = Types.CategorizationStage;
+  type CategorizationStageEnum = Types.CategorizationStageEnum;
 
-  public func verifyCurrentSelectionStage(question: Question, stages: [SelectionStage]) : ?Question {
+  public func verifyCurrentSelectionStage(question: Question, stages: [SelectionStageEnum]) : ?Question {
     let current_stage = StageHistory.getActiveStage(question.selection_stage).stage;
     for (stage in Array.vals(stages)){
-      if (stage == current_stage) { return ?question; };        
+      switch(current_stage){
+        case(#CREATED) { if (stage == #CREATED) { return ?question; }; };
+        case(#SELECTED) { if (stage == #SELECTED) { return ?question; }; };
+        case(#ARCHIVED(_)) { if (stage == #ARCHIVED) { return ?question; }; };
+      };
     };
     null;
   };
 
-  public func verifyCategorizationStage(question: Question, stages: [CategorizationStage]) : ?Question {
+  public func verifyCategorizationStage(question: Question, stages: [CategorizationStageEnum]) : ?Question {
     let current_stage = StageHistory.getActiveStage(question.categorization_stage).stage;
-    // @todo: if stage is done it won't work
     for (stage in Array.vals(stages)){
-      if (stage == current_stage) { return ?question; };        
+      switch(current_stage){
+        case(#PENDING) { if (stage == #PENDING) { return ?question; }; };
+        case(#ONGOING) { if (stage == #ONGOING) { return ?question; }; };
+        case(#DONE(_)) { if (stage == #DONE) { return ?question; }; };
+      };
     };
     null;
   };

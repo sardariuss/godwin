@@ -47,7 +47,7 @@ module {
     };
 
     public func getTotalForQuestion(question_id: Nat) : EndorsementsTotal {
-      switch(Votes.getAggregation(register_, question_id)){
+      switch(Votes.getAggregate(register_, question_id)){
         case(null) { 0; };
         case(?total) { total; };
       };

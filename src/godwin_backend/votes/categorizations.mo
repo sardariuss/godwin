@@ -63,7 +63,7 @@ module {
 
     public func getMeanForQuestion(question_id: Nat) : Categorization {
       var mean = emptyCategorization();
-      Option.iterate(Votes.getAggregation(register_, question_id), func(sum: CategorizationsSum){
+      Option.iterate(Votes.getAggregate(register_, question_id), func(sum: CategorizationsSum){
         if (sum.count > 0){
           for ((category, sum_cursors) in Trie.iter(sum.categorization)){
             mean := Trie.put(mean, Types.keyText(category), Text.equal, sum_cursors / Float.fromInt(sum.count)).0;

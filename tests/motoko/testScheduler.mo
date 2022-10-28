@@ -122,27 +122,27 @@ module {
       // and selection duration is 300.
 
       // 2.1 Archive a first question
-      question := scheduler.archiveQuestion(questions, 900);
+      question := scheduler.archiveQuestion(questions, opinions, 900);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, 1300);
+      question := scheduler.archiveQuestion(questions, opinions, 1300);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, 1501);
+      question := scheduler.archiveQuestion(questions, opinions, 1501);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 2.2 Archive a second question
-      question := scheduler.archiveQuestion(questions, 1600);
+      question := scheduler.archiveQuestion(questions, opinions, 1600);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, 1750);
+      question := scheduler.archiveQuestion(questions, opinions, 1750);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
       
       // 2.3 Archive a third question
-      question := scheduler.archiveQuestion(questions, 2400);
+      question := scheduler.archiveQuestion(questions, opinions, 2400);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };

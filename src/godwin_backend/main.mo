@@ -133,7 +133,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   public shared func run() {
     let time_now = Time.now();
     ignore scheduler_.selectQuestion(questions_, time_now);
-    ignore scheduler_.archiveQuestion(questions_, time_now);
+    ignore scheduler_.archiveQuestion(questions_, opinions_, time_now);
     ignore scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
   };
 

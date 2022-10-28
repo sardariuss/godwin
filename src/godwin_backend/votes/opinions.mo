@@ -9,14 +9,10 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from types modules
   type Opinion = Types.Opinion;
+  type OpinionsTotal = Types.OpinionsTotal;
   // For convenience: from other modules
   type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
-  
-  public type OpinionsTotal = {
-    agree: Float;
-    neutral: Float;
-    disagree: Float;
-  };
+
 
   public func emptyRegister() : VoteRegister<Opinion, OpinionsTotal> {
     Votes.empty<Opinion, OpinionsTotal>();
@@ -50,8 +46,11 @@ module {
       register_ := Votes.removeBallot(register_, principal, question_id, removeFromTotal).0;
     };
 
-    public func getTotalForQuestion(question_id: Nat) : ?OpinionsTotal {
-      Votes.getAggregation(register_, question_id);
+    public func getTotalForQuestion(question_id: Nat) : OpinionsTotal {
+      switch(Votes.getAggregate(register_, question_id)){
+        case(?opinions_total) { return opinions_total; };
+        case(null) { return emptyTotal(); };
+      };
     };
 
   };

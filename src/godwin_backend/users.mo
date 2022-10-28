@@ -2,6 +2,7 @@ import Types "types";
 import Questions "questions/questions";
 import Opinions "votes/opinions";
 import StageHistory "stageHistory";
+import Utils "utils";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -31,6 +32,7 @@ module {
   type CursorMean = {
     dividend: Float;
     divisor: Float;
+    // @todo: have neutral
   };
   type CategorizationMeans = Trie<Category, CursorMean>;
 
@@ -68,7 +70,7 @@ module {
             principal = principal;
             name = null;
             // Important: set convictions.to_update to true, because the associated principal could have already voted
-            convictions = { to_update = true; categorization = Trie.empty<Category, Float>(); } 
+            convictions = { to_update = true; categorization = []; } 
           };
           putUser(new_user);
           ?new_user;
@@ -110,7 +112,7 @@ module {
 
   };
 
-  func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Opinion>) : Categorization {
+  func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Opinion>) : CategorizationArray {
     var means = Trie.empty<Category, CursorMean>();
     // Iterate on the questions the user gave his opinion on
     for ((question_id, opinion) in Trie.iter(user_opinions)){
@@ -124,12 +126,11 @@ module {
       };
     };
     // "Aggregate" the means (i.e. compute the mean from accumulated dividend and divisor)
-    aggregateMeans(means);
+    Utils.toArray(aggregateMeans(means));
   };
 
-  // Note: there is no check if the categorization is well-formed, but normally it should always be at this stage
-  // (even an empty categorization shall have all a cursor for each defined category)
-  // @todo: too risky to not check ?
+  // Note: at this stage the categorizations are guaranteed to be well-formed (because only well-formed categorizations
+  // can be put in the categorizations register)
   func addCategorization(means: CategorizationMeans, categorization: CategorizationArray, coef: Float) : CategorizationMeans {
     var updated_means = means;
     for ((category, cursor) in Array.vals(categorization)){

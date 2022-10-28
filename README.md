@@ -18,24 +18,28 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 ## Roadmap:
 
 ### V0.1
+DONE:
 - questions can pass into 3 selection stages: created, selected, archived
 - users can ask new questions
 - users can upvote/downvote new questions
-- users can vote on open questions
-- admin is able to assign one category for each side (agree/disagree)
-- user profiles get updated after question categorization
+- users can vote on selected questions
+- users can categorize archived questions
+- user profiles get updated after a question is categorized
 - question status gets updated according to the rules
-- suport change of parameters as admin:
-  - number of questions that are open daily
-  - duration question open
-  - update, add or remove political categories
-- front-end: 
-  - find a logo
-  - default user avatar
-  - login through II or plug or ?
-  - simple view of profile (bar for each political category)
-  - timer to update questions status (no heartbeat til fixed)
-  - works on phone
+BACKEND TODO:
+ - being able to change scheduler parameters as admin
+ - being able to change categories definitions as admin
+ - add user categorization neutral bar
+ - order question by hotness
+ - make user name unique
+ - run scheduler via heartbeat
+TO THINK:
+- add user "boldness" indicator, or just a boolean slider for if question has been answered blindly or not ?
+- should we allow to modify the vote on a question ? yes but it can change your "boldness" depending on question status
+
+LATER:
+ - add sensitive vote to hide sensitive questions
+ - add duplicate vote to mark questions as duplicate
 
 ### V0.2: DAO and tokenization
 - implement SNS, use its DAO instead of an admin
@@ -52,9 +56,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 
 ### Later
  - add decay so the older the question (or the vote?) the less change on the user profile
- - add profile indicators (boldness etc.)
  - add possibility to comment questions (ordered by upvote, like reddit)
- - add moderating features (tag questions as duplicate, hide sensitive questions)
  - be able to follow users
  - add political parties (as an average of profiles of its members.)
  - add ranking (or title) based on participation
