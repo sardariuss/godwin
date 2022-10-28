@@ -10,23 +10,19 @@ module {
   // For convenience: from types modules
   type Opinion = Types.Opinion;
   type OpinionsTotal = Types.OpinionsTotal;
-  // For convenience: from other modules
-  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
 
-
-  public func emptyRegister() : VoteRegister<Opinion, OpinionsTotal> {
-    Votes.empty<Opinion, OpinionsTotal>();
-  };
+  type OpinionsRegister = Votes.VoteRegister<Opinion, OpinionsTotal>;
 
   public func empty() : Opinions {
-    Opinions(emptyRegister());
+    Opinions(Votes.empty<Opinion, OpinionsTotal>());
   };
 
-  public class Opinions(register: VoteRegister<Opinion, OpinionsTotal>) {
+  public class Opinions(register: OpinionsRegister) {
 
+    /// Members
     var register_ = register;
 
-    public func getRegister() : VoteRegister<Opinion, OpinionsTotal> {
+    public func share() : OpinionsRegister {
       register_;
     };
 

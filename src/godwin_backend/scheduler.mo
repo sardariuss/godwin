@@ -19,7 +19,7 @@ module {
   type Time = Time.Time;
   // For convenience: from types module
   type Question = Types.Question;
-  type CategoriesDefinition = Types.CategoriesDefinition;
+  type Categories = Types.Categories;
   type Categorization = Types.Categorization;
   type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
@@ -28,22 +28,34 @@ module {
   type Categorizations = Categorizations.Categorizations;
   type Opinions = Opinions.Opinions;
 
-  public class Scheduler(params: SchedulerParams, last_selection_date: Time){
+  type SchedulerShareable = {
+    params: SchedulerParams;
+    last_selection_date: Time;
+  };
+
+  public class Scheduler(shareable: SchedulerShareable){
     
     /// Members
-    let params_ = params;
-    var last_selection_date_ = last_selection_date;
+    var params_ = shareable.params;
+    var last_selection_date_ = shareable.last_selection_date;
 
-    public func getParams(): SchedulerParams {
-      params_;
+    public func share() : SchedulerShareable {
+      {
+        params = params_;
+        last_selection_date = last_selection_date_;
+      };
     };
 
-    public func getLastSelectionDate(): Time {
+    public func setParams(params: SchedulerParams){
+      params_ := params;
+    };
+
+    public func getLastSelectionDate() : Time {
       last_selection_date_;
     };
 
     public func selectQuestion(questions: Questions, time_now: Time) : ?Question {
-      if (time_now > last_selection_date_ + params_.selection_rate) {
+      if (time_now > last_selection_date_ + Utils.toTime(params_.selection_rate)) {
         switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){
           case(null){};
           case(?question){
@@ -80,7 +92,7 @@ module {
             Debug.trap("The question is not in the selected selection_stage.");
           };
           // If enough time has passed, archived the question
-          if (time_now > selection_stage.timestamp + params_.selection_duration) {
+          if (time_now > selection_stage.timestamp + Utils.toTime(params_.selection_duration)) {
             let updated_question = {
               id = question.id;
               author = question.author;
@@ -116,8 +128,8 @@ module {
             Debug.trap("The question categorization_stage is not ongoing.");
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregate
-          if (time_now > categorization_stage.timestamp + params_.categorization_duration) {
-            let categorization = Utils.toArray(categorizations.getMeanForQuestion(question.id));
+          if (time_now > categorization_stage.timestamp + Utils.toTime(params_.categorization_duration)) {
+            let categorization = Utils.trieToArray(categorizations.getMeanForQuestion(question.id));
             let updated_question = {
               id = question.id;
               author = question.author;

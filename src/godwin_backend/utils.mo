@@ -1,7 +1,7 @@
 import Types "types";
-
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 
@@ -10,13 +10,12 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Key<K> = Trie.Key<K>;
+  type Set<K> = TrieSet.Set<K>;
   type Time = Time.Time;
   // For convenience: from types module
   type Duration = Types.Duration;
-  type InputSchedulerParams = Types.InputSchedulerParams;
-  type SchedulerParams = Types.SchedulerParams;
   
-  public func fromArray<K, V>(array: [(K, V)], key: (K) -> Key<K>, equal: (K, K) -> Bool) : Trie<K, V> {
+  public func arrayToTrie<K, V>(array: [(K, V)], key: (K) -> Key<K>, equal: (K, K) -> Bool) : Trie<K, V> {
     var trie = Trie.empty<K, V>();
     for ((k, v) in Array.vals(array)){
       trie := Trie.put(trie, key(k), equal, v).0;
@@ -24,7 +23,7 @@ module {
     trie;
   };
 
-  public func toArray<K, V>(trie: Trie<K, V>) : [(K, V)] {
+  public func trieToArray<K, V>(trie: Trie<K, V>) : [(K, V)] {
     let buffer = Buffer.Buffer<(K, V)>(Trie.size(trie));
     for (key_val in Trie.iter(trie)) {
       buffer.add(key_val);
@@ -32,20 +31,13 @@ module {
     buffer.toArray();
   };
 
-  public func toSchedulerParams(input_params: InputSchedulerParams) : SchedulerParams {
-    {
-      selection_rate = toTime(input_params.selection_rate);
-      selection_duration = toTime(input_params.selection_duration);
-      categorization_duration = toTime(input_params.categorization_duration);
-    };
-  };
-
-  func toTime(duration: Duration) : Time {
+  public func toTime(duration: Duration) : Time {
     switch(duration) {
       case(#DAYS(days)){ days * 24 * 60 * 60 * 1_000_000_000; };
       case(#HOURS(hours)){ hours * 60 * 60 * 1_000_000_000; };
       case(#MINUTES(minutes)){ minutes * 60 * 1_000_000_000; };
       case(#SECONDS(seconds)){ seconds * 1_000_000_000; };
+      case(#NS(ns)){ ns; };
     };
   };
 

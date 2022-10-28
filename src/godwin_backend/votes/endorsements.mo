@@ -9,24 +9,20 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from types module
   type Endorsement = Types.Endorsement;
-  // For convenience: from other modules
-  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
-  
-  public type EndorsementsTotal = Nat;
+  type EndorsementsTotal = Types.EndorsementsTotal;
 
-  public func emptyRegister() : VoteRegister<Endorsement, EndorsementsTotal> {
-    Votes.empty<Endorsement, EndorsementsTotal>();
-  };
+  type EndorsementsRegister = Votes.VoteRegister<Endorsement, EndorsementsTotal>;
 
   public func empty() : Endorsements {
-    Endorsements(emptyRegister());
+    Endorsements(Votes.empty<Endorsement, EndorsementsTotal>());
   };
 
-  public class Endorsements(register: VoteRegister<Endorsement, EndorsementsTotal>) {
+  public class Endorsements(register: EndorsementsRegister) {
 
+    /// Members
     var register_ = register;
 
-    public func getRegister() : VoteRegister<Endorsement, EndorsementsTotal> {
+    public func share() : EndorsementsRegister {
       register_;
     };
 

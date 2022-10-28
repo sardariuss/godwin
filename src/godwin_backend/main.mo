@@ -6,14 +6,14 @@ import Categorizations "votes/categorizations";
 import Types "types";
 import Users "users";
 import Scheduler "scheduler";
-import Utils "utils";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
+import TrieSet "mo:base/TrieSet";
 
-shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters) = {
+shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
@@ -23,26 +23,40 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   type Endorsement = Types.Endorsement;
   type Opinion = Types.Opinion;
   type User = Types.User;
-  type CategorizationArray = Types.CategorizationArray; 
-  type Categorization = Types.Categorization; 
+  type CategorizationArray = Types.CategorizationArray;
+  type Categorization = Types.Categorization;
+  type SchedulerParams = Types.SchedulerParams;
+  type Category = Types.Category;
 
   // Members
-  stable var categories_definition_ = Utils.fromArray(parameters.categories_definition, Types.keyText, Text.equal);
   var users_ = Users.empty();
   var questions_ = Questions.empty();
   var endorsements_ = Endorsements.empty();
   var opinions_ = Opinions.empty();
-  var categorizations_ = Categorizations.empty(categories_definition_);
-  var scheduler_ = Scheduler.Scheduler(Utils.toSchedulerParams(parameters.scheduler), Time.now());
+  var categorizations_ = Categorizations.empty(TrieSet.fromArray(parameters.categories, Text.hash, Text.equal));
+  var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
-  stable var users_register_ = Users.emptyRegister();
-  stable var questions_register_ = Questions.emptyRegister();
-  stable var endorsements_register_ = Endorsements.emptyRegister();
-  stable var opinions_register_ = Opinions.emptyRegister();
-  stable var categorizations_register_ = Categorizations.emptyRegister();
-  stable var scheduler = scheduler_.getParams();
-  stable var scheduler_last_selection_date = scheduler_.getLastSelectionDate();
+  stable var users_shareable_ = users_.share();
+  stable var questions_shareable_ = questions_.share();
+  stable var endorsements_shareable_ = endorsements_.share();
+  stable var opinions_shareable_ = opinions_.share();
+  stable var categorizations_shareable_ = categorizations_.share();
+  stable var scheduler_shareable_ = scheduler_.share();
+
+  public func getSchedulerParams() : async SchedulerParams {
+    scheduler_.share().params;
+  };
+
+  public func getCategories() : async [Category] {
+    TrieSet.toArray(categorizations_.share().categories);
+  };
+
+  public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), VerifyCredentialsError> {
+    Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(caller), func () {
+      scheduler_.setParams(scheduler_params);
+    });
+  };
 
   public type GetQuestionError = {
     #QuestionNotFound;
@@ -121,15 +135,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     });
   };
 
-  public type VerifyCredentialsError = {
-    #InsufficientCredentials;
-  };
-
-  func verifyCredentials(caller: Principal) : Result<(), VerifyCredentialsError> {
-    if (caller != admin_) { #err(#InsufficientCredentials); }
-    else { #ok; };
-  };
-
   public shared func run() {
     let time_now = Time.now();
     ignore scheduler_.selectQuestion(questions_, time_now);
@@ -146,6 +151,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
   };
 
   public shared func updateConvictions(principal: Principal) : async Result<(), GetUserError> {
+    // @todo: this is a false assumption
     // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
     // and so on before "creating" a categorization (User). So here we have to create it if not already created.
     Result.mapOk<User, (), GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(user){
@@ -153,28 +159,31 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.InputParameters
     });
   };
 
+  public type VerifyCredentialsError = {
+    #InsufficientCredentials;
+  };
+
+  func verifyCredentials(caller: Principal) : Result<(), VerifyCredentialsError> {
+    if (caller != admin_) { #err(#InsufficientCredentials); }
+    else { #ok; };
+  };
+
   system func preupgrade(){
-    users_register_ := users_.getRegister();
-    questions_register_ := questions_.getRegister();
-    endorsements_register_ := endorsements_.getRegister();
-    opinions_register_ := opinions_.getRegister();
-    categorizations_register_ := categorizations_.getRegister();
-    scheduler := scheduler_.getParams();
-    scheduler_last_selection_date := scheduler_.getLastSelectionDate();
+    users_shareable_ := users_.share();
+    questions_shareable_ := questions_.share();
+    endorsements_shareable_ := endorsements_.share();
+    opinions_shareable_ := opinions_.share();
+    categorizations_shareable_ := categorizations_.share();
+    scheduler_shareable_ := scheduler_.share();
   };
 
   system func postupgrade(){
-    users_ := Users.Users(users_register_);
-    users_register_ := Users.emptyRegister();
-    questions_ := Questions.Questions(questions_register_);
-    questions_register_ := Questions.emptyRegister();
-    endorsements_ := Endorsements.Endorsements(endorsements_register_);
-    endorsements_register_ := Endorsements.emptyRegister();
-    opinions_ := Opinions.Opinions(opinions_register_);
-    opinions_register_ := Opinions.emptyRegister();
-    categorizations_ := Categorizations.Categorizations(categorizations_register_, categories_definition_);
-    categorizations_register_ := Categorizations.emptyRegister();
-    scheduler_ := Scheduler.Scheduler(scheduler, scheduler_last_selection_date);
+    users_ := Users.Users(users_shareable_);
+    questions_ := Questions.Questions(questions_shareable_);
+    endorsements_ := Endorsements.Endorsements(endorsements_shareable_);
+    opinions_ := Opinions.Opinions(opinions_shareable_);
+    categorizations_ := Categorizations.Categorizations(categorizations_shareable_);
+    scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };
 
 };

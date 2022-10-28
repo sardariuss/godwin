@@ -1,8 +1,8 @@
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Principal "mo:base/Principal";
-import Hash "mo:base/Hash";
 import Time "mo:base/Time";
 
 module {
@@ -10,8 +10,8 @@ module {
   // For convenience: from base module
   type Key<K> = Trie.Key<K>;
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Set<K> = TrieSet.Set<K>;
   type Principal = Principal.Principal;
-  type Hash = Hash.Hash;
   type Time = Time.Time;
 
   public type Duration = {
@@ -19,28 +19,18 @@ module {
     #HOURS: Nat;
     #MINUTES: Nat;
     #SECONDS: Nat;
+    #NS: Nat; // For testing
   };
 
   public type SchedulerParams = {
-    selection_rate: Time;
-    selection_duration: Time;
-    categorization_duration: Time;
-  };
-
-  public type InputSchedulerParams = {
     selection_rate: Duration;
     selection_duration: Duration;
     categorization_duration: Duration;
   };
 
-  public type InputParameters = {
-    scheduler: InputSchedulerParams;
-    categories_definition: InputCategoriesDefinition;
-  };
-
   public type Parameters = {
     scheduler: SchedulerParams;
-    categories_definition: CategoriesDefinition;
+    categories: [Category];
   };
 
   public type Question = {
@@ -62,15 +52,8 @@ module {
   public type StageHistory<S> = [StageRecord<S>];
 
   public type Category = Text;
-
-  public type Sides = {
-    left: Text;
-    right: Text;
-  };
-
-  public type InputCategoriesDefinition = [(Category, Sides)];
   
-  public type CategoriesDefinition = Trie<Category, Sides>;
+  public type Categories = Set<Category>;
 
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
@@ -79,6 +62,8 @@ module {
   public type Endorsement = {
     #ENDORSE;
   };
+
+  public type EndorsementsTotal = Nat;
 
   public type AgreementDegree = {
     #ABSOLUTE;

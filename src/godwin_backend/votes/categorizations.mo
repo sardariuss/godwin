@@ -15,31 +15,35 @@ module {
   // For convenience: from types modules
   type Categorization = Types.Categorization;
   type Category = Types.Category;
-  type CategoriesDefinition = Types.CategoriesDefinition;
+  type Categories = Types.Categories;
   type CategorizationArray = Types.CategorizationArray;
-  // For convenience: from other modules
-  type VoteRegister<B, A> = Votes.VoteRegister<B, A>;
+
+  type CategorizationsRegister = Votes.VoteRegister<Categorization, CategorizationsSum>;
   
   type CategorizationsSum = {
     count: Nat;
     categorization: Categorization;
   };
 
-  public func emptyRegister() : VoteRegister<Categorization, CategorizationsSum> {
-    Votes.empty<Categorization, CategorizationsSum>();
+  public func empty(categories: Categories) : Categorizations {
+    Categorizations({ register = Votes.empty<Categorization, CategorizationsSum>(); categories = categories; });
   };
 
-  public func empty(definitions: CategoriesDefinition) : Categorizations {
-    Categorizations(emptyRegister(), definitions);
+  type Shareable = {
+    register: CategorizationsRegister;
+    categories: Categories;
   };
 
-  public class Categorizations(register: VoteRegister<Categorization, CategorizationsSum>, definitions: CategoriesDefinition) {
+  public class Categorizations(args: Shareable) {
 
-    var register_ = register;
-    let definitions_ = definitions;
+    var register_ : CategorizationsRegister = args.register;
+    let categories_ : Categories = args.categories;
 
-    public func getRegister() : VoteRegister<Categorization, CategorizationsSum> {
-      register_;
+    public func share() : Shareable {
+      {
+        register = register_;
+        categories = categories_;
+      };
     };
 
     public func getForUser(principal: Principal) : Trie<Nat, Categorization> {
@@ -81,7 +85,7 @@ module {
         if (Float.abs(cursor) > 1.0){
           return false;
         };
-        if (Trie.get(definitions_, Types.keyText(category), Text.equal) == null){
+        if (Trie.get(categories_, Types.keyText(category), Text.equal) == null){
           return false;
         };
       };
@@ -89,7 +93,7 @@ module {
     };
 
     public func verifyCategorization(array: CategorizationArray) : ?Categorization {
-      var trie = Utils.fromArray(array, Types.keyText, Text.equal);
+      var trie = Utils.arrayToTrie(array, Types.keyText, Text.equal);
       if (isAcceptableCategorization(trie)){
         return ?trie;
       };
@@ -98,7 +102,7 @@ module {
 
     func emptyCategorization() : Categorization {
       var trie = Trie.empty<Category, Float>();
-      for ((category, _) in Trie.iter(definitions_)){
+      for ((category, _) in Trie.iter(categories_)){
         trie := Trie.put(trie, Types.keyText(category), Text.equal, 0.0).0;
       };
       trie;

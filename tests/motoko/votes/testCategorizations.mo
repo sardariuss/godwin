@@ -12,6 +12,7 @@ import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Float "mo:base/Float";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
@@ -69,20 +70,20 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      let categories_definition = [
-        ("IDENTITY", { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; }),
-        ("ECONOMY", { left = "REGULATION"; right = "LAISSEZFAIRE"; }),
-        ("CULTURE", { left = "PROGRESSIVISM"; right = "CONSERVATISM"; })
+      let categories = [
+        "IDENTITY",
+        "ECONOMY",
+        "CULTURE",
       ];
 
-      let categorizations = Categorizations.empty(Utils.fromArray(categories_definition, Types.keyText, Text.equal));
+      let categorizations = Categorizations.empty(TrieSet.fromArray(categories, Text.hash, Text.equal));
 
       // Add categorization
-      var categorization = Utils.fromArray([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);
+      var categorization = Utils.arrayToTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);
       categorizations.put(principal_0, 0, categorization);
       tests.add(test("Add categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(?categorization))));
       // Update categorization
-      categorization := Utils.fromArray([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)], Types.keyText, Text.equal);
+      categorization := Utils.arrayToTrie([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)], Types.keyText, Text.equal);
       categorizations.put(principal_0, 0, categorization);
       tests.add(test("Update categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(?categorization))));
       // Remove categorization
@@ -90,20 +91,20 @@ module {
       tests.add(test("Remove categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(null))));
       
       // Test mean
-      categorizations.put(principal_0, 1, Utils.fromArray([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
-      categorizations.put(principal_1, 1, Utils.fromArray([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_2, 1, Utils.fromArray([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_3, 1, Utils.fromArray([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_4, 1, Utils.fromArray([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal));
-      categorizations.put(principal_5, 1, Utils.fromArray([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_6, 1, Utils.fromArray([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_7, 1, Utils.fromArray([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_8, 1, Utils.fromArray([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_9, 1, Utils.fromArray([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
+      categorizations.put(principal_1, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_2, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_3, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_4, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal));
+      categorizations.put(principal_5, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_6, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_7, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_8, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      categorizations.put(principal_9, 1, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal));
       tests.add(test(
         "Mean categorization",
         ?categorizations.getMeanForQuestion(1),
-        Matchers.equals(testOptCategorization(?Utils.fromArray([("IDENTITY", 0.4), ("ECONOMY", 0.1), ("CULTURE", -0.5)], Types.keyText, Text.equal)))
+        Matchers.equals(testOptCategorization(?Utils.arrayToTrie([("IDENTITY", 0.4), ("ECONOMY", 0.1), ("CULTURE", -0.5)], Types.keyText, Text.equal)))
       ));
 
       suite("Test Categorizations module", tests.toArray());

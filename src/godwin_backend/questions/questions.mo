@@ -36,24 +36,21 @@ module {
     per_categorization_stage : PerCategorizationStage;
   };
 
-  public func emptyRegister() : Register {
-    {
+  public func empty() : Questions {
+    Questions({
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
       per_selection_stage = PerSelectionStage.empty();
       per_categorization_stage = PerCategorizationStage.empty();
-    };
-  };
-
-  public func empty() : Questions {
-    Questions(emptyRegister());
+    });
   };
 
   public class Questions(register: Register) {
 
+    /// Members
     var register_ = register;
 
-    public func getRegister() : Register {
+    public func share() : Register {
       register_;
     };
 

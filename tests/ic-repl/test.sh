@@ -9,15 +9,15 @@ let arguments = record {
     selection_duration = variant { SECONDS = 1 };
     categorization_duration = variant { SECONDS = 1 };
   };
-  categories_definition = vec {
-    record { category = "IDENTITY"; sides = record { left = "CONSTRUCTIVISM"; right = "ESSENTIALISM"; } };
-    record { category = "COOPERATION"; sides = record { left = "INTERNATIONALISM"; right = "NATIONALISM"; } };
-    record { category = "PROPERTY"; sides = record { left = "COMMUNISM"; right = "CAPITALISM"; } };
-    record { category = "ECONOMY"; sides = record { left = "REGULATION"; right = "LAISSEZFAIRE"; } };
-    record { category = "CULTURE"; sides = record { left = "PROGRESSIVISM"; right = "CONSERVATISM"; } };
-    record { category = "TECHNOLOGY"; sides = record { left = "ECOLOGY"; right = "PRODUCTION"; } };
-    record { category = "JUSTICE"; sides = record { left = "REHABILITATION"; right = "PUNITION"; } };
-    record { category = "CHANGE"; sides = record { left = "REVOLUTION"; right = "REFORM"; } } 
+  categories = vec {
+    "IDENTITY";
+    "COOPERATION";
+    "PROPERTY";
+    "ECONOMY";
+    "CULTURE";
+    "TECHNOLOGY";
+    "JUSTICE";
+    "CHANGE";
   };
 };
 

@@ -36,19 +36,16 @@ module {
   };
   type CategorizationMeans = Trie<Category, CursorMean>;
 
-  public func emptyRegister() : Register {
-    Trie.empty<Principal, User>();
-  };
-
   public func empty(): Users {
-    Users(emptyRegister());
+    Users(Trie.empty<Principal, User>());
   };
 
   public class Users(register: Register) {
 
+    /// Members
     var register_ = register;
 
-    public func getRegister() : Register {
+    public func share() : Register {
       register_;
     };
 
@@ -126,7 +123,7 @@ module {
       };
     };
     // "Aggregate" the means (i.e. compute the mean from accumulated dividend and divisor)
-    Utils.toArray(aggregateMeans(means));
+    Utils.trieToArray(aggregateMeans(means));
   };
 
   // Note: at this stage the categorizations are guaranteed to be well-formed (because only well-formed categorizations

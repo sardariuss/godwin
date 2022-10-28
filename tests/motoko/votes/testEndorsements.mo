@@ -20,9 +20,9 @@ module {
   let { run;test;suite; } = Suite;
   // For convenience: from types modules
   type Endorsement = Types.Endorsement;
+  type EndorsementsTotal = Types.EndorsementsTotal;
   // For convenience: from other modules
   type Endorsements = Endorsements.Endorsements;
-  type EndorsementsTotal = Endorsements.EndorsementsTotal;
 
   func toTextEndorsement(endorsement: Endorsement) : Text {
     switch(endorsement){ case(#ENDORSE){ "ENDORSE"; } };

@@ -13,20 +13,19 @@ import Testable "mo:matchers/Testable";
 import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
-import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Time = Time.Time;
-  type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from types module
   type Question = Types.Question;
-  type Sides = Types.Sides;
   type Category = Types.Category;
+  type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
   type Questions = Questions.Questions;
   
@@ -49,7 +48,7 @@ module {
       
       let users = Users.empty();
       let opinions = Opinions.empty();
-      let categorizations = Categorizations.empty(Trie.empty<Category, Sides>());
+      let categorizations = Categorizations.empty(TrieSet.empty<Category>());
       let questions = Questions.empty();
       
       // Add some questions
@@ -69,11 +68,16 @@ module {
       questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(8), 61));
       questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(9), 31));
 
+      let scheduler_params : SchedulerParams = {
+        selection_rate = #NS(150);
+        selection_duration = #NS(300);
+        categorization_duration = #NS(500);
+      };
+
       let scheduler = Scheduler.Scheduler({
-        selection_rate = 150;
-        selection_duration = 300;
-        categorization_duration = 500;
-      }, 1000); // last_selection_date
+        params = scheduler_params;
+        last_selection_date = 1000;
+      });
 
       // 1.1 Select a first question
       var question = scheduler.selectQuestion(questions, 900);
