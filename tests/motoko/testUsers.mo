@@ -98,8 +98,8 @@ module {
 
       // Users 0 and 1 give their opinions
       let opinions = Opinions.empty();
-      opinions.put(principals[0], question.id, #NEUTRAL);
-      opinions.put(principals[1], question.id, #AGREE(#ABSOLUTE));
+      opinions.put(principals[0], question.id, 0.0);
+      opinions.put(principals[1], question.id, 1.0);
 
       // Update the question categorization stage to done with an arbitrate categorization
       questions.replaceQuestion({

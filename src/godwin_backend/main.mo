@@ -95,6 +95,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public type OpinionError = {
+    #InvalidOpinion;
     #QuestionNotFound;
     #WrongSelectionStage;
   };
@@ -106,10 +107,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
-    Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), #WrongSelectionStage);
-      Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
-        opinions_.put(caller, question_id, opinion);
+    Result.chain<Opinion, (), OpinionError>(Result.fromOption(Opinions.verifyOpinion(opinion), #InvalidOpinion), func(opinion) {
+      Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), #WrongSelectionStage);
+        Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
+          opinions_.put(caller, question_id, opinion);
+        })
       })
     });
   };

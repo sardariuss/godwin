@@ -117,7 +117,7 @@ module {
       // Check the categorization stage of the question
       switch(StageHistory.getActiveStage(question.categorization_stage).stage){
         case(#DONE(question_categorization)){
-          means := addCategorization(means, question_categorization, getOpinionCoef(opinion));
+          means := addCategorization(means, question_categorization, opinion);
         };
         case(_){}; // Ignore questions which categorization is not complete
       };
@@ -128,12 +128,12 @@ module {
 
   // Note: at this stage the categorizations are guaranteed to be well-formed (because only well-formed categorizations
   // can be put in the categorizations register)
-  func addCategorization(means: CategorizationMeans, categorization: CategorizationArray, coef: Float) : CategorizationMeans {
+  func addCategorization(means: CategorizationMeans, categorization: CategorizationArray, opinion: Float) : CategorizationMeans {
     var updated_means = means;
     for ((category, cursor) in Array.vals(categorization)){
       let current_mean = Option.get(Trie.get(means, Types.keyText(category), Text.equal), { dividend = 0.0; divisor = 0.0; });
       let updated_mean = {
-        dividend = current_mean.dividend + coef * cursor;
+        dividend = current_mean.dividend + opinion * cursor;
         divisor = current_mean.divisor + Float.abs(cursor);
       };
       updated_means := Trie.put(updated_means, Types.keyText(category), Text.equal, updated_mean).0;
@@ -151,24 +151,6 @@ module {
       categorization := Trie.put(categorization, Types.keyText(category), Text.equal, aggregate).0;
     };
     categorization;
-  };
-
-  func getOpinionCoef(opinion: Opinion) : Float {
-    switch(opinion){
-      case(#AGREE(agreement)){
-        switch(agreement){
-          case(#ABSOLUTE){  1.0; };
-          case(#MODERATE){  0.5; };
-        };
-      };
-      case(#NEUTRAL)     {  0.0; };
-      case(#DISAGREE(agreement)){
-        switch(agreement){
-          case(#MODERATE){ -0.5; };
-          case(#ABSOLUTE){ -1.0; };
-        };
-      };
-    };
   };
 
 };

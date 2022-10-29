@@ -3,6 +3,7 @@ import Votes "votes";
 
 import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
+import Float "mo:base/Float";
 
 module {
   // For convenience: from base module
@@ -12,6 +13,14 @@ module {
   type OpinionsTotal = Types.OpinionsTotal;
 
   type OpinionsRegister = Votes.VoteRegister<Opinion, OpinionsTotal>;
+
+  public func verifyOpinion(opinion: Opinion) : ?Opinion {
+    if (opinion >= -1.0 and opinion <= 1.0){
+      return ?opinion;
+    } else {
+      return null;
+    };
+  };
 
   public func empty() : Opinions {
     Opinions(Votes.empty<Opinion, OpinionsTotal>());
@@ -35,6 +44,7 @@ module {
     };
 
     public func put(principal: Principal, question_id: Nat, opinion: Opinion) {
+      assert(verifyOpinion(opinion) != null);
       register_ := Votes.putBallot(register_, principal, question_id, opinion, emptyTotal, addToTotal, removeFromTotal).0;
     };
 
@@ -52,42 +62,26 @@ module {
   };
 
   func emptyTotal() : OpinionsTotal {
-    { agree = 0.0; neutral = 0.0; disagree = 0.0; };
+    { 
+      cursor = 0.0;
+      confidence = 0.0;
+      total = 0; 
+    };
   };
 
-  func addToTotal(total: OpinionsTotal, opinion: Opinion) : OpinionsTotal {
-    switch(opinion){
-      case(#AGREE(agreement)){
-        switch(agreement){
-          case(#ABSOLUTE){ { agree = total.agree + 1.0; neutral = total.neutral      ; disagree = total.disagree      ; } };
-          case(#MODERATE){ { agree = total.agree + 0.5; neutral = total.neutral + 0.5; disagree = total.disagree      ; } };
-        };
-      };
-      case(#NEUTRAL)     { { agree = total.agree      ; neutral = total.neutral + 1.0; disagree = total.disagree      ; } };
-      case(#DISAGREE(agreement)){
-        switch(agreement){
-          case(#MODERATE){ { agree = total.agree      ; neutral = total.neutral + 0.5; disagree = total.disagree + 0.5; } };
-          case(#ABSOLUTE){ { agree = total.agree      ; neutral = total.neutral      ; disagree = total.disagree + 1.0; } };
-        };
-      };
+  func addToTotal(total: OpinionsTotal, opinion: Float) : OpinionsTotal {
+    { 
+      cursor = total.cursor + opinion;
+      confidence = total.confidence + Float.abs(opinion);
+      total = total.total + 1; 
     };
   };
 
   func removeFromTotal(total: OpinionsTotal, opinion: Opinion) : OpinionsTotal {
-    switch(opinion){
-      case(#AGREE(agreement)){
-        switch(agreement){
-          case(#ABSOLUTE){ { agree = total.agree - 1.0; neutral = total.neutral      ; disagree = total.disagree      ; } };
-          case(#MODERATE){ { agree = total.agree - 0.5; neutral = total.neutral - 0.5; disagree = total.disagree      ; } };
-        };
-      };
-      case(#NEUTRAL)     { { agree = total.agree      ; neutral = total.neutral - 1.0; disagree = total.disagree      ; } };
-      case(#DISAGREE(agreement)){
-        switch(agreement){
-          case(#MODERATE){ { agree = total.agree      ; neutral = total.neutral - 0.5; disagree = total.disagree - 0.5; } };
-          case(#ABSOLUTE){ { agree = total.agree      ; neutral = total.neutral      ; disagree = total.disagree - 1.0; } };
-        };
-      };
+    { 
+      cursor = total.cursor - opinion;
+      confidence = total.confidence - Float.abs(opinion);
+      total = total.total - 1; 
     };
   };
 

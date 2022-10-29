@@ -65,21 +65,12 @@ module {
 
   public type EndorsementsTotal = Nat;
 
-  public type AgreementDegree = {
-    #ABSOLUTE;
-    #MODERATE;
-  };
-
-  public type Opinion = {
-    #AGREE: AgreementDegree;
-    #NEUTRAL;
-    #DISAGREE: AgreementDegree;
-  };
+  public type Opinion = Float;
 
   public type OpinionsTotal = {
-    agree: Float;
-    neutral: Float;
-    disagree: Float;
+    cursor: Float;
+    confidence: Float;
+    total: Nat;
   };
 
   public type SelectionStage = {

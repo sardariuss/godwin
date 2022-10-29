@@ -28,18 +28,18 @@ module {
   type Categorizations = Categorizations.Categorizations;
   type Opinions = Opinions.Opinions;
 
-  type SchedulerShareable = {
+  type Shareable = {
     params: SchedulerParams;
     last_selection_date: Time;
   };
 
-  public class Scheduler(shareable: SchedulerShareable){
+  public class Scheduler(args: Shareable){
     
     /// Members
-    var params_ = shareable.params;
-    var last_selection_date_ = shareable.last_selection_date;
+    var params_ = args.params;
+    var last_selection_date_ = args.last_selection_date;
 
-    public func share() : SchedulerShareable {
+    public func share() : Shareable {
       {
         params = params_;
         last_selection_date = last_selection_date_;

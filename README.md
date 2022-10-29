@@ -27,12 +27,11 @@ DONE:
 - user profiles get updated after a question is categorized
 - question status gets updated according to the rules
 BACKEND TODO:
- - being able to change scheduler parameters as admin
- - being able to change categories definitions as admin
  - add user categorization neutral bar
  - order question by hotness
  - make user name unique
  - run scheduler via heartbeat
+ - add standard deviation to categorization sum
 TO THINK:
 - add user "boldness" indicator, or just a boolean slider for if question has been answered blindly or not ?
 - should we allow to modify the vote on a question ? yes but it can change your "boldness" depending on question status
@@ -40,6 +39,16 @@ TO THINK:
 LATER:
  - add sensitive vote to hide sensitive questions
  - add duplicate vote to mark questions as duplicate
+ - be able to add/remove categories as an admin:
+  - addCategory
+   - error: already exists
+   - todo: assign 0 to every categorization for this new category ( for votes and categorized questions and user profiles )
+  - removeCategory
+   - error: does not exist
+   - todo: remove from every categorization vote, update in question final categorized state, remove from user profile
+  - replaceCategory:
+   - error: does not exist
+   - todo: replace from every categorization vote, replace in question final categorized state, replace in user profile
 
 ### V0.2: DAO and tokenization
 - implement SNS, use its DAO instead of an admin

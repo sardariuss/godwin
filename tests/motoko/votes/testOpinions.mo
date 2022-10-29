@@ -10,6 +10,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Float "mo:base/Float";
+import Nat "mo:base/Nat";
 
 module {
 
@@ -24,25 +25,11 @@ module {
   type Opinions = Opinions.Opinions;
 
   func toTextOpinion(opinion: Opinion) : Text {
-    switch(opinion){
-      case(#AGREE(conviction)){
-        switch(conviction){
-          case(#ABSOLUTE){"ABS_AGREE";};
-          case(#MODERATE){"MOD_AGREE";};
-        };
-      };
-      case(#NEUTRAL){"NEUTRAL";};
-      case(#DISAGREE(conviction)){
-        switch(conviction){
-          case(#ABSOLUTE){"ABS_DISAGREE";};
-          case(#MODERATE){"MOD_DISAGREE";};
-        };
-      };
-    };
+    Float.toText(opinion);
   };
 
   func equalOpinions(opinion1: Opinion, opinion2: Opinion) : Bool {
-    Text.equal(toTextOpinion(opinion1), toTextOpinion(opinion2));
+    Float.equal(opinion1, opinion2);
   };
 
   func testOptOpinion(opinion: ?Opinion) : Testable.TestableItem<?Opinion> {
@@ -50,13 +37,13 @@ module {
   };
 
   func toTextOpinionsTotal(total: OpinionsTotal) : Text {
-    "agree=" # Float.toText(total.agree) # 
-    ", neutral=" # Float.toText(total.neutral) #
-    ", disagree=" # Float.toText(total.disagree);
+    "cursor=" # Float.toText(total.cursor) # 
+    ", confidence=" # Float.toText(total.confidence) # 
+    ", total=" # Nat.toText(total.total);
   };
 
   func equalOpinionsTotal(t1: OpinionsTotal, t2: OpinionsTotal) : Bool {
-    t1.agree == t2.agree and t1.neutral == t2.neutral and t1.disagree == t2.disagree;
+    t1.cursor == t2.cursor and t1.confidence == t2.confidence and t1.total == t2.total;
   };
 
   func testOpinionsTotal(total: OpinionsTotal) : Testable.TestableItem<OpinionsTotal> {
@@ -87,28 +74,28 @@ module {
       let opinions = Opinions.empty();
 
       // Test put/remove
-      opinions.put(principal_0, 0, #NEUTRAL);
-      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?#NEUTRAL))));
-      opinions.put(principal_0, 0, #DISAGREE(#MODERATE));
-      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?#DISAGREE(#MODERATE)))));
+      opinions.put(principal_0, 0, 0.0);
+      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?0.0))));
+      opinions.put(principal_0, 0, 1.0);
+      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?1.0))));
       opinions.remove(principal_0, 0);
       tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(null))));
       
       // Test total
-      opinions.put(principal_0, 1, #AGREE(#ABSOLUTE));
-      opinions.put(principal_1, 1, #AGREE(#MODERATE));
-      opinions.put(principal_2, 1, #AGREE(#MODERATE));
-      opinions.put(principal_3, 1, #AGREE(#MODERATE));
-      opinions.put(principal_4, 1, #AGREE(#MODERATE));
-      opinions.put(principal_5, 1, #AGREE(#MODERATE));
-      opinions.put(principal_6, 1, #NEUTRAL);
-      opinions.put(principal_7, 1, #NEUTRAL);
-      opinions.put(principal_8, 1, #DISAGREE(#ABSOLUTE));
-      opinions.put(principal_9, 1, #DISAGREE(#ABSOLUTE));
+      opinions.put(principal_0, 1,  1.0);
+      opinions.put(principal_1, 1,  0.5);
+      opinions.put(principal_2, 1,  0.5);
+      opinions.put(principal_3, 1,  0.5);
+      opinions.put(principal_4, 1,  0.5);
+      opinions.put(principal_5, 1,  0.5);
+      opinions.put(principal_6, 1,  0.0);
+      opinions.put(principal_7, 1,  0.0);
+      opinions.put(principal_8, 1, -1.0);
+      opinions.put(principal_9, 1, -1.0);
       tests.add(test(
         "Total opinions",
         opinions.getTotalForQuestion(1),
-        Matchers.equals(testOpinionsTotal({ agree = 3.5; neutral = 4.5; disagree = 2.0; }))));
+        Matchers.equals(testOpinionsTotal({ cursor = 1.5; confidence = 5.5; total = 10; }))));
 
       suite("Test Opinions module", tests.toArray());
     };
