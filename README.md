@@ -21,13 +21,14 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 DONE:
 - questions can pass into 3 selection stages: created, selected, archived
 - users can ask new questions
-- users can upvote/downvote new questions
+- users can upvote new questions
 - users can vote on selected questions
-- users can categorize archived questions
+- the admin can categorize archived questions
 - user profiles get updated after a question is categorized
 - question status gets updated according to the rules
 BACKEND TODO:
- - add user categorization neutral bar
+ - censoring of questions
+ - add user categorization neutral bar / have the same accumulation data structure for at least opinions and categorizations
  - order question by hotness
  - make user name unique
  - run scheduler via heartbeat
