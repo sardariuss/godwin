@@ -1,88 +1,56 @@
 import Types "../types";
+import Cursor "../representation/cursor";
+import Polarization "../representation/polarization";
 import Votes "votes";
 
-import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
-import Float "mo:base/Float";
 
 module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from types modules
-  type Opinion = Types.Opinion;
-  type OpinionsTotal = Types.OpinionsTotal;
+  type Cursor = Types.Cursor;
+  type Polarization = Types.Polarization;
 
-  type OpinionsRegister = Votes.VoteRegister<Opinion, OpinionsTotal>;
-
-  public func verifyOpinion(opinion: Opinion) : ?Opinion {
-    if (opinion >= -1.0 and opinion <= 1.0){
-      return ?opinion;
-    } else {
-      return null;
-    };
-  };
+  type Register = Votes.VoteRegister<Cursor, Polarization>;
 
   public func empty() : Opinions {
-    Opinions(Votes.empty<Opinion, OpinionsTotal>());
+    Opinions(Votes.empty<Cursor, Polarization>());
   };
 
-  public class Opinions(register: OpinionsRegister) {
+  public class Opinions(register: Register) {
 
     /// Members
     var register_ = register;
 
-    public func share() : OpinionsRegister {
+    public func share() : Register {
       register_;
     };
 
-    public func getForUser(principal: Principal) : Trie<Nat, Opinion> {
+    public func getForUser(principal: Principal) : Trie<Nat, Cursor> {
       Votes.getUserBallots(register_, principal);
     };
 
-    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Opinion {
+    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Cursor {
       Votes.getBallot(register_, principal, question_id);
     };
 
-    public func put(principal: Principal, question_id: Nat, opinion: Opinion) {
-      assert(verifyOpinion(opinion) != null);
-      register_ := Votes.putBallot(register_, principal, question_id, opinion, emptyTotal, addToTotal, removeFromTotal).0;
+    public func put(principal: Principal, question_id: Nat, cursor: Cursor) {
+      assert(Cursor.isValid(cursor));
+      register_ := Votes.putBallot(register_, principal, question_id, cursor, Polarization.nil, Polarization.addCursor, Polarization.subCursor).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(register_, principal, question_id, removeFromTotal).0;
+      register_ := Votes.removeBallot(register_, principal, question_id, Polarization.subCursor).0;
     };
 
-    public func getTotalForQuestion(question_id: Nat) : OpinionsTotal {
+    public func getAggregate(question_id: Nat) : Polarization {
       switch(Votes.getAggregate(register_, question_id)){
-        case(?opinions_total) { return opinions_total; };
-        case(null) { return emptyTotal(); };
+        case(?polarization) { return polarization;       };
+        case(null)          { return Polarization.nil(); };
       };
     };
 
-  };
-
-  func emptyTotal() : OpinionsTotal {
-    { 
-      cursor = 0.0;
-      confidence = 0.0;
-      total = 0; 
-    };
-  };
-
-  func addToTotal(total: OpinionsTotal, opinion: Float) : OpinionsTotal {
-    { 
-      cursor = total.cursor + opinion;
-      confidence = total.confidence + Float.abs(opinion);
-      total = total.total + 1; 
-    };
-  };
-
-  func removeFromTotal(total: OpinionsTotal, opinion: Opinion) : OpinionsTotal {
-    { 
-      cursor = total.cursor - opinion;
-      confidence = total.confidence - Float.abs(opinion);
-      total = total.total - 1; 
-    };
   };
 
 };

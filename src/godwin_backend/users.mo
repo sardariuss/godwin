@@ -3,12 +3,14 @@ import Questions "questions/questions";
 import Opinions "votes/opinions";
 import StageHistory "stageHistory";
 import Utils "utils";
+import Math "math";
+import Polarization "representation/polarization";
+import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
+import Cursor "representation/cursor";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
-import Float "mo:base/Float";
-import Array "mo:base/Array";
 import Debug "mo:base/Debug";
 import Option "mo:base/Option";
 
@@ -21,20 +23,16 @@ module {
   type User = Types.User;
   type Question = Types.Question;
   type Category = Types.Category;
-  type Categorization = Types.Categorization;
-  type Opinion = Types.Opinion;
-  type CategorizationArray = Types.CategorizationArray;
+  type Cursor = Types.Cursor;
+  type Polarization = Types.Polarization;
+  type CategoryPolarizationArray = Types.CategoryPolarizationArray;
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Opinions = Opinions.Opinions;
+  type WeightedMean<K> = Math.WeightedMean<K>;
 
   type Register = Trie<Principal, User>;
-  type CursorMean = {
-    dividend: Float;
-    divisor: Float;
-    // @todo: have neutral
-  };
-  type CategorizationMeans = Trie<Category, CursorMean>;
 
   public func empty(): Users {
     Users(Trie.empty<Principal, User>());
@@ -67,7 +65,7 @@ module {
             principal = principal;
             name = null;
             // Important: set convictions.to_update to true, because the associated principal could have already voted
-            convictions = { to_update = true; categorization = []; } 
+            convictions = { to_update = true; categorization = []; }  // @todo: init with Categories
           };
           putUser(new_user);
           ?new_user;
@@ -109,46 +107,65 @@ module {
 
   };
 
-  func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Opinion>) : CategorizationArray {
-    var means = Trie.empty<Category, CursorMean>();
+  func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Cursor>) : CategoryPolarizationArray {
+    var polarization_means = Trie.empty<Category, WeightedMean<Polarization>>(); // @todo: init with Categories
     // Iterate on the questions the user gave his opinion on
-    for ((question_id, opinion) in Trie.iter(user_opinions)){
+    for ((question_id, opinion_cursor) in Trie.iter(user_opinions)){
       let question = questions.getQuestion(question_id);
       // Check the categorization stage of the question
       switch(StageHistory.getActiveStage(question.categorization_stage).stage){
-        case(#DONE(question_categorization)){
-          means := addCategorization(means, question_categorization, opinion);
+        case(#DONE(categorization_array)){
+          let question_categorization = Utils.arrayToTrie(categorization_array, Types.keyText, Text.equal);
+          // It is possible to have a nil categorization (if nobody voted, or if some users voted but removed their vote)
+          // They shouldn't be added, because the it could make Polarization.toCursor trap later
+          // @todo: should we return a centered cursor in Polarization.toCursor to avoid handling that case?
+          if (not CategoryPolarizationTrie.isNil(question_categorization)) {
+            polarization_means := addCategorization(polarization_means, question_categorization , opinion_cursor);
+          };
         };
         case(_){}; // Ignore questions which categorization is not complete
       };
     };
-    // "Aggregate" the means (i.e. compute the mean from accumulated dividend and divisor)
-    Utils.trieToArray(aggregateMeans(means));
+    // Compute the mean from accumulated dividend and divisor
+    Utils.trieToArray(computeMeans(polarization_means));
   };
 
-  // Note: at this stage the categorizations are guaranteed to be well-formed (because only well-formed categorizations
-  // can be put in the categorizations register)
-  func addCategorization(means: CategorizationMeans, categorization: CategorizationArray, opinion: Float) : CategorizationMeans {
-    var updated_means = means;
-    for ((category, cursor) in Array.vals(categorization)){
-      let current_mean = Option.get(Trie.get(means, Types.keyText(category), Text.equal), { dividend = 0.0; divisor = 0.0; });
-      let updated_mean = {
-        dividend = current_mean.dividend + opinion * cursor;
-        divisor = current_mean.divisor + Float.abs(cursor);
-      };
-      updated_means := Trie.put(updated_means, Types.keyText(category), Text.equal, updated_mean).0;
+  func addCategorization(
+    user_polarization_trie: Trie<Category, WeightedMean<Polarization>>,
+    question_categorization: CategoryPolarizationTrie,
+    opinion_cursor: Cursor)
+  : Trie<Category, WeightedMean<Polarization>> {
+    var updated_means = user_polarization_trie;
+    for ((category, polarization) in Trie.iter(question_categorization)){
+      // Get the current accumulated weighted mean for this category
+      var category_mean = Option.get(
+        Trie.get(user_polarization_trie, Types.keyText(category), Text.equal),
+        Math.emptyMean<Polarization>(Polarization.nil) // Initialize the mean with a null polarization if no mean is found
+      );
+      // Add the opinion cursor to the mean, which will be "softened" by how "extreme" the question polarization was 
+      category_mean := Math.addToMean<Polarization>(
+        category_mean,
+        Polarization.add,
+        Polarization.mul,
+        Cursor.toPolarization(opinion_cursor), // the opinion cursor is transformed into a polarization
+        Polarization.toCursor(polarization)); // the question polarization is transformed into a cursor to be used as a weight
+      // Replace the mean for this category in the trie
+      updated_means := Trie.put(updated_means, Types.keyText(category), Text.equal, category_mean).0;
     };
     updated_means;
   };
 
-  func aggregateMeans(means: CategorizationMeans) : Categorization {
-    var categorization = Trie.empty<Category, Float>();
+  func computeMeans(means: Trie<Category, WeightedMean<Polarization>>) : Trie<Category, Polarization> {
+    var categorization = Trie.empty<Category, Polarization>();
     for ((category, mean) in Trie.iter(means)){
-      var aggregate = 0.0;
-      if (mean.divisor > 0.0) {
-        aggregate := mean.dividend / mean.divisor;
+      // If all the answered questions are categorized absolutley in the center for a category,
+      // the resulting weithed mean will be { dividend = 0; divisor = 0; } for that category.
+      // Hence a centered polarization is used to handle this case.
+      var final_polarization = { left = 0.0; center = 1.0; right = 0.0 };
+      if(mean.divisor > 0.0) {
+        final_polarization := Polarization.div(mean.dividend, mean.divisor);
       };
-      categorization := Trie.put(categorization, Types.keyText(category), Text.equal, aggregate).0;
+      categorization := Trie.put(categorization, Types.keyText(category), Text.equal, final_polarization).0;
     };
     categorization;
   };

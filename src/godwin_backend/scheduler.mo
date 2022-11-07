@@ -20,7 +20,6 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Categories = Types.Categories;
-  type Categorization = Types.Categorization;
   type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
   type Users = Users.Users;
@@ -102,7 +101,7 @@ module {
               endorsements = question.endorsements;
               selection_stage = StageHistory.setActiveStage(
                 question.selection_stage,
-                { stage = #ARCHIVED(opinions.getTotalForQuestion(question.id)); timestamp = time_now; }
+                { stage = #ARCHIVED(opinions.getAggregate(question.id)); timestamp = time_now; }
               );
               categorization_stage = StageHistory.setActiveStage(
                 question.categorization_stage,
@@ -129,7 +128,7 @@ module {
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregate
           if (time_now > categorization_stage.timestamp + Utils.toTime(params_.categorization_duration)) {
-            let categorization = Utils.trieToArray(categorizations.getMeanForQuestion(question.id));
+            let categorization_aggregate = Utils.trieToArray(categorizations.getAggregate(question.id));
             let updated_question = {
               id = question.id;
               author = question.author;
@@ -138,7 +137,7 @@ module {
               date = question.date;
               endorsements = question.endorsements;
               selection_stage = question.selection_stage;
-              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization); timestamp = time_now; });
+              categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization_aggregate); timestamp = time_now; });
             };
             questions.replaceQuestion(updated_question);
             // Prune convictions of user who give their opinion on this question to force to recompute their categorization

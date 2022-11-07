@@ -1,6 +1,6 @@
 import Types "../../../src/godwin_backend/types";
 import Opinions "../../../src/godwin_backend/votes/opinions";
-import TestableItemExtension "../testableItemExtension";
+import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -18,41 +18,8 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
-  // For convenience: from types modules
-  type Opinion = Types.Opinion;
-  type OpinionsTotal = Types.OpinionsTotal;
   // For convenience: from other modules
   type Opinions = Opinions.Opinions;
-
-  func toTextOpinion(opinion: Opinion) : Text {
-    Float.toText(opinion);
-  };
-
-  func equalOpinions(opinion1: Opinion, opinion2: Opinion) : Bool {
-    Float.equal(opinion1, opinion2);
-  };
-
-  func testOptOpinion(opinion: ?Opinion) : Testable.TestableItem<?Opinion> {
-    TestableItemExtension.testOptItem(opinion, toTextOpinion, equalOpinions);
-  };
-
-  func toTextOpinionsTotal(total: OpinionsTotal) : Text {
-    "cursor=" # Float.toText(total.cursor) # 
-    ", confidence=" # Float.toText(total.confidence) # 
-    ", total=" # Nat.toText(total.total);
-  };
-
-  func equalOpinionsTotal(t1: OpinionsTotal, t2: OpinionsTotal) : Bool {
-    t1.cursor == t2.cursor and t1.confidence == t2.confidence and t1.total == t2.total;
-  };
-
-  func testOpinionsTotal(total: OpinionsTotal) : Testable.TestableItem<OpinionsTotal> {
-    {
-      display = toTextOpinionsTotal;
-      equals = equalOpinionsTotal;
-      item = total;
-    };
-  };
 
   public class TestOpinions() = {
 
@@ -75,13 +42,13 @@ module {
 
       // Test put/remove
       opinions.put(principal_0, 0, 0.0);
-      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?0.0))));
+      tests.add(test("Add ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(?0.0))));
       opinions.put(principal_0, 0, 1.0);
-      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(?1.0))));
+      tests.add(test("Update ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(?1.0))));
       opinions.remove(principal_0, 0);
-      tests.add(test("Get user opinion", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptOpinion(null))));
+      tests.add(test("Remove ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(null))));
       
-      // Test total
+      // Test aggregate
       opinions.put(principal_0, 1,  1.0);
       opinions.put(principal_1, 1,  0.5);
       opinions.put(principal_2, 1,  0.5);
@@ -93,9 +60,9 @@ module {
       opinions.put(principal_8, 1, -1.0);
       opinions.put(principal_9, 1, -1.0);
       tests.add(test(
-        "Total opinions",
-        opinions.getTotalForQuestion(1),
-        Matchers.equals(testOpinionsTotal({ cursor = 1.5; confidence = 5.5; total = 10; }))));
+        "Opinion aggregate",
+        opinions.getAggregate(1),
+        Matchers.equals(TestableItems.polarization({left = 2.0; center = 4.5; right = 3.5;}))));
 
       suite("Test Opinions module", tests.toArray());
     };

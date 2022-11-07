@@ -4,8 +4,9 @@ import Questions "../../src/godwin_backend/questions/questions";
 import StageHistory "../../src/godwin_backend/stageHistory";
 import Opinions "../../src/godwin_backend/votes/opinions";
 import Categorizations "../../src/godwin_backend/votes/categorizations";
+import CategoryPolarizationTrie "../../src/godwin_backend/representation/categoryPolarizationTrie";
 import Utils "../../src/godwin_backend/utils";
-import TestableItemExtension "testableItemExtension";
+import TestableItems "testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -18,6 +19,7 @@ import Nat "mo:base/Nat";
 import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
@@ -32,13 +34,18 @@ module {
   
   public class TestUsers() = {
 
+    // @todo: remove asserts, use matchers instead
     public func getSuite() : Suite.Suite {
+
+      let tests = Buffer.Buffer<Suite.Suite>(0);
 
       let principals = [
         Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"),
         Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae"),
         Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe")
       ];
+
+      let categories = TrieSet.fromArray(["IDENTITY", "ECONOMY", "CULTURE"], Text.hash, Text.equal);
 
       let users = Users.empty();
 
@@ -111,7 +118,11 @@ module {
         endorsements = question.endorsements;
         selection_stage = question.selection_stage;
         categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { 
-          stage = #DONE([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)]); 
+          stage = #DONE([
+            ("IDENTITY", {left = 0.0; center = 0.0; right = 1.0;}),
+            ("ECONOMY",  {left = 0.0; center = 0.5; right = 0.5;}),
+            ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
+          ]); 
           timestamp = 1000; 
         });
       });
@@ -131,11 +142,25 @@ module {
       user := users.getUser(principals[0]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[0]);
-      assert(user.convictions.categorization == [("IDENTITY", 0.0), ("ECONOMY", 0.0), ("CULTURE", 0.0)]);
+      tests.add(test(
+        "Convictions after update",
+        Utils.arrayToTrie(user.convictions.categorization, Types.keyText, Text.equal),
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
+          ("ECONOMY",  { left = 0.0; center = 1.0; right = 0.0; }),
+          ("CULTURE",  { left = 0.0; center = 1.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
       user := users.getUser(principals[1]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[1]);
-      assert(user.convictions.categorization == [("IDENTITY", 1.0), ("ECONOMY", 1.0), ("CULTURE", 0.0)]);
+      tests.add(test(
+        "Convictions after update",
+        Utils.arrayToTrie(user.convictions.categorization, Types.keyText, Text.equal),
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
+          ("ECONOMY",  { left = 0.0; center = 0.0; right = 1.0; }),
+          ("CULTURE",  { left = 0.0; center = 1.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
       user := users.getUser(principals[2]);
       users.updateConvictions(user, questions, opinions);
       user := users.getUser(principals[2]);
@@ -143,7 +168,7 @@ module {
 
       // @todo: need to have a more complete test on categorization computation
 
-      suite("Test Users module", []);
+      suite("Test Users module", tests.toArray());
     };
   };
 

@@ -28,7 +28,7 @@ DONE:
 - question status gets updated according to the rules
 BACKEND TODO:
  - censoring of questions
- - add user categorization neutral bar / have the same accumulation data structure for at least opinions and categorizations
+ - add user categorization center bar / have the same accumulation data structure for at least opinions and categorizations
  - order question by hotness
  - make user name unique
  - run scheduler via heartbeat

@@ -3,6 +3,7 @@ import Questions "questions/questions";
 import Endorsements "votes/endorsements";
 import Opinions "votes/opinions";
 import Categorizations "votes/categorizations";
+import Cursor "representation/cursor";
 import Types "types";
 import Users "users";
 import Scheduler "scheduler";
@@ -21,12 +22,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   // For convenience: from types module
   type Question = Types.Question;
   type Endorsement = Types.Endorsement;
-  type Opinion = Types.Opinion;
+  type Cursor = Types.Cursor;
   type User = Types.User;
-  type CategorizationArray = Types.CategorizationArray;
-  type Categorization = Types.Categorization;
   type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
+  type CategoryCursorArray = Types.CategoryCursorArray;
+  type CategoryCursorTrie = Types.CategoryCursorTrie;
 
   // Members
   var users_ = Users.empty();
@@ -100,18 +101,18 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #WrongSelectionStage;
   };
 
-  public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Opinion, OpinionError> {
-    Result.mapOk<Question, ?Opinion, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+  public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Cursor, OpinionError> {
+    Result.mapOk<Question, ?Cursor, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
       opinions_.getForUserAndQuestion(principal, question_id);
     });
   };
 
-  public shared({caller}) func setOpinion(question_id: Nat, opinion: Opinion) : async Result<(), OpinionError> {
-    Result.chain<Opinion, (), OpinionError>(Result.fromOption(Opinions.verifyOpinion(opinion), #InvalidOpinion), func(opinion) {
+  public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
+    Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
       Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), #WrongSelectionStage);
         Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
-          opinions_.put(caller, question_id, opinion);
+          opinions_.put(caller, question_id, cursor);
         })
       })
     });
@@ -124,14 +125,14 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #WrongCategorizationStage;
   };
 
-  public shared({caller}) func setCategorization(question_id: Nat, input_categorization: CategorizationArray) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
-        Result.chain<Question, (), CategorizationError>(verify_result, func(question) { 
-          let verified_categorization = Result.fromOption(categorizations_.verifyCategorization(input_categorization), #InvalidCategorization);
-          Result.mapOk<Categorization, (), CategorizationError>(verified_categorization, func (categorization: Categorization) {
-            categorizations_.put(caller, question_id, categorization);
+        Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
+          let verified = Result.fromOption(categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
+          Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
+            categorizations_.put(caller, question_id, cursor_trie);
           })
         })
       })

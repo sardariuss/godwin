@@ -1,7 +1,7 @@
 import Types "../../../src/godwin_backend/types";
 import Utils "../../../src/godwin_backend/utils";
 import Categorizations "../../../src/godwin_backend/votes/categorizations";
-import TestableItemExtension "../testableItemExtension";
+import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -21,37 +21,8 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
-  // For convenience: from types modules
-  type Categorization = Types.Categorization;
   // For convenience: from other modules
   type Categorizations = Categorizations.Categorizations;
-
-  func toTextCategorization(categorization: Categorization) : Text {
-    var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(Trie.size(categorization));
-    for ((category, cursor) in Trie.iter(categorization)){
-      buffer.add("(category: " # category # ", cursor: " # Float.toText(cursor) # ")");
-    };
-    Text.join(", ", buffer.vals());
-  };
-
-  func equalCategorizations(categorization1: Categorization, categorization2: Categorization) : Bool {
-    if (Trie.size(categorization1) != Trie.size(categorization2)){
-      return false;
-    };
-    if (Trie.size(categorization1) == Trie.size(categorization2)){
-      for ((category1, cursor1) in Trie.iter(categorization1)){
-        switch(Trie.get(categorization2, Types.keyText(category1), Text.equal)){
-          case(null) { return false; };
-          case(?cursor2) { if (cursor1 != cursor2) { return false; }; };
-        };
-      };
-    };
-    return true;
-  };
-
-  func testOptCategorization(categorization: ?Categorization) : Testable.TestableItem<?Categorization> {
-    TestableItemExtension.testOptItem(categorization, toTextCategorization, equalCategorizations);
-  };
 
   public class TestCategorizations() = {
 
@@ -81,16 +52,16 @@ module {
       // Add categorization
       var categorization = Utils.arrayToTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);
       categorizations.put(principal_0, 0, categorization);
-      tests.add(test("Add categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(?categorization))));
+      tests.add(test("Add ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
       // Update categorization
       categorization := Utils.arrayToTrie([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)], Types.keyText, Text.equal);
       categorizations.put(principal_0, 0, categorization);
-      tests.add(test("Update categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(?categorization))));
+      tests.add(test("Update ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
       // Remove categorization
       categorizations.remove(principal_0, 0);
-      tests.add(test("Remove categorization", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptCategorization(null))));
+      tests.add(test("Remove ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(null))));
       
-      // Test mean
+      // Test aggregate
       categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
       categorizations.put(principal_1, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
       categorizations.put(principal_2, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
@@ -101,14 +72,19 @@ module {
       categorizations.put(principal_7, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
       categorizations.put(principal_8, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
       categorizations.put(principal_9, 1, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+
       tests.add(test(
-        "Mean categorization",
-        ?categorizations.getMeanForQuestion(1),
-        Matchers.equals(testOptCategorization(?Utils.arrayToTrie([("IDENTITY", 0.4), ("ECONOMY", 0.1), ("CULTURE", -0.5)], Types.keyText, Text.equal)))
+        "Get aggregate",
+        categorizations.getAggregate(1),
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
+          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
+        Types.keyText, Text.equal)))
       ));
 
       suite("Test Categorizations module", tests.toArray());
     };
   };
-
+ 
 };

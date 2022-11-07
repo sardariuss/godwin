@@ -65,18 +65,10 @@ module {
 
   public type EndorsementsTotal = Nat;
 
-  public type Opinion = Float;
-
-  public type OpinionsTotal = {
-    cursor: Float;
-    confidence: Float;
-    total: Nat;
-  };
-
   public type SelectionStage = {
     #CREATED;
     #SELECTED;
-    #ARCHIVED: OpinionsTotal;
+    #ARCHIVED: Polarization;
   };
 
   public type SelectionStageEnum = {
@@ -85,14 +77,10 @@ module {
     #ARCHIVED;
   };
 
-  public type CategorizationArray = [(Category, Float)];
-
-  public type Categorization = Trie<Category, Float>;
-
   public type CategorizationStage = {
     #PENDING;
     #ONGOING;
-    #DONE: CategorizationArray;
+    #DONE: CategoryPolarizationArray;
   };
 
   public type CategorizationStageEnum = {
@@ -106,8 +94,22 @@ module {
     name: ?Text;
     convictions: {
       to_update: Bool;
-      categorization: CategorizationArray;
+      categorization: CategoryPolarizationArray;
     };
   };
+
+  // Assumed to be between -1 and 1
+  public type Cursor = Float;
+
+  public type Polarization = {
+    left: Float;
+    center: Float;
+    right: Float;
+  };
+
+  public type CategoryCursorArray = [(Category, Cursor)];
+  public type CategoryPolarizationArray = [(Category, Polarization)];
+  public type CategoryCursorTrie = Trie<Category, Cursor>;
+  public type CategoryPolarizationTrie = Trie<Category, Polarization>;
 
 };

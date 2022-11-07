@@ -1,7 +1,6 @@
 import Types "../types";
 import Votes "votes";
 
-import Debug "mo:base/Debug";
 import Trie "mo:base/Trie";
 
 module {

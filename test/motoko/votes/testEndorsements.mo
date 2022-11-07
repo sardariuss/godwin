@@ -1,6 +1,6 @@
 import Types "../../../src/godwin_backend/types";
 import Endorsements "../../../src/godwin_backend/votes/endorsements";
-import TestableItemExtension "../testableItemExtension";
+import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -32,8 +32,9 @@ module {
     Text.equal(toTextEndorsement(endorsement1), toTextEndorsement(endorsement2));
   };
 
+  // @todo: put in TestableItems
   func testOptEndorsement(endorsement: ?Endorsement) : Testable.TestableItem<?Endorsement> {
-    TestableItemExtension.testOptItem(endorsement, toTextEndorsement, equalEndorsements);
+    TestableItems.testOptItem(endorsement, toTextEndorsement, equalEndorsements);
   };
 
   func toTextEndorsementsTotal(total: EndorsementsTotal) : Text {
@@ -44,8 +45,9 @@ module {
     t1 == t2;
   };
 
+  // @todo: put in TestableItems
   func testOptEndorsementsTotal(total: ?EndorsementsTotal) : Testable.TestableItem<?EndorsementsTotal> {
-    TestableItemExtension.testOptItem(total, toTextEndorsementsTotal, equalEndorsementsTotal);
+    TestableItems.testOptItem(total, toTextEndorsementsTotal, equalEndorsementsTotal);
   };
 
   public class TestEndorsements() = {
