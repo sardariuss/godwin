@@ -12,6 +12,8 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
 
+  // Ballot = Cursor
+  // Aggregate = Polarization
   type Register = Votes.VoteRegister<Cursor, Polarization>;
 
   public func empty() : Opinions {

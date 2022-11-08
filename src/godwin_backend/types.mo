@@ -19,7 +19,7 @@ module {
     #HOURS: Nat;
     #MINUTES: Nat;
     #SECONDS: Nat;
-    #NS: Nat; // For testing
+    #NS: Nat; // To be able to ease the test on the scheduler
   };
 
   public type SchedulerParams = {
@@ -59,6 +59,7 @@ module {
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
   
+  // Upvotes
   public type Endorsement = {
     #ENDORSE;
   };
@@ -71,6 +72,8 @@ module {
     #ARCHIVED: Polarization;
   };
 
+  // The enum is required to be able to compare stages to not have to give
+  // a Polarization for the #ARCHIVED stage
   public type SelectionStageEnum = {
     #CREATED;
     #SELECTED;
@@ -83,6 +86,8 @@ module {
     #DONE: CategoryPolarizationArray;
   };
 
+  // The enum is required to be able to compare stages to not have to give
+  // a CategoryPolarizationArray for the #DONE stage
   public type CategorizationStageEnum = {
     #PENDING;
     #ONGOING;
@@ -91,25 +96,49 @@ module {
 
   public type User = {
     principal: Principal;
-    name: ?Text;
+    // Optional because we want the user to be able to log based solely on the II,
+    // without requiring a user name.
+    name: ?Text;  
+    // Convictions: political profile (left/center/right for every categories based on user's answers)
     convictions: {
       to_update: Bool;
-      categorization: CategoryPolarizationArray;
+      array: CategoryPolarizationArray;
     };
   };
 
-  // Assumed to be between -1 and 1
+  // Cursor used for voting, shall be between -1 and 1, where usually:
+  //  -1 means voting totally for A
+  //   0 means voting totally neutral
+  //   1 means voting totally for B
+  //  in between values mean voting for A or B with more or less reserve.
+  //
+  // Example: cursor of 0.5, which means voting for B with some reserve.
+  // -1                            0                             1
+  // [-----------------------------|--------------()-------------]
+  //
   public type Cursor = Float;
 
+  // Polarization, used mainly to store the result of a vote.
+  // Polarizations are never normalized in the backend in order to not
+  // loosing its magnitude (which can represent different things, usually
+  // how many people voted).
+  //
+  // Example: { left = 13; center = 8; right = 36; }
+  // [$$$$$$$$$$$$$|@@@@@@@@|&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&]
+  //     left        center                 right 
+  // 
   public type Polarization = {
     left: Float;
     center: Float;
     right: Float;
   };
 
-  public type CategoryCursorArray = [(Category, Cursor)];
-  public type CategoryPolarizationArray = [(Category, Polarization)];
+  // Mapping of <key=Category, value=Cursor>, used to vote to determine a question political affinity
   public type CategoryCursorTrie = Trie<Category, Cursor>;
+  public type CategoryCursorArray = [(Category, Cursor)];
+  
+  // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
   public type CategoryPolarizationTrie = Trie<Category, Polarization>;
+  public type CategoryPolarizationArray = [(Category, Polarization)];
 
 };

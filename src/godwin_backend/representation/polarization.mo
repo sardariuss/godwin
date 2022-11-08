@@ -52,14 +52,6 @@ module {
     };
   };
 
-  public func div(polarization: Polarization, divisor: Float) : Polarization {
-    {
-      left    = polarization.left / divisor;
-      center  = polarization.center / divisor;
-      right   = polarization.right / divisor;
-    };
-  };
-
   /// Warning: the polarizations are not normalized
   /// One could normalize before doing the comparison, but then comparing nil polarization
   /// would trap.
@@ -79,9 +71,8 @@ module {
 
   // Warning: Many different polarizations can lead to the same cursor
   public func toCursor(polarization: Polarization) : Cursor {
-    // A nil polarization cannot be represented by a cursor
+    // A nil polarization cannot be represented by a cursor.
     assert(not isNil(polarization));
-    // Return the "normalized" cursor
     (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
   };
 
@@ -91,21 +82,5 @@ module {
     ", right = " # Float.toText(polarization.right) #
     " }";
   };
-
-  // @todo: it is probably a bad idea to normalize a polarization, because it can be nil ?
-  // anyway it is not needed
-//  func getNormalized(polarization: Polarization) : Polarization {
-//    assert(isValid(polarization));
-//    let sum = polarization.left + polarization.center + polarization.right;
-//    if (sum == 0.0) {
-//      polarization;
-//    } else {
-//      {
-//        left    = polarization.left / sum;
-//        center  = polarization.center / sum;
-//        right   = polarization.right / sum;
-//      };
-//    };
-//  };
 
 };

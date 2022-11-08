@@ -6,6 +6,7 @@ import Categorizations "votes/categorizations";
 import Cursor "representation/cursor";
 import Types "types";
 import Users "users";
+import Utils "utils";
 import Scheduler "scheduler";
 
 import Result "mo:base/Result";
@@ -139,6 +140,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     });
   };
 
+  // @todo: call in a heartbeat
   public shared func run() {
     let time_now = Time.now();
     ignore scheduler_.selectQuestion(questions_, time_now);
@@ -154,12 +156,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.fromOption(users_.findUser(principal), #IsAnonymous);
   };
 
-  public shared func updateConvictions(principal: Principal) : async Result<(), GetUserError> {
-    // @todo: this is a false assumption
-    // By design, we want everybody that connects on the platform to directly be able to ask questions, vote
-    // and so on before "creating" a categorization (User). So here we have to create it if not already created.
-    Result.mapOk<User, (), GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(user){
-      users_.updateConvictions(user, questions_, opinions_);
+  public shared func updateConvictions(principal: Principal) : async Result<?User, GetUserError> {
+    Result.mapOk<User, ?User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(_){
+      users_.updateConvictions(principal, questions_, opinions_);
     });
   };
 

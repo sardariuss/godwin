@@ -27,16 +27,6 @@ module {
     trie;
   };
 
-  /// True if at least one polarization in the trie is nil
-  public func isNil(polarization_trie: CategoryPolarizationTrie) : Bool {
-    for ((_, polarization) in Trie.iter(polarization_trie)){
-      if (Polarization.isNil(polarization)){
-        return true;
-      };
-    };
-    false;
-  };
-
   public func add(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
     // Add the ballot to the polarization trie
     var new_polarization_trie = polarization_trie;
@@ -81,14 +71,5 @@ module {
     };
     Text.join(", ", buffer.vals());
   };
-
-  // @todo: probably a bad idea to normalize, not useful in the backend anyway
-//  public func getNormalized(polarization_trie: CategoryPolarizationTrie) : CategoryPolarizationTrie {
-//    var normalized = Trie.empty<Category, Polarization>();
-//    for ((category, polarization) in Trie.iter(polarization_trie)){
-//      normalized := Trie.put(normalized, Types.keyText(category), Text.equal, Polarization.getNormalized(polarization)).0;
-//    };
-//    normalized;
-//  };
 
 };

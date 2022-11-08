@@ -63,7 +63,7 @@ module {
             assert(user.principal == principal);
             assert(user.name == null);
             assert(user.convictions.to_update);
-            assert(user.convictions.categorization.size() == 0);
+            assert(user.convictions.array.size() == 0);
           };
         };
       };
@@ -76,19 +76,15 @@ module {
             assert(user.principal == principal);
             assert(user.name == null);
             assert(user.convictions.to_update);
-            assert(user.convictions.categorization.size() == 0);
+            assert(user.convictions.array.size() == 0);
           };
         };
       };
 
-      // Update the convictions before having any opinion
+      // Update the convictions before having any opinion shall not return null, because
+      // at user creation the flag is set to true
       for (principal in Array.vals(principals)){
-        switch(users.findUser(principal)){
-          case(null) { assert(false); };
-          case(?user) { 
-            users.updateConvictions(user, questions, Opinions.empty());
-          };
-        };
+        assert(users.updateConvictions(principal, questions, Opinions.empty()) != null);
       };
 
       // Verify the convictions have been updated
@@ -96,17 +92,17 @@ module {
         switch(users.findUser(principal)){
           case(null) { assert(false); };
           case(?user) {
-            assert(not user.convictions.to_update);
             // The convictions are still empty because no opinion has been given
-            assert(user.convictions.categorization.size() == 0);
+            assert(not user.convictions.to_update);
+            assert(user.convictions.array.size() == 0);
           };
         };
       };
 
       // Users 0 and 1 give their opinions
       let opinions = Opinions.empty();
-      opinions.put(principals[0], question.id, 0.0);
-      opinions.put(principals[1], question.id, 1.0);
+      opinions.put(principals[0], question.id, 0.0); // totally neutral
+      opinions.put(principals[1], question.id, 1.0); // totally agree
 
       // Update the question categorization stage to done with an arbitrate categorization
       questions.replaceQuestion({
@@ -138,33 +134,42 @@ module {
       user := users.getUser(principals[2]);
       assert(not user.convictions.to_update);
 
-      // Update the convictions
-      user := users.getUser(principals[0]);
-      users.updateConvictions(user, questions, opinions);
-      user := users.getUser(principals[0]);
-      tests.add(test(
-        "Convictions after update",
-        Utils.arrayToTrie(user.convictions.categorization, Types.keyText, Text.equal),
-        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
-          ("ECONOMY",  { left = 0.0; center = 1.0; right = 0.0; }),
-          ("CULTURE",  { left = 0.0; center = 1.0; right = 0.0; })
-        ], Types.keyText, Text.equal)))));
-      user := users.getUser(principals[1]);
-      users.updateConvictions(user, questions, opinions);
-      user := users.getUser(principals[1]);
-      tests.add(test(
-        "Convictions after update",
-        Utils.arrayToTrie(user.convictions.categorization, Types.keyText, Text.equal),
-        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
-          ("ECONOMY",  { left = 0.0; center = 0.0; right = 1.0; }),
-          ("CULTURE",  { left = 0.0; center = 1.0; right = 0.0; })
-        ], Types.keyText, Text.equal)))));
-      user := users.getUser(principals[2]);
-      users.updateConvictions(user, questions, opinions);
-      user := users.getUser(principals[2]);
-      assert(user.convictions.categorization.size() == 0);
+      // Update the convictions of user 0
+      switch(users.updateConvictions(principals[0], questions, opinions)){
+        case(null) { assert(false); }; // user 0 needed to have his convictions updated
+        case(?user_0) {
+          tests.add(test(
+            "User 0 convictions",
+            Utils.arrayToTrie(user_0.convictions.array, Types.keyText, Text.equal),
+            Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+              ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
+              ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
+              ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
+            ], Types.keyText, Text.equal)))));
+        };
+      };
+      // Update again user 0 shall return null
+      assert(users.updateConvictions(principals[0], questions, opinions) == null);
+
+      // Update the convictions of user 1
+      switch(users.updateConvictions(principals[1], questions, opinions)){
+        case(null) { assert(false); }; // user needed to have his convictions updated
+        case(?user_1) {
+          tests.add(test(
+            "User 1 convictions",
+            Utils.arrayToTrie(user_1.convictions.array, Types.keyText, Text.equal),
+            Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+              ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
+              ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
+              ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
+            ], Types.keyText, Text.equal)))));
+        };
+      };
+      // Update again user 1 shall return null
+      assert(users.updateConvictions(principals[1], questions, opinions) == null);
+
+      // Update the convictions of user 2 shall return null right away
+      assert(users.updateConvictions(principals[2], questions, opinions) == null);
 
       // @todo: need to have a more complete test on categorization computation
 

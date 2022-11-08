@@ -21,18 +21,12 @@ module {
     else                 { null;    };
   };
 
-  public func inner(outer: Cursor, inner: Cursor) : Cursor {
-    assert(isValid(inner));
-    assert(isValid(outer));
-    outer * inner;
-  };
-
   public func equal(cursor_1: Cursor, cursor_2: Cursor) : Bool {
     Float.equal(cursor_1, cursor_2);
   };
 
-  // One cursor leads to only one polarization by assuming that the opposit 
-  // side of the cursor is 0 and the rest is center
+  // One cursor leads to only one *normalized* polarization by assuming
+  // that the opposit side of the cursor is 0 and the rest is center
   public func toPolarization(cursor: Cursor) : Polarization {
     if (cursor >= 0.0) {
       {

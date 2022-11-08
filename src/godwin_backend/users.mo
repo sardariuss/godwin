@@ -3,9 +3,7 @@ import Questions "questions/questions";
 import Opinions "votes/opinions";
 import StageHistory "stageHistory";
 import Utils "utils";
-import Math "math";
 import Polarization "representation/polarization";
-import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
 import Cursor "representation/cursor";
 
 import Trie "mo:base/Trie";
@@ -13,12 +11,14 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 import Option "mo:base/Option";
+import Array "mo:base/Array";
 
 module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
+
   // For convenience: from types module
   type User = Types.User;
   type Question = Types.Question;
@@ -26,11 +26,10 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Opinions = Opinions.Opinions;
-  type WeightedMean<K> = Math.WeightedMean<K>;
 
   type Register = Trie<Principal, User>;
 
@@ -38,15 +37,22 @@ module {
     Users(Trie.empty<Principal, User>());
   };
 
+  /// 
   public class Users(register: Register) {
 
-    /// Members
+    /// Map of <key=Principal, value=User>
     var register_ = register;
 
+    /// Get the shareable representation of the class.
+    /// \return The shareable representation of the class.
     public func share() : Register {
       register_;
     };
 
+    /// Get the user associated with the given principal.
+    /// \param[in] principal The principal associated to the user.
+    /// \trap If the given principal is anonymous
+    /// \return The user if in the register
     public func getUser(principal: Principal) : User {
       switch(findUser(principal)){
         case(null) { Debug.trap("The user does not exist."); };
@@ -54,6 +60,10 @@ module {
       };
     };
 
+    /// Find the user associated with the given principal or create it 
+    /// if it is not in the register.
+    /// \param[in] principal The principal associated to the user.
+    /// \return Null if the principal is anonymous, the user otherwise.
     public func findUser(principal: Principal) : ?User {
       if (Principal.isAnonymous(principal)){
         return null;
@@ -64,8 +74,10 @@ module {
           let new_user = {
             principal = principal;
             name = null;
-            // Important: set convictions.to_update to true, because the associated principal could have already voted
-            convictions = { to_update = true; categorization = []; }  // @todo: init with Categories
+            // Important: set convictions.to_update to true, because the principal could have already voted
+            // before findUser is called (we don't want to assume the frontend called findUser right after the
+            // user logged in).
+            convictions = { to_update = true; array = []; };
           };
           putUser(new_user);
           ?new_user;
@@ -73,6 +85,11 @@ module {
       };
     };
 
+    /// Prune the convictions of the users who gave their opinions on the question.
+    /// In this context, pruning means putting the convictions.to_update flag to false,
+    /// so the users' convictions need to be re-computed.
+    /// \param[in] opinions The voting register of opinions.
+    /// \param[in] question_id The question identifier.
     public func pruneConvictions(opinions: Opinions, question_id: Nat) {
       for ((principal, user) in Trie.iter(register_)){
         switch(opinions.getForUserAndQuestion(principal, question_id)){
@@ -81,23 +98,38 @@ module {
             putUser({
               principal = user.principal;
               name = user.name;
-              convictions = { to_update = true; categorization = user.convictions.categorization; };
+              convictions = { to_update = true; array = user.convictions.array; };
             });
           };
         };
       };
     };
 
-    public func updateConvictions(user: User, questions: Questions, opinions: Opinions) {
+    /// Update the convictions of the user, i.e. computes the user's specific polarization for each 
+    /// category based on the opinion he gave on the questions and the final categorization the community
+    /// has decided for this question.
+    /// \param[in] user The user which convictions to update.
+    /// \param[in] questions The register of questions.
+    /// \param[in] opinions The register of opinions.
+    /// \return The update user if his convictions needed to be updated, null otherwise.
+    public func updateConvictions(principal: Principal, questions: Questions, opinions: Opinions) : ?User {
+      var user = getUser(principal);
       if (user.convictions.to_update){
-        putUser({
+        user := {
           principal = user.principal;
           name = user.name;
-          convictions = { to_update = false; categorization = computeCategorization(questions, opinions.getForUser(user.principal)); };
-        });
+          convictions = { to_update = false; array = computeConvictions(questions, opinions.getForUser(user.principal)); };
+        };
+        putUser(user);
+        ?user;
+      } else {
+        null;
       };
     };
 
+    /// Put the user in the register.
+    /// \param[in] user The user to put in the register.
+    /// \trap If the user principal is anonymous.
     func putUser(user: User) {
       if (Principal.isAnonymous(user.principal)){
         Debug.trap("User's principal cannot be anonymous.");
@@ -107,67 +139,38 @@ module {
 
   };
 
-  func computeCategorization(questions: Questions, user_opinions: Trie<Nat, Cursor>) : CategoryPolarizationArray {
-    var polarization_means = Trie.empty<Category, WeightedMean<Polarization>>(); // @todo: init with Categories
-    // Iterate on the questions the user gave his opinion on
+  /// Compute the user's convictions (i.e. polarization for each category) based on 
+  /// the opinion he gave on the questions he voted upon and the final categorization 
+  /// the community has decided for these questions.
+  /// \param[in] questions The register of questions.
+  /// \param[in] user_opinions The opinions the user gave for each question he voted on.
+  /// \return The up-to-date user's convictions as an array: [(Category, Polarization)]
+  func computeConvictions(questions: Questions, user_opinions: Trie<Nat, Cursor>) : CategoryPolarizationArray {
+    var convictions = Trie.empty<Category, Polarization>();
+    // Iterate on the questions the user gave his opinion on.
     for ((question_id, opinion_cursor) in Trie.iter(user_opinions)){
       let question = questions.getQuestion(question_id);
-      // Check the categorization stage of the question
+      // Check the categorization stage of the question.
       switch(StageHistory.getActiveStage(question.categorization_stage).stage){
-        case(#DONE(categorization_array)){
-          let question_categorization = Utils.arrayToTrie(categorization_array, Types.keyText, Text.equal);
-          // It is possible to have a nil categorization (if nobody voted, or if some users voted but removed their vote)
-          // They shouldn't be added, because the it could make Polarization.toCursor trap later
-          // @todo: should we return a centered cursor in Polarization.toCursor to avoid handling that case?
-          if (not CategoryPolarizationTrie.isNil(question_categorization)) {
-            polarization_means := addCategorization(polarization_means, question_categorization , opinion_cursor);
+        case(#DONE(question_categorization)){
+          // Iterate on the categories.
+          for ((category, question_polarization) in Array.vals(question_categorization)){
+            // It is possible to have a nil polarization (if nobody voted, or if some users voted but then removed their vote).
+            // It shouldn't be added because Polarization.toCursor would trap (there is no cursor to reprensent a nil polarization indeed).
+            if (not Polarization.isNil(question_polarization)){
+              var category_conviction = Option.get(Trie.get(convictions, Types.keyText(category), Text.equal), Polarization.nil());
+              // Add the opinion cursor to the convictions, which will be "softened" by how "extreme" the question polarization was.
+              category_conviction := Polarization.add(category_conviction, 
+                Polarization.mul(Cursor.toPolarization(opinion_cursor), Polarization.toCursor(question_polarization)));
+              // Update the conviction for this category in the trie.
+              convictions := Trie.put(convictions, Types.keyText(category), Text.equal, category_conviction).0;
+            };
           };
         };
-        case(_){}; // Ignore questions which categorization is not complete
+        case(_){}; // Ignore the questions which categorization is not done.
       };
     };
-    // Compute the mean from accumulated dividend and divisor
-    Utils.trieToArray(computeMeans(polarization_means));
-  };
-
-  func addCategorization(
-    user_polarization_trie: Trie<Category, WeightedMean<Polarization>>,
-    question_categorization: CategoryPolarizationTrie,
-    opinion_cursor: Cursor)
-  : Trie<Category, WeightedMean<Polarization>> {
-    var updated_means = user_polarization_trie;
-    for ((category, polarization) in Trie.iter(question_categorization)){
-      // Get the current accumulated weighted mean for this category
-      var category_mean = Option.get(
-        Trie.get(user_polarization_trie, Types.keyText(category), Text.equal),
-        Math.emptyMean<Polarization>(Polarization.nil) // Initialize the mean with a null polarization if no mean is found
-      );
-      // Add the opinion cursor to the mean, which will be "softened" by how "extreme" the question polarization was 
-      category_mean := Math.addToMean<Polarization>(
-        category_mean,
-        Polarization.add,
-        Polarization.mul,
-        Cursor.toPolarization(opinion_cursor), // the opinion cursor is transformed into a polarization
-        Polarization.toCursor(polarization)); // the question polarization is transformed into a cursor to be used as a weight
-      // Replace the mean for this category in the trie
-      updated_means := Trie.put(updated_means, Types.keyText(category), Text.equal, category_mean).0;
-    };
-    updated_means;
-  };
-
-  func computeMeans(means: Trie<Category, WeightedMean<Polarization>>) : Trie<Category, Polarization> {
-    var categorization = Trie.empty<Category, Polarization>();
-    for ((category, mean) in Trie.iter(means)){
-      // If all the answered questions are categorized absolutley in the center for a category,
-      // the resulting weithed mean will be { dividend = 0; divisor = 0; } for that category.
-      // Hence a centered polarization is used to handle this case.
-      var final_polarization = { left = 0.0; center = 1.0; right = 0.0 };
-      if(mean.divisor > 0.0) {
-        final_polarization := Polarization.div(mean.dividend, mean.divisor);
-      };
-      categorization := Trie.put(categorization, Types.keyText(category), Text.equal, final_polarization).0;
-    };
-    categorization;
+    Utils.trieToArray(convictions);
   };
 
 };

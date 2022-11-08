@@ -14,7 +14,9 @@ module {
   type Categories = Types.Categories;
   type Ballot = Types.CategoryCursorTrie;
   type Aggregate = Types.CategoryPolarizationTrie;
-
+  
+  // Ballot = CategoryCursorTrie = Trie<Category, Cursor>
+  // Aggregate = CategoryPolarizationTrie = Trie<Category, Polarization>
   type Register = Votes.VoteRegister<Ballot, Aggregate>;
   
   public func empty(categories: Categories) : Categorizations {

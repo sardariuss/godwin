@@ -95,17 +95,15 @@ call backend.findUser(default);
 assert _ == variant { ok = record { 
   "principal" = default;
   name = null : opt record{};
-  convictions = record { to_update = true; categorization = vec {}; }
+  convictions = record { to_update = true; array = vec {}; }
 } };
 
 "Compute user convictions";
 call backend.updateConvictions(default);
-assert _ == variant { ok };
-
-"Get default user, updated convictions";
-call backend.findUser(default);
-assert _ == variant { ok = record { 
+assert _ == variant { ok = opt record { 
   "principal" = default;
   name = null : opt record{};
-  convictions = record { to_update = false; categorization = vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; }; };
+  convictions = record { to_update = false; array = vec { 
+    record { "IDENTITY"; record { left = 0.0; center = 0.0; right = 1.0; }; };
+    record { "COOPERATION"; record { left = 0.0; center = 0.0; right = 0.0; }; }; }; };
 } };
