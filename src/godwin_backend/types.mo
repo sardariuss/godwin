@@ -52,8 +52,6 @@ module {
   public type StageHistory<S> = [StageRecord<S>];
 
   public type Category = Text;
-  
-  public type Categories = Set<Category>;
 
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };

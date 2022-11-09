@@ -61,6 +61,9 @@ assert _ ~= variant { ok = record {
   //selection_stage = vec { record { stage = variant { CREATED }; }; record { stage = variant { SELECTED }; }; };
   //categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
+"Endorse the question: should fail";
+call backend.setEndorsement(0);
+assert _ == variant { err = variant { WrongSelectionStage} };
 "Set opinion: should succeed";
 call backend.setOpinion(0, 1.0);
 assert _ == variant { ok };
@@ -77,6 +80,12 @@ assert _ ~= variant { ok = record {
   //categorization_stage = vec { record { stage = variant { ONGOING }; }; }; 
 }};
 
+"Endorse the question: should fail";
+call backend.setEndorsement(0);
+assert _ == variant { err = variant { WrongSelectionStage} };
+"Set opinion: should fail";
+call backend.setOpinion(0, 1.0);
+assert _ == variant { err = variant { WrongSelectionStage } };
 "Set categorization: should succeed";
 call backend.setCategorization(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
 assert _ == variant { ok };

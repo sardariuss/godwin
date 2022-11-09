@@ -5,6 +5,7 @@ import Scheduler "../../src/godwin_backend/scheduler";
 import Users "../../src/godwin_backend/users";
 import Opinions "../../src/godwin_backend/votes/opinions";
 import Categorizations "../../src/godwin_backend/votes/categorizations";
+import Categories "../../src/godwin_backend/categories";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -48,7 +49,7 @@ module {
       
       let users = Users.empty();
       let opinions = Opinions.empty();
-      let categorizations = Categorizations.empty(TrieSet.empty<Category>());
+      let categorizations = Categorizations.empty(Categories.Categories([]));
       let questions = Questions.empty();
       
       // Add some questions

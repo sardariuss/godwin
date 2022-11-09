@@ -1,5 +1,6 @@
 import Types "../types";
 import Cursor "cursor";
+import Categories "../categories";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
@@ -13,26 +14,28 @@ module {
   // For convenience: from types module
   type Cursor = Types.Cursor;
   type Category = Types.Category; 
-  type Categories = Types.Categories;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
+
+  // For convenience: from other modules
+  type Categories = Categories.Categories;
 
   public func init(categories: Categories) : CategoryCursorTrie {
     var trie = Trie.empty<Category, Cursor>();
-    for ((category, _) in Trie.iter(categories)){
+    for (category in categories.vals()){
       trie := Trie.put(trie, Types.keyText(category), Text.equal, Cursor.init()).0;
     };
     trie;
   };
 
   public func isValid(cursor_trie: CategoryCursorTrie, categories: Categories) : Bool {
-    if (Trie.size(cursor_trie) != Trie.size(categories)){
+    if (Trie.size(cursor_trie) != categories.size()){
       return false;
     };
     for ((category, cursor) in Trie.iter(cursor_trie)){
       if (not Cursor.isValid(cursor)){
         return false;
       };
-      if (Trie.get(categories, Types.keyText(category), Text.equal) == null){
+      if (not categories.contains(category)){
         return false;
       };
     };

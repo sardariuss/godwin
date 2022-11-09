@@ -5,6 +5,7 @@ import Opinions "votes/opinions";
 import Categorizations "votes/categorizations";
 import Cursor "representation/cursor";
 import Types "types";
+import Categories "categories";
 import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
@@ -35,7 +36,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   var questions_ = Questions.empty();
   var endorsements_ = Endorsements.empty();
   var opinions_ = Opinions.empty();
-  var categorizations_ = Categorizations.empty(TrieSet.fromArray(parameters.categories, Text.hash, Text.equal));
+  var categories_ = Categories.Categories(parameters.categories);
+  var categorizations_ = Categorizations.empty(categories_);
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
@@ -43,6 +45,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   stable var questions_shareable_ = questions_.share();
   stable var endorsements_shareable_ = endorsements_.share();
   stable var opinions_shareable_ = opinions_.share();
+  stable var categories_shareable_ = categories_.share();
   stable var categorizations_shareable_ = categorizations_.share();
   stable var scheduler_shareable_ = scheduler_.share();
 
@@ -51,7 +54,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public func getCategories() : async [Category] {
-    TrieSet.toArray(categorizations_.share().categories);
+    categories_.share();
   };
 
   public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), VerifyCredentialsError> {
@@ -74,6 +77,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public type EndorsementError = {
     #QuestionNotFound;
+    #WrongSelectionStage;
   };
 
   public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
@@ -83,9 +87,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      endorsements_.put(caller, question_id);
-      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
+    Result.chain<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#CREATED]), #WrongSelectionStage);
+      Result.mapOk<Question, (), EndorsementError>(verify_result, func(question) {
+        endorsements_.put(caller, question_id);
+        questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
+      });
     });
   };
 
@@ -111,7 +118,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
     Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
       Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED, #ARCHIVED]), #WrongSelectionStage);
+        let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED]), #WrongSelectionStage);
         Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
           opinions_.put(caller, question_id, cursor);
         })
@@ -176,6 +183,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     questions_shareable_ := questions_.share();
     endorsements_shareable_ := endorsements_.share();
     opinions_shareable_ := opinions_.share();
+    categories_shareable_ := categories_.share();
     categorizations_shareable_ := categorizations_.share();
     scheduler_shareable_ := scheduler_.share();
   };
@@ -185,7 +193,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     questions_ := Questions.Questions(questions_shareable_);
     endorsements_ := Endorsements.Endorsements(endorsements_shareable_);
     opinions_ := Opinions.Opinions(opinions_shareable_);
-    categorizations_ := Categorizations.Categorizations(categorizations_shareable_);
+    categories_ := Categories.Categories(categories_shareable_);
+    categorizations_ := Categorizations.Categorizations(categories_, categorizations_shareable_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };
 

@@ -15,65 +15,39 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
  - once categorized, users' profiles gets updated accordingly
  - branding: famous politicians pictures and quotes for profile
 
-## Roadmap:
+## Backlog
 
-### V0.1
-DONE:
-- questions can pass into 3 selection stages: created, selected, archived
-- users can ask new questions
-- users can upvote new questions
-- users can vote on selected questions
-- the admin can categorize archived questions
-- user profiles get updated after a question is categorized
-- question status gets updated according to the rules
-BACKEND TODO:
- - censoring of questions
- - add user categorization center bar / have the same accumulation data structure for at least opinions and categorizations
- - order question by hotness
- - make user name unique
- - run scheduler via heartbeat
- - add standard deviation to categorization sum
-TO THINK:
-- add user "boldness" indicator, or just a boolean slider for if question has been answered blindly or not ?
-- should we allow to modify the vote on a question ? yes but it can change your "boldness" depending on question status
+### DONE
+- a user is automatically created on logging with II
+- users can ask questions
+- users can endorse newly created questions
+- most endorsed questions get selected
+- users can give their opinion on selected questions
+- selected questions get archived after a while, opinion aggregate is saved
+- admin can vote to categorize questions that have just been archived
+- categorization closes after a while, categorization aggregate is saved, users' convictions get updated
 
-LATER:
- - add sensitive vote to hide sensitive questions
- - add duplicate vote to mark questions as duplicate
- - be able to add/remove categories as an admin:
-  - addCategory
-   - error: already exists
-   - todo: assign 0 to every categorization for this new category ( for votes and categorized questions and user profiles )
-  - removeCategory
-   - error: does not exist
-   - todo: remove from every categorization vote, update in question final categorized state, remove from user profile
-  - replaceCategory:
-   - error: does not exist
-   - todo: replace from every categorization vote, replace in question final categorized state, replace in user profile
+### TO DO
+- a user shall be able to set a username, which is unique among all users.
+- order created questions by hotness (for front-end).
+- users have another convictions' profile offline profile, which is update when answering on archived questions.
+- admin shall be able to add/remove/replace categories
+- replace endorsements (upvotes) by cursor where right=upvote, left=censor
+- add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
 
-### V0.2: DAO and tokenization
-- implement SNS, use its DAO instead of an admin
-- people can lock the token, and get rewarded when:
-  - their question(s) gets open
-  - they vote
-  - they categorize questions (by DAO users only)
-- launch ICO
+### TO THINK
+- shall categorization and selection happen at the same time ?
+- add lifetime to a question. when lifetime is over, question is removed. censoring/upvoting can add lifetime to the question, but if censoring > upvoting, lifetime goes to 0.
+- reward/penalize users with tokens.
+- categorization shall be made by randomly picked users, where 
 
-### v0.3: Beautifying and NFTs
- - create NFTs of avatars/quotes of politicians
- - pre-mint them
- - be able to rare NFTs vs tokens
+### FOR LATER
+- being able to tag questions as duplicate
+- add decay on vote, so the older the question (or the vote?) the less change on user profile
+- add optional comment on voting on opinion and categorization, being able to upvote comments that
 
-### Later
- - add decay so the older the question (or the vote?) the less change on the user profile
- - add possibility to comment questions (ordered by upvote, like reddit)
+### IN THE FUTURE
  - be able to follow users
  - add political parties (as an average of profiles of its members.)
  - add ranking (or title) based on participation
- - improve profile visualization
  - per country platform + translations
- - add ads
- - think about political sub-categories
- - find finer voting scheme for categorization of questions
- - dashboard of people's opinion on questions, indicators
- - proof of humanity

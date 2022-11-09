@@ -19,7 +19,6 @@ module {
   type Time = Time.Time;
   // For convenience: from types module
   type Question = Types.Question;
-  type Categories = Types.Categories;
   type SchedulerParams = Types.SchedulerParams;
   // For convenience: from other modules
   type Users = Users.Users;

@@ -1,7 +1,9 @@
 import Types "../../../src/godwin_backend/types";
 import Utils "../../../src/godwin_backend/utils";
 import Categorizations "../../../src/godwin_backend/votes/categorizations";
+import Categories "../../../src/godwin_backend/categories";
 import TestableItems "../testableItems";
+
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -41,13 +43,9 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      let categories = [
-        "IDENTITY",
-        "ECONOMY",
-        "CULTURE",
-      ];
+      let categories = Categories.Categories(["IDENTITY", "ECONOMY", "CULTURE"]);
 
-      let categorizations = Categorizations.empty(TrieSet.fromArray(categories, Text.hash, Text.equal));
+      let categorizations = Categorizations.empty(categories);
 
       // Add categorization
       var categorization = Utils.arrayToTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);

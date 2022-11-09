@@ -1,5 +1,6 @@
 import Votes "votes";
 import Types "../types";
+import Categories "../categories";
 import CategoryCursorTrie "../representation/categoryCursorTrie";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 
@@ -10,37 +11,28 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   
-  // For convenience: from types modules
-  type Categories = Types.Categories;
+  // For convenience: from types modules  
   type Ballot = Types.CategoryCursorTrie;
   type Aggregate = Types.CategoryPolarizationTrie;
+
+  // For convenience: from other modules
+  type Categories = Categories.Categories;
   
   // Ballot = CategoryCursorTrie = Trie<Category, Cursor>
   // Aggregate = CategoryPolarizationTrie = Trie<Category, Polarization>
   type Register = Votes.VoteRegister<Ballot, Aggregate>;
   
   public func empty(categories: Categories) : Categorizations {
-    Categorizations({ 
-      categories;
-      register = Votes.empty<Ballot, Aggregate>();
-    });
+    Categorizations(categories, Votes.empty<Ballot, Aggregate>());
   };
 
-  type Shareable = {
-    categories: Categories;
-    register: Register;
-  };
+  public class Categorizations(categories: Categories, register: Register) {
 
-  public class Categorizations(args: Shareable) {
+    let categories_ : Categories = categories;
+    var register_ : Register = register;
 
-    let categories_ : Categories = args.categories;
-    var register_ : Register = args.register;
-
-    public func share() : Shareable {
-      {
-        categories = categories_;
-        register = register_;
-      };
+    public func share() : Register {
+      register_;
     };
 
     public func getForUser(principal: Principal) : Trie<Nat, Ballot> {
