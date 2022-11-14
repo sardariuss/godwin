@@ -32,20 +32,20 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
 
   // Members
-  var users_ = Users.empty();
+  var categories_ = Categories.Categories(parameters.categories);
+  var users_ = Users.empty(categories_);
   var questions_ = Questions.empty();
   var endorsements_ = Endorsements.empty();
   var opinions_ = Opinions.empty();
-  var categories_ = Categories.Categories(parameters.categories);
   var categorizations_ = Categorizations.empty(categories_);
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
+  stable var categories_shareable_ = categories_.share();
   stable var users_shareable_ = users_.share();
   stable var questions_shareable_ = questions_.share();
   stable var endorsements_shareable_ = endorsements_.share();
   stable var opinions_shareable_ = opinions_.share();
-  stable var categories_shareable_ = categories_.share();
   stable var categorizations_shareable_ = categorizations_.share();
   stable var scheduler_shareable_ = scheduler_.share();
 
@@ -55,6 +55,30 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public func getCategories() : async [Category] {
     categories_.share();
+  };
+
+  public type AddCategoryError = {
+    #InsufficientCredentials;
+    #CategoryAlreadyExists;
+  };
+
+  public shared({caller}) func addCategory(category: Category) : async Result<(), AddCategoryError> {
+    Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func () {
+      if (categories_.contains(category)) { #err(#CategoryAlreadyExists); }
+      else { #ok(categories_.add(category)); };
+    });
+  };
+
+  public type RemoveCategoryError = {
+    #InsufficientCredentials;
+    #CategoryDoesntExist;
+  };
+
+  public shared({caller}) func removeCategory(category: Category) : async Result<(), RemoveCategoryError> {
+    Result.chain<(), (), RemoveCategoryError>(verifyCredentials(caller), func () {
+      if (not categories_.contains(category)) { #err(#CategoryDoesntExist); }
+      else { #ok(categories_.remove(category)); };
+    });
   };
 
   public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), VerifyCredentialsError> {
@@ -163,8 +187,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.fromOption(users_.findUser(principal), #IsAnonymous);
   };
 
-  public shared func updateConvictions(principal: Principal) : async Result<?User, GetUserError> {
-    Result.mapOk<User, ?User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(_){
+  public shared func updateConvictions(principal: Principal) : async Result<User, GetUserError> {
+    Result.mapOk<User, User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(_){
       users_.updateConvictions(principal, questions_, opinions_);
     });
   };
@@ -179,22 +203,22 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   system func preupgrade(){
+    categories_shareable_ := categories_.share();
     users_shareable_ := users_.share();
     questions_shareable_ := questions_.share();
     endorsements_shareable_ := endorsements_.share();
     opinions_shareable_ := opinions_.share();
-    categories_shareable_ := categories_.share();
     categorizations_shareable_ := categorizations_.share();
     scheduler_shareable_ := scheduler_.share();
   };
 
   system func postupgrade(){
-    users_ := Users.Users(users_shareable_);
+    categories_ := Categories.Categories(categories_shareable_);
+    users_ := Users.Users(users_shareable_, categories_);
     questions_ := Questions.Questions(questions_shareable_);
     endorsements_ := Endorsements.Endorsements(endorsements_shareable_);
     opinions_ := Opinions.Opinions(opinions_shareable_);
-    categories_ := Categories.Categories(categories_shareable_);
-    categorizations_ := Categorizations.Categorizations(categories_, categorizations_shareable_);
+    categorizations_ := Categorizations.Categorizations(categorizations_shareable_, categories_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };
 

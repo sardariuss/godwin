@@ -28,10 +28,10 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - categorization closes after a while, categorization aggregate is saved, users' convictions get updated
 
 ### TO DO
+- admin shall be able to add/remove/replace categories
 - a user shall be able to set a username, which is unique among all users.
 - order created questions by hotness (for front-end).
-- users have another convictions' profile offline profile, which is update when answering on archived questions.
-- admin shall be able to add/remove/replace categories
+- users have another convictions' offline profile, which is updated when answering on archived questions.
 - replace endorsements (upvotes) by cursor where right=upvote, left=censor
 - add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
 

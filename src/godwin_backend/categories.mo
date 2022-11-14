@@ -16,12 +16,12 @@ module {
   // For convenience: from types modules
   type Category = Types.Category;
 
-  type ChangeType = {
-    #ADDED;
-    #REMOVED;
+  public type UpdateType = {
+    #CATEGORY_ADDED;
+    #CATEGORY_REMOVED;
   };
 
-  type Callback = (Category, ChangeType) -> ();
+  type Callback = (Category, UpdateType) -> ();
 
   public class Categories(categories: [Category]) {
 
@@ -48,7 +48,7 @@ module {
       assert(not contains(category));
       categories_ := TrieSet.put(categories_, category, Text.hash(category), Text.equal);
       for(idx in Iter.range(0, callbacks_.size() - 1)){
-        callbacks_.get(idx)(category, #ADDED);
+        callbacks_.get(idx)(category, #CATEGORY_ADDED);
       };
     };
 
@@ -56,7 +56,7 @@ module {
       assert(contains(category));
       categories_ := TrieSet.delete(categories_, category, Text.hash(category), Text.equal);
       for(idx in Iter.range(0, callbacks_.size() - 1)){
-        callbacks_.get(idx)(category, #REMOVED);
+        callbacks_.get(idx)(category, #CATEGORY_REMOVED);
       };
     };
 

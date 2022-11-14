@@ -104,7 +104,9 @@ call backend.findUser(default);
 assert _ == variant { ok = record { 
   "principal" = default;
   name = null : opt record{};
-  convictions = record { to_update = true; array = vec {}; }
+  convictions = record { to_update = true; array = vec { 
+    record { "IDENTITY"; record { left = 0.0; center = 0.0; right = 0.0; }; };
+    record { "COOPERATION"; record { left = 0.0; center = 0.0; right = 0.0; }; }; }; };
 } };
 
 "Compute user convictions";

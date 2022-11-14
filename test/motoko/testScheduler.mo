@@ -47,9 +47,10 @@ module {
 
     public func getSuite() : Suite.Suite {
       
-      let users = Users.empty();
+      let categories = Categories.Categories([]);
+      let users = Users.empty(categories);
       let opinions = Opinions.empty();
-      let categorizations = Categorizations.empty(Categories.Categories([]));
+      let categorizations = Categorizations.empty(categories);
       let questions = Questions.empty();
       
       // Add some questions

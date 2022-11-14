@@ -31,6 +31,9 @@ module {
     last_selection_date: Time;
   };
 
+  // Right now, the scheduler does this:
+  // SelectionStage:       created -> selected -> archived
+  // CategorizationStage:       pending        -> ongoing  -> done
   public class Scheduler(args: Shareable){
     
     /// Members
@@ -140,6 +143,9 @@ module {
             };
             questions.replaceQuestion(updated_question);
             // Prune convictions of user who give their opinion on this question to force to recompute their categorization
+            // @todo: think about making questions module observable to add pruneConvictions as an observer
+            // @todo: updating your opinion shall also prune the convictions! right now this does not cause any 
+            // problem because opinions cannot be changed after categorization is done
             users.pruneConvictions(opinions, question.id);
             return ?question;
           };

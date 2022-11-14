@@ -28,7 +28,7 @@ module {
     {
       ballots = Trie.empty<Principal, Trie<Item, B>>();
       aggregates = Trie.empty<Item, A>();
-    }
+    };
   };
 
   public func getUserBallots<B, A>(register: VoteRegister<B, A>, user: Principal) : Trie<Item, B> {
