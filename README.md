@@ -26,9 +26,9 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - selected questions get archived after a while, opinion aggregate is saved
 - admin can vote to categorize questions that have just been archived
 - categorization closes after a while, categorization aggregate is saved, users' convictions get updated
+- the admin is be able to add or remove a category
 
 ### TO DO
-- admin shall be able to add/remove/replace categories
 - a user shall be able to set a username, which is unique among all users.
 - order created questions by hotness (for front-end).
 - users have another convictions' offline profile, which is updated when answering on archived questions.
