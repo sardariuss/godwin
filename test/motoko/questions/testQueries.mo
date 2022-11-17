@@ -1,17 +1,12 @@
 import Types "../../../src/godwin_backend/types";
 import StageHistory "../../../src/godwin_backend/stageHistory";
 import Queries "../../../src/godwin_backend/questions/queries";
+import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
-
-import RBT "mo:stableRBT/StableRBTree";
 
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
-import Array "mo:base/Array";
-import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
 
 module {
@@ -27,47 +22,8 @@ module {
     type Question = Types.Question;
     // For convenience: from queries module
     type QuestionRBTs = Queries.QuestionRBTs;
-    type QueryQuestionsResult = Queries.QueryQuestionsResult;
-
-    // @todo: put in TestableItems
-    func testQueryQuestionsResult(query_result: QueryQuestionsResult) : Testable.TestableItem<QueryQuestionsResult> {
-      {
-        display = func (query_result) : Text {
-          var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-          buffer.add("ids = [");
-          for (id in Array.vals(query_result.ids)) {
-            buffer.add(Nat.toText(id) # ", ");
-          };
-          buffer.add("], next = ");
-          switch(query_result.next_id){
-            case(null){ buffer.add("null"); };
-            case(?id) { buffer.add(Nat.toText(id)); };
-          };
-          Text.join("", buffer.vals());
-        };
-        equals = func (qr1: QueryQuestionsResult, qr2: QueryQuestionsResult) : Bool { 
-          let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat, id2: Nat) : Bool {
-            Nat.equal(id1, id2);
-          });
-          let equal_next = switch(qr1.next_id) {
-            case(null) { 
-              switch(qr2.next_id) {
-                case(null) { true };
-                case(_) { false; };
-              };
-            };
-            case(?next_id1) {
-              switch(qr2.next_id) {
-                case(null) { false };
-                case(?next_id2) { Nat.equal(next_id1, next_id2); };
-              };
-            };
-          };
-          equal_ids and equal_next;
-        };
-        item = query_result;
-      };
-    };
+    
+    let testQuery = TestableItems.testQueryQuestionsResult;
 
     let question_0 =                           { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; endorsements = 13; selection_stage = [{ timestamp = 8493; stage = #CREATED;                                              }]; categorization_stage = [{ timestamp = 1283; stage = #PENDING;  }]; };
     let question_0_text_update =               { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; endorsements = 13; selection_stage = [{ timestamp = 8493; stage = #CREATED;                                              }]; categorization_stage = [{ timestamp = 1283; stage = #PENDING;  }]; };
@@ -96,12 +52,12 @@ module {
       rbts := Queries.add(rbts, question_2);
       rbts := Queries.add(rbts, question_3);
       rbts := Queries.add(rbts, question_4);
-      tests.add(test("Query by #ID",                        { ids = [0, 1, 2, 3, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #ID,                        null, null, #fwd, 10)))));
-      tests.add(test("Query by #TITLE",                     { ids = [4, 3, 2];       next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #TITLE,                     null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE",             { ids = [4, 0, 3, 2];    next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #CREATION_DATE,             null, null, #bwd, 4 )))));
-      tests.add(test("Query by #ENDORSEMENTS",              { ids = [2, 3, 4, 0, 1]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
-      tests.add(test("Query by #SELECTION_STAGE_DATE",      { ids = [3, 0, 2, 4];    next_id = ?1;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
-      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE", { ids = [0, 3, 1, 2];    next_id = ?4;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
+      tests.add(test("Query by #ID",                        { ids = [0, 1, 2, 3, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #ID,                        null, null, #fwd, 10)))));
+      tests.add(test("Query by #TITLE",                     { ids = [4, 3, 2];       next_id = ?1;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #TITLE,                     null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE",             { ids = [4, 0, 3, 2];    next_id = ?1;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #CREATION_DATE,             null, null, #bwd, 4 )))));
+      tests.add(test("Query by #ENDORSEMENTS",              { ids = [2, 3, 4, 0, 1]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
+      tests.add(test("Query by #SELECTION_STAGE_DATE",      { ids = [3, 0, 2, 4];    next_id = ?1;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
+      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE", { ids = [0, 3, 1, 2];    next_id = ?4;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
       
       // Replace questions      
       var rbts_replaced = Queries.replace(rbts, question_0, question_0_text_update);
@@ -109,22 +65,22 @@ module {
       rbts_replaced := Queries.replace(rbts_replaced, question_2, question_2_endorsements_update);
       rbts_replaced := Queries.replace(rbts_replaced, question_3, question_3_selection_stage_update);
       rbts_replaced := Queries.replace(rbts_replaced, question_4, question_4_categorization_update);
-      tests.add(test("Query by #ID (after replace)",                        { ids = [0, 1, 2, 3, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #ID,                        null, null, #fwd, 10)))));
-      tests.add(test("Query by #TITLE (after replace)",                     { ids = [0, 4, 3];       next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #TITLE,                     null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after replace)",             { ids = [4, 0, 1, 3];    next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #CREATION_DATE,             null, null, #bwd, 4 )))));
-      tests.add(test("Query by #ENDORSEMENTS (after replace)",              { ids = [3, 4, 0, 2, 1]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
-      tests.add(test("Query by #SELECTION_STAGE_DATE (after replace)",      { ids = [0, 2, 4, 1];    next_id = ?3;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
-      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE (after replace)", { ids = [0, 3, 4, 1];    next_id = ?2;   }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_replaced, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
+      tests.add(test("Query by #ID (after replace)",                        { ids = [0, 1, 2, 3, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #ID,                        null, null, #fwd, 10)))));
+      tests.add(test("Query by #TITLE (after replace)",                     { ids = [0, 4, 3];       next_id = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #TITLE,                     null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after replace)",             { ids = [4, 0, 1, 3];    next_id = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #CREATION_DATE,             null, null, #bwd, 4 )))));
+      tests.add(test("Query by #ENDORSEMENTS (after replace)",              { ids = [3, 4, 0, 2, 1]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
+      tests.add(test("Query by #SELECTION_STAGE_DATE (after replace)",      { ids = [0, 2, 4, 1];    next_id = ?3;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
+      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE (after replace)", { ids = [0, 3, 4, 1];    next_id = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
       
       // Remove questions
       var rbts_removed = Queries.remove(rbts, question_0);
       rbts_removed := Queries.remove(rbts_removed, question_1);
-      tests.add(test("Query by #ID (after remove)",                        { ids = [2, 3, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #ID,                        null, null, #fwd, 10)))));
-      tests.add(test("Query by #TITLE (after remove)",                     { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #TITLE,                     null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after remove)",             { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #CREATION_DATE,             null, null, #bwd, 4 )))));
-      tests.add(test("Query by #ENDORSEMENTS (after remove)",              { ids = [2, 3, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
-      tests.add(test("Query by #SELECTION_STAGE_DATE (after remove)",      { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
-      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE (after remove)", { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQueryQuestionsResult(Queries.queryQuestions(rbts_removed, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
+      tests.add(test("Query by #ID (after remove)",                        { ids = [2, 3, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #ID,                        null, null, #fwd, 10)))));
+      tests.add(test("Query by #TITLE (after remove)",                     { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #TITLE,                     null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after remove)",             { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #CREATION_DATE,             null, null, #bwd, 4 )))));
+      tests.add(test("Query by #ENDORSEMENTS (after remove)",              { ids = [2, 3, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #ENDORSEMENTS,              null, null, #bwd, 5 )))));
+      tests.add(test("Query by #SELECTION_STAGE_DATE (after remove)",      { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #SELECTION_STAGE_DATE,      null, null, #fwd, 4 )))));
+      tests.add(test("Query by #CATEGORIZATION_STAGE_DATE (after remove)", { ids = [3, 2, 4]; next_id = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #CATEGORIZATION_STAGE_DATE, null, null, #fwd, 4 )))));
 
       suite("Test Queries module", tests.toArray());
     };

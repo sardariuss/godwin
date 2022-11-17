@@ -31,7 +31,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 ### TO DO
 - a user shall be able to set a username, which is unique among all users.
 - order created questions by hotness (for front-end).
-- users have another convictions' offline profile, which is updated when answering on archived questions.
+- be able to reopen to opinion vote questions from the archive after some period of time
 - replace endorsements (upvotes) by cursor where right=upvote, left=censor
 - add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
 
@@ -39,7 +39,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - shall categorization and selection happen at the same time ?
 - add lifetime to a question. when lifetime is over, question is removed. censoring/upvoting can add lifetime to the question, but if censoring > upvoting, lifetime goes to 0.
 - reward/penalize users with tokens.
-- categorization shall be made by randomly picked users, where 
+- categorization shall be made by randomly picked users
 
 ### FOR LATER
 - being able to tag questions as duplicate

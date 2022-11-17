@@ -9,18 +9,14 @@ import Categories "../../src/godwin_backend/categories";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
 
-import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
-import TrieSet "mo:base/TrieSet";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
-  type Time = Time.Time;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from types module

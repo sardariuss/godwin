@@ -6,14 +6,11 @@ import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
 
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
-import Float "mo:base/Float";
 import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
 
 module {
 

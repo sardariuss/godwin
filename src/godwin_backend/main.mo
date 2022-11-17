@@ -101,7 +101,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public type EndorsementError = {
     #QuestionNotFound;
-    #WrongSelectionStage;
   };
 
   public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
@@ -111,12 +110,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.chain<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#CREATED]), #WrongSelectionStage);
-      Result.mapOk<Question, (), EndorsementError>(verify_result, func(question) {
-        endorsements_.put(caller, question_id);
-        questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
-      });
+    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      endorsements_.put(caller, question_id);
+      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question_id)));
     });
   };
 

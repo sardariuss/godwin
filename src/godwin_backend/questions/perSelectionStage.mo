@@ -19,6 +19,7 @@ module {
   public func empty() : PerSelectionStage {
     var created_rbts = Queries.init();
     created_rbts := Queries.addOrderBy(created_rbts, #ENDORSEMENTS);
+    created_rbts := Queries.addOrderBy(created_rbts, #CREATION_HOT);
     var selected_rbts = Queries.init();
     selected_rbts := Queries.addOrderBy(created_rbts, #SELECTION_STAGE_DATE);
     let archived_rbts = Queries.init();

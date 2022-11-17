@@ -4,13 +4,10 @@ import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
 
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
 
 module {

@@ -1,5 +1,6 @@
 import TestQueries "questions/testQueries";
 import TestQuestions "questions/testQuestions";
+import TestHotRanking "questions/testHotRanking";
 import TestEndorsements "votes/testEndorsements";
 import TestOpinions "votes/testOpinions";
 import TestCategorizations "votes/testCategorizations";
@@ -15,6 +16,7 @@ Suite.run(TestOpinions.TestOpinions().getSuite());
 Suite.run(TestCategorizations.TestCategorizations().getSuite());
 Suite.run(TestScheduler.TestScheduler().getSuite());
 Suite.run(TestUsers.TestUsers().getSuite());
+Suite.run(TestHotRanking.TestHotRanking().getSuite());
 // @todo: test perCategorizationStage module
 // @todo: test perSelectionStage module
 // @todo: test stageHistory module

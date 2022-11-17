@@ -1,16 +1,11 @@
-import Types "../../../src/godwin_backend/types";
 import Endorsements "../../../src/godwin_backend/votes/endorsements";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
 
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
-import Float "mo:base/Float";
-import Nat "mo:base/Nat";
 
 module {
 
@@ -18,37 +13,11 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
-  // For convenience: from types modules
-  type Endorsement = Types.Endorsement;
-  type EndorsementsTotal = Types.EndorsementsTotal;
   // For convenience: from other modules
   type Endorsements = Endorsements.Endorsements;
 
-  func toTextEndorsement(endorsement: Endorsement) : Text {
-    switch(endorsement){ case(#ENDORSE){ "ENDORSE"; } };
-  };
-
-  func equalEndorsements(endorsement1: Endorsement, endorsement2: Endorsement) : Bool {
-    Text.equal(toTextEndorsement(endorsement1), toTextEndorsement(endorsement2));
-  };
-
-  // @todo: put in TestableItems
-  func testOptEndorsement(endorsement: ?Endorsement) : Testable.TestableItem<?Endorsement> {
-    TestableItems.testOptItem(endorsement, toTextEndorsement, equalEndorsements);
-  };
-
-  func toTextEndorsementsTotal(total: EndorsementsTotal) : Text {
-    "total=" # Nat.toText(total);
-  };
-
-  func equalEndorsementsTotal(t1: EndorsementsTotal, t2: EndorsementsTotal) : Bool {
-    t1 == t2;
-  };
-
-  // @todo: put in TestableItems
-  func testOptEndorsementsTotal(total: ?EndorsementsTotal) : Testable.TestableItem<?EndorsementsTotal> {
-    TestableItems.testOptItem(total, toTextEndorsementsTotal, equalEndorsementsTotal);
-  };
+  let testOptEndorsementsTotal = TestableItems.testOptEndorsementsTotal;
+  let testOptEndorsement = TestableItems.testOptEndorsement;
 
   public class TestEndorsements() = {
 

@@ -42,7 +42,7 @@ assert _ ~= variant { ok = record {
   categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
 
-"Endorse the question: should succeed";
+"Endorse the question: should always succeed";
 call backend.setEndorsement(0);
 assert _ == variant { ok };
 "Set opinion: should fail";
@@ -61,9 +61,9 @@ assert _ ~= variant { ok = record {
   //selection_stage = vec { record { stage = variant { CREATED }; }; record { stage = variant { SELECTED }; }; };
   //categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
-"Endorse the question: should fail";
+"Endorse the question: should always succeed";
 call backend.setEndorsement(0);
-assert _ == variant { err = variant { WrongSelectionStage} };
+assert _ == variant { ok };
 "Set opinion: should succeed";
 call backend.setOpinion(0, 1.0);
 assert _ == variant { ok };
@@ -80,9 +80,9 @@ assert _ ~= variant { ok = record {
   //categorization_stage = vec { record { stage = variant { ONGOING }; }; }; 
 }};
 
-"Endorse the question: should fail";
+"Endorse the question: should always succeed";
 call backend.setEndorsement(0);
-assert _ == variant { err = variant { WrongSelectionStage} };
+assert _ == variant { ok };
 "Set opinion: should fail";
 call backend.setOpinion(0, 1.0);
 assert _ == variant { err = variant { WrongSelectionStage } };
@@ -111,7 +111,7 @@ assert _ == variant { ok = record {
 
 "Compute user convictions";
 call backend.updateConvictions(default);
-assert _ == variant { ok = opt record { 
+assert _ == variant { ok = record { 
   "principal" = default;
   name = null : opt record{};
   convictions = record { to_update = false; array = vec { 

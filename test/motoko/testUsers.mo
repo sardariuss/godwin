@@ -5,23 +5,17 @@ import Questions "../../src/godwin_backend/questions/questions";
 import StageHistory "../../src/godwin_backend/stageHistory";
 import Categories "../../src/godwin_backend/categories";
 import Opinions "../../src/godwin_backend/votes/opinions";
-import Categorizations "../../src/godwin_backend/votes/categorizations";
-import CategoryPolarizationTrie "../../src/godwin_backend/representation/categoryPolarizationTrie";
 import Utils "../../src/godwin_backend/utils";
 import TestableItems "testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
-import Testable "mo:matchers/Testable";
 
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
-import Nat "mo:base/Nat";
-import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
 
 module {
 

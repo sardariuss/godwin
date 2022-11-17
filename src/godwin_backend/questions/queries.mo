@@ -13,6 +13,7 @@ import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
+import Float "mo:base/Float";
 
 module {
 
@@ -28,8 +29,6 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type SelectionStage = Types.SelectionStage;
-  //type OrderBy = Types.OrderBy;
-  //type QueryQuestionsResult = Types.QueryQuestionsResult;
   type CategorizationStage = Types.CategorizationStage;
 
   // Public types
@@ -42,6 +41,7 @@ module {
     #CREATION_DATE;
     #SELECTION_STAGE_DATE;
     #CATEGORIZATION_STAGE_DATE;
+    #CREATION_HOT;
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
@@ -60,6 +60,7 @@ module {
       #CREATION_DATE: DateEntry;
       #SELECTION_STAGE_DATE: SelectionStageEntry;
       #CATEGORIZATION_STAGE_DATE: CategorizationStageEntry;
+      #CREATION_HOT: CreationHotEntry;
     };
   };
 
@@ -69,6 +70,7 @@ module {
   type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
   type EndorsementsEntry = { endorsements: Nat; date: Time; };
   type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
+  type CreationHotEntry = Float;
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
 
   // To be able to use OrderBy as key in a Trie
@@ -82,6 +84,7 @@ module {
       case(#CREATION_DATE){ "CREATION_DATE"; };
       case(#SELECTION_STAGE_DATE){ "SELECTION_STAGE_DATE"; };
       case(#CATEGORIZATION_STAGE_DATE){ "CATEGORIZATION"; };
+      case(#CREATION_HOT){ "CREATION_HOT"; };
     };
   };
   func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -99,6 +102,7 @@ module {
       case(#CREATION_DATE){ { id = question.id; data = #CREATION_DATE(initDateEntry(question)); } };
       case(#SELECTION_STAGE_DATE){ { id = question.id; data = #SELECTION_STAGE_DATE(initSelectionStageEntry(question)); } };
       case(#CATEGORIZATION_STAGE_DATE){ { id = question.id; data = #CATEGORIZATION_STAGE_DATE(initCategorizationStageEntry(question)); } };
+      case(#CREATION_HOT){ { id = question.id; data = #CREATION_HOT(initCreationHotEntry(question)); } };
     };
   };
   func initDateEntry(question: Question) : DateEntry { {date = question.date; }; };
@@ -124,6 +128,13 @@ module {
       categorization_stage = stage_record.stage;
       date = stage_record.timestamp;
     };
+  };
+  func initCreationHotEntry(question: Question) : CreationHotEntry { 
+    // When based on creation date, the hot algorithm assumes the date is in the past
+    // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
+    // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
+    // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
+    Float.log(Float.max(Float.fromInt(question.endorsements), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
   };
 
   // Compare functions
@@ -175,6 +186,12 @@ module {
       case(#CATEGORIZATION_STAGE_DATE(entry_a)){
         switch(b.data){
           case(#CATEGORIZATION_STAGE_DATE(entry_b)){ compareCategorizationStageEntry(entry_a, entry_b, default_order); };
+          case(_){Debug.trap("Cannot compare entries of different types")};
+        };
+      };
+      case(#CREATION_HOT(entry_a)){
+        switch(b.data){
+          case(#CREATION_HOT(entry_b)){ Float.compare(entry_a, entry_b); };
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
