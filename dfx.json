@@ -9,11 +9,11 @@
         "godwin_backend"
       ],
       "frontend": {
-        "entrypoint": "src/godwin_frontend/src/index.html"
+        "entrypoint": "index.html"
       },
       "source": [
         "src/godwin_frontend/assets",
-        "dist/godwin_frontend/"
+        "src/godwin_frontend/dist"
       ],
       "type": "assets"
     }
