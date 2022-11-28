@@ -16,6 +16,7 @@ module {
   type SelectionStageEnum = Types.SelectionStageEnum;
   type CategorizationStage = Types.CategorizationStage;
   type CategorizationStageEnum = Types.CategorizationStageEnum;
+  type InterestAggregate = Types.InterestAggregate;
 
   public func verifyCurrentSelectionStage(question: Question, stages: [SelectionStageEnum]) : ?Question {
     let current_stage = StageHistory.getActiveStage(question.selection_stage).stage;
@@ -41,14 +42,14 @@ module {
     null;
   };
 
-  public func updateTotalEndorsements(question: Question, total_endorsements: Int) : Question {
+  public func updateTotalInterests(question: Question, interests: InterestAggregate) : Question {
     {
       id = question.id;
       author = question.author;
       title = question.title;
       text = question.text;
       date = question.date;
-      endorsements = total_endorsements;
+      interests = interests;
       selection_stage = question.selection_stage;
       categorization_stage = question.categorization_stage;
     };
@@ -61,7 +62,7 @@ module {
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
-    buffer.add("endorsements: " # Int.toText(question.endorsements) # ", ");
+    buffer.add("interests: " # Int.toText(question.interests.score) # ", ");
     // buffer.add(.toText(question.selection_stage)); // @todo
     // buffer.add(.toText(question.categorization_stage)); // @todo
     Text.join("", buffer.vals());
@@ -73,7 +74,7 @@ module {
         and Text.equal(q1.title, q2.title)
         and Text.equal(q1.text, q2.text)
         and Int.equal(q1.date, q2.date)
-        and Int.equal(q1.endorsements, q2.endorsements);
+        and Int.equal(q1.interests.score, q2.interests.score);
         // @todo
   };
 

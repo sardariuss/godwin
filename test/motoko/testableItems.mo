@@ -21,8 +21,8 @@ module {
   type Polarization = Types.Polarization;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type Endorsement = Types.Endorsement;
-  type EndorsementsTotal = Types.EndorsementsTotal;
+  type Interest = Types.Interest;
+  type InterestAggregate = Types.InterestAggregate;
   
   // For convenience: from queries module
   type QueryQuestionsResult = Queries.QueryQuestionsResult;
@@ -122,31 +122,31 @@ module {
     };
   };
 
-  func toTextEndorsement(endorsement: Endorsement) : Text {
-    switch(endorsement){ 
+  func toTextInterest(interest: Interest) : Text {
+    switch(interest){ 
       case(#UP){ "UP"; };
       case(#DOWN){ "DOWN"; };
     };
   };
 
-  func equalEndorsements(endorsement1: Endorsement, endorsement2: Endorsement) : Bool {
-    Text.equal(toTextEndorsement(endorsement1), toTextEndorsement(endorsement2));
+  func equalInterests(interest1: Interest, interest2: Interest) : Bool {
+    Text.equal(toTextInterest(interest1), toTextInterest(interest2));
   };
 
-  public func testOptEndorsement(endorsement: ?Endorsement) : Testable.TestableItem<?Endorsement> {
-    testOptItem(endorsement, toTextEndorsement, equalEndorsements);
+  public func testOptInterest(interest: ?Interest) : Testable.TestableItem<?Interest> {
+    testOptItem(interest, toTextInterest, equalInterests);
   };
 
-  func toTextEndorsementsTotal(total: EndorsementsTotal) : Text {
+  func toTextInterestAggregate(total: InterestAggregate) : Text {
     "{ ups = " # Nat.toText(total.ups) # "; downs = " # Nat.toText(total.downs) # " }";
   };
 
-  func equalEndorsementsTotal(t1: EndorsementsTotal, t2: EndorsementsTotal) : Bool {
+  func equalInterestAggregate(t1: InterestAggregate, t2: InterestAggregate) : Bool {
     t1.ups == t2.ups and t1.downs == t2.downs;
   };
 
-  public func testOptEndorsementsTotal(total: ?EndorsementsTotal) : Testable.TestableItem<?EndorsementsTotal> {
-    testOptItem(total, toTextEndorsementsTotal, equalEndorsementsTotal);
+  public func testOptInterestAggregate(total: ?InterestAggregate) : Testable.TestableItem<?InterestAggregate> {
+    testOptItem(total, toTextInterestAggregate, equalInterestAggregate);
   };
 
 };

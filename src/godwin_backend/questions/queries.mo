@@ -30,6 +30,7 @@ module {
   type Question = Types.Question;
   type SelectionStage = Types.SelectionStage;
   type CategorizationStage = Types.CategorizationStage;
+  type InterestAggregate = Types.InterestAggregate;
 
   // Public types
   public type OrderBy = {
@@ -56,7 +57,7 @@ module {
       #AUTHOR: TextEntry;
       #TITLE: TextEntry;
       #TEXT: TextEntry;
-      #ENDORSEMENTS: EndorsementsEntry;
+      #ENDORSEMENTS: InterestsEntry;
       #CREATION_DATE: DateEntry;
       #SELECTION_STAGE_DATE: SelectionStageEntry;
       #CATEGORIZATION_STAGE_DATE: CategorizationStageEntry;
@@ -68,7 +69,7 @@ module {
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
   type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
-  type EndorsementsEntry = { endorsements: Int; date: Time; };
+  type InterestsEntry = { interests: InterestAggregate; date: Time; };
   type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
   type CreationHotEntry = Float;
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
@@ -98,7 +99,7 @@ module {
       case(#AUTHOR){ { id = question.id; data = #AUTHOR(initAuthorEntry(question)); } };
       case(#TITLE){ { id = question.id; data = #TITLE(initTitleEntry(question)); } };
       case(#TEXT){ { id = question.id; data = #TEXT(initTextEntry(question)); } };
-      case(#ENDORSEMENTS){ { id = question.id; data = #ENDORSEMENTS(initEndorsementsEntry(question)); } };
+      case(#ENDORSEMENTS){ { id = question.id; data = #ENDORSEMENTS(initInterestsEntry(question)); } };
       case(#CREATION_DATE){ { id = question.id; data = #CREATION_DATE(initDateEntry(question)); } };
       case(#SELECTION_STAGE_DATE){ { id = question.id; data = #SELECTION_STAGE_DATE(initSelectionStageEntry(question)); } };
       case(#CATEGORIZATION_STAGE_DATE){ { id = question.id; data = #CATEGORIZATION_STAGE_DATE(initCategorizationStageEntry(question)); } };
@@ -116,9 +117,9 @@ module {
       date = stage_record.timestamp;
     }; 
   };
-  func initEndorsementsEntry(question: Question) : EndorsementsEntry { 
+  func initInterestsEntry(question: Question) : InterestsEntry { 
     { 
-      endorsements = question.endorsements; 
+      interests = question.interests; 
       date = StageHistory.getActiveStage(question.selection_stage).timestamp;
     }; 
   };
@@ -134,7 +135,7 @@ module {
     // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
     // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
     // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
-    Float.log(Float.max(Float.fromInt(question.endorsements), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
+    Float.log(Float.max(Float.fromInt(question.interests.score), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
   };
 
   // Compare functions
@@ -167,7 +168,7 @@ module {
       };
       case(#ENDORSEMENTS(entry_a)){
         switch(b.data){
-          case(#ENDORSEMENTS(entry_b)){ compareEndorsementsEntry(entry_a, entry_b, default_order); };
+          case(#ENDORSEMENTS(entry_b)){ compareInterestsEntry(entry_a, entry_b, default_order); };
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
@@ -233,9 +234,9 @@ module {
       };
     };
   };
-  func compareEndorsementsEntry(a: EndorsementsEntry, b: EndorsementsEntry, default_order: Order) : Order {
-    if (a.endorsements < b.endorsements){ #less; }
-    else if (a.endorsements > b.endorsements){ #greater;}
+  func compareInterestsEntry(a: InterestsEntry, b: InterestsEntry, default_order: Order) : Order {
+    if (a.interests.score < b.interests.score){ #less; }
+    else if (a.interests.score > b.interests.score){ #greater;}
     else { compareDateEntry(a, b, default_order); };
   };
   func compareCategorizationStageEntry(a: CategorizationStageEntry, b: CategorizationStageEntry, default_order: Order) : Order {

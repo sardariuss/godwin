@@ -20,8 +20,8 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 ### DONE
 - a user is automatically created on logging with II
 - users can ask questions
-- users can endorse newly created questions
-- most endorsed questions get selected
+- users can give interest on newly created questions
+- most interesting questions get selected
 - users can give their opinion on selected questions
 - selected questions get archived after a while, opinion aggregate is saved
 - admin can vote to categorize questions that have just been archived
@@ -32,7 +32,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - a user shall be able to set a username, which is unique among all users.
 - order created questions by hotness (for front-end).
 - be able to reopen to opinion vote questions from the archive after some period of time
-- replace endorsements (upvotes) by cursor where right=upvote, left=censor
+- replace interests (upvotes) by cursor where right=upvote, left=censor
 - add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
 
 ### TO THINK

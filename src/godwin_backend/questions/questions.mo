@@ -88,7 +88,7 @@ module {
         title = title;
         text = text;
         date = date;
-        endorsements = 0;
+        interests = { ups = 0; downs = 0; score = 0; };
         selection_stage = StageHistory.initStageHistory({ timestamp = date; stage = #CREATED; });
         categorization_stage =  StageHistory.initStageHistory({ timestamp = date; stage = #PENDING; });
       };

@@ -1,6 +1,6 @@
 import Question "questions/question";
 import Questions "questions/questions";
-import Endorsements "votes/endorsements";
+import Interests "votes/interests";
 import Opinions "votes/opinions";
 import Categorizations "votes/categorizations";
 import Cursor "representation/cursor";
@@ -23,7 +23,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Principal = Principal.Principal;
   // For convenience: from types module
   type Question = Types.Question;
-  type Endorsement = Types.Endorsement;
+  type Interest = Types.Interest;
   type Cursor = Types.Cursor;
   type User = Types.User;
   type SchedulerParams = Types.SchedulerParams;
@@ -35,7 +35,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   var categories_ = Categories.Categories(parameters.categories);
   var users_ = Users.empty(categories_);
   var questions_ = Questions.empty();
-  var endorsements_ = Endorsements.empty();
+  var interests_ = Interests.empty();
   var opinions_ = Opinions.empty();
   var categorizations_ = Categorizations.empty(categories_);
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
@@ -44,7 +44,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   stable var categories_shareable_ = categories_.share();
   stable var users_shareable_ = users_.share();
   stable var questions_shareable_ = questions_.share();
-  stable var endorsements_shareable_ = endorsements_.share();
+  stable var interests_shareable_ = interests_.share();
   stable var opinions_shareable_ = opinions_.share();
   stable var categorizations_shareable_ = categorizations_.share();
   stable var scheduler_shareable_ = scheduler_.share();
@@ -99,27 +99,27 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     questions_.createQuestion(caller, Time.now(), title, text);
   };
 
-  public type EndorsementError = {
+  public type InterestError = {
     #QuestionNotFound;
   };
 
-  public shared query func getEndorsement(principal: Principal, question_id: Nat) : async Result<?Endorsement, EndorsementError> {
-    Result.mapOk<Question, ?Endorsement, EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      endorsements_.getForUserAndQuestion(principal, question_id);
+  public shared query func getInterest(principal: Principal, question_id: Nat) : async Result<?Interest, InterestError> {
+    Result.mapOk<Question, ?Interest, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      interests_.getForUserAndQuestion(principal, question_id);
     });
   };
 
-  public shared({caller}) func setEndorsement(question_id: Nat, endorsement: Endorsement) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      endorsements_.put(caller, question_id, endorsement);
-      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question_id)));
+  public shared({caller}) func setInterest(question_id: Nat, interest: Interest) : async Result<(), InterestError> {
+    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      interests_.put(caller, question_id, interest);
+      questions_.replaceQuestion(Question.updateTotalInterests(question, interests_.getAggregate(question_id)));
     });
   };
 
-  public shared({caller}) func removeEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
-    Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      endorsements_.remove(caller, question_id);
-      questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question.id)));
+  public shared({caller}) func removeInterest(question_id: Nat) : async Result<(), InterestError> {
+    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      interests_.remove(caller, question_id);
+      questions_.replaceQuestion(Question.updateTotalInterests(question, interests_.getAggregate(question.id)));
     });
   };
 
@@ -202,7 +202,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_shareable_ := categories_.share();
     users_shareable_ := users_.share();
     questions_shareable_ := questions_.share();
-    endorsements_shareable_ := endorsements_.share();
+    interests_shareable_ := interests_.share();
     opinions_shareable_ := opinions_.share();
     categorizations_shareable_ := categorizations_.share();
     scheduler_shareable_ := scheduler_.share();
@@ -212,7 +212,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_ := Categories.Categories(categories_shareable_);
     users_ := Users.Users(users_shareable_, categories_);
     questions_ := Questions.Questions(questions_shareable_);
-    endorsements_ := Endorsements.Endorsements(endorsements_shareable_);
+    interests_ := Interests.Interests(interests_shareable_);
     opinions_ := Opinions.Opinions(opinions_shareable_);
     categorizations_ := Categorizations.Categorizations(categorizations_shareable_, categories_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);

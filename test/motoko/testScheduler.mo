@@ -54,17 +54,17 @@ module {
         let question = question_inputs_[index];
         ignore questions.createQuestion(question.author, question.date, question.title, question.text);
       };
-      // Set a specific total of endorsements for each question
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(0), 10));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(1), 2));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(2), 75));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(3), 93));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(4), 12));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(5), 38));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(6), 91));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(7), 73));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(8), 61));
-      questions.replaceQuestion(Question.updateTotalEndorsements(questions.getQuestion(9), 31));
+      // Set a specific total of interests for each question
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(0), {ups = 0; downs = 0; score = 10; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(1), {ups = 0; downs = 0; score = 2; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(2), {ups = 0; downs = 0; score = 75; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(3), {ups = 0; downs = 0; score = 93; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(4), {ups = 0; downs = 0; score = 12; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(5), {ups = 0; downs = 0; score = 38; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(6), {ups = 0; downs = 0; score = 91; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(7), {ups = 0; downs = 0; score = 73; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(8), {ups = 0; downs = 0; score = 61; }));
+      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(9), {ups = 0; downs = 0; score = 31; }));
 
       let scheduler_params : SchedulerParams = {
         selection_rate = #NS(150);
