@@ -39,25 +39,77 @@ module {
       let endorsements = Endorsements.empty();
 
       // Test put/remove
-      endorsements.put(principal_0, 0);
-      tests.add(test("Get user endorsement", endorsements.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptEndorsement(?#ENDORSE))));
-      endorsements.put(principal_0, 0);
-      tests.add(test("Get user endorsement", endorsements.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptEndorsement(?#ENDORSE))));
+      endorsements.put(principal_0, 0, #UP);
+      tests.add(test("Get user endorsement", endorsements.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptEndorsement(?#UP))));
+      endorsements.put(principal_0, 0, #UP);
+      tests.add(test("Get user endorsement", endorsements.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptEndorsement(?#UP))));
       endorsements.remove(principal_0, 0);
       tests.add(test("Get user endorsement", endorsements.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptEndorsement(null))));
       
-      // Test total
-      endorsements.put(principal_0, 1);
-      endorsements.put(principal_1, 1);
-      endorsements.put(principal_2, 1);
-      endorsements.put(principal_3, 1);
-      endorsements.put(principal_4, 1);
-      endorsements.put(principal_5, 1);
-      endorsements.put(principal_6, 1);
-      endorsements.put(principal_7, 1);
-      endorsements.put(principal_8, 1);
-      endorsements.put(principal_9, 1);
-      tests.add(test("Total endorsements", ?endorsements.getTotalForQuestion(1), Matchers.equals(testOptEndorsementsTotal(?10))));
+      // Test only ups ( 10 VS 0 )
+      endorsements.put(principal_0, 1, #UP);
+      endorsements.put(principal_1, 1, #UP);
+      endorsements.put(principal_2, 1, #UP);
+      endorsements.put(principal_3, 1, #UP);
+      endorsements.put(principal_4, 1, #UP);
+      endorsements.put(principal_5, 1, #UP);
+      endorsements.put(principal_6, 1, #UP);
+      endorsements.put(principal_7, 1, #UP);
+      endorsements.put(principal_8, 1, #UP);
+      endorsements.put(principal_9, 1, #UP);
+      assert(endorsements.getTotalForQuestion(1) == 10);
+
+      // Test only downs ( 0 VS 10 )
+      endorsements.put(principal_0, 1, #DOWN);
+      endorsements.put(principal_1, 1, #DOWN);
+      endorsements.put(principal_2, 1, #DOWN);
+      endorsements.put(principal_3, 1, #DOWN);
+      endorsements.put(principal_4, 1, #DOWN);
+      endorsements.put(principal_5, 1, #DOWN);
+      endorsements.put(principal_6, 1, #DOWN);
+      endorsements.put(principal_7, 1, #DOWN);
+      endorsements.put(principal_8, 1, #DOWN);
+      endorsements.put(principal_9, 1, #DOWN);
+      assert(endorsements.getTotalForQuestion(1) == -10);
+
+      // Test as many ups than downs ( 5 VS 5 )
+      endorsements.put(principal_0, 1, #UP);
+      endorsements.put(principal_1, 1, #UP);
+      endorsements.put(principal_2, 1, #UP);
+      endorsements.put(principal_3, 1, #UP);
+      endorsements.put(principal_4, 1, #UP);
+      endorsements.put(principal_5, 1, #DOWN);
+      endorsements.put(principal_6, 1, #DOWN);
+      endorsements.put(principal_7, 1, #DOWN);
+      endorsements.put(principal_8, 1, #DOWN);
+      endorsements.put(principal_9, 1, #DOWN);
+      assert(endorsements.getTotalForQuestion(1) == 0);
+
+      // Test almost only ups ( 9 VS 1 )
+      endorsements.put(principal_0, 1, #UP);
+      endorsements.put(principal_1, 1, #UP);
+      endorsements.put(principal_2, 1, #UP);
+      endorsements.put(principal_3, 1, #UP);
+      endorsements.put(principal_4, 1, #UP);
+      endorsements.put(principal_5, 1, #UP);
+      endorsements.put(principal_6, 1, #UP);
+      endorsements.put(principal_7, 1, #UP);
+      endorsements.put(principal_8, 1, #UP);
+      endorsements.put(principal_9, 1, #DOWN);
+      assert(endorsements.getTotalForQuestion(1) == 9); // down votes have no effect
+
+      // Test slight majority of ups ( 4 VS 3 )
+      endorsements.put(principal_0, 1, #UP);
+      endorsements.put(principal_1, 1, #UP);
+      endorsements.put(principal_2, 1, #UP);
+      endorsements.put(principal_3, 1, #UP);
+      endorsements.put(principal_4, 1, #DOWN);
+      endorsements.put(principal_5, 1, #DOWN);
+      endorsements.put(principal_6, 1, #DOWN);
+      endorsements.remove(principal_7, 1);
+      endorsements.remove(principal_8, 1);
+      endorsements.remove(principal_9, 1);
+      assert(endorsements.getTotalForQuestion(1) == 3); // down votes have a slight effect
 
       suite("Test Endorsements module", tests.toArray());
     };

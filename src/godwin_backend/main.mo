@@ -109,9 +109,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     });
   };
 
-  public shared({caller}) func setEndorsement(question_id: Nat) : async Result<(), EndorsementError> {
+  public shared({caller}) func setEndorsement(question_id: Nat, endorsement: Endorsement) : async Result<(), EndorsementError> {
     Result.mapOk<Question, (), EndorsementError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      endorsements_.put(caller, question_id);
+      endorsements_.put(caller, question_id, endorsement);
       questions_.replaceQuestion(Question.updateTotalEndorsements(question, endorsements_.getTotalForQuestion(question_id)));
     });
   };

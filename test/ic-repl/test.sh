@@ -30,20 +30,20 @@ let backend = installBackend(arguments);
 call backend.createQuestion("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society.", "");
 assert _ ~= record { 
   id = (0 : nat);
-  endorsements = (0 : nat);
+  endorsements = (0 : int);
   selection_stage = vec { record { stage = variant { CREATED }; }; };
   categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 };
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  endorsements = (0 : nat);
+  endorsements = (0 : int);
   selection_stage = vec { record { stage = variant { CREATED }; }; };
   categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
 
 "Endorse the question: should always succeed";
-call backend.setEndorsement(0);
+call backend.setEndorsement(0, variant { UP } );
 assert _ == variant { ok };
 "Set opinion: should fail";
 call backend.setOpinion(0, 1.0);
@@ -57,12 +57,12 @@ call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
-  endorsements = (1 : nat);
+  endorsements = (1 : int);
   //selection_stage = vec { record { stage = variant { CREATED }; }; record { stage = variant { SELECTED }; }; };
   //categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
 "Endorse the question: should always succeed";
-call backend.setEndorsement(0);
+call backend.setEndorsement(0, variant { UP } );
 assert _ == variant { ok };
 "Set opinion: should succeed";
 call backend.setOpinion(0, 1.0);
@@ -81,7 +81,7 @@ assert _ ~= variant { ok = record {
 }};
 
 "Endorse the question: should always succeed";
-call backend.setEndorsement(0);
+call backend.setEndorsement(0, variant { UP } );
 assert _ == variant { ok };
 "Set opinion: should fail";
 call backend.setOpinion(0, 1.0);

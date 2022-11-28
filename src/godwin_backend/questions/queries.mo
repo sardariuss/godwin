@@ -68,7 +68,7 @@ module {
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
   type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
-  type EndorsementsEntry = { endorsements: Nat; date: Time; };
+  type EndorsementsEntry = { endorsements: Int; date: Time; };
   type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
   type CreationHotEntry = Float;
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
@@ -306,6 +306,7 @@ module {
   };
 
   // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
+  // @todo: fix lower_bound and upper_bound should not require the question id...
   public func queryQuestions(
     rbts: QuestionRBTs,
     order_by: OrderBy,

@@ -39,7 +39,7 @@ module {
     title: Text;
     text: Text;
     date: Time;
-    endorsements: Nat;
+    endorsements: Int;
     selection_stage: StageHistory<SelectionStage>;
     categorization_stage: StageHistory<CategorizationStage>;
   };
@@ -57,12 +57,16 @@ module {
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
   
-  // Upvotes
+  // @todo: need to rename in interest
   public type Endorsement = {
-    #ENDORSE;
+    #UP;
+    #DOWN;
   };
 
-  public type EndorsementsTotal = Nat;
+  public type EndorsementsTotal = {
+    ups: Nat;
+    downs: Nat;
+  };
 
   public type SelectionStage = {
     #CREATED;

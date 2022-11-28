@@ -41,7 +41,7 @@ module {
     null;
   };
 
-  public func updateTotalEndorsements(question: Question, total_endorsements: Nat) : Question {
+  public func updateTotalEndorsements(question: Question, total_endorsements: Int) : Question {
     {
       id = question.id;
       author = question.author;
@@ -61,7 +61,7 @@ module {
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
-    buffer.add("endorsements: " # Nat.toText(question.endorsements) # ", ");
+    buffer.add("endorsements: " # Int.toText(question.endorsements) # ", ");
     // buffer.add(.toText(question.selection_stage)); // @todo
     // buffer.add(.toText(question.categorization_stage)); // @todo
     Text.join("", buffer.vals());
@@ -73,7 +73,7 @@ module {
         and Text.equal(q1.title, q2.title)
         and Text.equal(q1.text, q2.text)
         and Int.equal(q1.date, q2.date)
-        and Nat.equal(q1.endorsements, q2.endorsements);
+        and Int.equal(q1.endorsements, q2.endorsements);
         // @todo
   };
 

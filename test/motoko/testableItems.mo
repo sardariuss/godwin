@@ -123,7 +123,10 @@ module {
   };
 
   func toTextEndorsement(endorsement: Endorsement) : Text {
-    switch(endorsement){ case(#ENDORSE){ "ENDORSE"; } };
+    switch(endorsement){ 
+      case(#UP){ "UP"; };
+      case(#DOWN){ "DOWN"; };
+    };
   };
 
   func equalEndorsements(endorsement1: Endorsement, endorsement2: Endorsement) : Bool {
@@ -135,11 +138,11 @@ module {
   };
 
   func toTextEndorsementsTotal(total: EndorsementsTotal) : Text {
-    "total=" # Nat.toText(total);
+    "{ ups = " # Nat.toText(total.ups) # "; downs = " # Nat.toText(total.downs) # " }";
   };
 
   func equalEndorsementsTotal(t1: EndorsementsTotal, t2: EndorsementsTotal) : Bool {
-    t1 == t2;
+    t1.ups == t2.ups and t1.downs == t2.downs;
   };
 
   public func testOptEndorsementsTotal(total: ?EndorsementsTotal) : Testable.TestableItem<?EndorsementsTotal> {

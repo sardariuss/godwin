@@ -43,7 +43,7 @@ module {
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(register_, principal, question_id, Polarization.subCursor).0;
+      register_ := Votes.removeBallot(register_, principal, question_id, Polarization.nil, Polarization.subCursor).0;
     };
 
     public func getAggregate(question_id: Nat) : Polarization {

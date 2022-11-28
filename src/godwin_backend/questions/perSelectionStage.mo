@@ -36,9 +36,9 @@ module {
 
   func setSelectionStageRBTs(per_selection_stage: PerSelectionStage, selection_stage: SelectionStage, rbts: Queries.QuestionRBTs) : PerSelectionStage {
     switch(selection_stage){
-      case(#CREATED){   { created_rbts = rbts;                selected_rbts = per_selection_stage.selected_rbts; archived_rbts = per_selection_stage.archived_rbts; }; };
-      case(#SELECTED){  { created_rbts = per_selection_stage.created_rbts; selected_rbts = rbts;                 archived_rbts = per_selection_stage.archived_rbts; }; };
-      case(#ARCHIVED(_)){ { created_rbts = per_selection_stage.created_rbts; selected_rbts = per_selection_stage.selected_rbts; archived_rbts = rbts;                  }; };
+      case(#CREATED){     { created_rbts = rbts;                             selected_rbts = per_selection_stage.selected_rbts; archived_rbts = per_selection_stage.archived_rbts; }; };
+      case(#SELECTED){    { created_rbts = per_selection_stage.created_rbts; selected_rbts = rbts;                              archived_rbts = per_selection_stage.archived_rbts; }; };
+      case(#ARCHIVED(_)){ { created_rbts = per_selection_stage.created_rbts; selected_rbts = per_selection_stage.selected_rbts; archived_rbts = rbts;                              }; };
     };
   };
 
