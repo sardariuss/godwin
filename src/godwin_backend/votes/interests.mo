@@ -1,74 +1,50 @@
 import Types "../types";
-import MultiKeyMap "../multiKeyMap";
-import Votes "votes";
+import Questions "../questions/questions";
+import Question "../questions/question";
+import Users "../users";
+import User "../user";
+import Aggregates "aggregates";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
 import Int "mo:base/Int";
 import Float "mo:base/Float";
-import Option "mo:base/Option";
 
 module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
+  
   // For convenience: from types module
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-  type MultiKeyMap<K1, K2> = MultiKeyMap.MultiKeyMap<K1, K2>;
+  type User = Types.User;
+  type Question = Types.Question;
+  
+  // For convenience: from other modules
+  type Questions = Questions.Questions;
+  type Users = Users.Users;
 
-  type InterestsRegister = Votes.VoteRegister<Interest, InterestAggregate>;
-
-  public func empty() : Interests {
-    Interests(Votes.empty<Interest, InterestAggregate>());
+  // Warning: the user and question are assumed to exist! if ever not, they will be added as new
+  public func put(users: Users, principal: Principal, questions: Questions, question_id: Nat, new_interest: Interest){
+    let user = users.getUser(principal);
+    let question = questions.getQuestion(question_id);
+    
+    let (user_interests, old_interest) = Trie.put(user.ballots.interests, Types.keyNat(question.id), Nat.equal, new_interest);
+    users.putUser(User.updateInterests(user, user_interests));
+    
+    let question_interests = Aggregates.updateAggregate(question.aggregates.interest, ?new_interest, old_interest, addToAggregate, removeFromAggregate);
+    questions.replaceQuestion(Question.updateInterestAggregate(question, question_interests));
   };
+  
+  public func remove(users: Users, principal: Principal, questions: Questions, question_id: Nat){
+    let user = users.getUser(principal);
+    let question = questions.getQuestion(question_id);
+    
+    let (user_interests, old_interest) = Trie.remove(user.ballots.interests, Types.keyNat(question.id), Nat.equal);
+    users.putUser(User.updateInterests(user, user_interests));
 
-  public class Interests(register: InterestsRegister) {
-
-    /// Members
-    var register_ = register;
-    var order_by_upvotes_ = MultiKeyMap.init<Int, Nat>();
-    for ((question_id, aggregate) in Trie.iter(register.aggregates)){
-      order_by_upvotes_ := MultiKeyMap.put(order_by_upvotes_, Int.compare, aggregate.score, Int.hash, Nat.equal, question_id);
-    };
-
-    public func share() : InterestsRegister {
-      register_;
-    };
-
-    public func getForUser(principal: Principal) : Trie<Nat, Interest> {
-      Votes.getUserBallots(register_, principal);
-    };
-
-    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Interest {
-      Votes.getBallot(register_, principal, question_id);
-    };
-
-    public func put(principal: Principal, question_id: Nat, interest: Interest) {
-      let (register, removed_ballot, old_aggregate, new_aggregate) = 
-        Votes.putBallot(register_, principal, question_id, interest, emptyAggregate, addToAggregate, removeFromAggregate);
-      // Replace the aggregate in the multikey map
-      order_by_upvotes_ := MultiKeyMap.replace(order_by_upvotes_, Int.compare, old_aggregate.score, new_aggregate.score, Int.hash, Nat.equal, question_id);
-      // Update the register
-      register_ := register;
-    };
-
-    public func remove(principal: Principal, question_id: Nat) {
-      let (register, removed_ballot, old_aggregate, new_aggregate) = 
-        Votes.removeBallot(register_, principal, question_id, emptyAggregate, removeFromAggregate);
-      // Replace the aggregate in the multikey map
-      order_by_upvotes_ := MultiKeyMap.replace(order_by_upvotes_, Int.compare, old_aggregate.score, new_aggregate.score, Int.hash, Nat.equal, question_id);
-      // Update the register
-      register_ := register;
-    };
-
-    public func getAggregate(question_id: Nat) : InterestAggregate {
-      Option.get(Votes.getAggregate(register_, question_id), emptyAggregate());
-    };
-
-  };
-
-  func emptyAggregate() : InterestAggregate {
-    { ups = 0; downs = 0; score = 0; };
+    let question_interests = Aggregates.updateAggregate(question.aggregates.interest, null, old_interest, addToAggregate, removeFromAggregate);
+    questions.replaceQuestion(Question.updateInterestAggregate(question, question_interests));
   };
 
   func addToAggregate(aggregate: InterestAggregate, ballot: Interest) : InterestAggregate {

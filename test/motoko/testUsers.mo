@@ -42,11 +42,10 @@ module {
       ];
 
       let categories = Categories.Categories(["IDENTITY", "ECONOMY", "CULTURE"]);
-
       let users = Users.empty(categories);
+      let questions = Questions.empty(categories);
 
-      let questions = Questions.empty();
-      let question = questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
+      let question = questions.createQuestion(principals[0], 0, "title0", "text0");
 
       // Get the anonymous user
       assert(users.findUser(Principal.fromText("2vxsx-fae")) == null);
@@ -86,7 +85,7 @@ module {
       // Update the convictions before having any opinion shall not return null, because
       // at user creation the flag is set to true
       for (principal in Array.vals(principals)){
-        assert(not users.updateConvictions(principal, questions, Opinions.empty()).convictions.to_update);
+        assert(not users.updateConvictions(principal, questions).convictions.to_update);
       };
 
       // Verify the convictions have been updated
@@ -105,9 +104,8 @@ module {
       };
 
       // Users 0 and 1 give their opinions
-      let opinions = Opinions.empty();
-      opinions.put(principals[0], question.id, 0.0); // totally neutral
-      opinions.put(principals[1], question.id, 1.0); // totally agree
+      Opinions.put(users, principals[0], questions, question.id, 0.0); // totally neutral
+      Opinions.put(users, principals[1], questions, question.id, 1.0); // totally agree
 
       // Update the question categorization stage to done with an arbitrate categorization
       questions.replaceQuestion({
@@ -116,7 +114,7 @@ module {
         title = question.title;
         text = question.text;
         date = question.date;
-        interests = question.interests;
+        aggregates = question.aggregates;
         selection_stage = question.selection_stage;
         categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { 
           stage = #DONE([
@@ -130,13 +128,13 @@ module {
 
       // Prune the convictions linked to users who answered this question
       // @todo: if an observer is used, one don't have to make this call
-      users.pruneConvictions(opinions, question.id);
+      users.pruneConvictions(question.id);
 
       // Verify the convictions shall be updated for users who answered this question
       // User 0
       var user = users.getUser(principals[0]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[0], questions, opinions);
+      user := users.updateConvictions(principals[0], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 0 convictions",
@@ -149,7 +147,7 @@ module {
       // User 1
       user := users.getUser(principals[1]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[1], questions, opinions);
+      user := users.updateConvictions(principals[1], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 1 convictions",
@@ -168,7 +166,7 @@ module {
       // User 0
       user := users.getUser(principals[0]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[0], questions, opinions);
+      user := users.updateConvictions(principals[0], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 0 convictions",
@@ -182,7 +180,7 @@ module {
       // User 1
       user := users.getUser(principals[1]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[1], questions, opinions);
+      user := users.updateConvictions(principals[1], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 1 convictions",
@@ -196,7 +194,7 @@ module {
       // User 2
       user := users.getUser(principals[2]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[2], questions, opinions);
+      user := users.updateConvictions(principals[2], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 2 convictions",
@@ -213,7 +211,7 @@ module {
       // User 0
       user := users.getUser(principals[0]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[0], questions, opinions);
+      user := users.updateConvictions(principals[0], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 0 convictions",
@@ -226,7 +224,7 @@ module {
       // User 1
       user := users.getUser(principals[1]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[1], questions, opinions);
+      user := users.updateConvictions(principals[1], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 1 convictions",
@@ -239,7 +237,7 @@ module {
       // User 2
       user := users.getUser(principals[2]);
       assert(user.convictions.to_update);
-      user := users.updateConvictions(principals[2], questions, opinions);
+      user := users.updateConvictions(principals[2], questions);
       assert(not user.convictions.to_update);
       tests.add(test(
         "User 2 convictions",

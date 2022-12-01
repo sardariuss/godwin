@@ -2,6 +2,9 @@ import Types "../../../src/godwin_backend/types";
 import Utils "../../../src/godwin_backend/utils";
 import Categorizations "../../../src/godwin_backend/votes/categorizations";
 import Categories "../../../src/godwin_backend/categories";
+import Users "../../../src/godwin_backend/users";
+import Questions "../../../src/godwin_backend/questions/questions";
+import User "../../../src/godwin_backend/user";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -19,8 +22,6 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
-  // For convenience: from other modules
-  type Categorizations = Categorizations.Categorizations;
 
   public class TestCategorizations() = {
 
@@ -40,36 +41,40 @@ module {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
       let categories = Categories.Categories(["IDENTITY", "ECONOMY", "CULTURE"]);
-
-      let categorizations = Categorizations.empty(categories);
+      
+      let users = Users.empty(categories);
+      
+      let questions = Questions.empty(categories);
+      let question_0 = questions.createQuestion(principal_0, 0, "title0", "text0");
+      let question_1 = questions.createQuestion(principal_0, 0, "title1", "text1");
 
       // Add categorization
       var categorization = Utils.arrayToTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);
-      categorizations.put(principal_0, 0, categorization);
-      tests.add(test("Add ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
+      Categorizations.put(users, principal_0, questions, question_0.id, categorization);
+      tests.add(test("Add ballot", User.getCategorization(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
       // Update categorization
       categorization := Utils.arrayToTrie([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)], Types.keyText, Text.equal);
-      categorizations.put(principal_0, 0, categorization);
-      tests.add(test("Update ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
+      Categorizations.put(users, principal_0, questions, question_0.id, categorization);
+      tests.add(test("Update ballot", User.getCategorization(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
       // Remove categorization
-      categorizations.remove(principal_0, 0);
-      tests.add(test("Remove ballot", categorizations.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCategoryCursorTrie(null))));
+      Categorizations.remove(users, principal_0, questions, question_0.id);
+      tests.add(test("Remove ballot", User.getCategorization(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCategoryCursorTrie(null))));
       
       // Test aggregate
-      categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
-      categorizations.put(principal_1, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_2, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_3, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_4, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal));
-      categorizations.put(principal_5, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_6, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_7, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_8, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_9, 1, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_0, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_1, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_2, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_3, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_4, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_5, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_6, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_7, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_8, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_9, questions, question_1.id, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal));
 
       tests.add(test(
         "Get aggregate",
-        categorizations.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.categorization,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
            ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
@@ -83,7 +88,7 @@ module {
       // The aggregate shall contain the new category
       tests.add(test(
         "Get aggregate with new category before voting again",
-        categorizations.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.categorization,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
            ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
@@ -93,19 +98,19 @@ module {
       ));
 
       // Without the added category, voting shall trap
-      //categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_0, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal));
       
       // Update some votes, the non-updated ballots do not impact the aggregate (meaning they won't even be considered as 0.0)
-      categorizations.put(principal_5, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_6, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_7, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_8, 1, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_9, 1, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_5, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_6, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_7, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_8, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_9, questions, question_1.id, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
 
       // The aggregate shall contain the new category
       tests.add(test(
         "Get aggregate with new category after voting again",
-        categorizations.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.categorization,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
            ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
@@ -120,7 +125,7 @@ module {
       // The aggregate shall not have the removed category
       tests.add(test(
         "Get aggregate with new category before voting again",
-        categorizations.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.categorization,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
            ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),
@@ -129,17 +134,17 @@ module {
       ));
 
       // With the removed category, voting shall trap
-      //categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_0, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5), ("JUSTICE", -1.0)], Types.keyText, Text.equal));
       // Update some votes
-      categorizations.put(principal_0, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_1, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_2, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_3, 1, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
-      categorizations.put(principal_4, 1, Utils.arrayToTrie([("IDENTITY",  0.5), ("CULTURE", -0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_0, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_1, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_2, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_3, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
+      Categorizations.put(users, principal_4, questions, question_1.id, Utils.arrayToTrie([("IDENTITY",  0.5), ("CULTURE", -0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal));
       // The aggregate shall not have the removed category
       tests.add(test(
         "Get aggregate with new category after voting again",
-        categorizations.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.categorization,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
            ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),

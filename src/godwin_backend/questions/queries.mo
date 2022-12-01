@@ -69,7 +69,7 @@ module {
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
   type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
-  type InterestsEntry = { interests: InterestAggregate; date: Time; };
+  type InterestsEntry = { interest: InterestAggregate; date: Time; };
   type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
   type CreationHotEntry = Float;
   public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
@@ -119,7 +119,7 @@ module {
   };
   func initInterestsEntry(question: Question) : InterestsEntry { 
     { 
-      interests = question.interests; 
+      interest = question.aggregates.interest; 
       date = StageHistory.getActiveStage(question.selection_stage).timestamp;
     }; 
   };
@@ -135,7 +135,7 @@ module {
     // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
     // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
     // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
-    Float.log(Float.max(Float.fromInt(question.interests.score), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
+    Float.log(Float.max(Float.fromInt(question.aggregates.interest.score), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
   };
 
   // Compare functions
@@ -235,8 +235,8 @@ module {
     };
   };
   func compareInterestsEntry(a: InterestsEntry, b: InterestsEntry, default_order: Order) : Order {
-    if (a.interests.score < b.interests.score){ #less; }
-    else if (a.interests.score > b.interests.score){ #greater;}
+    if (a.interest.score < b.interest.score){ #less; }
+    else if (a.interest.score > b.interest.score){ #greater;}
     else { compareDateEntry(a, b, default_order); };
   };
   func compareCategorizationStageEntry(a: CategorizationStageEntry, b: CategorizationStageEntry, default_order: Order) : Order {

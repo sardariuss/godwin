@@ -1,4 +1,8 @@
 import Interests "../../../src/godwin_backend/votes/interests";
+import Users "../../../src/godwin_backend/users";
+import Questions "../../../src/godwin_backend/questions/questions";
+import Categories "../../../src/godwin_backend/categories";
+import User "../../../src/godwin_backend/user";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -14,7 +18,6 @@ module {
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
-  type Interests = Interests.Interests;
 
   let testOptInterestAggregate = TestableItems.testOptInterestAggregate;
   let testOptInterest = TestableItems.testOptInterest;
@@ -35,81 +38,87 @@ module {
     public func getSuite() : Suite.Suite {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
+      
+      let categories = Categories.Categories(["IDENTITY", "ECONOMY", "CULTURE"]);
 
-      let interests = Interests.empty();
+      let questions = Questions.empty(categories);
+      let question_0 = questions.createQuestion(principal_0, 0, "title0", "text0");
+      let question_1 = questions.createQuestion(principal_0, 0, "title1", "text1");
+
+      let users = Users.empty(categories);
 
       // Test put/remove
-      interests.put(principal_0, 0, #UP);
-      tests.add(test("Get user interest", interests.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptInterest(?#UP))));
-      interests.put(principal_0, 0, #UP);
-      tests.add(test("Get user interest", interests.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptInterest(?#UP))));
-      interests.remove(principal_0, 0);
-      tests.add(test("Get user interest", interests.getForUserAndQuestion(principal_0, 0), Matchers.equals(testOptInterest(null))));
+      Interests.put(users, principal_0, questions, question_0.id, #UP);
+      tests.add(test("Get user interest", User.getInterest(users.getUser(principal_0), question_0.id), Matchers.equals(testOptInterest(?#UP))));
+      Interests.put(users, principal_0, questions, question_0.id, #UP);
+      tests.add(test("Get user interest", User.getInterest(users.getUser(principal_0), question_0.id), Matchers.equals(testOptInterest(?#UP))));
+      Interests.remove(users, principal_0, questions, question_0.id);
+      tests.add(test("Get user interest", User.getInterest(users.getUser(principal_0), question_0.id), Matchers.equals(testOptInterest(null))));
       
       // Test only ups ( 10 VS 0 )
-      interests.put(principal_0, 1, #UP);
-      interests.put(principal_1, 1, #UP);
-      interests.put(principal_2, 1, #UP);
-      interests.put(principal_3, 1, #UP);
-      interests.put(principal_4, 1, #UP);
-      interests.put(principal_5, 1, #UP);
-      interests.put(principal_6, 1, #UP);
-      interests.put(principal_7, 1, #UP);
-      interests.put(principal_8, 1, #UP);
-      interests.put(principal_9, 1, #UP);
-      assert(interests.getAggregate(1) == { ups = 10; downs = 0; score = 10; });
+      Interests.put(users, principal_0, questions, question_1.id, #UP);
+      Interests.put(users, principal_1, questions, question_1.id, #UP);
+      Interests.put(users, principal_2, questions, question_1.id, #UP);
+      Interests.put(users, principal_3, questions, question_1.id, #UP);
+      Interests.put(users, principal_4, questions, question_1.id, #UP);
+      Interests.put(users, principal_5, questions, question_1.id, #UP);
+      Interests.put(users, principal_6, questions, question_1.id, #UP);
+      Interests.put(users, principal_7, questions, question_1.id, #UP);
+      Interests.put(users, principal_8, questions, question_1.id, #UP);
+      Interests.put(users, principal_9, questions, question_1.id, #UP);
+      assert(questions.getQuestion(question_1.id).aggregates.interest == { ups = 10; downs = 0; score = 10; });
 
       // Test only downs ( 0 VS 10 )
-      interests.put(principal_0, 1, #DOWN);
-      interests.put(principal_1, 1, #DOWN);
-      interests.put(principal_2, 1, #DOWN);
-      interests.put(principal_3, 1, #DOWN);
-      interests.put(principal_4, 1, #DOWN);
-      interests.put(principal_5, 1, #DOWN);
-      interests.put(principal_6, 1, #DOWN);
-      interests.put(principal_7, 1, #DOWN);
-      interests.put(principal_8, 1, #DOWN);
-      interests.put(principal_9, 1, #DOWN);
-      assert(interests.getAggregate(1) == { ups = 0; downs = 10; score = -10; });
+      Interests.put(users, principal_0, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_1, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_2, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_3, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_4, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_5, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_6, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_7, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_8, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_9, questions, question_1.id, #DOWN);
+      assert(questions.getQuestion(question_1.id).aggregates.interest == { ups = 0; downs = 10; score = -10; });
 
       // Test as many ups than downs ( 5 VS 5 )
-      interests.put(principal_0, 1, #UP);
-      interests.put(principal_1, 1, #UP);
-      interests.put(principal_2, 1, #UP);
-      interests.put(principal_3, 1, #UP);
-      interests.put(principal_4, 1, #UP);
-      interests.put(principal_5, 1, #DOWN);
-      interests.put(principal_6, 1, #DOWN);
-      interests.put(principal_7, 1, #DOWN);
-      interests.put(principal_8, 1, #DOWN);
-      interests.put(principal_9, 1, #DOWN);
-      assert(interests.getAggregate(1) == { ups = 5; downs = 5; score = 0; });
+      Interests.put(users, principal_0, questions, question_1.id, #UP);
+      Interests.put(users, principal_1, questions, question_1.id, #UP);
+      Interests.put(users, principal_2, questions, question_1.id, #UP);
+      Interests.put(users, principal_3, questions, question_1.id, #UP);
+      Interests.put(users, principal_4, questions, question_1.id, #UP);
+      Interests.put(users, principal_5, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_6, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_7, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_8, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_9, questions, question_1.id, #DOWN);
+      assert(questions.getQuestion(question_1.id).aggregates.interest == { ups = 5; downs = 5; score = 0; });
 
       // Test almost only ups ( 9 VS 1 )
-      interests.put(principal_0, 1, #UP);
-      interests.put(principal_1, 1, #UP);
-      interests.put(principal_2, 1, #UP);
-      interests.put(principal_3, 1, #UP);
-      interests.put(principal_4, 1, #UP);
-      interests.put(principal_5, 1, #UP);
-      interests.put(principal_6, 1, #UP);
-      interests.put(principal_7, 1, #UP);
-      interests.put(principal_8, 1, #UP);
-      interests.put(principal_9, 1, #DOWN);
-      assert(interests.getAggregate(1) == { ups = 9; downs = 1; score = 9; }); // down votes have no effect
+      Interests.put(users, principal_0, questions, question_1.id, #UP);
+      Interests.put(users, principal_1, questions, question_1.id, #UP);
+      Interests.put(users, principal_2, questions, question_1.id, #UP);
+      Interests.put(users, principal_3, questions, question_1.id, #UP);
+      Interests.put(users, principal_4, questions, question_1.id, #UP);
+      Interests.put(users, principal_5, questions, question_1.id, #UP);
+      Interests.put(users, principal_6, questions, question_1.id, #UP);
+      Interests.put(users, principal_7, questions, question_1.id, #UP);
+      Interests.put(users, principal_8, questions, question_1.id, #UP);
+      Interests.put(users, principal_9, questions, question_1.id, #DOWN);
+      assert(questions.getQuestion(question_1.id).aggregates.interest == { ups = 9; downs = 1; score = 9; }); // down votes have no effect
 
       // Test slight majority of ups ( 4 VS 3 )
-      interests.put(principal_0, 1, #UP);
-      interests.put(principal_1, 1, #UP);
-      interests.put(principal_2, 1, #UP);
-      interests.put(principal_3, 1, #UP);
-      interests.put(principal_4, 1, #DOWN);
-      interests.put(principal_5, 1, #DOWN);
-      interests.put(principal_6, 1, #DOWN);
-      interests.remove(principal_7, 1);
-      interests.remove(principal_8, 1);
-      interests.remove(principal_9, 1);
-      assert(interests.getAggregate(1) == { ups = 4; downs = 3; score = 3; }); // down votes have a slight effect
+      Interests.put(users, principal_0, questions, question_1.id, #UP);
+      Interests.put(users, principal_1, questions, question_1.id, #UP);
+      Interests.put(users, principal_2, questions, question_1.id, #UP);
+      Interests.put(users, principal_3, questions, question_1.id, #UP);
+      Interests.put(users, principal_4, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_5, questions, question_1.id, #DOWN);
+      Interests.put(users, principal_6, questions, question_1.id, #DOWN);
+      Interests.remove(users, principal_7, questions, question_1.id);
+      Interests.remove(users, principal_8, questions, question_1.id);
+      Interests.remove(users, principal_9, questions, question_1.id);
+      assert(questions.getQuestion(question_1.id).aggregates.interest == { ups = 4; downs = 3; score = 3; }); // down votes have a slight effect
 
       suite("Test Interests module", tests.toArray());
     };

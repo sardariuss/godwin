@@ -1,7 +1,5 @@
 import Types "types";
 import Questions "questions/questions";
-import Categorizations "votes/categorizations";
-import Opinions "votes/opinions";
 import Users "users";
 import Utils "utils";
 import StageHistory "stageHistory";
@@ -23,8 +21,6 @@ module {
   // For convenience: from other modules
   type Users = Users.Users;
   type Questions = Questions.Questions;
-  type Categorizations = Categorizations.Categorizations;
-  type Opinions = Opinions.Opinions;
 
   type Shareable = {
     params: SchedulerParams;
@@ -71,7 +67,7 @@ module {
               title = question.title;
               text = question.text;
               date = question.date;
-              interests = question.interests;
+              aggregates = question.aggregates;
               selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #SELECTED; timestamp = time_now; });
               categorization_stage = question.categorization_stage;
             };
@@ -83,7 +79,7 @@ module {
       null;
     };
 
-    public func archiveQuestion(questions: Questions, opinions: Opinions, time_now: Time) : ?Question {
+    public func archiveQuestion(questions: Questions, time_now: Time) : ?Question {
       switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){
         case(null){};
         case(?question){
@@ -100,10 +96,10 @@ module {
               title = question.title;
               text = question.text;
               date = question.date;
-              interests = question.interests;
+              aggregates = question.aggregates;
               selection_stage = StageHistory.setActiveStage(
                 question.selection_stage,
-                { stage = #ARCHIVED(opinions.getAggregate(question.id)); timestamp = time_now; }
+                { stage = #ARCHIVED(question.aggregates.opinion); timestamp = time_now; }
               );
               categorization_stage = StageHistory.setActiveStage(
                 question.categorization_stage,
@@ -118,7 +114,7 @@ module {
       null;
     };
 
-    public func closeCategorization(questions: Questions, users: Users, opinions: Opinions, categorizations: Categorizations, time_now: Time) : ?Question {
+    public func closeCategorization(questions: Questions, users: Users, time_now: Time) : ?Question {
       // Get the oldest question currently being categorized
       switch(Questions.nextQuestion(questions, questions.getInCategorizationStage(#ONGOING, #CATEGORIZATION_STAGE_DATE, #FWD))){
         case(null){}; // If there is no question with ongoing categorization_stage, there is nothing to do
@@ -130,14 +126,14 @@ module {
           };
           // If enough time has passed, put the categorization_stage at done and save its aggregate
           if (time_now > categorization_stage.timestamp + Utils.toTime(params_.categorization_duration)) {
-            let categorization_aggregate = Utils.trieToArray(categorizations.getAggregate(question.id));
+            let categorization_aggregate = Utils.trieToArray(question.aggregates.categorization);
             let updated_question = {
               id = question.id;
               author = question.author;
               title = question.title;
               text = question.text;
               date = question.date;
-              interests = question.interests;
+              aggregates = question.aggregates;
               selection_stage = question.selection_stage;
               categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization_aggregate); timestamp = time_now; });
             };
@@ -146,7 +142,7 @@ module {
             // @todo: think about making questions module observable to add pruneConvictions as an observer
             // @todo: updating your opinion shall also prune the convictions! right now this does not cause any 
             // problem because opinions cannot be changed after categorization is done
-            users.pruneConvictions(opinions, question.id);
+            users.pruneConvictions(question.id);
             return ?question;
           };
         };

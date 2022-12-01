@@ -1,11 +1,11 @@
 import Types "../types";
 import Polarization "polarization";
-import Categories "../categories";
 
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 
 module {
 
@@ -19,12 +19,9 @@ module {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
-  // For convenience: from other modules
-  type Categories = Categories.Categories;
-
-  public func nil(categories: Categories) : CategoryPolarizationTrie {
+  public func nil(categories: [Category]) : CategoryPolarizationTrie {
     var trie = Trie.empty<Category, Polarization>();
-    for (category in categories.vals()){
+    for (category in Array.vals(categories)){
       trie := Trie.put(trie, Types.keyText(category), Text.equal, Polarization.nil()).0;
     };
     trie;

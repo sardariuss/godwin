@@ -3,8 +3,6 @@ import Questions "../../src/godwin_backend/questions/questions";
 import Question "../../src/godwin_backend/questions/question";
 import Scheduler "../../src/godwin_backend/scheduler";
 import Users "../../src/godwin_backend/users";
-import Opinions "../../src/godwin_backend/votes/opinions";
-import Categorizations "../../src/godwin_backend/votes/categorizations";
 import Categories "../../src/godwin_backend/categories";
 
 import Matchers "mo:matchers/Matchers";
@@ -45,9 +43,7 @@ module {
       
       let categories = Categories.Categories([]);
       let users = Users.empty(categories);
-      let opinions = Opinions.empty();
-      let categorizations = Categorizations.empty(categories);
-      let questions = Questions.empty();
+      let questions = Questions.empty(categories);
       
       // Add some questions
       for (index in Array.keys(question_inputs_)){
@@ -55,16 +51,16 @@ module {
         ignore questions.createQuestion(question.author, question.date, question.title, question.text);
       };
       // Set a specific total of interests for each question
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(0), {ups = 0; downs = 0; score = 10; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(1), {ups = 0; downs = 0; score = 2; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(2), {ups = 0; downs = 0; score = 75; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(3), {ups = 0; downs = 0; score = 93; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(4), {ups = 0; downs = 0; score = 12; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(5), {ups = 0; downs = 0; score = 38; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(6), {ups = 0; downs = 0; score = 91; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(7), {ups = 0; downs = 0; score = 73; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(8), {ups = 0; downs = 0; score = 61; }));
-      questions.replaceQuestion(Question.updateTotalInterests(questions.getQuestion(9), {ups = 0; downs = 0; score = 31; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(0), {ups = 0; downs = 0; score = 10; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(1), {ups = 0; downs = 0; score = 2; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(2), {ups = 0; downs = 0; score = 75; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(3), {ups = 0; downs = 0; score = 93; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(4), {ups = 0; downs = 0; score = 12; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(5), {ups = 0; downs = 0; score = 38; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(6), {ups = 0; downs = 0; score = 91; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(7), {ups = 0; downs = 0; score = 73; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(8), {ups = 0; downs = 0; score = 61; }));
+      questions.replaceQuestion(Question.updateInterestAggregate(questions.getQuestion(9), {ups = 0; downs = 0; score = 31; }));
 
       let scheduler_params : SchedulerParams = {
         selection_rate = #NS(150);
@@ -124,27 +120,27 @@ module {
       // and selection duration is 300.
 
       // 2.1 Archive a first question
-      question := scheduler.archiveQuestion(questions, opinions, 900);
+      question := scheduler.archiveQuestion(questions, 900);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, opinions, 1300);
+      question := scheduler.archiveQuestion(questions, 1300);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, opinions, 1501);
+      question := scheduler.archiveQuestion(questions, 1501);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 2.2 Archive a second question
-      question := scheduler.archiveQuestion(questions, opinions, 1600);
+      question := scheduler.archiveQuestion(questions, 1600);
       assert(question == null);
-      question := scheduler.archiveQuestion(questions, opinions, 1750);
+      question := scheduler.archiveQuestion(questions, 1750);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
       
       // 2.3 Archive a third question
-      question := scheduler.archiveQuestion(questions, opinions, 2400);
+      question := scheduler.archiveQuestion(questions, 2400);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };
@@ -154,20 +150,20 @@ module {
       // and categorization duration is 500.
 
       // 3.1 Close categorization of a first question
-      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 1501);
+      question := scheduler.closeCategorization(questions, users, 1501);
       assert(question == null);
-      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 1900);
+      question := scheduler.closeCategorization(questions, users, 1900);
       assert(question == null);
-      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2050);
+      question := scheduler.closeCategorization(questions, users, 2050);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 3.2 Close categorization of a second question
-      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2200);
+      question := scheduler.closeCategorization(questions, users, 2200);
       assert(question == null);
-      question := scheduler.closeCategorization(questions, users, opinions, categorizations, 2260);
+      question := scheduler.closeCategorization(questions, users, 2260);
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };

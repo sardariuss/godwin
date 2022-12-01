@@ -1,5 +1,9 @@
 import Types "../../../src/godwin_backend/types";
+import Users "../../../src/godwin_backend/users";
+import Questions "../../../src/godwin_backend/questions/questions";
 import Opinions "../../../src/godwin_backend/votes/opinions";
+import User "../../../src/godwin_backend/user";
+import Categories "../../../src/godwin_backend/categories";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -14,8 +18,6 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
-  // For convenience: from other modules
-  type Opinions = Opinions.Opinions;
 
   public class TestOpinions() = {
 
@@ -33,31 +35,37 @@ module {
     public func getSuite() : Suite.Suite {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
+      
+      let categories = Categories.Categories([]);
 
-      let opinions = Opinions.empty();
+      let questions = Questions.empty(categories);
+      let question_0 = questions.createQuestion(principal_0, 0, "title0", "text0");
+      let question_1 = questions.createQuestion(principal_0, 0, "title1", "text1");
+
+      let users = Users.empty(categories);
 
       // Test put/remove
-      opinions.put(principal_0, 0, 0.0);
-      tests.add(test("Add ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(?0.0))));
-      opinions.put(principal_0, 0, 1.0);
-      tests.add(test("Update ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(?1.0))));
-      opinions.remove(principal_0, 0);
-      tests.add(test("Remove ballot", opinions.getForUserAndQuestion(principal_0, 0), Matchers.equals(TestableItems.optCursor(null))));
+      Opinions.put(users, principal_0, questions, question_0.id, 0.0);
+      tests.add(test("Add ballot", User.getOpinion(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCursor(?0.0))));
+      Opinions.put(users, principal_0, questions, question_0.id, 1.0);
+      tests.add(test("Update ballot", User.getOpinion(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCursor(?1.0))));
+      Opinions.remove(users, principal_0, questions, question_0.id);
+      tests.add(test("Remove ballot", User.getOpinion(users.getUser(principal_0), question_0.id), Matchers.equals(TestableItems.optCursor(null))));
       
       // Test aggregate
-      opinions.put(principal_0, 1,  1.0);
-      opinions.put(principal_1, 1,  0.5);
-      opinions.put(principal_2, 1,  0.5);
-      opinions.put(principal_3, 1,  0.5);
-      opinions.put(principal_4, 1,  0.5);
-      opinions.put(principal_5, 1,  0.5);
-      opinions.put(principal_6, 1,  0.0);
-      opinions.put(principal_7, 1,  0.0);
-      opinions.put(principal_8, 1, -1.0);
-      opinions.put(principal_9, 1, -1.0);
+      Opinions.put(users, principal_0, questions, question_1.id,  1.0);
+      Opinions.put(users, principal_1, questions, question_1.id,  0.5);
+      Opinions.put(users, principal_2, questions, question_1.id,  0.5);
+      Opinions.put(users, principal_3, questions, question_1.id,  0.5);
+      Opinions.put(users, principal_4, questions, question_1.id,  0.5);
+      Opinions.put(users, principal_5, questions, question_1.id,  0.5);
+      Opinions.put(users, principal_6, questions, question_1.id,  0.0);
+      Opinions.put(users, principal_7, questions, question_1.id,  0.0);
+      Opinions.put(users, principal_8, questions, question_1.id, -1.0);
+      Opinions.put(users, principal_9, questions, question_1.id, -1.0);
       tests.add(test(
         "Opinion aggregate",
-        opinions.getAggregate(1),
+        questions.getQuestion(question_1.id).aggregates.opinion,
         Matchers.equals(TestableItems.polarization({left = 2.0; center = 4.5; right = 3.5;}))));
 
       suite("Test Opinions module", tests.toArray());
