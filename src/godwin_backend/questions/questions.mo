@@ -2,11 +2,7 @@ import Types "../types";
 import PerSelectionStage "perSelectionStage";
 import PerCategorizationStage "perCategorizationStage";
 import Queries "queries";
-import Polarization "../representation/polarization";
-import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 import StageHistory "../stageHistory";
-import Categories "../categories";
-import Question "question";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -14,7 +10,6 @@ import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
-import Text "mo:base/Text";
 
 module {
 
@@ -27,15 +22,12 @@ module {
   type Question = Types.Question;
   type SelectionStageEnum = Types.SelectionStageEnum;
   type CategorizationStageEnum = Types.CategorizationStageEnum;
-  type Category = Types.Category;
   // For convenience: from other modules
   type PerSelectionStage = PerSelectionStage.PerSelectionStage;
   type PerCategorizationStage = PerCategorizationStage.PerCategorizationStage;
   type QuestionKey = Queries.QuestionKey;
   type OrderBy = Queries.OrderBy;
   type QueryDirection = Queries.QueryDirection;
-  type Categories = Categories.Categories;
-  type UpdateType = Categories.UpdateType;
 
   type Register = {
     questions: Trie<Nat, Question>;
@@ -44,22 +36,19 @@ module {
     per_categorization_stage : PerCategorizationStage;
   };
 
-  public func empty(categories: Categories) : Questions {
-    Questions(
-    {
+  public func empty() : Questions {
+    Questions({
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
       per_selection_stage = PerSelectionStage.empty();
       per_categorization_stage = PerCategorizationStage.empty();
-    },
-    categories);
+    });
   };
 
-  public class Questions(register: Register, categories: Categories) {
+  public class Questions(register: Register) {
 
     /// Members
     var register_ = register;
-    let categories_ = categories;
 
     public func share() : Register {
       register_;
@@ -93,7 +82,16 @@ module {
     };
 
     public func createQuestion(author: Principal, date: Time, title: Text, text: Text) : Question {
-      let question = Question.createQuestion(register_.question_index, author, date, title, text, categories_.share());
+      let question = {
+        id = register_.question_index;
+        author = author;
+        title = title;
+        text = text;
+        date = date;
+        interests = { ups = 0; downs = 0; score = 0; };
+        selection_stage = StageHistory.initStageHistory({ timestamp = date; stage = #CREATED; });
+        categorization_stage =  StageHistory.initStageHistory({ timestamp = date; stage = #PENDING; });
+      };
       register_ := {
         questions = Trie.put(register_.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register_.question_index + 1;
@@ -117,37 +115,6 @@ module {
         };
       };
     };
-
-    public func iter() : Iter<(Nat, Question)> {
-      Trie.iter(register_.questions);
-    };
-
-    /// For every question in the register, adds a null aggregate for the category
-    /// \param[in] category The category to add to the categorizations
-    func addCategory(category: Category) {
-      for ((_, question) in Trie.iter(register_.questions)){
-        let categorization = Trie.put(question.aggregates.categorization, Types.keyText(category), Text.equal, Polarization.nil()).0;
-        replaceQuestion(Question.updateCategorizationAggregate(question, categorization));
-      };
-    };
-
-    /// For every question in the register, remove the category's aggregate
-    /// \param[in] category The category to remove from the categorizations
-    func removeCategory(category: Category) {
-      for ((_, question) in Trie.iter(register_.questions)){
-        let categorization = Trie.remove(question.aggregates.categorization, Types.keyText(category), Text.equal).0;
-        replaceQuestion(Question.updateCategorizationAggregate(question, categorization));
-      };
-    };
-
-    /// Add an observer on the categories at construction, so that every time a category
-    /// is added or removed, all users' convictions are pruned.
-    categories_.addCallback(func(category: Category, update_type: UpdateType) { 
-       switch(update_type){
-        case(#CATEGORY_ADDED){ addCategory(category); };
-        case(#CATEGORY_REMOVED) { removeCategory(category); };
-      };
-    });
 
   };
 

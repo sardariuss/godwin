@@ -39,11 +39,7 @@ module {
     title: Text;
     text: Text;
     date: Time;
-    aggregates: {
-      interest: InterestAggregate;
-      opinion: Polarization;
-      categorization: CategoryPolarizationTrie;
-    };
+    interests: InterestAggregate;
     selection_stage: StageHistory<SelectionStage>;
     categorization_stage: StageHistory<CategorizationStage>;
   };
@@ -104,13 +100,7 @@ module {
     principal: Principal;
     // Optional because we want the user to be able to log based solely on the II,
     // without requiring a user name.
-    name: ?Text;
-    // Ballots
-    ballots: {
-      interests: Trie<Nat, Interest>;
-      opinions: Trie<Nat, Cursor>;
-      categorizations: Trie<Nat, CategoryCursorTrie>;
-    };
+    name: ?Text;  
     // Convictions: political profile (left/center/right for every categories based on user's answers)
     convictions: {
       to_update: Bool;

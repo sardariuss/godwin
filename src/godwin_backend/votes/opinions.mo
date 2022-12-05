@@ -1,49 +1,58 @@
 import Types "../types";
 import Cursor "../representation/cursor";
 import Polarization "../representation/polarization";
-import Questions "../questions/questions";
-import Question "../questions/question";
-import Users "../users";
-import User "../user";
-import Aggregates "aggregates";
+import Votes "votes";
 
 import Trie "mo:base/Trie";
-import Nat "mo:base/Nat";
 
 module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-
   // For convenience: from types modules
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
-  type User = Types.User;
-  type Question = Types.Question;
 
-  // For convenience: from other modules
-  type Questions = Questions.Questions;
-  type Users = Users.Users;
+  // Ballot = Cursor
+  // Aggregate = Polarization
+  type Register = Votes.VoteRegister<Cursor, Polarization>;
 
-  public func put(users: Users, principal: Principal, questions: Questions, question_id: Nat, new_opinion: Cursor){
-    let user = users.getUser(principal);
-    let question = questions.getQuestion(question_id);
-
-    let (user_opinions, old_opinion) = Trie.put(user.ballots.opinions, Types.keyNat(question.id), Nat.equal, new_opinion);
-    users.putUser(User.updateOpinions(user, user_opinions));
-    
-    let question_opinions = Aggregates.updateAggregate(question.aggregates.opinion, ?new_opinion, old_opinion, Polarization.addCursor, Polarization.subCursor);
-    questions.replaceQuestion(Question.updateOpinionAggregate(question, question_opinions));
+  public func empty() : Opinions {
+    Opinions(Votes.empty<Cursor, Polarization>());
   };
-  
-  public func remove(users: Users, principal: Principal, questions: Questions, question_id: Nat){
-    let user = users.getUser(principal);
-    let question = questions.getQuestion(question_id);
 
-    let (user_opinions, old_opinion) = Trie.remove(user.ballots.opinions, Types.keyNat(question.id), Nat.equal);
-    users.putUser(User.updateOpinions(user, user_opinions));
+  public class Opinions(register: Register) {
 
-    let question_opinions = Aggregates.updateAggregate(question.aggregates.opinion, null, old_opinion, Polarization.addCursor, Polarization.subCursor);
-    questions.replaceQuestion(Question.updateOpinionAggregate(question, question_opinions));
+    /// Members
+    var register_ = register;
+
+    public func share() : Register {
+      register_;
+    };
+
+    public func getForUser(principal: Principal) : Trie<Nat, Cursor> {
+      Votes.getUserBallots(register_, principal);
+    };
+
+    public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Cursor {
+      Votes.getBallot(register_, principal, question_id);
+    };
+
+    public func put(principal: Principal, question_id: Nat, cursor: Cursor) {
+      assert(Cursor.isValid(cursor));
+      register_ := Votes.putBallot(register_, principal, question_id, cursor, Polarization.nil, Polarization.addCursor, Polarization.subCursor).0;
+    };
+
+    public func remove(principal: Principal, question_id: Nat) {
+      register_ := Votes.removeBallot(register_, principal, question_id, Polarization.nil, Polarization.subCursor).0;
+    };
+
+    public func getAggregate(question_id: Nat) : Polarization {
+      switch(Votes.getAggregate(register_, question_id)){
+        case(?polarization) { return polarization;       };
+        case(null)          { return Polarization.nil(); };
+      };
+    };
+
   };
 
 };

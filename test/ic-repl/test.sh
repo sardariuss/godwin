@@ -30,12 +30,14 @@ let backend = installBackend(arguments);
 call backend.createQuestion("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society.", "");
 assert _ ~= record { 
   id = (0 : nat);
+  interests = record { ups = 0 : int; downs = 0 : int; score = 0 : int; };
   selection_stage = vec { record { stage = variant { CREATED }; }; };
   categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 };
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
+  interests = record { ups = 0 : int; downs = 0 : int; score = 0 : int; };
   selection_stage = vec { record { stage = variant { CREATED }; }; };
   categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
@@ -55,6 +57,7 @@ call backend.run();
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat);
+  interests = record { ups = 1 : int; downs = 0 : int; score = 1 : int; };
   //selection_stage = vec { record { stage = variant { CREATED }; }; record { stage = variant { SELECTED }; }; };
   //categorization_stage = vec { record { stage = variant { PENDING }; }; }; 
 }};
@@ -98,7 +101,7 @@ assert _ ~= variant { ok = record {
 
 "Get default user, convictions to update";
 call backend.findUser(default);
-assert _ ~= variant { ok = record { 
+assert _ == variant { ok = record { 
   "principal" = default;
   name = null : opt record{};
   convictions = record { to_update = true; array = vec { 
@@ -108,7 +111,7 @@ assert _ ~= variant { ok = record {
 
 "Compute user convictions";
 call backend.updateConvictions(default);
-assert _ ~= variant { ok = record { 
+assert _ == variant { ok = record { 
   "principal" = default;
   name = null : opt record{};
   convictions = record { to_update = false; array = vec { 

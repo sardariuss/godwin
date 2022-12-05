@@ -1,13 +1,12 @@
 import Types "types";
 import Questions "questions/questions";
+import Opinions "votes/opinions";
 import StageHistory "stageHistory";
 import Utils "utils";
 import Polarization "representation/polarization";
 import Cursor "representation/cursor";
-import CategoryCursorTrie "representation/categoryCursorTrie";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
 import Categories "categories";
-import User "user";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -15,7 +14,6 @@ import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
-import Nat "mo:base/Nat";
 
 module {
 
@@ -30,11 +28,10 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
-  type Interest = Types.Interest;
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
 
   // For convenience: from other modules
   type Questions = Questions.Questions;
+  type Opinions = Opinions.Opinions;
   type Categories = Categories.Categories;
   type UpdateType = Categories.UpdateType;
 
@@ -78,7 +75,14 @@ module {
       switch(Trie.get(register_, Types.keyPrincipal(principal), Principal.equal)){
         case(?user){ ?user; };
         case(null){
-          let new_user = User.newUser(principal, Utils.trieToArray(CategoryPolarizationTrie.nil(categories_.share())));
+          let new_user = {
+            principal = principal;
+            name = null;
+            // Important: set convictions.to_update to true, because the principal could have already voted
+            // before findUser is called (we don't want to assume the frontend called findUser right after the
+            // user logged in).
+            convictions = { to_update = true; array = Utils.trieToArray(CategoryPolarizationTrie.nil(categories_)); };
+          };
           putUser(new_user);
           ?new_user;
         };
@@ -88,19 +92,31 @@ module {
     /// Prune the convictions of all the users
     func pruneAllConvictions() {
       for ((_, user) in Trie.iter(register_)){
-        putUser(User.pruneConvictions(user));
+        putUser({
+          principal = user.principal;
+          name = user.name;
+          convictions = { to_update = true; array = user.convictions.array; };
+        });
       };
     };
 
     /// Prune the convictions of the users who gave their opinions on the question.
     /// In this context, pruning means putting the convictions.to_update flag to false,
     /// so the users' convictions need to be re-computed.
+    /// \param[in] opinions The voting register of opinions.
     /// \param[in] question_id The question identifier.
-    public func pruneConvictions(question_id: Nat) {
+    public func pruneConvictions(opinions: Opinions, question_id: Nat) {
       for ((principal, user) in Trie.iter(register_)){
-        Option.iterate(Trie.get(user.ballots.opinions, Types.keyNat(question_id), Nat.equal), func(_: Cursor) {
-          putUser(User.pruneConvictions(user));
-        });
+        switch(opinions.getForUserAndQuestion(principal, question_id)){
+          case(null){};
+          case(?opinion){
+            putUser({
+              principal = user.principal;
+              name = user.name;
+              convictions = { to_update = true; array = user.convictions.array; };
+            });
+          };
+        };
       };
     };
 
@@ -111,10 +127,14 @@ module {
     /// \param[in] questions The register of questions.
     /// \param[in] opinions The register of opinions.
     /// \return The user with up-to-date convictions
-    public func updateConvictions(principal: Principal, questions: Questions) : User {
+    public func updateConvictions(principal: Principal, questions: Questions, opinions: Opinions) : User {
       var user = getUser(principal);
       if (user.convictions.to_update){
-        user := User.updateConvictions(user, computeConvictions(questions, user.ballots.opinions));
+        user := {
+          principal = user.principal;
+          name = user.name;
+          convictions = { to_update = false; array = computeConvictions(questions, opinions.getForUser(user.principal)); };
+        };
         putUser(user);
       };
       user;
@@ -123,7 +143,7 @@ module {
     /// Put the user in the register.
     /// \param[in] user The user to put in the register.
     /// \trap If the user principal is anonymous.
-    public func putUser(user: User) {
+    func putUser(user: User) {
       if (Principal.isAnonymous(user.principal)){
         Debug.trap("User's principal cannot be anonymous.");
       };
@@ -137,7 +157,7 @@ module {
     /// \param[in] user_opinions The opinions the user gave for each question he voted on.
     /// \return The up-to-date user's convictions as an array: [(Category, Polarization)]
     func computeConvictions(questions: Questions, user_opinions: Trie<Nat, Cursor>) : CategoryPolarizationArray {
-      var convictions = CategoryPolarizationTrie.nil(categories_.share());
+      var convictions = CategoryPolarizationTrie.nil(categories_);
       // Iterate on the questions the user gave his opinion on.
       for ((question_id, opinion_cursor) in Trie.iter(user_opinions)){
         let question = questions.getQuestion(question_id);
@@ -162,11 +182,6 @@ module {
         };
       };
       Utils.trieToArray(convictions);
-    };
-
-    public func verifyCategorization(categorization: CategoryCursorTrie) : ?CategoryCursorTrie{
-      if (CategoryCursorTrie.isValid(categorization, categories_)) { ?categorization; }
-      else                                                         { null;    };
     };
 
     /// Add an observer on the categories at construction, so that every time a category
