@@ -83,7 +83,7 @@ module {
       null;
     };
 
-    public func archiveQuestion(questions: Questions, opinions: Opinions, time_now: Time) : ?Question {
+    public func archiveQuestion(questions: Questions, time_now: Time) : ?Question {
       switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){
         case(null){};
         case(?question){
@@ -103,7 +103,7 @@ module {
               interests = question.interests;
               selection_stage = StageHistory.setActiveStage(
                 question.selection_stage,
-                { stage = #ARCHIVED(opinions.getAggregate(question.id)); timestamp = time_now; }
+                { stage = #ARCHIVED({ left = 0.0; center = 0.0; right = 0.0; }); timestamp = time_now; } // @todo
               );
               categorization_stage = StageHistory.setActiveStage(
                 question.categorization_stage,

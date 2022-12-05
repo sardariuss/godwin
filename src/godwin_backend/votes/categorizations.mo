@@ -1,4 +1,4 @@
-import Votes "votes";
+import Vote "vote";
 import Types "../types";
 import Categories "../categories";
 import Polarization "../representation/polarization";
@@ -13,7 +13,7 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-  
+
   // For convenience: from types modules  
   type Ballot = Types.CategoryCursorTrie;
   type Aggregate = Types.CategoryPolarizationTrie;
@@ -25,10 +25,10 @@ module {
   
   // Ballot = CategoryCursorTrie = Trie<Category, Cursor>
   // Aggregate = CategoryPolarizationTrie = Trie<Category, Polarization>
-  type Register = Votes.VoteRegister<Ballot, Aggregate>;
+  type Register = Vote.VoteRegister<Ballot, Aggregate>;
   
   public func empty(categories: Categories) : Categorizations {
-    Categorizations(Votes.empty<Ballot, Aggregate>(), categories);
+    Categorizations(Vote.empty<Ballot, Aggregate>(), categories);
   };
 
   public class Categorizations(register: Register, categories: Categories) {
@@ -41,24 +41,24 @@ module {
     };
 
     public func getForUser(principal: Principal) : Trie<Nat, Ballot> {
-      Votes.getUserBallots(register_, principal);
+      Vote.getUserBallots(register_, principal);
     };
 
     public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Ballot {
-      Votes.getBallot(register_, principal, question_id);
+      Vote.getBallot(register_, principal, question_id);
     };
 
     public func put(principal: Principal, question_id: Nat, ballot: Ballot) {
       assert(CategoryCursorTrie.isValid(ballot, categories_));
-      register_ := Votes.putBallot(register_, principal, question_id, ballot, nilAggregate, CategoryPolarizationTrie.add, CategoryPolarizationTrie.sub).0;
+      register_ := Vote.putBallot(register_, principal, question_id, ballot, nilAggregate, CategoryPolarizationTrie.add, CategoryPolarizationTrie.sub).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(register_, principal, question_id, nilAggregate, CategoryPolarizationTrie.sub).0;
+      register_ := Vote.removeBallot(register_, principal, question_id, nilAggregate, CategoryPolarizationTrie.sub).0;
     };
 
     public func getAggregate(question_id: Nat) : Aggregate {
-      switch(Votes.getAggregate(register_, question_id)){
+      switch(Vote.getAggregate(register_, question_id)){
         case(?aggregate) { return aggregate;       };
         case(null)       { return nilAggregate();  };
       };

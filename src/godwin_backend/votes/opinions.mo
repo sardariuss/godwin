@@ -1,7 +1,7 @@
 import Types "../types";
 import Cursor "../representation/cursor";
 import Polarization "../representation/polarization";
-import Votes "votes";
+import Vote "vote";
 
 import Trie "mo:base/Trie";
 
@@ -14,10 +14,10 @@ module {
 
   // Ballot = Cursor
   // Aggregate = Polarization
-  type Register = Votes.VoteRegister<Cursor, Polarization>;
+  type Register = Vote.VoteRegister<Cursor, Polarization>;
 
   public func empty() : Opinions {
-    Opinions(Votes.empty<Cursor, Polarization>());
+    Opinions(Vote.empty<Cursor, Polarization>());
   };
 
   public class Opinions(register: Register) {
@@ -30,24 +30,24 @@ module {
     };
 
     public func getForUser(principal: Principal) : Trie<Nat, Cursor> {
-      Votes.getUserBallots(register_, principal);
+      Vote.getUserBallots(register_, principal);
     };
 
     public func getForUserAndQuestion(principal: Principal, question_id: Nat) : ?Cursor {
-      Votes.getBallot(register_, principal, question_id);
+      Vote.getBallot(register_, principal, question_id);
     };
 
     public func put(principal: Principal, question_id: Nat, cursor: Cursor) {
       assert(Cursor.isValid(cursor));
-      register_ := Votes.putBallot(register_, principal, question_id, cursor, Polarization.nil, Polarization.addCursor, Polarization.subCursor).0;
+      register_ := Vote.putBallot(register_, principal, question_id, cursor, Polarization.nil, Polarization.addCursor, Polarization.subCursor).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Votes.removeBallot(register_, principal, question_id, Polarization.nil, Polarization.subCursor).0;
+      register_ := Vote.removeBallot(register_, principal, question_id, Polarization.nil, Polarization.subCursor).0;
     };
 
     public func getAggregate(question_id: Nat) : Polarization {
-      switch(Votes.getAggregate(register_, question_id)){
+      switch(Vote.getAggregate(register_, question_id)){
         case(?polarization) { return polarization;       };
         case(null)          { return Polarization.nil(); };
       };

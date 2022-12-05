@@ -39,9 +39,43 @@ module {
     title: Text;
     text: Text;
     date: Time;
+//    votes: {
+//      current: Iteration;
+//      history: [Iteration];
+//    };
     interests: InterestAggregate;
     selection_stage: StageHistory<SelectionStage>;
     categorization_stage: StageHistory<CategorizationStage>;
+  };
+
+  public type VoteType = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+    #NONE;
+  };
+  
+  public type Iteration = {
+    id: Nat;
+    question_id: Nat;
+    opening_date: Int;
+    closing_date: ?Int;
+    current: VoteType;
+    interest: Vote<Interest, InterestAggregate>;
+    opinion: Vote<Cursor, Polarization>;
+    categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
+  };
+
+  public type VoteState = {
+    #PENDING;
+    #OPEN;
+    #CLOSED;
+  };
+
+  public type Vote<B, A> = {
+    state: VoteState;
+    ballots: Trie<Principal, B>;
+    aggregate: A;
   };
 
   public type StageRecord<S> = {

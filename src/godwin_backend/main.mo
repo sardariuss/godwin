@@ -1,7 +1,7 @@
 import Question "questions/question";
 import Questions "questions/questions";
-import Interests "votes/interests";
 import Opinions "votes/opinions";
+import Iterations "votes/register";
 import Categorizations "votes/categorizations";
 import Cursor "representation/cursor";
 import Types "types";
@@ -30,23 +30,23 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
+  type Iteration = Types.Iteration;
 
   // Members
   var categories_ = Categories.Categories(parameters.categories);
   var users_ = Users.empty(categories_);
   var questions_ = Questions.empty();
-  var interests_ = Interests.empty();
-  var opinions_ = Opinions.empty();
-  var categorizations_ = Categorizations.empty(categories_);
+  stable var iterations_ = Iterations.empty();
+  var old_opinions_ = Opinions.empty();
+  var old_categorizations_ = Categorizations.empty(categories_);
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
   stable var categories_shareable_ = categories_.share();
   stable var users_shareable_ = users_.share();
   stable var questions_shareable_ = questions_.share();
-  stable var interests_shareable_ = interests_.share();
-  stable var opinions_shareable_ = opinions_.share();
-  stable var categorizations_shareable_ = categorizations_.share();
+  stable var old_opinions_shareable_ = old_opinions_.share();
+  stable var old_categorizations_shareable_ = old_categorizations_.share();
   stable var scheduler_shareable_ = scheduler_.share();
 
   public func getSchedulerParams() : async SchedulerParams {
@@ -100,48 +100,47 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public type InterestError = {
-    #QuestionNotFound;
+    #VoteNotFound;
   };
 
-  public shared query func getInterest(principal: Principal, question_id: Nat) : async Result<?Interest, InterestError> {
-    Result.mapOk<Question, ?Interest, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      interests_.getForUserAndQuestion(principal, question_id);
+  public shared query func getInterest(iteration_id: Nat, principal: Principal) : async Result<?Interest, InterestError> {
+    Result.mapOk<Iteration, ?Interest, InterestError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+      Iterations.getInterest(iterations_, iteration_id, principal);
     });
   };
 
-  public shared({caller}) func setInterest(question_id: Nat, interest: Interest) : async Result<(), InterestError> {
-    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      interests_.put(caller, question_id, interest);
-      questions_.replaceQuestion(Question.updateTotalInterests(question, interests_.getAggregate(question_id)));
+  public shared({caller}) func setInterest(iteration_id: Nat, interest: Interest) : async Result<(), InterestError> {
+    Result.mapOk<Iteration, (), InterestError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+      iterations_ := Iterations.putInterest(iterations_, iteration_id, caller, interest);
     });
   };
 
-  public shared({caller}) func removeInterest(question_id: Nat) : async Result<(), InterestError> {
-    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      interests_.remove(caller, question_id);
-      questions_.replaceQuestion(Question.updateTotalInterests(question, interests_.getAggregate(question.id)));
+  public shared({caller}) func removeInterest(iteration_id: Nat) : async Result<(), InterestError> {
+    Result.mapOk<Iteration, (), InterestError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+      iterations_ := Iterations.removeInterest(iterations_, iteration_id, caller);
     });
   };
 
   public type OpinionError = {
     #InvalidOpinion;
-    #QuestionNotFound;
+    #VoteNotFound;
     #WrongSelectionStage;
   };
 
-  public shared query func getOpinion(principal: Principal, question_id: Nat) : async Result<?Cursor, OpinionError> {
-    Result.mapOk<Question, ?Cursor, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      opinions_.getForUserAndQuestion(principal, question_id);
+  public shared query func getOpinion(iteration_id: Nat, principal: Principal) : async Result<?Cursor, OpinionError> {
+    Result.mapOk<Iteration, ?Cursor, OpinionError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+      Iterations.getOpinion(iterations_, iteration_id, principal);
     });
   };
 
-  public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
+  public shared({caller}) func setOpinion(iteration_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
     Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-      Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED]), #WrongSelectionStage);
-        Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
-          opinions_.put(caller, question_id, cursor);
-        })
+      Result.mapOk<Iteration, (), OpinionError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+        iterations_ := Iterations.putOpinion(iterations_, iteration_id, caller, cursor);
+        //let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED]), #WrongSelectionStage);
+        //Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
+          //
+        //})
       })
     });
   };
@@ -149,20 +148,20 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public type CategorizationError = {
     #InsufficientCredentials;
     #InvalidCategorization;
-    #QuestionNotFound;
+    #VoteNotFound;
     #WrongCategorizationStage;
   };
 
-  public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(iteration_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
-      Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
-        Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
-          let verified = Result.fromOption(categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
+      Result.chain<Iteration, (), CategorizationError>(Result.fromOption(Iterations.findIteration(iterations_, iteration_id), #VoteNotFound), func(iteration) {
+        //let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
+        //Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
+          let verified = Result.fromOption(old_categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
           Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
-            categorizations_.put(caller, question_id, cursor_trie);
+            iterations_ := Iterations.putCategorization(iterations_, iteration_id, caller, cursor_trie);
           })
-        })
+        //})
       })
     });
   };
@@ -171,8 +170,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public shared func run() {
     let time_now = Time.now();
     ignore scheduler_.selectQuestion(questions_, time_now);
-    ignore scheduler_.archiveQuestion(questions_, opinions_, time_now);
-    ignore scheduler_.closeCategorization(questions_, users_, opinions_, categorizations_, time_now);
+    ignore scheduler_.archiveQuestion(questions_, time_now);
+    ignore scheduler_.closeCategorization(questions_, users_, old_opinions_, old_categorizations_, time_now);
   };
 
   public type GetUserError = {
@@ -185,7 +184,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func updateConvictions(principal: Principal) : async Result<User, GetUserError> {
     Result.mapOk<User, User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(_){
-      users_.updateConvictions(principal, questions_, opinions_);
+      users_.updateConvictions(principal, questions_, old_opinions_);
     });
   };
 
@@ -202,9 +201,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_shareable_ := categories_.share();
     users_shareable_ := users_.share();
     questions_shareable_ := questions_.share();
-    interests_shareable_ := interests_.share();
-    opinions_shareable_ := opinions_.share();
-    categorizations_shareable_ := categorizations_.share();
+    old_opinions_shareable_ := old_opinions_.share();
+    old_categorizations_shareable_ := old_categorizations_.share();
     scheduler_shareable_ := scheduler_.share();
   };
 
@@ -212,9 +210,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_ := Categories.Categories(categories_shareable_);
     users_ := Users.Users(users_shareable_, categories_);
     questions_ := Questions.Questions(questions_shareable_);
-    interests_ := Interests.Interests(interests_shareable_);
-    opinions_ := Opinions.Opinions(opinions_shareable_);
-    categorizations_ := Categorizations.Categorizations(categorizations_shareable_, categories_);
+    old_opinions_ := Opinions.Opinions(old_opinions_shareable_);
+    old_categorizations_ := Categorizations.Categorizations(old_categorizations_shareable_, categories_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };
 

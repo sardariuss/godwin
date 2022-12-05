@@ -1,6 +1,5 @@
 import Types "../types";
 
-import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Trie "mo:base/Trie";
@@ -11,8 +10,11 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
-  type Hash = Hash.Hash;
   type Principal = Principal.Principal;
+
+  // For convenience: from types module
+  type VoteState = Types.VoteState;
+  type Vote<B, A> = Types.Vote<B, A>;
 
   // B for ballot, A for aggregate
   public type VoteRegister<B, A> = {
@@ -108,6 +110,79 @@ module {
       old_aggregate,
       new_aggregate
     );
+  };
+
+  public func new<B, A>(state: VoteState, aggregate: A) : Vote<B, A> {
+    {
+      state;
+      ballots = Trie.empty<Principal, B>();
+      aggregate;
+    };
+  };
+
+  func update<B, A>(vote: Vote<B, A>, ballots: Trie<Principal, B>, aggregate: A) : Vote<B, A> {
+    {
+      state = vote.state;
+      ballots;
+      aggregate;
+    };
+  };
+
+  public func getBallot2<B, A>(
+    vote: Vote<B, A>,
+    principal: Principal
+  ) : ?B {
+    Trie.get(vote.ballots, Types.keyPrincipal(principal), Principal.equal);
+  };
+
+  public func putBallot2<B, A>(
+    vote: Vote<B, A>,
+    principal: Principal,
+    ballot: B,
+    add_to_aggregate: (A, B) -> A,
+    remove_from_aggregate: (A, B) -> A
+  ) : Vote<B, A> {
+    // The vote shall be open
+    assert(vote.state == #OPEN);
+    // Put the ballot in the user's ballots
+    let (ballots, removed_ballot) = Trie.put(vote.ballots, Types.keyPrincipal(principal), Principal.equal, ballot);
+    // Update the aggregate
+    let aggregate = updateAggregate(vote.aggregate, ?ballot, removed_ballot, add_to_aggregate, remove_from_aggregate);
+    update(vote, ballots, aggregate);
+  };
+
+  public func removeBallot2<B, A>(
+    vote: Vote<B, A>,
+    principal: Principal,
+    add_to_aggregate: (A, B) -> A,
+    remove_from_aggregate: (A, B) -> A
+  ) : Vote<B, A> {
+    // The vote shall be open
+    assert(vote.state == #OPEN);
+    // Remove the ballot from the user's ballots
+    let (ballots, removed_ballot) = Trie.remove(vote.ballots, Types.keyPrincipal(principal), Principal.equal);
+    // Update the aggregate
+    let aggregate = updateAggregate(vote.aggregate, null, removed_ballot, add_to_aggregate, remove_from_aggregate);
+    update(vote, ballots, aggregate);
+  };
+
+  func updateAggregate<B, A>(
+    aggregate: A,
+    new_ballot: ?B,
+    old_ballot: ?B,
+    add_to_aggregate: (A, B) -> A,
+    remove_from_aggregate: (A, B) -> A
+  ) : A {
+    var new_aggregate = aggregate;
+    // If there is a new ballot, add it to the aggregate
+    Option.iterate(new_ballot, func(ballot: B) {
+      new_aggregate := add_to_aggregate(new_aggregate, ballot);
+    });
+    // If there was an old ballot, remove it from the aggregate
+    Option.iterate(old_ballot, func(ballot: B) {
+      new_aggregate := remove_from_aggregate(new_aggregate, ballot);
+    });
+    new_aggregate;
   };
 
 };
