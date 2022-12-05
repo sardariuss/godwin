@@ -39,10 +39,10 @@ module {
     title: Text;
     text: Text;
     date: Time;
-//    votes: {
-//      current: Iteration;
-//      history: [Iteration];
-//    };
+    iterations: {
+      current: Nat;
+      history: [Nat];
+    };
     interests: InterestAggregate;
     selection_stage: StageHistory<SelectionStage>;
     categorization_stage: StageHistory<CategorizationStage>;

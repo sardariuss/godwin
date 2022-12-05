@@ -49,6 +49,7 @@ module {
       title = question.title;
       text = question.text;
       date = question.date;
+      iterations = question.iterations;
       interests = interests;
       selection_stage = question.selection_stage;
       categorization_stage = question.categorization_stage;

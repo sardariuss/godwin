@@ -71,6 +71,7 @@ module {
               title = question.title;
               text = question.text;
               date = question.date;
+              iterations = question.iterations;
               interests = question.interests;
               selection_stage = StageHistory.setActiveStage(question.selection_stage, { stage = #SELECTED; timestamp = time_now; });
               categorization_stage = question.categorization_stage;
@@ -100,6 +101,7 @@ module {
               title = question.title;
               text = question.text;
               date = question.date;
+              iterations = question.iterations;
               interests = question.interests;
               selection_stage = StageHistory.setActiveStage(
                 question.selection_stage,
@@ -137,6 +139,7 @@ module {
               title = question.title;
               text = question.text;
               date = question.date;
+              iterations = question.iterations;
               interests = question.interests;
               selection_stage = question.selection_stage;
               categorization_stage = StageHistory.setActiveStage(question.categorization_stage, { stage = #DONE(categorization_aggregate); timestamp = time_now; });

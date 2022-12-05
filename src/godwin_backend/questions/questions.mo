@@ -81,13 +81,17 @@ module {
       };
     };
 
-    public func createQuestion(author: Principal, date: Time, title: Text, text: Text) : Question {
+    public func createQuestion(author: Principal, date: Time, title: Text, text: Text, iteration_id: Nat) : Question {
       let question = {
         id = register_.question_index;
         author = author;
         title = title;
         text = text;
         date = date;
+        iterations = {
+          current = iteration_id;
+          history = [];
+        };
         interests = { ups = 0; downs = 0; score = 0; };
         selection_stage = StageHistory.initStageHistory({ timestamp = date; stage = #CREATED; });
         categorization_stage =  StageHistory.initStageHistory({ timestamp = date; stage = #PENDING; });
