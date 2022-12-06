@@ -7,6 +7,7 @@ import Polarization "representation/polarization";
 import Cursor "representation/cursor";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
 import Categories "categories";
+import Iterations "votes/register";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -28,6 +29,7 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
+  type Iteration = Types.Iteration;
 
   // For convenience: from other modules
   type Questions = Questions.Questions;
@@ -103,11 +105,10 @@ module {
     /// Prune the convictions of the users who gave their opinions on the question.
     /// In this context, pruning means putting the convictions.to_update flag to false,
     /// so the users' convictions need to be re-computed.
-    /// \param[in] opinions The voting register of opinions.
-    /// \param[in] question_id The question identifier.
-    public func pruneConvictions(opinions: Opinions, question_id: Nat) {
+    /// \param[in] @todo
+    public func pruneConvictions(opinions: Trie<Principal, Cursor>) {
       for ((principal, user) in Trie.iter(register_)){
-        switch(opinions.getForUserAndQuestion(principal, question_id)){
+        switch(Trie.get(opinions, Types.keyPrincipal(principal), Principal.equal)){
           case(null){};
           case(?opinion){
             putUser({

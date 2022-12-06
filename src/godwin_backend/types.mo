@@ -60,10 +60,10 @@ module {
     question_id: Nat;
     opening_date: Int;
     closing_date: ?Int;
-    current: VoteType;
-    interest: Vote<Interest, InterestAggregate>;
-    opinion: Vote<Cursor, Polarization>;
-    categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
+    current_vote: VoteType;
+    interest: ?Vote<Interest, InterestAggregate>;
+    opinion: ?Vote<Cursor, Polarization>;
+    categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
   };
 
   public type VoteState = {
@@ -73,6 +73,7 @@ module {
   };
 
   public type Vote<B, A> = {
+    date: Int;
     state: VoteState;
     ballots: Trie<Principal, B>;
     aggregate: A;

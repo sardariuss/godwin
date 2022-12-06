@@ -112,8 +112,9 @@ module {
     );
   };
 
-  public func new<B, A>(state: VoteState, aggregate: A) : Vote<B, A> {
+  public func new<B, A>(date: Int, state: VoteState, aggregate: A) : Vote<B, A> {
     {
+      date;
       state;
       ballots = Trie.empty<Principal, B>();
       aggregate;
@@ -122,6 +123,7 @@ module {
 
   func update<B, A>(vote: Vote<B, A>, ballots: Trie<Principal, B>, aggregate: A) : Vote<B, A> {
     {
+      date = vote.date;
       state = vote.state;
       ballots;
       aggregate;

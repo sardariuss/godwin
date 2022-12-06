@@ -37,16 +37,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   var users_ = Users.empty(categories_);
   var questions_ = Questions.empty();
   stable var iterations_ = Iterations.empty();
-  var old_opinions_ = Opinions.empty();
-  var old_categorizations_ = Categorizations.empty(categories_);
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
   stable var categories_shareable_ = categories_.share();
   stable var users_shareable_ = users_.share();
   stable var questions_shareable_ = questions_.share();
-  stable var old_opinions_shareable_ = old_opinions_.share();
-  stable var old_categorizations_shareable_ = old_categorizations_.share();
   stable var scheduler_shareable_ = scheduler_.share();
 
   public func getSchedulerParams() : async SchedulerParams {
@@ -140,6 +136,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
       Result.mapOk<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         iterations_ := Iterations.putOpinion(iterations_, question.iterations.current, caller, cursor);
+        // @todo
         //let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED]), #WrongSelectionStage);
         //Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
           //
@@ -157,13 +154,14 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
-      Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      Result.mapOk<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        // @todo
         //let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
         //Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
-          let verified = Result.fromOption(old_categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
-          Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
-            iterations_ := Iterations.putCategorization(iterations_, question.iterations.current, caller, cursor_trie);
-          })
+          //let verified = Result.fromOption(old_categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
+          //Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
+            iterations_ := Iterations.putCategorization(iterations_, question.iterations.current, caller, Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal));
+          //})
         //})
       })
     });
@@ -172,9 +170,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   // @todo: call in a heartbeat
   public shared func run() {
     let time_now = Time.now();
-    ignore scheduler_.selectQuestion(questions_, time_now);
-    ignore scheduler_.archiveQuestion(questions_, time_now);
-    ignore scheduler_.closeCategorization(questions_, users_, old_opinions_, old_categorizations_, time_now);
+    iterations_ := scheduler_.selectQuestion(iterations_, time_now).0;
+    iterations_ := scheduler_.archiveQuestion(iterations_, time_now).0;
+    iterations_ := scheduler_.closeCategorization(iterations_, users_, time_now).0;
   };
 
   public type GetUserError = {
@@ -186,8 +184,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared func updateConvictions(principal: Principal) : async Result<User, GetUserError> {
-    Result.mapOk<User, User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(_){
-      users_.updateConvictions(principal, questions_, old_opinions_);
+    Result.mapOk<User, User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(user){
+      //users_.updateConvictions(principal, questions_, old_opinions_); // @todo
+      user;
     });
   };
 
@@ -204,8 +203,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_shareable_ := categories_.share();
     users_shareable_ := users_.share();
     questions_shareable_ := questions_.share();
-    old_opinions_shareable_ := old_opinions_.share();
-    old_categorizations_shareable_ := old_categorizations_.share();
     scheduler_shareable_ := scheduler_.share();
   };
 
@@ -213,8 +210,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     categories_ := Categories.Categories(categories_shareable_);
     users_ := Users.Users(users_shareable_, categories_);
     questions_ := Questions.Questions(questions_shareable_);
-    old_opinions_ := Opinions.Opinions(old_opinions_shareable_);
-    old_categorizations_ := Categorizations.Categorizations(old_categorizations_shareable_, categories_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };
 
