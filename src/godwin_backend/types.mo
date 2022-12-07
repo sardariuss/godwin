@@ -14,6 +14,9 @@ module {
   type Principal = Principal.Principal;
   type Time = Time.Time;
 
+  public type QuestionId = Nat;
+  public type InterationId = Nat;
+
   public type Duration = {
     #DAYS: Nat;
     #HOURS: Nat;
@@ -34,18 +37,15 @@ module {
   };
 
   public type Question = {
-    id: Nat;
+    id: QuestionId;
     author: Principal;
     title: Text;
     text: Text;
     date: Time;
     iterations: {
-      current: Nat;
-      history: [Nat];
+      current: InterationId;
+      history: [InterationId];
     };
-    interests: InterestAggregate;
-    selection_stage: StageHistory<SelectionStage>;
-    categorization_stage: StageHistory<CategorizationStage>;
   };
 
   public type VotingStage = {
@@ -56,8 +56,8 @@ module {
   };
   
   public type Iteration = {
-    id: Nat;
-    question_id: Nat;
+    id: InterationId;
+    question_id: QuestionId;
     opening_date: Int;
     closing_date: ?Int;
     voting_stage: VotingStage;
@@ -66,25 +66,11 @@ module {
     categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
   };
 
-  public type VoteState = {
-    #PENDING;
-    #OPEN;
-    #CLOSED;
-  };
-
   public type Vote<B, A> = {
     date: Int;
-    state: VoteState;
     ballots: Trie<Principal, B>;
     aggregate: A;
   };
-
-  public type StageRecord<S> = {
-    timestamp: Time;
-    stage: S;
-  };
-
-  public type StageHistory<S> = [StageRecord<S>];
 
   public type Category = Text;
 
@@ -101,34 +87,6 @@ module {
     ups: Nat;
     downs: Nat;
     score: Int;
-  };
-
-  public type SelectionStage = {
-    #CREATED;
-    #SELECTED;
-    #ARCHIVED: Polarization;
-  };
-
-  // The enum is required to be able to compare stages to not have to give
-  // a Polarization for the #ARCHIVED stage
-  public type SelectionStageEnum = {
-    #CREATED;
-    #SELECTED;
-    #ARCHIVED;
-  };
-
-  public type CategorizationStage = {
-    #PENDING;
-    #ONGOING;
-    #DONE: CategoryPolarizationArray;
-  };
-
-  // The enum is required to be able to compare stages to not have to give
-  // a CategoryPolarizationArray for the #DONE stage
-  public type CategorizationStageEnum = {
-    #PENDING;
-    #ONGOING;
-    #DONE;
   };
 
   public type User = {

@@ -11,23 +11,12 @@ module {
   type Principal = Principal.Principal;
 
   // For convenience: from types module
-  type VoteState = Types.VoteState;
   type Vote<B, A> = Types.Vote<B, A>;
 
-  public func new<B, A>(date: Int, state: VoteState, aggregate: A) : Vote<B, A> {
+  public func new<B, A>(date: Int, aggregate: A) : Vote<B, A> {
     {
       date;
-      state;
       ballots = Trie.empty<Principal, B>();
-      aggregate;
-    };
-  };
-
-  func update<B, A>(vote: Vote<B, A>, ballots: Trie<Principal, B>, aggregate: A) : Vote<B, A> {
-    {
-      date = vote.date;
-      state = vote.state;
-      ballots;
       aggregate;
     };
   };
@@ -46,13 +35,11 @@ module {
     add_to_aggregate: (A, B) -> A,
     remove_from_aggregate: (A, B) -> A
   ) : Vote<B, A> {
-    // The vote shall be open
-    assert(vote.state == #OPEN);
     // Put the ballot in the user's ballots
     let (ballots, removed_ballot) = Trie.put(vote.ballots, Types.keyPrincipal(principal), Principal.equal, ballot);
     // Update the aggregate
     let aggregate = updateAggregate(vote.aggregate, ?ballot, removed_ballot, add_to_aggregate, remove_from_aggregate);
-    update(vote, ballots, aggregate);
+    { vote with ballots; aggregate; };
   };
 
   public func removeBallot<B, A>(
@@ -61,13 +48,11 @@ module {
     add_to_aggregate: (A, B) -> A,
     remove_from_aggregate: (A, B) -> A
   ) : Vote<B, A> {
-    // The vote shall be open
-    assert(vote.state == #OPEN);
     // Remove the ballot from the user's ballots
     let (ballots, removed_ballot) = Trie.remove(vote.ballots, Types.keyPrincipal(principal), Principal.equal);
     // Update the aggregate
     let aggregate = updateAggregate(vote.aggregate, null, removed_ballot, add_to_aggregate, remove_from_aggregate);
-    update(vote, ballots, aggregate);
+    { vote with ballots; aggregate; };
   };
 
   func updateAggregate<B, A>(

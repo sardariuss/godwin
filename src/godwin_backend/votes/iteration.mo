@@ -15,7 +15,6 @@ module {
   type Polarization = Types.Polarization;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type VotingStage = Types.VotingStage;
 
   public func new(id: Nat, question_id: Nat, opening_date: Int) : Iteration {
     {
@@ -24,7 +23,7 @@ module {
       opening_date;
       closing_date = null;
       voting_stage = #INTEREST;
-      interest = ?Vote.new<Interest, InterestAggregate>(opening_date, #OPEN, { ups = 0; downs = 0; score = 0; });
+      interest = ?Vote.new<Interest, InterestAggregate>(opening_date, { ups = 0; downs = 0; score = 0; });
       opinion = null; // Vote.new<Cursor, Polarization>(opening_date, #PENDING, Polarization.nil()); @todo
       categorization = null; // Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(opening_date, #PENDING, Trie.empty<Text, Polarization>()); @todo
     };

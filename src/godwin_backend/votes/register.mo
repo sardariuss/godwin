@@ -74,7 +74,7 @@ module {
 
   public func getInterest(register: Register, id: Nat, principal: Principal) : ?Interest {
     Option.chain(get(register, id).interest, func(iteration_interest: Vote<Interest, InterestAggregate>) : ?Interest {
-      Vote.getBallot<Interest, InterestAggregate>(iteration_interest, principal);
+      Vote.getBallot(iteration_interest, principal);
     });
   };
 
@@ -84,7 +84,7 @@ module {
     switch(iteration.interest){
       case(null) { Prelude.unreachable(); };
       case(?iteration_interest) {
-        let new_interest = Vote.putBallot<Interest, InterestAggregate>(iteration_interest, principal, interest, Interests.addToAggregate, Interests.removeFromAggregate);
+        let new_interest = Vote.putBallot(iteration_interest, principal, interest, Interests.addToAggregate, Interests.removeFromAggregate);
         updateIteration(register, { iteration with new_interest });
       };
     };
@@ -96,7 +96,7 @@ module {
     switch(iteration.interest) {
       case(null) { Prelude.unreachable(); };
       case(?iteration_interest) {
-        let new_interest = Vote.removeBallot<Interest, InterestAggregate>(iteration_interest, principal, Interests.addToAggregate, Interests.removeFromAggregate);
+        let new_interest = Vote.removeBallot(iteration_interest, principal, Interests.addToAggregate, Interests.removeFromAggregate);
         updateIteration(register, { iteration with new_interest });
       };
     };
@@ -104,7 +104,7 @@ module {
 
   public func getOpinion(register: Register, id: Nat, principal: Principal) : ?Cursor {
     Option.chain(get(register, id).opinion, func(iteration_opinion: Vote<Cursor, Polarization>) : ?Cursor {
-      Vote.getBallot<Cursor, Polarization>(iteration_opinion, principal);
+      Vote.getBallot(iteration_opinion, principal);
     });
   };
 
@@ -114,7 +114,7 @@ module {
     switch(iteration.opinion) {
       case(null) { Prelude.unreachable(); };
       case(?iteration_opinion) {
-        let new_opinion = Vote.putBallot<Cursor, Polarization>(iteration_opinion, principal, opinion, Polarization.addCursor, Polarization.subCursor);
+        let new_opinion = Vote.putBallot(iteration_opinion, principal, opinion, Polarization.addCursor, Polarization.subCursor);
         updateIteration(register, { iteration with new_opinion });
       };
     };
@@ -126,7 +126,7 @@ module {
     switch(iteration.opinion) {
       case(null) { Prelude.unreachable(); };
       case(?iteration_opinion) {
-        let new_opinion = Vote.removeBallot<Cursor, Polarization>(iteration_opinion, principal, Polarization.addCursor, Polarization.subCursor);
+        let new_opinion = Vote.removeBallot(iteration_opinion, principal, Polarization.addCursor, Polarization.subCursor);
         updateIteration(register, { iteration with new_opinion });
       };
     };
@@ -134,7 +134,7 @@ module {
 
   public func getCategorization(register: Register, id: Nat, principal: Principal) : ?CategoryCursorTrie {
     Option.chain(get(register, id).categorization, func(iteration_categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : ?CategoryCursorTrie {
-      Vote.getBallot<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal);
+      Vote.getBallot(iteration_categorization, principal);
     });
   };
 
@@ -144,7 +144,7 @@ module {
     switch(iteration.categorization) {
       case(null) { Prelude.unreachable(); };
       case(?iteration_categorization) {
-        let new_categorization = Vote.putBallot<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, categorization, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
+        let new_categorization = Vote.putBallot(iteration_categorization, principal, categorization, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
         updateIteration(register, { iteration with new_categorization });
       };
     };
@@ -156,7 +156,7 @@ module {
     switch(iteration.categorization) {
       case(null) { Prelude.unreachable(); };
       case(?iteration_categorization) {
-        let new_categorization = Vote.removeBallot<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
+        let new_categorization = Vote.removeBallot(iteration_categorization, principal, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
         updateIteration(register, { iteration with new_categorization });
       };
     };
