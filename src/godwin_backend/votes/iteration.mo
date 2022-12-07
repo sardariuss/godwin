@@ -15,62 +15,22 @@ module {
   type Polarization = Types.Polarization;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type VoteType = Types.VoteType;
+  type VotingStage = Types.VotingStage;
 
-  public func updateInterests(iteration: Iteration, interest: ?Vote<Interest, InterestAggregate>) : Iteration {
+  public func new(id: Nat, question_id: Nat, opening_date: Int) : Iteration {
     {
-      id = iteration.id;
-      question_id = iteration.question_id;
-      opening_date = iteration.opening_date;
-      closing_date = iteration.closing_date;
-      current_vote = iteration.current_vote;
-      interest;
-      opinion = iteration.opinion;
-      categorization = iteration.categorization;
-    };
-  };
-
-  public func updateOpinions(iteration: Iteration, opinion: ?Vote<Cursor, Polarization>) : Iteration {
-    {
-      id = iteration.id;
-      question_id = iteration.question_id;
-      opening_date = iteration.opening_date;
-      closing_date = iteration.closing_date;
-      current_vote = iteration.current_vote;
-      interest = iteration.interest;
-      opinion;
-      categorization = iteration.categorization;
-    };
-  };
-
-  public func updateCategorizations(iteration: Iteration, categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : Iteration {
-    {
-      id = iteration.id;
-      question_id = iteration.question_id;
-      opening_date = iteration.opening_date;
-      closing_date = iteration.closing_date;
-      current_vote = iteration.current_vote;
-      interest = iteration.interest;
-      opinion = iteration.opinion;
-      categorization;
-    };
-  };
-
-  public func updateCurrentVote(iteration: Iteration, current_vote: VoteType, closing_date: ?Int) : Iteration {
-    {
-      id = iteration.id;
-      question_id = iteration.question_id;
-      opening_date = iteration.opening_date;
-      closing_date;
-      current_vote;
-      interest = iteration.interest;
-      opinion = iteration.opinion;
-      categorization = iteration.categorization;
+      id;
+      question_id;
+      opening_date;
+      closing_date = null;
+      voting_stage = #INTEREST;
+      interest = ?Vote.new<Interest, InterestAggregate>(opening_date, #OPEN, { ups = 0; downs = 0; score = 0; });
+      opinion = null; // Vote.new<Cursor, Polarization>(opening_date, #PENDING, Polarization.nil()); @todo
+      categorization = null; // Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(opening_date, #PENDING, Trie.empty<Text, Polarization>()); @todo
     };
   };
 
   public func unwrapInterest(iteration: Iteration) : Vote<Interest, InterestAggregate> {
-    assert(iteration.interest != null);
     switch(iteration.interest){
       case(null) { Prelude.unreachable(); };
       case(?interest) { return interest; };
@@ -78,7 +38,6 @@ module {
   };
 
   public func unwrapOpinion(iteration: Iteration) : Vote<Cursor, Polarization> {
-    assert(iteration.opinion != null);
     switch(iteration.opinion){
       case(null) { Prelude.unreachable(); };
       case(?opinion) { return opinion; };
@@ -86,7 +45,6 @@ module {
   };
 
   public func unwrapCategorization(iteration: Iteration) : Vote<CategoryCursorTrie, CategoryPolarizationTrie> {
-    assert(iteration.categorization != null);
     switch(iteration.categorization){
       case(null) { Prelude.unreachable(); };
       case(?categorization) { return categorization; };

@@ -48,11 +48,11 @@ module {
     categorization_stage: StageHistory<CategorizationStage>;
   };
 
-  public type VoteType = {
+  public type VotingStage = {
     #INTEREST;
     #OPINION;
     #CATEGORIZATION;
-    #NONE;
+    #COMPLETE;
   };
   
   public type Iteration = {
@@ -60,7 +60,7 @@ module {
     question_id: Nat;
     opening_date: Int;
     closing_date: ?Int;
-    current_vote: VoteType;
+    voting_stage: VotingStage;
     interest: ?Vote<Interest, InterestAggregate>;
     opinion: ?Vote<Cursor, Polarization>;
     categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
@@ -136,11 +136,7 @@ module {
     // Optional because we want the user to be able to log based solely on the II,
     // without requiring a user name.
     name: ?Text;  
-    // Convictions: political profile (left/center/right for every categories based on user's answers)
-    convictions: {
-      to_update: Bool;
-      array: CategoryPolarizationArray;
-    };
+    convictions: CategoryPolarizationTrie;
   };
 
   // Cursor used for voting, shall be between -1 and 1, where usually:

@@ -3,6 +3,7 @@ import Cursor "cursor";
 
 import Float "mo:base/Float";
 import Text "mo:base/Text";
+import Option "mo:base/Option";
 
 module {
 
@@ -44,6 +45,16 @@ module {
     };
   };
 
+  public func addOpt(polarization_1: Polarization, polarization_2: ?Polarization) : Polarization {
+    add(polarization_1, Option.get(polarization_2, nil()));
+  };
+
+  public func subOpt(polarization_1: Polarization, polarization_2: ?Polarization) : Polarization {
+    sub(polarization_1, Option.get(polarization_2, nil()));
+  };
+
+
+  // @todo: why call it coef when it's really a cursor that is used?
   public func mul(polarization: Polarization, coef: Float) : Polarization {
     {
       left    = polarization.left * coef;
@@ -65,14 +76,24 @@ module {
     add(polarization, Cursor.toPolarization(cursor));
   };
 
+  public func addOptCursor(polarization: Polarization, cursor: ?Cursor) : Polarization {
+    add(polarization, Option.getMapped(cursor, Cursor.toPolarization, nil()));
+  };
+
   public func subCursor(polarization: Polarization, cursor: Cursor) : Polarization {
     sub(polarization, Cursor.toPolarization(cursor));
   };
 
+  public func subOptCursor(polarization: Polarization, cursor: ?Cursor) : Polarization {
+    sub(polarization, Option.getMapped(cursor, Cursor.toPolarization, nil()));
+  };
+
   // Warning: Many different polarizations can lead to the same cursor
   public func toCursor(polarization: Polarization) : Cursor {
-    // A nil polarization cannot be represented by a cursor.
-    assert(not isNil(polarization));
+    // @todo: A nil polarization leads to a cursor value of 0
+    if (isNil(polarization)) {
+      return Cursor.init();
+    };
     (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
   };
 

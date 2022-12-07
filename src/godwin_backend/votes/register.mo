@@ -10,6 +10,9 @@ import Principal "mo:base/Principal";
 import Trie "mo:base/Trie";
 import Debug "mo:base/Debug";
 import Option "mo:base/Option";
+import Prelude "mo:base/Prelude";
+import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 
 module {
 
@@ -23,6 +26,7 @@ module {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Iteration = Types.Iteration;
+  type Question = Types.Question;
   type Vote<B, A> = Types.Vote<B, A>;
 
   public type Register = {
@@ -37,14 +41,14 @@ module {
     };
   };
 
-  public func getIteration(register: Register, index: Nat) : Iteration {
+  public func get(register: Register, index: Nat) : Iteration {
     switch(Trie.get(register.iterations, Types.keyNat(index), Nat.equal)){
       case(null) { Debug.trap("The iteration does not exist"); };
       case(?iteration) { iteration; }
     }
   };
 
-  public func findIteration(register: Register, index: Nat) : ?Iteration {
+  public func find(register: Register, index: Nat) : ?Iteration {
     Trie.get(register.iterations, Types.keyNat(index), Nat.equal);
   };
 
@@ -53,17 +57,7 @@ module {
     question_id: Nat,
     opening_date: Int,
   ) : (Register, Iteration) {
-    let iteration = {
-      id = register.index;
-      question_id;
-      opening_date;
-      closing_date = null;
-      current_vote = #INTEREST;
-      interest = ?Vote.new<Interest, InterestAggregate>(opening_date, #OPEN, { ups = 0; downs = 0; score = 0; });
-      opinion = null; // Vote.new<Cursor, Polarization>(opening_date, #PENDING, Polarization.nil()); @todo
-      categorization = null; // Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(opening_date, #PENDING, Trie.empty<Text, Polarization>()); @todo
-    };
-
+    let iteration = Iteration.new(register.index, question_id, opening_date);
     (
       {
         iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0;
@@ -75,106 +69,106 @@ module {
 
   public func updateIteration(register: Register, iteration: Iteration) : Register {
     // @todo: assert it is in it ?
-    {
-      iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0;
-      index = register.index;
-    };
+    { register with iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0 };
   };
 
   public func getInterest(register: Register, id: Nat, principal: Principal) : ?Interest {
-    Option.chain(getIteration(register, id).interest, func(iteration_interest: Vote<Interest, InterestAggregate>) : ?Interest {
+    Option.chain(get(register, id).interest, func(iteration_interest: Vote<Interest, InterestAggregate>) : ?Interest {
       Vote.getBallot2<Interest, InterestAggregate>(iteration_interest, principal);
     });
   };
 
   public func putInterest(register: Register, id: Nat, principal: Principal, interest: Interest) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #INTEREST);
-    assert(iteration.interest != null);
-    Option.getMapped(
-      iteration.interest,
-      func(iteration_interest: Vote<Interest, InterestAggregate>) : Register {
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #INTEREST);
+    switch(iteration.interest){
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_interest) {
         let new_interest = Vote.putBallot2<Interest, InterestAggregate>(iteration_interest, principal, interest, Interests.addToAggregate, Interests.removeFromAggregate);
-        updateIteration(register, Iteration.updateInterests(iteration, ?new_interest));
-      },
-      register);
+        updateIteration(register, { iteration with new_interest });
+      };
+    };
   };
 
   public func removeInterest(register: Register, id: Nat, principal: Principal) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #INTEREST);
-    assert(iteration.interest != null);
-    Option.getMapped(
-      iteration.interest, 
-      func(iteration_interest: Vote<Interest, InterestAggregate>) : Register {
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #INTEREST);
+    switch(iteration.interest) {
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_interest) {
         let new_interest = Vote.removeBallot2<Interest, InterestAggregate>(iteration_interest, principal, Interests.addToAggregate, Interests.removeFromAggregate);
-        updateIteration(register, Iteration.updateInterests(iteration, ?new_interest));
-      },
-      register);
+        updateIteration(register, { iteration with new_interest });
+      };
+    };
   };
 
   public func getOpinion(register: Register, id: Nat, principal: Principal) : ?Cursor {
-    Option.chain(getIteration(register, id).opinion, func(iteration_opinion: Vote<Cursor, Polarization>) : ?Cursor {
+    Option.chain(get(register, id).opinion, func(iteration_opinion: Vote<Cursor, Polarization>) : ?Cursor {
       Vote.getBallot2<Cursor, Polarization>(iteration_opinion, principal);
     });
   };
 
   public func putOpinion(register: Register, id: Nat, principal: Principal, opinion: Cursor) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #OPINION);
-    assert(iteration.opinion != null);
-    Option.getMapped(
-      iteration.opinion,
-      func(iteration_opinion: Vote<Cursor, Polarization>) : Register {
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #OPINION);
+    switch(iteration.opinion) {
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_opinion) {
         let new_opinion = Vote.putBallot2<Cursor, Polarization>(iteration_opinion, principal, opinion, Polarization.addCursor, Polarization.subCursor);
-        updateIteration(register, Iteration.updateOpinions(iteration, ?new_opinion));
-      },
-      register);
+        updateIteration(register, { iteration with new_opinion });
+      };
+    };
   };
 
   public func removeOpinion(register: Register, id: Nat, principal: Principal) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #OPINION);
-    assert(iteration.opinion != null);
-    Option.getMapped(
-      iteration.opinion,
-      func(iteration_opinion: Vote<Cursor, Polarization>) : Register {
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #OPINION);
+    switch(iteration.opinion) {
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_opinion) {
         let new_opinion = Vote.removeBallot2<Cursor, Polarization>(iteration_opinion, principal, Polarization.addCursor, Polarization.subCursor);
-        updateIteration(register, Iteration.updateOpinions(iteration, ?new_opinion));
-      },
-      register);
+        updateIteration(register, { iteration with new_opinion });
+      };
+    };
   };
 
   public func getCategorization(register: Register, id: Nat, principal: Principal) : ?CategoryCursorTrie {
-    Option.chain(getIteration(register, id).categorization, func(iteration_categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : ?CategoryCursorTrie {
+    Option.chain(get(register, id).categorization, func(iteration_categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : ?CategoryCursorTrie {
       Vote.getBallot2<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal);
     });
   };
 
   public func putCategorization(register: Register, id: Nat, principal: Principal, categorization: CategoryCursorTrie) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #CATEGORIZATION);
-    assert(iteration.categorization != null);
-    Option.getMapped(
-      iteration.categorization,
-      func(iteration_categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : Register {
-        let new_categorization = Vote.putBallot2<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, categorization, CategoryPolarizationTrie.add, CategoryPolarizationTrie.sub);
-        updateIteration(register, Iteration.updateCategorizations(iteration, ?new_categorization));
-      },
-      register);
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #CATEGORIZATION);
+    switch(iteration.categorization) {
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_categorization) {
+        let new_categorization = Vote.putBallot2<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, categorization, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
+        updateIteration(register, { iteration with new_categorization });
+      };
+    };
   };
 
   public func removeCategorization(register: Register, id: Nat, principal: Principal) : Register {
-    let iteration = getIteration(register, id);
-    assert(iteration.current_vote == #CATEGORIZATION);
-    assert(iteration.categorization != null);
-    Option.getMapped(
-      iteration.categorization,
-      func(iteration_categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>) : Register {
-        let new_categorization = Vote.removeBallot2<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, CategoryPolarizationTrie.add, CategoryPolarizationTrie.sub);
-        updateIteration(register, Iteration.updateCategorizations(iteration, ?new_categorization));
-      },
-      register);
+    let iteration = get(register, id);
+    assert(iteration.voting_stage == #CATEGORIZATION);
+    switch(iteration.categorization) {
+      case(null) { Prelude.unreachable(); };
+      case(?iteration_categorization) {
+        let new_categorization = Vote.removeBallot2<CategoryCursorTrie, CategoryPolarizationTrie>(iteration_categorization, principal, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
+        updateIteration(register, { iteration with new_categorization });
+      };
+    };
+  };
+  
+  public func getQuestionOpinions(register: Register, question: Question) : [Trie<Principal, Cursor>] {
+    let buffer = Buffer.Buffer<Trie<Principal, Cursor>>(question.iterations.history.size() + 1);
+    for (iteration in Array.vals(question.iterations.history)){
+      buffer.add(Iteration.unwrapOpinion(get(register, iteration)).ballots);
+    };
+    buffer.add(Iteration.unwrapOpinion(get(register, question.iterations.current)).ballots);
+    buffer.toArray();
   };
 
 };

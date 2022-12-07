@@ -1,6 +1,7 @@
 import Types "../types";
 import Polarization "polarization";
 import Categories "../categories";
+import Utils "../utils";
 
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";
@@ -8,9 +9,6 @@ import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
 
 module {
-
-  // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
 
   // For convenience: from types module
   type Cursor = Types.Cursor;
@@ -23,48 +21,46 @@ module {
   type Categories = Categories.Categories;
 
   public func nil(categories: Categories) : CategoryPolarizationTrie {
-    var trie = Trie.empty<Category, Polarization>();
-    for (category in categories.vals()){
-      trie := Trie.put(trie, Types.keyText(category), Text.equal, Polarization.nil()).0;
-    };
-    trie;
+    Utils.make(categories.share(), Types.keyText, Text.equal, Polarization.nil());
   };
 
-  public func add(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
-    // Add the ballot to the polarization trie
-    var new_polarization_trie = polarization_trie;
-    for ((category, polarization) in Trie.iter(new_polarization_trie)){
-      // Assumes that the ballot is valid
-      Option.iterate(Trie.get(cursor_trie, Types.keyText(category), Text.equal), func(cursor: Cursor) {
-        new_polarization_trie := Trie.put(new_polarization_trie, Types.keyText(category), Text.equal, Polarization.addCursor(polarization, cursor)).0;
-      });
-    };
-    new_polarization_trie;
+  public func addCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
+    Utils.leftJoin(polarization_trie, cursor_trie, Types.keyText, Text.equal, func(polarization: Polarization, cursor: ?Cursor) : Polarization {
+      Polarization.addOptCursor(polarization, cursor);
+    });
   };
 
-  public func sub(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
-    // Subtract the ballot from the polarization trie
-    var new_polarization_trie = polarization_trie;
-    for ((category, polarization) in Trie.iter(new_polarization_trie)){
-      // Assumes that the ballot is valid
-      Option.iterate(Trie.get(cursor_trie, Types.keyText(category), Text.equal), func(cursor: Cursor) {
-        new_polarization_trie := Trie.put(new_polarization_trie, Types.keyText(category), Text.equal, Polarization.subCursor(polarization, cursor)).0;
-      });
-    };
-    new_polarization_trie;
+  public func subCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
+    Utils.leftJoin(polarization_trie, cursor_trie, Types.keyText, Text.equal, func(polarization: Polarization, cursor: ?Cursor) : Polarization {
+      Polarization.subOptCursor(polarization, cursor);
+    });
   };
 
-  public func equal(trie_1: CategoryPolarizationTrie, trie_2: CategoryPolarizationTrie) : Bool {
-    if (Trie.size(trie_1) != Trie.size(trie_2)){
-      return false;
-    };
-    for ((category_1, polarization_1) in Trie.iter(trie_1)){
-      switch(Trie.get(trie_2, Types.keyText(category_1), Text.equal)){
-        case(null) { return false; };
-        case(?polarization_2) { if (not Polarization.equal(polarization_1, polarization_2)) { return false; }; };
-      };
-    };
-    return true;
+  public func mulCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
+    Utils.leftJoin(polarization_trie, cursor_trie, Types.keyText, Text.equal, func(polarization: Polarization, cursor: ?Cursor) : Polarization {
+      Polarization.mul(polarization, Option.get(cursor, 0.0)); // @todo: 0 because if the cursor does not have this category, the resulting polarization shall be nil
+    });
+  };
+
+  public func add(a: CategoryPolarizationTrie, b: CategoryPolarizationTrie) : CategoryPolarizationTrie {
+    Utils.leftJoin(a, b, Types.keyText, Text.equal, func(polarization_a: Polarization, polarization_b: ?Polarization) : Polarization {
+      Polarization.addOpt(polarization_a, polarization_b);
+    });
+  };
+
+  public func sub(a: CategoryPolarizationTrie, b: CategoryPolarizationTrie) : CategoryPolarizationTrie {
+    Utils.leftJoin(a, b, Types.keyText, Text.equal, func(polarization_a: Polarization, polarization_b: ?Polarization) : Polarization {
+      Polarization.subOpt(polarization_a, polarization_b);
+    });
+  };
+
+  public func toCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie) : CategoryCursorTrie {
+    Trie.mapFilter(polarization_trie, func(_: Text, polarization: Polarization) : ?Cursor { ?Polarization.toCursor(polarization); });
+  };
+
+  // @todo: check if the test on size is really required.
+  public func equal(a: CategoryPolarizationTrie, b: CategoryPolarizationTrie) : Bool {
+    (Trie.size(a) == Trie.size(b)) and Trie.equalStructure(a, b, Text.equal, Polarization.equal);
   };
 
   public func toText(polarization_trie: CategoryPolarizationTrie) : Text {

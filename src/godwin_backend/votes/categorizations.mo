@@ -50,11 +50,11 @@ module {
 
     public func put(principal: Principal, question_id: Nat, ballot: Ballot) {
       assert(CategoryCursorTrie.isValid(ballot, categories_));
-      register_ := Vote.putBallot(register_, principal, question_id, ballot, nilAggregate, CategoryPolarizationTrie.add, CategoryPolarizationTrie.sub).0;
+      register_ := Vote.putBallot(register_, principal, question_id, ballot, nilAggregate, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie).0;
     };
 
     public func remove(principal: Principal, question_id: Nat) {
-      register_ := Vote.removeBallot(register_, principal, question_id, nilAggregate, CategoryPolarizationTrie.sub).0;
+      register_ := Vote.removeBallot(register_, principal, question_id, nilAggregate, CategoryPolarizationTrie.subCategoryCursorTrie).0;
     };
 
     public func getAggregate(question_id: Nat) : Aggregate {

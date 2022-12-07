@@ -8,6 +8,7 @@ import Cursor "representation/cursor";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
 import Categories "categories";
 import Iterations "votes/register";
+import Iteration "votes/iteration";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -30,6 +31,7 @@ module {
   type Polarization = Types.Polarization;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
   type Iteration = Types.Iteration;
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
   // For convenience: from other modules
   type Questions = Questions.Questions;
@@ -80,65 +82,12 @@ module {
           let new_user = {
             principal = principal;
             name = null;
-            // Important: set convictions.to_update to true, because the principal could have already voted
-            // before findUser is called (we don't want to assume the frontend called findUser right after the
-            // user logged in).
-            convictions = { to_update = true; array = Utils.trieToArray(CategoryPolarizationTrie.nil(categories_)); };
+            convictions = CategoryPolarizationTrie.nil(categories_);
           };
           putUser(new_user);
           ?new_user;
         };
       };
-    };
-
-    /// Prune the convictions of all the users
-    func pruneAllConvictions() {
-      for ((_, user) in Trie.iter(register_)){
-        putUser({
-          principal = user.principal;
-          name = user.name;
-          convictions = { to_update = true; array = user.convictions.array; };
-        });
-      };
-    };
-
-    /// Prune the convictions of the users who gave their opinions on the question.
-    /// In this context, pruning means putting the convictions.to_update flag to false,
-    /// so the users' convictions need to be re-computed.
-    /// \param[in] @todo
-    public func pruneConvictions(opinions: Trie<Principal, Cursor>) {
-      for ((principal, user) in Trie.iter(register_)){
-        switch(Trie.get(opinions, Types.keyPrincipal(principal), Principal.equal)){
-          case(null){};
-          case(?opinion){
-            putUser({
-              principal = user.principal;
-              name = user.name;
-              convictions = { to_update = true; array = user.convictions.array; };
-            });
-          };
-        };
-      };
-    };
-
-    /// Update the convictions of the user, i.e. computes the user's specific polarization for each 
-    /// category based on the opinion he gave on the questions and the final categorization the community
-    /// has decided for this question.
-    /// \param[in] user The user which convictions to update.
-    /// \param[in] questions The register of questions.
-    /// \param[in] opinions The register of opinions.
-    /// \return The user with up-to-date convictions
-    public func updateConvictions(principal: Principal, questions: Questions, opinions: Opinions) : User {
-      var user = getUser(principal);
-      if (user.convictions.to_update){
-        user := {
-          principal = user.principal;
-          name = user.name;
-          convictions = { to_update = false; array = computeConvictions(questions, opinions.getForUser(user.principal)); };
-        };
-        putUser(user);
-      };
-      user;
     };
 
     /// Put the user in the register.
@@ -151,43 +100,52 @@ module {
       register_ := Trie.put(register_, Types.keyPrincipal(user.principal), Principal.equal, user).0;
     };
 
-    /// Compute the user's convictions (i.e. polarization for each category) based on 
-    /// the opinion he gave on the questions he voted upon and the final categorization 
-    /// the community has decided for these questions.
-    /// \param[in] questions The register of questions.
-    /// \param[in] user_opinions The opinions the user gave for each question he voted on.
-    /// \return The up-to-date user's convictions as an array: [(Category, Polarization)]
-    func computeConvictions(questions: Questions, user_opinions: Trie<Nat, Cursor>) : CategoryPolarizationArray {
-      var convictions = CategoryPolarizationTrie.nil(categories_);
-      // Iterate on the questions the user gave his opinion on.
-      for ((question_id, opinion_cursor) in Trie.iter(user_opinions)){
-        let question = questions.getQuestion(question_id);
-        // Check the categorization stage of the question.
-        switch(StageHistory.getActiveStage(question.categorization_stage).stage){
-          case(#DONE(categorization)){
-            let question_categorization = Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
-            // Iterate on the categories from the conviction trie (and not the question's) in order to
-            // take account only of the up-to-date definition of the categories (because potential old
-            // categories are never removed from the questions' categorizations).
-            for ((category, conviction) in Trie.iter(convictions)){
-              Option.iterate(Trie.get(question_categorization, Types.keyText(category), Text.equal), func(question_polarization: Polarization) {
-                // Add the opinion cursor to the convictions, which will be "softened" by how "extreme" the question polarization was.
-                let updated_conviction = Polarization.add(conviction, 
-                  Polarization.mul(Cursor.toPolarization(opinion_cursor), Polarization.toCursor(question_polarization)));
-                // Update the conviction for this category in the trie.
-                convictions := Trie.put(convictions, Types.keyText(category), Text.equal, updated_conviction).0;
-              });
-            };
-          };
-          case(_){}; // Ignore the questions which categorization is not done.
+    public func updateConvictions(question: Question, iterations: Iterations.Register) {
+      let current_iteration = Iterations.get(iterations, question.iterations.current);
+      assert(current_iteration.voting_stage == #COMPLETE);
+      let categorization = Iteration.unwrapCategorization(current_iteration).aggregate;
+
+      // Process the ballos from the question's history of iterations
+      for (iteration_id in Array.vals(question.iterations.history)){
+        let iteration = Iterations.get(iterations, iteration_id);
+        let old_categorization = Iteration.unwrapCategorization(iteration).aggregate;
+        for ((principal, opinion) in Trie.iter(Iteration.unwrapOpinion(iteration).ballots))
+        {
+          updateBallotContribution(getUser(principal), opinion, categories_.share(), categorization, ?old_categorization);
         };
       };
-      Utils.trieToArray(convictions);
+
+      // Process the ballos from the question's current iteration
+      for ((principal, opinion) in Trie.iter(Iteration.unwrapOpinion(current_iteration).ballots)) {
+        updateBallotContribution(getUser(principal), opinion, categories_.share(), categorization, null);
+      };
+    };
+
+    func updateBallotContribution(user: User, opinion: Cursor, categories: [Category], new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) {
+      // Create a Polarization trie from the cursor, based on given categories.
+      let opinion_trie = Utils.make(categories, Types.keyText, Text.equal, Cursor.toPolarization(opinion));
+
+      // Add the opinion times new categorization.
+      var contribution = CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(new));
+
+      // Remove the opinion times old categorization if any.
+      Option.iterate(old, func(old_cat: CategoryPolarizationTrie) {
+        let old_contribution = CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(old_cat));
+        contribution := CategoryPolarizationTrie.sub(contribution, old_contribution);
+      });
+
+      putUser({ user with convictions = CategoryPolarizationTrie.add(user.convictions, contribution); });
     };
 
     /// Add an observer on the categories at construction, so that every time a category
-    /// is added or removed, all users' convictions are pruned.
-    categories_.addCallback(func(category: Category, update_type: UpdateType) { pruneAllConvictions(); } );
+    /// is removed, it is removed from every use profile.
+    categories_.addCallback(func(category: Category, update_type: UpdateType) { 
+      if (update_type == #CATEGORY_REMOVED) {
+        for ((principal, user) in Trie.iter(register_)) {
+          putUser({ user with convictions = Trie.remove(user.convictions, Types.keyText(category), Text.equal).0 });
+        };
+      };
+     });
 
   };
 

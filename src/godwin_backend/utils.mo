@@ -4,6 +4,7 @@ import Trie "mo:base/Trie";
 import TrieSet "mo:base/TrieSet";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
+import Option "mo:base/Option";
 
 module {
 
@@ -50,6 +51,23 @@ module {
       buffer.add(val);
     };
     return buffer.toArray();
+  };
+
+  public func leftJoin<K, V, W, X>(tl : Trie<K, V>, tr : Trie<K, W>, k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, vbin : (V, ?W) -> X) : Trie<K, X> {
+    var join = Trie.empty<K, X>();
+    for ((k, v) in Trie.iter(tl)){
+      let key = k_compute(k);
+      join := Trie.put(join, key, k_eq, vbin(v, Trie.get(tr, key, k_eq))).0;
+    };
+    join;
+  };
+
+  public func make<K, V>(keys: [K], k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, init_val: V) : Trie<K, V> {
+    var trie = Trie.empty<K, V>();
+    for (k in Array.vals(keys)) {
+      trie := Trie.put(trie, k_compute(k), k_eq, init_val).0;
+    };
+    trie;
   };
 
 };

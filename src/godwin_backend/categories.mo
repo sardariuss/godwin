@@ -7,6 +7,12 @@ import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 
+// categories management:
+//  - to compute the user convictions, always iterate on the current definition of the categories (not the ones from the categorization)
+//     - if the category from the definition is not found in the questions's categorization, do nothing
+//     - if a question's categorization category is not in the definition of categories, do nothing
+//  - if a category is removed, remove it from all users convictions
+//  - if a category is added, nothing to do
 module {
 
   // For convenience: from base module

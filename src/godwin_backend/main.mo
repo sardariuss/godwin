@@ -100,6 +100,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public type InterestError = {
     #QuestionNotFound;
+    #InvalidVotingStage;
   };
 
   public shared query func getInterest(question_id: Nat, principal: Principal) : async Result<?Interest, InterestError> {
@@ -109,21 +110,23 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func setInterest(question_id: Nat, interest: Interest) : async Result<(), InterestError> {
-    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      iterations_ := Iterations.putInterest(iterations_, question.iterations.current, caller, interest);
+    Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      if (Iterations.get(iterations_, question.iterations.current).voting_stage != #INTEREST) { return #err(#InvalidVotingStage); };
+      #ok(iterations_ := Iterations.putInterest(iterations_, question.iterations.current, caller, interest));
     });
   };
 
   public shared({caller}) func removeInterest(question_id: Nat) : async Result<(), InterestError> {
-    Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-      iterations_ := Iterations.removeInterest(iterations_, question.iterations.current, caller);
+    Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      if (Iterations.get(iterations_, question.iterations.current).voting_stage != #INTEREST) { return #err(#InvalidVotingStage); };
+      #ok(iterations_ := Iterations.removeInterest(iterations_, question.iterations.current, caller));
     });
   };
 
   public type OpinionError = {
     #InvalidOpinion;
     #QuestionNotFound;
-    #WrongSelectionStage;
+    #InvalidVotingStage;
   };
 
   public shared query func getOpinion(question_id: Nat, principal: Principal) : async Result<?Cursor, OpinionError> {
@@ -134,45 +137,44 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
     Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-      Result.mapOk<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        iterations_ := Iterations.putOpinion(iterations_, question.iterations.current, caller, cursor);
-        // @todo
-        //let verify_result = Result.fromOption(Question.verifyCurrentSelectionStage(question, [#SELECTED]), #WrongSelectionStage);
-        //Result.mapOk<Question, (), OpinionError>(verify_result, func(question) {
-          //
-        //})
+      Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        if (Iterations.get(iterations_, question.iterations.current).voting_stage != #OPINION) { return #err(#InvalidVotingStage); };
+        #ok(iterations_ := Iterations.putOpinion(iterations_, question.iterations.current, caller, cursor));
       })
     });
   };
 
   public type CategorizationError = {
+    #InvalidVotingStage;
     #InsufficientCredentials;
     #InvalidCategorization;
     #QuestionNotFound;
-    #WrongCategorizationStage;
   };
 
   public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
-      Result.mapOk<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+      Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        if (Iterations.get(iterations_, question.iterations.current).voting_stage != #CATEGORIZATION) { return #err(#InvalidVotingStage); };
         // @todo
-        //let verify_result = Result.fromOption(Question.verifyCategorizationStage(question, [#ONGOING]), #WrongCategorizationStage);
         //Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
           //let verified = Result.fromOption(old_categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
           //Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
-            iterations_ := Iterations.putCategorization(iterations_, question.iterations.current, caller, Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal));
+        #ok(iterations_ := Iterations.putCategorization(iterations_, question.iterations.current, caller, Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)));
           //})
         //})
       })
     });
   };
 
-  // @todo: call in a heartbeat
   public shared func run() {
     let time_now = Time.now();
     iterations_ := scheduler_.selectQuestion(iterations_, time_now).0;
     iterations_ := scheduler_.archiveQuestion(iterations_, time_now).0;
-    iterations_ := scheduler_.closeCategorization(iterations_, users_, time_now).0;
+    let (iterations, iteration) = scheduler_.closeCategorization(iterations_, time_now);
+    iterations_ := iterations;
+    Option.iterate(iteration, func(it: Iteration) {
+      users_.updateConvictions(questions_.getQuestion(it.question_id), iterations_);
+    });
   };
 
   public type GetUserError = {
@@ -181,13 +183,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func findUser(principal: Principal) : async Result<User, GetUserError> {
     Result.fromOption(users_.findUser(principal), #IsAnonymous);
-  };
-
-  public shared func updateConvictions(principal: Principal) : async Result<User, GetUserError> {
-    Result.mapOk<User, User, GetUserError>(Result.fromOption(users_.findUser(principal), #IsAnonymous), func(user){
-      //users_.updateConvictions(principal, questions_, old_opinions_); // @todo
-      user;
-    });
   };
 
   public type VerifyCredentialsError = {
