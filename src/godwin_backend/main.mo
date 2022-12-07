@@ -1,8 +1,7 @@
 import Question "questions/question";
 import Questions "questions/questions";
-import Opinions "votes/opinions";
 import Iterations "votes/register";
-import Categorizations "votes/categorizations";
+import CategoryCursorTrie "representation/categoryCursorTrie";
 import Cursor "representation/cursor";
 import Types "types";
 import Categories "categories";
@@ -14,8 +13,8 @@ import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
-import TrieSet "mo:base/TrieSet";
 
+// @todo: one need to call getOrCreateUser when voting or doing anything that takes the caller as input
 shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   // For convenience: from base module
@@ -33,15 +32,13 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Iteration = Types.Iteration;
 
   // Members
-  var categories_ = Categories.Categories(parameters.categories);
-  var users_ = Users.empty(categories_);
+  stable var categories_ = Categories.fromArray(parameters.categories);
+  stable var users_ = Users.empty();
   var questions_ = Questions.empty();
   stable var iterations_ = Iterations.empty();
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
-  stable var categories_shareable_ = categories_.share();
-  stable var users_shareable_ = users_.share();
   stable var questions_shareable_ = questions_.share();
   stable var scheduler_shareable_ = scheduler_.share();
 
@@ -50,7 +47,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public func getCategories() : async [Category] {
-    categories_.share();
+    Categories.toArray(categories_);
   };
 
   public type AddCategoryError = {
@@ -60,8 +57,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func addCategory(category: Category) : async Result<(), AddCategoryError> {
     Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func () {
-      if (categories_.contains(category)) { #err(#CategoryAlreadyExists); }
-      else { #ok(categories_.add(category)); };
+      if (Categories.contains(categories_, category)) { #err(#CategoryAlreadyExists); }
+      else { #ok(categories_ := Categories.add(categories_, category)); };
     });
   };
 
@@ -72,8 +69,13 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func removeCategory(category: Category) : async Result<(), RemoveCategoryError> {
     Result.chain<(), (), RemoveCategoryError>(verifyCredentials(caller), func () {
-      if (not categories_.contains(category)) { #err(#CategoryDoesntExist); }
-      else { #ok(categories_.remove(category)); };
+      if (not Categories.contains(categories_, category)) { #err(#CategoryDoesntExist); }
+      else { 
+        categories_ := Categories.remove(categories_, category); 
+        // Also remove the category from users' profile
+        users_ := Users.removeCategory(users_, category);
+        #ok;
+      };
     });
   };
 
@@ -155,13 +157,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         if (Iterations.get(iterations_, question.iterations.current).voting_stage != #CATEGORIZATION) { return #err(#InvalidVotingStage); };
-        // @todo
-        //Result.chain<Question, (), CategorizationError>(verify_result, func(question) {
-          //let verified = Result.fromOption(old_categorizations_.verifyBallot(Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)), #InvalidCategorization);
-          //Result.mapOk<CategoryCursorTrie, (), CategorizationError>(verified, func(cursor_trie: CategoryCursorTrie) {
+        let cursor_trie = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal);
+        if (not CategoryCursorTrie.isValid(cursor_trie, categories_)) { return #err(#InvalidCategorization); };
         #ok(iterations_ := Iterations.putCategorization(iterations_, question.iterations.current, caller, Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal)));
-          //})
-        //})
       })
     });
   };
@@ -173,7 +171,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     let (iterations, iteration) = scheduler_.closeCategorization(iterations_, time_now);
     iterations_ := iterations;
     Option.iterate(iteration, func(it: Iteration) {
-      users_.updateConvictions(questions_.getQuestion(it.question_id), iterations_);
+      users_ := Users.updateConvictions(users_, questions_.getQuestion(it.question_id), Categories.toArray(categories_), iterations_);
     });
   };
 
@@ -182,7 +180,10 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared func findUser(principal: Principal) : async Result<User, GetUserError> {
-    Result.fromOption(users_.findUser(principal), #IsAnonymous);
+    // @todo: do case if anonymous
+    let (users, user) = Users.getOrCreateUser(users_, principal, Categories.toArray(categories_));
+    users_ := users;
+    #ok(user);
   };
 
   public type VerifyCredentialsError = {
@@ -195,15 +196,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   system func preupgrade(){
-    categories_shareable_ := categories_.share();
-    users_shareable_ := users_.share();
     questions_shareable_ := questions_.share();
     scheduler_shareable_ := scheduler_.share();
   };
 
   system func postupgrade(){
-    categories_ := Categories.Categories(categories_shareable_);
-    users_ := Users.Users(users_shareable_, categories_);
     questions_ := Questions.Questions(questions_shareable_);
     scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
   };

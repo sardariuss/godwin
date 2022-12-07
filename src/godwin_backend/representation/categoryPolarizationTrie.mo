@@ -1,6 +1,5 @@
 import Types "../types";
 import Polarization "polarization";
-import Categories "../categories";
 import Utils "../utils";
 
 import Text "mo:base/Text";
@@ -18,10 +17,9 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
   // For convenience: from other modules
-  type Categories = Categories.Categories;
 
-  public func nil(categories: Categories) : CategoryPolarizationTrie {
-    Utils.make(categories.share(), Types.keyText, Text.equal, Polarization.nil());
+  public func nil(categories: [Category]) : CategoryPolarizationTrie {
+    Utils.make(categories, Types.keyText, Text.equal, Polarization.nil());
   };
 
   public func addCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {

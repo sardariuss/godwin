@@ -16,26 +16,23 @@ module {
   type Category = Types.Category; 
   type CategoryCursorTrie = Types.CategoryCursorTrie;
 
-  // For convenience: from other modules
-  type Categories = Categories.Categories;
-
-  public func init(categories: Categories) : CategoryCursorTrie {
+  public func init(categories: Categories.Categories) : CategoryCursorTrie {
     var trie = Trie.empty<Category, Cursor>();
-    for (category in categories.vals()){
+    for (category in Categories.vals(categories)){
       trie := Trie.put(trie, Types.keyText(category), Text.equal, Cursor.init()).0;
     };
     trie;
   };
 
-  public func isValid(cursor_trie: CategoryCursorTrie, categories: Categories) : Bool {
-    if (Trie.size(cursor_trie) != categories.size()){
+  public func isValid(cursor_trie: CategoryCursorTrie, categories: Categories.Categories) : Bool {
+    if (Trie.size(cursor_trie) != Categories.size(categories)){
       return false;
     };
     for ((category, cursor) in Trie.iter(cursor_trie)){
       if (not Cursor.isValid(cursor)){
         return false;
       };
-      if (not categories.contains(category)){
+      if (not Categories.contains(categories, category)){
         return false;
       };
     };
