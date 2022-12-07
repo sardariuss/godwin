@@ -46,10 +46,6 @@ module {
       title = title;
       text = text;
       date = date;
-      iterations = {
-        current = iteration_id;
-        history = [];
-      };
     };
     (
       {

@@ -11,10 +11,20 @@ module {
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Key<K> = Trie.Key<K>;
+  type Buffer<T> = Buffer.Buffer<T>;
   type Set<K> = TrieSet.Set<K>;
   type Time = Time.Time;
   // For convenience: from types module
   type Duration = Types.Duration;
+
+  /// Creates a buffer from an array
+  public func toBuffer<T>(x :[T]) : Buffer<T>{
+    let buffer = Buffer.Buffer<T>(x.size());
+    for(thisItem in x.vals()){
+      buffer.add(thisItem);
+    };
+    return buffer;
+  };
   
   public func arrayToTrie<K, V>(array: [(K, V)], key: (K) -> Key<K>, equal: (K, K) -> Bool) : Trie<K, V> {
     var trie = Trie.empty<K, V>();

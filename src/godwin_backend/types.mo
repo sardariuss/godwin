@@ -15,7 +15,7 @@ module {
   type Time = Time.Time;
 
   public type QuestionId = Nat;
-  public type InterationId = Nat;
+  public type IterationId = Nat;
 
   public type Duration = {
     #DAYS: Nat;
@@ -42,10 +42,6 @@ module {
     title: Text;
     text: Text;
     date: Time;
-    iterations: {
-      current: InterationId;
-      history: [InterationId];
-    };
   };
 
   public type VotingStage = {
@@ -56,8 +52,7 @@ module {
   };
   
   public type Iteration = {
-    id: InterationId;
-    question_id: QuestionId;
+    id: IterationId;
     opening_date: Int;
     closing_date: ?Int;
     voting_stage: VotingStage;
@@ -70,6 +65,16 @@ module {
     date: Int;
     ballots: Trie<Principal, B>;
     aggregate: A;
+  };
+
+  public type QuestionIterations = {
+    current: IterationId;
+    history: [IterationId];
+  };
+
+  public type Junctions = {
+    iterations: Trie<QuestionId, QuestionIterations>;
+    questions: Trie<IterationId, QuestionId>;
   };
 
   public type Category = Text;

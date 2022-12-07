@@ -54,10 +54,9 @@ module {
 
   public func newIteration(
     register: Register,
-    question_id: Nat,
     opening_date: Int,
   ) : (Register, Iteration) {
-    let iteration = Iteration.new(register.index, question_id, opening_date);
+    let iteration = Iteration.new(register.index, opening_date);
     (
       {
         iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0;
@@ -160,15 +159,6 @@ module {
         updateIteration(register, { iteration with new_categorization });
       };
     };
-  };
-  
-  public func getQuestionOpinions(register: Register, question: Question) : [Trie<Principal, Cursor>] {
-    let buffer = Buffer.Buffer<Trie<Principal, Cursor>>(question.iterations.history.size() + 1);
-    for (iteration in Array.vals(question.iterations.history)){
-      buffer.add(Iteration.unwrapOpinion(get(register, iteration)).ballots);
-    };
-    buffer.add(Iteration.unwrapOpinion(get(register, question.iterations.current)).ballots);
-    buffer.toArray();
   };
 
 };

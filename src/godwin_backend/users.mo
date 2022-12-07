@@ -27,6 +27,7 @@ module {
   type Polarization = Types.Polarization;
   type Iteration = Types.Iteration;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type QuestionIterations = Types.QuestionIterations;
 
   type Register = Trie<Principal, User>;
 
@@ -88,15 +89,15 @@ module {
     updated_register;
   };
 
-  public func updateConvictions(register: Register, question: Question, categories: [Category], iterations: Iterations.Register) : Register {
+  public func updateConvictions(register: Register, question_iterations: QuestionIterations, categories: [Category], iterations: Iterations.Register) : Register {
     var updated_register = Trie.clone(register);
 
-    let current_iteration = Iterations.get(iterations, question.iterations.current);
+    let current_iteration = Iterations.get(iterations, question_iterations.current);
     assert(current_iteration.voting_stage == #COMPLETE);
     let categorization = Iteration.unwrapCategorization(current_iteration).aggregate;
 
     // Process the ballos from the question's history of iterations
-    for (iteration_id in Array.vals(question.iterations.history)){
+    for (iteration_id in Array.vals(question_iterations.history)){
       let iteration = Iterations.get(iterations, iteration_id);
       let old_categorization = Iteration.unwrapCategorization(iteration).aggregate;
       for ((principal, opinion) in Trie.iter(Iteration.unwrapOpinion(iteration).ballots))

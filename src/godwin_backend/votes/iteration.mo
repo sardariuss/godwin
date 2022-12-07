@@ -16,10 +16,9 @@ module {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
-  public func new(id: Nat, question_id: Nat, opening_date: Int) : Iteration {
+  public func new(id: Nat, opening_date: Int) : Iteration {
     {
       id;
-      question_id;
       opening_date;
       closing_date = null;
       voting_stage = #INTEREST;
