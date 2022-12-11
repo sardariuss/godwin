@@ -15,7 +15,11 @@ module {
 
   public func new<B, A>(date: Int, aggregate: A) : Vote<B, A> {
     {
+      id = 0; // @todo
+      question_id = 0; // @todo
       date;
+      iteration = 0; // @todo
+      status = #OPEN; // @todo
       ballots = Trie.empty<Principal, B>();
       aggregate;
     };

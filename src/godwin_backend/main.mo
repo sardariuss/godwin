@@ -9,6 +9,8 @@ import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
 import Junctions "junctions";
+import Votes "votes/voteRegister";
+import Status "questionStatus";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -27,11 +29,14 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Cursor = Types.Cursor;
   type User = Types.User;
   type SchedulerParams = Types.SchedulerParams;
+  type InterestAggregate = Types.InterestAggregate;
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type Iteration = Types.Iteration;
   type IterationId = Types.IterationId;
+  type Polarization = Types.Polarization;
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
   // Members
   stable var categories_ = Categories.fromArray(parameters.categories);
@@ -39,6 +44,10 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   stable var questions_ = Questions.empty();
   stable var iterations_ = Iterations.empty();
   stable var junctions_ = Junctions.empty();
+  stable var interests_ = Votes.empty<Interest, InterestAggregate>();
+  stable var opinions_ = Votes.empty<Cursor, Polarization>();
+  stable var categorizations_ = Votes.empty<CategoryCursorTrie, CategoryPolarizationTrie>();
+  stable var status_ = Status.empty();
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
 
   // For upgrades
@@ -97,12 +106,34 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func createQuestion(title: Text, text: Text) : async Question {
     let time_now = Time.now();
-    let (questions, question) = Questions.createQuestion(questions_, caller, time_now, title, text, iterations_.index);
+    let (questions, interests, question) = Questions.createQuestion(questions_, interests_, caller, time_now, title, text, 0);
     questions_ := questions;
-    let (iterations, iteration) = Iterations.newIteration(iterations_, time_now);
-    iterations_ := iterations;
-    junctions_ := Junctions.addNew(junctions_, question.id, iteration.id);
+    interests_ := interests;
     question;
+  };
+
+  func getVoteType(vote_link: Types.VoteLink) : Types.VoteType {
+    switch(vote_link){
+      case(#INTEREST(_)) { #INTEREST; };
+      case(#OPINION(_)) { #OPINION; };
+      case(#CATEGORIZATION(_)) { #CATEGORIZATION; };
+    };
+  };
+
+  func getVoteType2(ballot: Types.Ballot) : Types.VoteType {
+    switch(ballot){
+      case(#INTEREST(_)) { #INTEREST; };
+      case(#OPINION(_)) { #OPINION; };
+      case(#CATEGORIZATION(_)) { #CATEGORIZATION; };
+    };
+  };
+
+  public shared({caller}) func putBallot(question_id: Nat, ballot: Types.Ballot) : async Result<(), InterestError> {
+    Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+      let vote_link = question.votes[question.votes.size() - 1];
+      if (getVoteType(vote_link) != getVoteType2(ballot)) { return #err(#InvalidVotingStage); }
+      #ok;
+    });
   };
 
   public type InterestError = {

@@ -1,4 +1,5 @@
 import Types "../types";
+import Interests "../votes/interests";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -39,19 +40,22 @@ module {
     Trie.get(register.questions, Types.keyNat(question_id), Nat.equal);
   };
 
-  public func createQuestion(register: Register, author: Principal, date: Time, title: Text, text: Text, iteration_id: Nat) : (Register, Question) {
+  public func createQuestion(register: Register, interests: Interests.Register, author: Principal, date: Time, title: Text, text: Text, iteration_id: Nat) : (Register, Interests.Register, Question) {
+    let (updated_interests, vote) = Interests.newVote(interests, date); // @todo: add question id
     let question = {
       id = register.question_index;
       author = author;
       title = title;
       text = text;
       date = date;
+      votes = [#INTEREST(vote.id)];
     };
     (
       {
         questions = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register.question_index + 1;
       },
+      updated_interests,
       question
     );
   };

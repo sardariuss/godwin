@@ -16,6 +16,7 @@ module {
 
   public type QuestionId = Nat;
   public type IterationId = Nat;
+  public type VoteId = Nat;
 
   public type Duration = {
     #DAYS: Nat;
@@ -42,6 +43,7 @@ module {
     title: Text;
     text: Text;
     date: Time;
+    votes: [VoteLink];
   };
 
   public type VotingStage = {
@@ -61,10 +63,49 @@ module {
     categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
   };
 
+  public type VoteType = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
+  public type Ballot = {
+    #INTEREST: Interest;
+    #OPINION: Cursor;
+    #CATEGORIZATION: Polarization;
+  };
+
+  public type VoteStatus = {
+    #OPEN;
+    #CLOSED;
+  };
+
   public type Vote<B, A> = {
+    id: VoteId;
+    question_id: QuestionId;
     date: Int;
+    iteration: Nat;
+    status: VoteStatus;
     ballots: Trie<Principal, B>;
     aggregate: A;
+  };
+
+  public type VoteLink = {
+    #INTEREST: Nat;
+    #OPINION: Nat;
+    #CATEGORIZATION: Nat;
+  };
+
+  public type Status = {
+    #INTEREST: Nat;
+    #OPINION: Nat;
+    #CATEGORIZATION: Nat;
+    #CLOSED: Int;
+  };
+
+  public type QuestionStatus = {
+    current: Status;
+    history: [Status];
   };
 
   public type QuestionIterations = {
