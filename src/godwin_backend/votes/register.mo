@@ -4,6 +4,7 @@ import Iteration "iteration";
 import Polarization "../representation/polarization";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 import Vote "vote";
+import Queries "queries";
 
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
@@ -32,13 +33,66 @@ module {
   public type Register = {
     iterations: Trie<Nat, Iteration>;
     index: Nat;
+    rbts: Queries.IterationRBTs;
   };
 
   public func empty() : Register {
+    var rbts = Queries.init();
+    rbts := Queries.addOrderBy(rbts, #VOTE_AGGREGATE);
+    rbts := Queries.addOrderBy(rbts, #VOTE_DATE);
     {
       iterations = Trie.empty<Nat, Iteration>();
       index = 0;
+      rbts;
     };
+  };
+
+  public func getMostInteresting(register: Register) : ?Iteration {
+    let result = Queries.queryQuestions(
+      register.rbts,
+      #VOTE_AGGREGATE,
+      ?{ id = 0; data = #VOTE_AGGREGATE(#INTEREST(0)); },
+      ?{ id = 0; data = #VOTE_AGGREGATE(#INTEREST(1_000_000_000_000)); }, // @todo: what could be a max for the score?
+      #bwd,
+      1);
+    if (result.ids.size() == 0) { return null; }
+    else { return ?get(register, result.ids[0]); };
+  };
+
+  public func getOldestInterest(register: Register) : ?Iteration {
+    let result = Queries.queryQuestions(
+      register.rbts,
+      #VOTE_DATE,
+      ?{ id = 0; data = #VOTE_DATE({ stage = #INTEREST; date = 0; }); },
+      ?{ id = 0; data = #VOTE_DATE({ stage = #INTEREST; date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
+      #bwd,
+      1);
+    if (result.ids.size() == 0) { return null; }
+    else { return ?get(register, result.ids[0]); };
+  };
+
+  public func getOldestOpinion(register: Register) : ?Iteration {
+    let result = Queries.queryQuestions(
+      register.rbts,
+      #VOTE_DATE,
+      ?{ id = 0; data = #VOTE_DATE({ stage = #OPINION; date = 0; }); },
+      ?{ id = 0; data = #VOTE_DATE({ stage = #OPINION; date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
+      #fwd,
+      1);
+    if (result.ids.size() == 0) { return null; }
+    else { return ?get(register, result.ids[0]); };
+  };
+
+    public func getOldestCategorization(register: Register) : ?Iteration {
+    let result = Queries.queryQuestions(
+      register.rbts,
+      #VOTE_DATE,
+      ?{ id = 0; data = #VOTE_DATE({ stage = #CATEGORIZATION; date = 0; }); },
+      ?{ id = 0; data = #VOTE_DATE({ stage = #CATEGORIZATION; date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
+      #fwd,
+      1);
+    if (result.ids.size() == 0) { return null; }
+    else { return ?get(register, result.ids[0]); };
   };
 
   public func get(register: Register, index: Nat) : Iteration {
@@ -61,6 +115,7 @@ module {
       {
         iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0;
         index = register.index + 1;
+        rbts = Queries.add(register.rbts, iteration);
       },
       iteration
     );
@@ -68,7 +123,17 @@ module {
 
   public func updateIteration(register: Register, iteration: Iteration) : Register {
     // @todo: assert it is in it ?
-    { register with iterations = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration).0 };
+    let (iterations, old_iteration) = Trie.put(register.iterations, Types.keyNat(iteration.id), Nat.equal, iteration);
+    switch(old_iteration){
+      case(null) { Debug.trap("@todo"); };
+      case(?old) {
+        { 
+          register with 
+          iterations;
+          rbts = Queries.replace(register.rbts, old, iteration);
+        };
+      };
+    };
   };
 
   public func getInterest(register: Register, id: Nat, principal: Principal) : ?Interest {

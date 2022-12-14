@@ -8,7 +8,7 @@ identity default;
 let arguments = record {
   scheduler = record {
     selection_rate = variant { SECONDS = 0 };
-    selection_duration = variant { SECONDS = 0 };
+    opinion_duration = variant { SECONDS = 0 };
     categorization_duration = variant { SECONDS = 0 };
   };
   categories = vec {

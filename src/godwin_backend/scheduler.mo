@@ -1,6 +1,7 @@
 import Types "types";
 import Iterations "votes/register";
 import Iteration "votes/iteration";
+import Queries "votes/queries";
 import Utils "utils";
 
 module {
@@ -18,9 +19,6 @@ module {
     last_selection_date: Time;
   };
 
-  // Right now, the scheduler does this:
-  // SelectionStage:       created -> selected -> archived
-  // CategorizationStage:       pending        -> ongoing  -> done
   public class Scheduler(args: Shareable){
     
     /// Members
@@ -44,8 +42,7 @@ module {
 
     public func selectQuestion(iterations: Iterations, time_now: Time) : (Iterations, ?Iteration) {
       if (time_now > last_selection_date_ + Utils.toTime(params_.selection_rate)) {
-        switch(Iterations.find(iterations, 0)){
-        //switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){ // @todo
+        switch(Iterations.getMostInteresting(iterations)){
           case(null){};
           case(?iteration){ 
             let new_iteration = Iteration.openOpinionVote(iteration, time_now);
@@ -57,12 +54,14 @@ module {
       (iterations, null);
     };
 
+    // @todo: could take more than one vote, cause if heartbeat does not loop fast enough, questions my stay open
     public func closeInterestVote(iterations: Iterations, time_now: Time) : (Iterations, ?Iteration) {
-      switch(Iterations.find(iterations, 0)){
-      //switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#CREATED, #ENDORSEMENTS, #BWD))){ // @todo
+      switch(Iterations.getOldestInterest(iterations)){
         case(null){};
         case(?iteration){
-          if (time_now > iteration.opening_date + Utils.toTime(params_.interest_duration)) {
+          let interest = Iteration.unwrapInterest(iteration);
+          // If enough time has passed, close votes
+          if (time_now > interest.date + Utils.toTime(params_.interest_duration)) {
             let new_iteration = Iteration.closeVotes(iteration, time_now);
             return (Iterations.updateIteration(iterations, new_iteration), ?new_iteration);
           };
@@ -72,13 +71,12 @@ module {
     };
 
     public func closeOpinionVote(iterations: Iterations, time_now: Time) : (Iterations, ?Iteration) {
-      switch(Iterations.find(iterations, 0)){
-        // switch(Questions.nextQuestion(questions, questions.getInSelectionStage(#SELECTED, #SELECTION_STAGE_DATE, #FWD))){ // @todo
+      switch(Iterations.getOldestOpinion(iterations)){
         case(null){};
         case(?iteration){
           let opinion = Iteration.unwrapOpinion(iteration);
-          // If enough time has passed, archived the question
-          if (time_now > opinion.date + Utils.toTime(params_.selection_duration)) {
+          // If opinion duration is over, open categorization vote
+          if (time_now > opinion.date + Utils.toTime(params_.opinion_duration)) {
             let new_iteration = Iteration.openCategorizationVote(iteration, time_now);
             return (Iterations.updateIteration(iterations, new_iteration), ?new_iteration);
           };
@@ -88,13 +86,11 @@ module {
     };
 
     public func closeCategorizationVote(iterations: Iterations, time_now: Time) : (Iterations, ?Iteration) {
-      // Get the oldest question currently being categorized
-      switch(Iterations.find(iterations, 0)){
-      //switch(Questions.nextQuestion(questions, questions.getInCategorizationStage(#ONGOING, #CATEGORIZATION_STAGE_DATE, #FWD))){ // @todo
-        case(null){}; // If there is no question with ongoing categorization_stage, there is nothing to do
+      switch(Iterations.getOldestCategorization(iterations)){
+        case(null){};
         case(?iteration){
           let categorization = Iteration.unwrapCategorization(iteration);
-          // If enough time has passed, put the categorization_stage at done and save its aggregate
+          // If categorization duration is over, close votes
           if (time_now > categorization.date + Utils.toTime(params_.categorization_duration)) {
             let new_iteration = Iteration.closeVotes(iteration, time_now);
             return (Iterations.updateIteration(iterations, new_iteration), ?new_iteration);

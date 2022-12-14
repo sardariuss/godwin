@@ -5,7 +5,7 @@ dfx start --background --clean
 dfx deploy godwin_backend --argument '(record {
   scheduler = record {
     selection_rate = variant { HOURS = 4 };
-    selection_duration = variant { DAYS = 5 };
+    opinion_duration = variant { DAYS = 5 };
     categorization_duration = variant { DAYS = 5 };
   };
   categories = vec {

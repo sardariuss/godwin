@@ -28,7 +28,7 @@ module {
   public type SchedulerParams = {
     interest_duration: Duration;
     selection_rate: Duration;
-    selection_duration: Duration;
+    opinion_duration: Duration;
     categorization_duration: Duration;
   };
 

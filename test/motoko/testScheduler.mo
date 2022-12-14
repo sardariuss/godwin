@@ -68,7 +68,7 @@ module {
 
       let scheduler_params : SchedulerParams = {
         selection_rate = #NS(150);
-        selection_duration = #NS(300);
+        opinion_duration = #NS(300);
         categorization_duration = #NS(500);
       };
 
