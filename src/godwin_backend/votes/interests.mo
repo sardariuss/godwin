@@ -1,6 +1,4 @@
 import Types "../types";
-//import Vote "vote";
-import VoteRegister "voteRegister";
 
 import Float "mo:base/Float";
 
@@ -9,43 +7,6 @@ module {
   // For convenience: from types module
   type B = Types.Interest;
   type A = Types.InterestAggregate;
-  
-//  public type Vote = Types.Vote<B, A>;
-  public type Register = VoteRegister.Register<B, A>;
-  // For convenience: from types module
-  type Vote = Types.Vote<B, A>;
-
-//  public func empty() : Register {
-//    VoteRegister.empty();
-//  };
-
-//  public func get(register: Register, index: Nat) : Vote {
-//    VoteRegister.get(register, index);
-//  };
-//
-  public func find(register: Register, index: Nat) : ?Vote {
-    VoteRegister.find(register, index);
-  };
-
-  public func newVote(register: Register, date: Int) : (Register, Vote) {
-    VoteRegister.newVote(register, date, emptyAggregate());
-  };
-//
-//  public func updateVote(register: Register, vote: Vote) : Register {
-//    VoteRegister.updateVote(register, vote);
-//  };
-//
-//  public func getBallot(register: Register, id: Nat, principal: Principal) : ?B {
-//    VoteRegister.getBallot(register, id, principal);
-//  };
-
-  public func putBallot(register: Register, id: Nat, principal: Principal, ballot: B) : Register {
-    VoteRegister.putBallot(register, id, principal, ballot, addToAggregate, removeFromAggregate);
-  };
-
-  public func removeBallot(register: Register, id: Nat, principal: Principal) : Register {
-    VoteRegister.removeBallot(register, id, principal, addToAggregate, removeFromAggregate);
-  };
 
   func emptyAggregate() : A {
     { ups = 0; downs = 0; score = 0; };

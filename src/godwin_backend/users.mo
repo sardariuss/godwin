@@ -93,7 +93,7 @@ module {
     var updated_register = Trie.clone(register);
 
     let current_iteration = Iterations.get(iterations, question_iterations.current);
-    assert(current_iteration.voting_stage == #COMPLETE);
+    assert(current_iteration.voting_stage == #CLOSED);
     let categorization = Iteration.unwrapCategorization(current_iteration).aggregate;
 
     // Process the ballos from the question's history of iterations

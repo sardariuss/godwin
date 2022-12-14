@@ -1,5 +1,7 @@
 import Types "../types";
 import Interests "../votes/interests";
+import Iterations "../votes/register";
+import Junctions "../junctions";
 
 import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
@@ -13,6 +15,7 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from types module
   type Question = Types.Question;
+  type Junctions = Types.Junctions;
   // For convenience: from other modules
 
   type Time = Int;
@@ -40,22 +43,23 @@ module {
     Trie.get(register.questions, Types.keyNat(question_id), Nat.equal);
   };
 
-  public func createQuestion(register: Register, interests: Interests.Register, author: Principal, date: Time, title: Text, text: Text, iteration_id: Nat) : (Register, Interests.Register, Question) {
-    let (updated_interests, vote) = Interests.newVote(interests, date); // @todo: add question id
+  public func createQuestion(register: Register, iterations: Iterations.Register, junctions: Junctions, author: Principal, date: Time, title: Text, text: Text) : (Register, Iterations.Register, Junctions, Question) {
+    let (updated_iterations, iteration) = Iterations.newIteration(iterations, date);
     let question = {
       id = register.question_index;
       author = author;
       title = title;
       text = text;
       date = date;
-      votes = [#INTEREST(vote.id)];
     };
+    let updated_junctions = Junctions.addNew(junctions, question.id, iteration.id);
     (
       {
         questions = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question).0;
         question_index = register.question_index + 1;
       },
-      updated_interests,
+      updated_iterations,
+      updated_junctions,
       question
     );
   };

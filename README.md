@@ -33,6 +33,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - order created questions by hotness (for front-end).
 - be able to reopen to opinion vote questions from the archive after some period of time
 - add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
+- put IDs as Nat32
 
 ### TO THINK
 - shall categorization and selection happen at the same time ?
