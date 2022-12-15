@@ -3,8 +3,6 @@ import Utils "utils";
 import Polarization "representation/polarization";
 import Cursor "representation/cursor";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
-import Iterations "votes/register";
-import Iteration "votes/iteration";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -27,9 +25,8 @@ module {
   type Polarization = Types.Polarization;
   type Iteration = Types.Iteration;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type QuestionIterations = Types.QuestionIterations;
 
-  type Register = Trie<Principal, User>;
+  public type Register = Trie<Principal, User>;
 
   public func empty() : Register {
     Trie.empty<Principal, User>();
@@ -89,31 +86,28 @@ module {
     updated_register;
   };
 
-  public func updateConvictions(register: Register, question_iterations: QuestionIterations, categories: [Category], iterations: Iterations.Register) : Register {
+  // Warning: assumes that the question is not closed yet but will be after convictions have been updated
+  public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], categories: [Category]) : Register {
     var updated_register = Trie.clone(register);
 
-    let current_iteration = Iterations.get(iterations, question_iterations.current);
-    assert(current_iteration.voting_stage == #CLOSED);
-    let categorization = Iteration.unwrapCategorization(current_iteration).aggregate;
+    let new_categorization = new_iteration.categorization.aggregate;
 
     // Process the ballos from the question's history of iterations
-    for (iteration_id in Array.vals(question_iterations.history)){
-      let iteration = Iterations.get(iterations, iteration_id);
-      let old_categorization = Iteration.unwrapCategorization(iteration).aggregate;
-      for ((principal, opinion) in Trie.iter(Iteration.unwrapOpinion(iteration).ballots))
+    for (old_iteration in Array.vals(old_iterations)){
+      for ((principal, opinion) in Trie.iter(old_iteration.opinion.ballots))
       {
         updated_register := putUser(
           updated_register, 
-          updateBallotContribution(getUser(updated_register, principal), opinion, categories, categorization, ?old_categorization)
+          updateBallotContribution(getUser(updated_register, principal), opinion, categories, new_categorization, ?old_iteration.categorization.aggregate)
         );
       };
     };
 
     // Process the ballos from the question's current iteration
-    for ((principal, opinion) in Trie.iter(Iteration.unwrapOpinion(current_iteration).ballots)) {
+    for ((principal, opinion) in Trie.iter(new_iteration.opinion.ballots)) {
       updated_register := putUser(
         updated_register, 
-        updateBallotContribution(getUser(updated_register, principal), opinion, categories, categorization, null)
+        updateBallotContribution(getUser(updated_register, principal), opinion, categories, new_categorization, null)
       );
     };
 

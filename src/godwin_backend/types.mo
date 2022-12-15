@@ -37,47 +37,49 @@ module {
     categories: [Category];
   };
 
+  public type Status = {
+    #CANDIDATE;
+    #OPEN: {
+      #OPINION;
+      #CATEGORIZATION;
+    };
+    #CLOSED;
+    #REJECTED;
+  };
+
+  public type QuestionStatus = {
+    #CANDIDATE: Vote<Interest, InterestAggregate>;
+    #OPEN: { stage: VotingStage; iteration: Iteration; };
+    #CLOSED: Time;
+    #REJECTED: Time;
+  };
+
   public type Question = {
     id: QuestionId;
     author: Principal;
     title: Text;
     text: Text;
     date: Time;
+    status: QuestionStatus;
+    // @todo: status_history
+    interests_history: [Vote<Interest, InterestAggregate>];
+    vote_history: [Iteration];
   };
 
   public type VotingStage = {
-    #INTEREST;
     #OPINION;
     #CATEGORIZATION;
-    #CLOSED;
   };
-  
+
   public type Iteration = {
-    id: IterationId;
-    opening_date: Int;
-    closing_date: ?Int;
-    voting_stage: VotingStage;
-    interest: ?Vote<Interest, InterestAggregate>;
-    opinion: ?Vote<Cursor, Polarization>;
-    categorization: ?Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
+    opinion: Vote<Cursor, Polarization>;
+    categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
   };
 
   public type Vote<B, A> = {
     date: Int;
     ballots: Trie<Principal, B>;
     aggregate: A;
-  };
-
-  public type QuestionIterations = {
-    current: IterationId;
-    history: [IterationId];
-  };
-
-  public type Junctions = {
-    iterations: Trie<QuestionId, QuestionIterations>;
-    questions: Trie<IterationId, QuestionId>;
-    new: Set<IterationId>;
-    current: Set<IterationId>;
   };
 
   public type Category = Text;
