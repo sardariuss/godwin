@@ -14,9 +14,6 @@ module {
   type Principal = Principal.Principal;
   type Time = Time.Time;
 
-  public type QuestionId = Nat;
-  public type IterationId = Nat;
-
   public type Duration = {
     #DAYS: Nat;
     #HOURS: Nat;
@@ -26,8 +23,8 @@ module {
   };
 
   public type SchedulerParams = {
-    interest_duration: Duration;
     selection_rate: Duration;
+    interest_duration: Duration;
     opinion_duration: Duration;
     categorization_duration: Duration;
   };
@@ -55,13 +52,12 @@ module {
   };
 
   public type Question = {
-    id: QuestionId;
+    id: Nat32;
     author: Principal;
     title: Text;
     text: Text;
     date: Time;
     status: QuestionStatus;
-    // @todo: status_history
     interests_history: [Vote<Interest, InterestAggregate>];
     vote_history: [Iteration];
   };
@@ -84,8 +80,8 @@ module {
 
   public type Category = Text;
 
-  public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t) } };
-  public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Int.hash(n) } };
+  public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t); } };
+  public func keyNat32(n: Nat32) : Key<Nat32> { { key = n; hash = n; } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
   
   public type Interest = {

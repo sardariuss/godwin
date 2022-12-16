@@ -15,7 +15,7 @@ import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Float "mo:base/Float";
 import Int "mo:base/Int";
-import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 
 module {
 
@@ -43,13 +43,13 @@ module {
     #INTEREST;
   };
 
-  public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
+  public type QueryQuestionsResult = { ids: [Nat32]; next_id: ?Nat32 };
   public type QueryDirection = {
     #FWD;
     #BWD;
   };
   public type QuestionKey = {
-    id: Nat;
+    id: Nat32;
     data: {
       #ID;
       #AUTHOR: TextEntry;
@@ -134,7 +134,7 @@ module {
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
-    let default_order = Nat.compare(a.id, b.id);
+    let default_order = Nat32.compare(a.id, b.id);
     switch(a.data){
       case(#ID){
         switch(b.data){
@@ -274,8 +274,8 @@ module {
               case(?last){
                 let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
                 {
-                  ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat { key_value.0.id; });
-                  next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
+                  ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat32 { key_value.0.id; });
+                  next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat32 { ?key.id; }, null);
                 }
               };
             };

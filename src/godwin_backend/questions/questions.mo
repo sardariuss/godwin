@@ -4,7 +4,7 @@ import Vote "../votes/vote";
 import Queries "queries";
 
 import Trie "mo:base/Trie";
-import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
@@ -24,8 +24,8 @@ module {
   type Time = Int;
 
   public type Register = {
-    questions: Trie<Nat, Question>;
-    question_index: Nat;
+    questions: Trie<Nat32, Question>;
+    question_index: Nat32;
     rbts: Queries.QuestionRBTs;
   };
 
@@ -38,21 +38,21 @@ module {
     rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#REJECTED));
     rbts := Queries.addOrderBy(rbts, #INTEREST);
     {
-      questions = Trie.empty<Nat, Question>();
+      questions = Trie.empty<Nat32, Question>();
       question_index = 0;
       rbts;
     };
   };
 
-  public func getQuestion(register: Register, question_id: Nat) : Question {
+  public func getQuestion(register: Register, question_id: Nat32) : Question {
     switch(findQuestion(register, question_id)){
       case(null) { Debug.trap("The question does not exist."); };
       case(?question) { question; };
     };
   };
 
-  public func findQuestion(register: Register, question_id: Nat) : ?Question {
-    Trie.get(register.questions, Types.keyNat(question_id), Nat.equal);
+  public func findQuestion(register: Register, question_id: Nat32) : ?Question {
+    Trie.get(register.questions, Types.keyNat32(question_id), Nat32.equal);
   };
 
   public func createQuestion(register: Register, author: Principal, date: Time, title: Text, text: Text) : (Register, Question) {
@@ -68,7 +68,7 @@ module {
     };
     (
       {
-        questions = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question).0;
+        questions = Trie.put(register.questions, Types.keyNat32(question.id), Nat32.equal, question).0;
         question_index = register.question_index + 1;
         rbts = Queries.add(register.rbts, question);
       },
@@ -77,7 +77,7 @@ module {
   };
 
   public func replaceQuestion(register: Register, question: Question) : Register {
-    let (questions, removed_question) = Trie.put(register.questions, Types.keyNat(question.id), Nat.equal, question);
+    let (questions, removed_question) = Trie.put(register.questions, Types.keyNat32(question.id), Nat32.equal, question);
     switch(removed_question){
       case(null) { Debug.trap("Cannot replace a question that does not exist"); };
       case(?old_question) {

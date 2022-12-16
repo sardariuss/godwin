@@ -1,7 +1,6 @@
 import Types "types";
 import Questions "questions/questions";
 import Question "questions/question";
-import Users "users";
 import Utils "utils";
 
 import Buffer "mo:base/Buffer";
@@ -21,11 +20,14 @@ module {
     last_selection_date: Time;
   };
 
-  public class Scheduler(args: Shareable){
+  public type OnClosingQuestion = (Question) -> ();
+
+  public class Scheduler(args: Shareable, on_closing_callback: OnClosingQuestion){
     
     /// Members
     var params_ = args.params;
     var last_selection_date_ = args.last_selection_date;
+    let on_closing_callback_ = on_closing_callback;
 
     public func share() : Shareable {
       {
@@ -42,24 +44,21 @@ module {
       last_selection_date_;
     };
 
-    // @todo: find a way to break the loop
     public func rejectQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
       var updated_questions = questions;
       let buffer = Buffer.Buffer<Question>(0);
       let iter = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #FWD);
-      while(true){
+      label iter_oldest while(true){
         switch(Questions.next(questions, iter)){
-          case(null){ return (updated_questions, buffer.toArray()); };
+          case(null){ break iter_oldest; };
           case(?question){
             let interest = Question.unwrapInterest(question);
-            // If enough time has passed, close votes
-            if (time_now > interest.date + Utils.toTime(params_.interest_duration)){
-              let new_question = Question.rejectQuestion(question, time_now);
-              updated_questions := Questions.replaceQuestion(questions, new_question);
-              buffer.add(new_question);
-            } else {
-              return (updated_questions, buffer.toArray());
-            };
+            // Stop iterating here if the question is not old enough
+            if (time_now < interest.date + Utils.toTime(params_.interest_duration)){ break iter_oldest; };
+            // If old enough, reject the question
+            let updated_question = Question.rejectQuestion(question, time_now);
+            updated_questions := Questions.replaceQuestion(questions, updated_question);
+            buffer.add(updated_question);
           };
         };
       };
@@ -71,9 +70,9 @@ module {
         switch(Questions.first(questions, #INTEREST, #BWD)){
           case(null){};
           case(?question){ 
-            let new_question = Question.openOpinionVote(question, time_now);
+            let updated_question = Question.openOpinionVote(question, time_now, time_now + Utils.toTime(params_.opinion_duration));
             last_selection_date_ := time_now;
-            return (Questions.replaceQuestion(questions, new_question), ?new_question);
+            return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };
         };
       };
@@ -87,28 +86,30 @@ module {
           let opinion = Question.unwrapIteration(question).opinion;
           // If opinion duration is over, open categorization vote
           if (time_now > opinion.date + Utils.toTime(params_.opinion_duration)) {
-            let new_question = Question.openCategorizationVote(question, time_now);
-            return (Questions.replaceQuestion(questions, new_question), ?new_question);
+            let updated_question = Question.openCategorizationVote(question, time_now);
+            return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };
         };
       };
       (questions, null);
     };
 
-    public func closeQuestion(questions: Questions, time_now: Time, users: Users.Register, categories: [Category]) : (Questions, Users.Register, ?Question) {
+    public func closeQuestion(questions: Questions, time_now: Time) : (Questions, ?Question) {
       switch(Questions.first(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #FWD)){
         case(null){};
         case(?question){
           let iteration = Question.unwrapIteration(question);
           // If categorization duration is over, close votes
           if (time_now > iteration.categorization.date + Utils.toTime(params_.categorization_duration)) {
-            let new_users = Users.updateConvictions(users, iteration, question.vote_history, categories); // @todo: could use a callback
-            let new_question = Question.closeQuestion(question, time_now);
-            return (Questions.replaceQuestion(questions, new_question), users, ?new_question);
+            // Need to call the callback before closing the question
+            on_closing_callback_(question);
+            // Finally close the question
+            let closed_question = Question.closeQuestion(question, time_now);
+            return (Questions.replaceQuestion(questions, closed_question), ?closed_question);
           };
         };
       };
-      (questions, users, null);
+      (questions, null);
     };
 
   };

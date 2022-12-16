@@ -36,7 +36,7 @@ module {
 
   public func mulCategoryCursorTrie(polarization_trie: CategoryPolarizationTrie, cursor_trie: CategoryCursorTrie) : CategoryPolarizationTrie {
     Utils.leftJoin(polarization_trie, cursor_trie, Types.keyText, Text.equal, func(polarization: Polarization, cursor: ?Cursor) : Polarization {
-      Polarization.mul(polarization, Option.get(cursor, 0.0)); // @todo: 0 because if the cursor does not have this category, the resulting polarization shall be nil
+      Polarization.mul(polarization, Option.get(cursor, 0.0)); // 0 because if the cursor does not have this category, the resulting polarization shall be nil
     });
   };
 

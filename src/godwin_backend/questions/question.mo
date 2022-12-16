@@ -6,7 +6,7 @@ import Utils "../utils";
 
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
-import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
@@ -30,7 +30,7 @@ module {
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
-    buffer.add("id: " # Nat.toText(question.id) # ", ");
+    buffer.add("id: " # Nat32.toText(question.id) # ", ");
     buffer.add("author: " # Principal.toText(question.author) # ", ");
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
@@ -39,11 +39,11 @@ module {
   };
   
   public func equal(q1: Question, q2: Question) : Bool {
-    return Nat.equal(q1.id, q2.id)
-        and Principal.equal(q1.author, q2.author)
-        and Text.equal(q1.title, q2.title)
-        and Text.equal(q1.text, q2.text)
-        and Int.equal(q1.date, q2.date);
+    return Nat32.equal(q1.id, q2.id)
+       and Principal.equal(q1.author, q2.author)
+       and Text.equal(q1.title, q2.title)
+       and Text.equal(q1.text, q2.text)
+       and Int.equal(q1.date, q2.date);
   };
 
   type VoteError = {
@@ -93,12 +93,12 @@ module {
     };
   };
 
-  public func openOpinionVote(question: Question, date: Int) : Question {
+  public func openOpinionVote(question: Question, opinion_date: Int, categorization_date: Int) : Question {
     switch(question.status){
       case(#CANDIDATE(interests)) {
         { 
           question with 
-          status = #OPEN({ stage = #OPINION; iteration = Iteration.new(date); });
+          status = #OPEN({ stage = #OPINION; iteration = Iteration.new(opinion_date, categorization_date); });
           interests_history = Utils.append(question.interests_history, [interests]);
         };
       };

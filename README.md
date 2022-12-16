@@ -29,21 +29,17 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - the admin is be able to add or remove a category
 
 ### TO DO
+- the query module probably needs some additional order_by for the frontend (e.g. hotness), and @todo shall be fixed
 - a user shall be able to set a username, which is unique among all users.
-- order created questions by hotness (for front-end).
-- be able to reopen to opinion vote questions from the archive after some period of time
-- add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet. 
-- put IDs as Nat32
+- add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet.
+- add decay on vote, so the older the vote the less change on user profile
 
 ### TO THINK
-- shall categorization and selection happen at the same time ?
-- add lifetime to a question. when lifetime is over, question is removed. censoring/upvoting can add lifetime to the question, but if censoring > upvoting, lifetime goes to 0.
 - reward/penalize users with tokens.
 - categorization shall be made by randomly picked users
 
 ### FOR LATER
 - being able to tag questions as duplicate
-- add decay on vote, so the older the question (or the vote?) the less change on user profile
 - add optional comment on voting on opinion and categorization, being able to upvote comments that
 
 ### IN THE FUTURE

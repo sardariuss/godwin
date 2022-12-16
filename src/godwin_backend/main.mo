@@ -28,14 +28,19 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
+  type Iteration = Types.Iteration;
 
-  // Members
+  /// Members
   stable var categories_ = Categories.fromArray(parameters.categories);
   stable var users_ = Users.empty();
   stable var questions_ = Questions.empty();
-  var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); });
+  // The compiler requires this function to be defined before its passed to the scheduler 
+  func onClosingQuestion(question: Question) {
+    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, Categories.toArray(categories_));
+  };
+  var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); }, onClosingQuestion);
 
-  // For upgrades
+  /// For upgrades
   stable var scheduler_shareable_ = scheduler_.share();
 
   public func getSchedulerParams() : async SchedulerParams {
@@ -85,7 +90,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #QuestionNotFound;
   };
 
-  public shared query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
+  public shared query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
     Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
   };
 
@@ -95,7 +100,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     question;
   };
 
-  public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), InterestError> {
+  public shared({caller}) func reopenQuestion(question_id: Nat32) : async Result<(), InterestError> {
     Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
       Result.mapOk<Question, (), InterestError>(Question.reopenQuestion(question), func(question) {
         questions_ := Questions.replaceQuestion(questions_, question);
@@ -108,7 +113,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #InvalidVotingStage;
   };
 
-  public shared({caller}) func setInterest(question_id: Nat, interest: Interest) : async Result<(), InterestError> {
+  public shared({caller}) func setInterest(question_id: Nat32, interest: Interest) : async Result<(), InterestError> {
     Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
       Result.mapOk<Question, (), InterestError>(Question.putInterest(question, caller, interest), func(question) {
         questions_ := Questions.replaceQuestion(questions_, question);
@@ -116,7 +121,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     });
   };
 
-  public shared({caller}) func removeInterest(question_id: Nat) : async Result<(), InterestError> {
+  public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
     Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
       Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, caller), func(question) {
         questions_ := Questions.replaceQuestion(questions_, question);
@@ -130,7 +135,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #InvalidVotingStage;
   };
 
-  public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
+  public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
     Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
       Result.chain<Question, (), OpinionError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
         Result.mapOk<Question, (), OpinionError>(Question.putOpinion(question, caller, cursor), func(question) {
@@ -147,7 +152,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #QuestionNotFound;
   };
 
-  public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(question_id: Nat32, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
       Result.chain<Question, (), CategorizationError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
         let cursor_trie = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal);
@@ -164,9 +169,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     questions_ := scheduler_.rejectQuestions(questions_, time_now).0;
     questions_ := scheduler_.openOpinionVote(questions_, time_now).0;
     questions_ := scheduler_.openCategorizationVote(questions_, time_now).0;
-    let (questions, users, _) = scheduler_.closeQuestion(questions_, time_now, users_, Categories.toArray(categories_));
-    questions_ := questions;
-    users_ := users;
+    questions_ := scheduler_.closeQuestion(questions_, time_now).0;
   };
 
   public type GetUserError = {
@@ -194,7 +197,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   system func postupgrade(){
-    scheduler_ := Scheduler.Scheduler(scheduler_shareable_);
+    scheduler_ := Scheduler.Scheduler(scheduler_shareable_, onClosingQuestion);
   };
 
 };

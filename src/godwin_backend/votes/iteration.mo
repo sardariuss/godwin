@@ -20,10 +20,10 @@ module {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
-  public func new(date: Int) : Iteration { // @todo: date is not good for categorization vote
+  public func new(opinion_date: Int, categorization_date: Int) : Iteration {
     {
-      opinion = Vote.new<Cursor, Polarization>(date, Polarization.nil());
-      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(date, Trie.empty<Text, Polarization>()); 
+      opinion = Vote.new<Cursor, Polarization>(opinion_date, Polarization.nil());
+      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(categorization_date, Trie.empty<Text, Polarization>()); 
     };
   };
 

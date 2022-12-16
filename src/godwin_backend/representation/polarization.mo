@@ -53,8 +53,6 @@ module {
     sub(polarization_1, Option.get(polarization_2, nil()));
   };
 
-
-  // @todo: why call it coef when it's really a cursor that is used?
   public func mul(polarization: Polarization, coef: Float) : Polarization {
     {
       left    = polarization.left * coef;
@@ -88,9 +86,9 @@ module {
     sub(polarization, Option.getMapped(cursor, Cursor.toPolarization, nil()));
   };
 
-  // Warning: Many different polarizations can lead to the same cursor
+  // Many different polarizations can result in the same cursor.
+  // Assumes a nil polarization gives a cursor of value 0.
   public func toCursor(polarization: Polarization) : Cursor {
-    // @todo: A nil polarization leads to a cursor value of 0
     if (isNil(polarization)) {
       return Cursor.init();
     };
