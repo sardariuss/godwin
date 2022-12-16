@@ -46,8 +46,9 @@ module {
     public func rejectQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
       var updated_questions = questions;
       let buffer = Buffer.Buffer<Question>(0);
+      let iter = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #FWD);
       while(true){
-        switch(Questions.getOldestInterest(updated_questions)){
+        switch(Questions.next(questions, iter)){
           case(null){ return (updated_questions, buffer.toArray()); };
           case(?question){
             let interest = Question.unwrapInterest(question);
@@ -67,7 +68,7 @@ module {
 
     public func openOpinionVote(questions: Questions, time_now: Time) : (Questions, ?Question) {
       if (time_now > last_selection_date_ + Utils.toTime(params_.selection_rate)) {
-        switch(Questions.getMostInteresting(questions)){
+        switch(Questions.first(questions, #INTEREST, #BWD)){
           case(null){};
           case(?question){ 
             let new_question = Question.openOpinionVote(question, time_now);
@@ -80,7 +81,7 @@ module {
     };
 
     public func openCategorizationVote(questions: Questions, time_now: Time) : (Questions, ?Question) {
-      switch(Questions.getOldestOpinion(questions)){
+      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #FWD)){
         case(null){};
         case(?question){
           let opinion = Question.unwrapIteration(question).opinion;
@@ -95,7 +96,7 @@ module {
     };
 
     public func closeQuestion(questions: Questions, time_now: Time, users: Users.Register, categories: [Category]) : (Questions, Users.Register, ?Question) {
-      switch(Questions.getOldestCategorization(questions)){
+      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #FWD)){
         case(null){};
         case(?question){
           let iteration = Question.unwrapIteration(question);

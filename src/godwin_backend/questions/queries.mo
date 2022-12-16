@@ -1,4 +1,5 @@
 import Types "../types";
+import Question "question";
 
 import RBT "mo:stableRBT/StableRBTree";
 
@@ -14,6 +15,7 @@ import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Float "mo:base/Float";
 import Int "mo:base/Int";
+import Nat "mo:base/Nat";
 
 module {
 
@@ -29,9 +31,6 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Status = Types.Status;
-  //type SelectionStage = Types.SelectionStage;
-  //type CategorizationStage = Types.CategorizationStage;
-  //type InterestAggregate = Types.InterestAggregate;
 
   // Public types
   public type OrderBy = {
@@ -39,12 +38,9 @@ module {
     #AUTHOR;
     #TITLE;
     #TEXT;
-    //#ENDORSEMENTS;
     #CREATION_DATE;
-    //#SELECTION_STAGE_DATE;
-    //#CATEGORIZATION_STAGE_DATE;
-    //#CREATION_HOT;
-    #STATUS_DATE;
+    #STATUS_DATE: Status;
+    #INTEREST;
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
@@ -59,22 +55,16 @@ module {
       #AUTHOR: TextEntry;
       #TITLE: TextEntry;
       #TEXT: TextEntry;
-      //#ENDORSEMENTS: InterestsEntry;
       #CREATION_DATE: DateEntry;
-      //#SELECTION_STAGE_DATE: SelectionStageEntry;
-      //#CATEGORIZATION_STAGE_DATE: CategorizationStageEntry;
-      //#CREATION_HOT: CreationHotEntry;
-      #STATUS_DATE: StatusDateEntry;
+      #STATUS_DATE: DateEntry;
+      #INTEREST: InterestEntry;
     };
   };
 
   // Private types
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
-  //type SelectionStageEntry = { selection_stage: SelectionStage; date: Time; };
-  //type InterestsEntry = { interests: InterestAggregate; date: Time; };
-  //type CategorizationStageEntry = { categorization_stage: CategorizationStage; date: Time; };
-  //type CreationHotEntry = Float;
+  type InterestEntry = Int;
   type StatusDateEntry = {
     status: Status;
     date: Int;
@@ -88,12 +78,17 @@ module {
       case(#AUTHOR){ "AUTHOR"; };
       case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
-      //case(#ENDORSEMENTS){ "ENDORSEMENTS"; };
       case(#CREATION_DATE){ "CREATION_DATE"; };
-      //case(#SELECTION_STAGE_DATE){ "SELECTION_STAGE_DATE"; };
-      //case(#CATEGORIZATION_STAGE_DATE){ "CATEGORIZATION"; };
-      //case(#CREATION_HOT){ "CREATION_HOT"; };
-      case(#STATUS_DATE) { "STATUS_DATE"; };
+      case(#STATUS_DATE(status)) { 
+        switch(status){
+          case(#CANDIDATE) { "CANDIDATE"; };
+          case(#OPEN(#OPINION)) { "OPEN_OPINION"; };
+          case(#OPEN(#CATEGORIZATION)) { "OPEN_CATEGORIZATION"; };
+          case(#CLOSED) { "CLOSED"; };
+          case(#REJECTED) { "REJECTED"; };
+        };
+      };
+      case(#INTEREST) { "INTEREST"; };
     };
   };
   func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -101,67 +96,34 @@ module {
   func keyOrderBy(order_by: OrderBy) : Key<OrderBy> { { key = order_by; hash = hashOrderBy(order_by); } };
 
   // Init functions
-  func initQuestionKey(question: Question, order_by: OrderBy) : QuestionKey {
+  func initQuestionKey(question: Question, order_by: OrderBy) : ?QuestionKey {
     switch(order_by){
-      case(#ID){ { id = question.id; data = #ID; } };
-      case(#AUTHOR){ { id = question.id; data = #AUTHOR(initAuthorEntry(question)); } };
-      case(#TITLE){ { id = question.id; data = #TITLE(initTitleEntry(question)); } };
-      case(#TEXT){ { id = question.id; data = #TEXT(initTextEntry(question)); } };
-      //case(#ENDORSEMENTS){ { id = question.id; data = #ENDORSEMENTS(initInterestsEntry(question)); } };
-      case(#CREATION_DATE){ { id = question.id; data = #CREATION_DATE(initDateEntry(question)); } };
-      //case(#SELECTION_STAGE_DATE){ { id = question.id; data = #SELECTION_STAGE_DATE(initSelectionStageEntry(question)); } };
-      //case(#CATEGORIZATION_STAGE_DATE){ { id = question.id; data = #CATEGORIZATION_STAGE_DATE(initCategorizationStageEntry(question)); } };
-      //case(#CREATION_HOT){ { id = question.id; data = #CREATION_HOT(initCreationHotEntry(question)); } };
-      case(#STATUS_DATE) { { id = question.id; data = #STATUS_DATE(initStatusDateEntry(question)); } };
+      case(#ID){ ?{ id = question.id; data = #ID; } };
+      case(#AUTHOR){ initAuthorEntry(question); };
+      case(#TITLE){ initTitleEntry(question); };
+      case(#TEXT){ initTextEntry(question); };
+      case(#CREATION_DATE){ initDateEntry(question); };
+      case(#STATUS_DATE(status)) { initStatusDateEntry(status, question); };
+      case(#INTEREST) { initInterestEntry(question); };
     };
   };
-  func initDateEntry(question: Question) : DateEntry { {date = question.date; }; };
-  func initAuthorEntry(question: Question) : TextEntry { { text = Principal.toText(question.author); date = question.date; }; };
-  func initTitleEntry(question: Question) : TextEntry { { text = question.title; date = question.date; }; };
-  func initTextEntry(question: Question) : TextEntry {{ text = question.text; date = question.date; };};
-  func initStatusDateEntry(question: Question) : StatusDateEntry { 
-    switch(question.status){
-      case(#CANDIDATE(vote)){
-        { status = #CANDIDATE; date = vote.date; };
-      };
-      case(#OPEN({stage; iteration;})){
-        switch(stage){
-          case(#OPINION){
-            { status = #OPEN(#OPINION); date = iteration.opinion.date; };
-          };
-          case(#CATEGORIZATION){
-            { status = #OPEN(#CATEGORIZATION); date = iteration.categorization.date; };
-          };
-        };
-      };
-      case(#CLOSED(date)){
-        { status = #CLOSED; date; };
-      };
-      case(#REJECTED(date)){
-        { status = #REJECTED; date; };
-      };
-    }
+  func initDateEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #CREATION_DATE({date = question.date; }); }};
+  func initAuthorEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #AUTHOR({ text = Principal.toText(question.author); date = question.date; }); }};
+  func initTitleEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #TITLE({ text = question.title; date = question.date; }); }};
+  func initTextEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #TEXT({ text = question.text; date = question.date; }); }};
+
+  func initStatusDateEntry(status: Status, question: Question) : ?QuestionKey {
+    if (Question.getStatus(question) != status) { return null; };
+    ?{ id = question.id; data = #STATUS_DATE({ date = Question.unwrapStatusDate(question); }) };
   };
-//  func initSelectionStageEntry(question: Question) : SelectionStageEntry { 
-//    let stage_record = StageHistory.getActiveStage(question.selection_stage);
-//    {
-//      selection_stage = stage_record.stage;
-//      date = stage_record.timestamp;
-//    }; 
-//  };
-//  func initInterestsEntry(question: Question) : InterestsEntry { 
-//    { 
-//      interests = question.interests; 
-//      date = StageHistory.getActiveStage(question.selection_stage).timestamp;
-//    }; 
-//  };
-//  func initCategorizationStageEntry(question: Question) : CategorizationStageEntry {
-//    let stage_record = StageHistory.getActiveStage(question.categorization_stage);
-//    { 
-//      categorization_stage = stage_record.stage;
-//      date = stage_record.timestamp;
-//    };
-//  };
+
+  func initInterestEntry(question: Question) : ?QuestionKey {
+    switch(question.status){
+      case(#CANDIDATE(vote)) { ?{ id = question.id; data = #INTEREST(vote.aggregate.score); }; };
+      case(_) { null; };
+    };
+  };
+
 //  func initCreationHotEntry(question: Question) : CreationHotEntry { 
 //    // When based on creation date, the hot algorithm assumes the date is in the past
 //    // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
@@ -172,7 +134,7 @@ module {
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
-    let default_order = compareIds(a.id, b.id);
+    let default_order = Nat.compare(a.id, b.id);
     switch(a.data){
       case(#ID){
         switch(b.data){
@@ -198,12 +160,6 @@ module {
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
-//      case(#ENDORSEMENTS(entry_a)){
-//        switch(b.data){
-//          case(#ENDORSEMENTS(entry_b)){ compareInterestsEntry(entry_a, entry_b, default_order); };
-//          case(_){Debug.trap("Cannot compare entries of different types")};
-//        };
-//      };
       case(#CREATION_DATE(entry_a)){
         switch(b.data){
           case(#CREATION_DATE(entry_b)){ compareDateEntry(entry_a, entry_b, default_order); };
@@ -212,146 +168,35 @@ module {
       };
       case(#STATUS_DATE(entry_a)){
         switch(b.data){
-          case(#STATUS_DATE(entry_b)){ compareStatusDate(entry_a, entry_b, default_order); };
+          case(#STATUS_DATE(entry_b)){ compareDateEntry(entry_a, entry_b, default_order); };
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
-//      case(#SELECTION_STAGE_DATE(entry_a)){
-//        switch(b.data){
-//          case(#SELECTION_STAGE_DATE(entry_b)){ compareSelectionStageEntry(entry_a, entry_b, default_order); };
-//          case(_){Debug.trap("Cannot compare entries of different types")};
-//        };
-//      };
-//      case(#CATEGORIZATION_STAGE_DATE(entry_a)){
-//        switch(b.data){
-//          case(#CATEGORIZATION_STAGE_DATE(entry_b)){ compareCategorizationStageEntry(entry_a, entry_b, default_order); };
-//          case(_){Debug.trap("Cannot compare entries of different types")};
-//        };
-//      };
-//      case(#CREATION_HOT(entry_a)){
-//        switch(b.data){
-//          case(#CREATION_HOT(entry_b)){ Float.compare(entry_a, entry_b); };
-//          case(_){Debug.trap("Cannot compare entries of different types")};
-//        };
-//      };
+      case(#INTEREST(entry_a)){
+        switch(b.data){
+          case(#INTEREST(entry_b)) { compareInt(entry_a, entry_b, default_order); };
+          case(_){Debug.trap("Cannot compare entries of different types")};
+        };
+      };
     };
   };
-  func compareIds(first_id: Nat, second_id: Nat) : Order {
-    if (first_id < second_id){ #less;}
-    else if (first_id > second_id){ #greater;}
-    else { #equal;}  
-  };
-  func compareDateEntry(a: DateEntry, b: DateEntry, default_order: Order) : Order {
-    if (a.date < b.date){ #less;}
-    else if (a.date > b.date){ #greater;}
-    else { default_order };
-  };
-  func compareInt(a: Int, b: Int, default_order: Order) : Order {
-    switch(Int.compare(a, b)){
+
+  func compare<T>(a: T, b: T, compare: (T, T) -> Order, on_equality: Order) : Order {
+    switch(compare(a, b)){
       case(#greater) { #greater; };
       case(#less) { #less; };
-      case(#equal) { default_order; }; 
+      case(#equal) { on_equality; };     
     };
+  };
+  func compareDateEntry(a: DateEntry, b: DateEntry, default_order: Order) : Order {
+    compare<Int>(a.date, b.date, Int.compare, default_order);
+  };
+  func compareInt(a: Int, b: Int, default_order: Order) : Order {
+    compare<Int>(a, b, Int.compare, default_order);
   };
   func compareTextEntry(a: TextEntry, b: TextEntry, default_order: Order) : Order {
-    switch (Text.compare(a.text, b.text)){
-      case(#less){ #less; };
-      case(#greater){ #greater; };
-      case(#equal){ compareDateEntry(a, b, default_order); };
-    };
+    compare<Text>(a.text, b.text, Text.compare, compareDateEntry(a, b, default_order));
   };
-  func compareStatusDate(a: StatusDateEntry, b: StatusDateEntry, default_order: Order) : Order {
-    switch(a.status){
-      case(#CANDIDATE){
-        switch(b.status){
-          case(#CANDIDATE){ compareInt(a.date, b.date, default_order); };
-          case(#OPEN(#OPINION)){ #less; };
-          case(#OPEN(#CATEGORIZATION)){ #less; };
-          case(#CLOSED){ #less; };
-          case(#REJECTED){ #less; };
-        };
-      };
-      case(#OPEN(#OPINION)){
-        switch(b.status){
-          case(#CANDIDATE){ #greater; };
-          case(#OPEN(#OPINION)){ compareInt(a.date, b.date, default_order); };
-          case(#OPEN(#CATEGORIZATION)){ #less; };
-          case(#CLOSED){ #less; };
-          case(#REJECTED){ #less; };
-        };
-      };
-      case(#OPEN(#CATEGORIZATION)){
-        switch(b.status){
-          case(#CANDIDATE){ #greater; };
-          case(#OPEN(#OPINION)){ #greater; };
-          case(#OPEN(#CATEGORIZATION)){ compareInt(a.date, b.date, default_order); };
-          case(#CLOSED){ #less; };
-          case(#REJECTED){ #less; };
-        };
-      };
-      case(#CLOSED){
-        switch(b.status){
-          case(#CANDIDATE){ #greater; };
-          case(#OPEN(#OPINION)){ #greater; };
-          case(#OPEN(#CATEGORIZATION)){ #greater; };
-          case(#CLOSED){ compareInt(a.date, b.date, default_order); };
-          case(#REJECTED){ #less; };
-        };
-      };
-      case(#REJECTED){
-        switch(b.status){
-          case(#CANDIDATE){ #greater; };
-          case(#OPEN(#OPINION)){ #greater; };
-          case(#OPEN(#CATEGORIZATION)){ #greater; };
-          case(#CLOSED){ #greater; };
-          case(#REJECTED){ compareInt(a.date, b.date, default_order); };
-        };
-      };
-    };
-  };
-//  func compareSelectionStageEntry(a: SelectionStageEntry, b: SelectionStageEntry, default_order: Order) : Order {
-//    switch(a.selection_stage){
-//      case(#CREATED){
-//        switch(b.selection_stage){
-//          case(#CREATED){ compareDateEntry(a, b, default_order); }; case(#SELECTED){ #less; }; case(#ARCHIVED(_)){ #less; };
-//        };
-//      };
-//      case(#SELECTED){
-//        switch(b.selection_stage){
-//          case(#CREATED){ #greater; }; case(#SELECTED){ compareDateEntry(a, b, default_order); }; case(#ARCHIVED(_)){ #less; };
-//        };
-//      };
-//      case(#ARCHIVED(_)){
-//        switch(b.selection_stage){
-//          case(#CREATED){ #greater; }; case(#SELECTED){ #greater; }; case(#ARCHIVED(_)){ compareDateEntry(a, b, default_order); };
-//        };
-//      };
-//    };
-//  };
-//  func compareInterestsEntry(a: InterestsEntry, b: InterestsEntry, default_order: Order) : Order {
-//    if (a.interests.score < b.interests.score){ #less; }
-//    else if (a.interests.score > b.interests.score){ #greater;}
-//    else { compareDateEntry(a, b, default_order); };
-//  };
-//  func compareCategorizationStageEntry(a: CategorizationStageEntry, b: CategorizationStageEntry, default_order: Order) : Order {
-//    switch(a.categorization_stage){
-//      case(#PENDING){
-//        switch(b.categorization_stage){
-//          case(#PENDING){ compareDateEntry(a, b, default_order); }; case(#ONGOING){ #less; }; case(#DONE(_)){ #less; };
-//        };
-//      };
-//      case(#ONGOING){
-//        switch(b.categorization_stage){
-//          case(#PENDING){ #greater; }; case(#ONGOING){ compareDateEntry(a, b, default_order); }; case(#DONE(_)){ #less; };
-//        };
-//      };
-//      case(#DONE(_)){
-//        switch(b.categorization_stage){
-//          case(#PENDING){ #greater; }; case(#ONGOING){ #greater; }; case(#DONE(_)){ compareDateEntry(a, b, default_order); };
-//        };
-//      };
-//    };
-//  };
 
   // Public functions
 
@@ -369,22 +214,29 @@ module {
   public func add(rbts: QuestionRBTs, new_question: Question) : QuestionRBTs {
     var new_rbts = rbts;
     for ((order_by, rbt) in Trie.iter(rbts)){
-      let new_rbt = RBT.put(rbt, compareQuestionKey, initQuestionKey(new_question, order_by), ());
-      new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+      // Add the new key
+      Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
+        let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
+        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+      });
     };
     new_rbts;
   };
 
+  // @todo: once tested, use add and remove instead
   public func replace(rbts: QuestionRBTs, old_question: Question, new_question: Question) : QuestionRBTs {
     var new_rbts = rbts;
     for ((order_by, rbt) in Trie.iter(rbts)){
-      let old_key = initQuestionKey(old_question, order_by);
-      let new_key = initQuestionKey(new_question, order_by);
-      if (compareQuestionKey(old_key, new_key) != #equal){
-        var new_rbt = RBT.remove(rbt, compareQuestionKey, old_key).1;
-        new_rbt := RBT.put(new_rbt, compareQuestionKey, new_key, ());
+      // Remove the old key
+      Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
+        let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
         new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
-      };
+      });
+      // Add the new key
+      Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
+        let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
+        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+      });
     };
     new_rbts;
   };
@@ -392,8 +244,11 @@ module {
   public func remove(rbts: QuestionRBTs, old_question: Question) : QuestionRBTs {
     var new_rbts = rbts;
     for ((order_by, rbt) in Trie.iter(rbts)){
-      let new_rbt = RBT.remove(rbt, compareQuestionKey, initQuestionKey(old_question, order_by)).1;
-      new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+      // Remove the old key
+      Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
+        let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
+        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+      });
     };
     new_rbts;
   };

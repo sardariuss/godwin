@@ -26,6 +26,7 @@ module {
   type Vote<B, A> = Types.Vote<B, A>;
   type Iteration = Types.Iteration;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Status = Types.Status;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -47,6 +48,34 @@ module {
 
   type VoteError = {
     #InvalidVotingStage;
+  };
+
+  public func getStatus(question: Question) : Status {
+    switch(question.status) {
+      case(#CANDIDATE(_)) { #CANDIDATE; };
+      case(#OPEN({stage;})) { 
+        switch(stage){
+          case(#OPINION)        { #OPEN(#OPINION);        };
+          case(#CATEGORIZATION) { #OPEN(#CATEGORIZATION); };
+        };
+      };
+      case(#CLOSED(_)) { #CLOSED; };
+      case(#REJECTED(_)) { #REJECTED; };
+    };
+  };
+
+  public func unwrapStatusDate(question: Question) : Int {
+    switch(question.status) {
+      case(#CANDIDATE(vote)) { vote.date; };
+      case(#OPEN({stage; iteration; })) { 
+        switch(stage){
+          case(#OPINION)        { iteration.opinion.date;        };
+          case(#CATEGORIZATION) { iteration.categorization.date; };
+        };
+      };
+      case(#CLOSED(date))   { date; };
+      case(#REJECTED(date)) { date; };
+    };
   };
 
   public func rejectQuestion(question: Question, date: Int) : Question {

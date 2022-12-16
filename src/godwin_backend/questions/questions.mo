@@ -7,11 +7,13 @@ import Trie "mo:base/Trie";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
+import Iter "mo:base/Iter";
 
 module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Iter<T> = Iter.Iter<T>;
   type Principal = Principal.Principal;
   // For convenience: from types module
   type Question = Types.Question;
@@ -29,60 +31,17 @@ module {
 
   public func empty() : Register {
     var rbts = Queries.init();
-    rbts := Queries.addOrderBy(rbts, #STATUS_DATE);
+    rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#CANDIDATE));
+    rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#OPINION)));
+    rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
+    rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#CLOSED));
+    rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#REJECTED));
+    rbts := Queries.addOrderBy(rbts, #INTEREST);
     {
       questions = Trie.empty<Nat, Question>();
       question_index = 0;
       rbts;
     };
-  };
-
-  public func getMostInteresting(register: Register) : ?Question {
-    let result = Queries.queryQuestions(
-      register.rbts,
-      #STATUS_DATE,
-      ?{ id = 0; data = #STATUS_DATE({ status = #CANDIDATE; date = 0; });},
-      ?{ id = 0; data = #STATUS_DATE({ status = #CANDIDATE; date = 1_000_000_000_000; });}, // @todo: what could be a max for the score?
-      #bwd,
-      1);
-    if (result.ids.size() == 0) { return null; }
-    else { return ?getQuestion(register, result.ids[0]); };
-  };
-
-  public func getOldestInterest(register: Register) : ?Question {
-    let result = Queries.queryQuestions(
-      register.rbts,
-      #STATUS_DATE,
-      ?{ id = 0; data = #STATUS_DATE({ status = #CANDIDATE; date = 0; }); },
-      ?{ id = 0; data = #STATUS_DATE({ status = #CANDIDATE; date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
-      #bwd,
-      1);
-    if (result.ids.size() == 0) { return null; }
-    else { return ?getQuestion(register, result.ids[0]); };
-  };
-
-  public func getOldestOpinion(register: Register) : ?Question {
-    let result = Queries.queryQuestions(
-      register.rbts,
-      #STATUS_DATE,
-      ?{ id = 0; data = #STATUS_DATE({ status = #OPEN(#OPINION); date = 0; }); },
-      ?{ id = 0; data = #STATUS_DATE({ status = #OPEN(#OPINION); date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
-      #fwd,
-      1);
-    if (result.ids.size() == 0) { return null; }
-    else { return ?getQuestion(register, result.ids[0]); };
-  };
-
-    public func getOldestCategorization(register: Register) : ?Question {
-    let result = Queries.queryQuestions(
-      register.rbts,
-      #STATUS_DATE,
-      ?{ id = 0; data = #STATUS_DATE({ status = #OPEN(#CATEGORIZATION); date = 0; }); },
-      ?{ id = 0; data = #STATUS_DATE({ status = #OPEN(#CATEGORIZATION); date = 1_000_000_000_000; }); }, // @todo: what could be a max for the score?
-      #fwd,
-      1);
-    if (result.ids.size() == 0) { return null; }
-    else { return ?getQuestion(register, result.ids[0]); };
   };
 
   public func getQuestion(register: Register, question_id: Nat) : Question {
@@ -125,6 +84,21 @@ module {
         { register with questions; rbts = Queries.replace(register.rbts, old_question, question); };
       };
     };
+  };
+
+  public func iter(register: Register, order_by: Queries.OrderBy, direction: Queries.QueryDirection) : Iter<(Queries.QuestionKey, ())>{
+    Queries.entries(register.rbts, order_by, direction);
+  };
+
+  public func next(register: Register, iter: Iter<(Queries.QuestionKey, ())>) : ?Question {
+    switch(iter.next()){
+      case(null) { null; };
+      case(?(question_key, _)){ ?getQuestion(register, question_key.id); };
+    };
+  };
+
+  public func first(register: Register, order_by: Queries.OrderBy, direction: Queries.QueryDirection) : ?Question {
+    next(register, iter(register, order_by, direction));
   };
 
 };
