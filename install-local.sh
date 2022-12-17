@@ -19,4 +19,5 @@ dfx deploy godwin_backend --argument '(record {
     "JUSTICE";
     "CHANGE";
   };
+  convictions_decay = null;
 })'

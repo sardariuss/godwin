@@ -32,6 +32,7 @@ module {
   public type Parameters = {
     scheduler: SchedulerParams;
     categories: [Category];
+    convictions_decay: ?Float;
   };
 
   public type Status = {

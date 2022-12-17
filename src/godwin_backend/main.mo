@@ -32,22 +32,28 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   /// Members
   stable var categories_ = Categories.fromArray(parameters.categories);
+  stable var convictions_decay_ = parameters.convictions_decay;
   stable var users_ = Users.empty();
   stable var questions_ = Questions.empty();
   // The compiler requires this function to be defined before its passed to the scheduler 
   func onClosingQuestion(question: Question) {
-    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, Categories.toArray(categories_));
+    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, Categories.toArray(categories_), convictions_decay_);
   };
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); }, onClosingQuestion);
 
   /// For upgrades
   stable var scheduler_shareable_ = scheduler_.share();
 
-  public func getSchedulerParams() : async SchedulerParams {
+  public query func getSchedulerParams() : async SchedulerParams {
     scheduler_.share().params;
   };
 
-  public func getCategories() : async [Category] {
+  // @todo
+  public func getTime() : async Int {
+    Time.now();
+  };
+
+  public query func getCategories() : async [Category] {
     Categories.toArray(categories_);
   };
 
@@ -90,7 +96,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #QuestionNotFound;
   };
 
-  public shared query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
+  public query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
     Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
   };
 

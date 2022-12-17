@@ -40,6 +40,12 @@ module {
     });
   };
 
+  public func mul(polarization_trie: CategoryPolarizationTrie, coef: Float) : CategoryPolarizationTrie {
+    Trie.mapFilter(polarization_trie, func(category: Category, polarization: Polarization) : ?Polarization {
+      ?Polarization.mul(polarization, coef);
+    });
+  };
+
   public func add(a: CategoryPolarizationTrie, b: CategoryPolarizationTrie) : CategoryPolarizationTrie {
     Utils.leftJoin(a, b, Types.keyText, Text.equal, func(polarization_a: Polarization, polarization_b: ?Polarization) : Polarization {
       Polarization.addOpt(polarization_a, polarization_b);

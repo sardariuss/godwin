@@ -10,6 +10,7 @@ import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
+import Float "mo:base/Float";
 
 module {
 
@@ -27,6 +28,9 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
 
   public type Register = Trie<Principal, User>;
+
+  // October 2096
+  let MAX_DATE = 4_000_000_000_000_000_000;
 
   public func empty() : Register {
     Trie.empty<Principal, User>();
@@ -87,7 +91,7 @@ module {
   };
 
   // Warning: assumes that the question is not closed yet but will be after convictions have been updated
-  public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], categories: [Category]) : Register {
+  public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], categories: [Category], decay: ?Float) : Register {
     var updated_register = Trie.clone(register);
 
     let new_categorization = new_iteration.categorization.aggregate;
@@ -98,7 +102,7 @@ module {
       {
         updated_register := putUser(
           updated_register, 
-          updateBallotContribution(getUser(updated_register, principal), opinion, categories, new_categorization, ?old_iteration.categorization.aggregate)
+          updateBallotContribution(getUser(updated_register, principal), opinion, old_iteration.opinion.date, categories, decay, new_categorization, ?old_iteration.categorization.aggregate)
         );
       };
     };
@@ -107,23 +111,31 @@ module {
     for ((principal, opinion) in Trie.iter(new_iteration.opinion.ballots)) {
       updated_register := putUser(
         updated_register, 
-        updateBallotContribution(getUser(updated_register, principal), opinion, categories, new_categorization, null)
+        updateBallotContribution(getUser(updated_register, principal), opinion, new_iteration.opinion.date, categories, decay, new_categorization, null)
       );
     };
 
     updated_register;
   };
 
-  func updateBallotContribution(user: User, opinion: Cursor, categories: [Category], new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
+  func updateBallotContribution(user: User, opinion: Cursor, date: Int, categories: [Category], decay: ?Float, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
     // Create a Polarization trie from the cursor, based on given categories.
     let opinion_trie = Utils.make(categories, Types.keyText, Text.equal, Cursor.toPolarization(opinion));
 
+    // Compute the decay coefficient
+    let normalized_date = Float.fromInt(date) / Float.fromInt(MAX_DATE); // To have a time < 1 to avoid exponential to overflow
+    let decay_coef = Option.getMapped(decay, func(lambda: Float) : Float { Float.exp(lambda * normalized_date); }, 1.0);
+
     // Add the opinion times new categorization.
-    var contribution = CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(new));
+    var contribution = CategoryPolarizationTrie.mul(
+      CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(new)),
+      decay_coef);
 
     // Remove the opinion times old categorization if any.
     Option.iterate(old, func(old_cat: CategoryPolarizationTrie) {
-      let old_contribution = CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(old_cat));
+      let old_contribution = CategoryPolarizationTrie.mul(
+        CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(old_cat)),
+        decay_coef);
       contribution := CategoryPolarizationTrie.sub(contribution, old_contribution);
     });
 
