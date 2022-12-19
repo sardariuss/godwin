@@ -3,6 +3,7 @@ import Interests "../votes/interests";
 import Vote "../votes/vote";
 import Iteration "../votes/iteration";
 import Utils "../utils";
+import Categories "../categories";
 
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
@@ -27,6 +28,7 @@ module {
   type Iteration = Types.Iteration;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Status = Types.Status;
+  type Category = Types.Category;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -108,12 +110,12 @@ module {
     };
   };
 
-  public func openCategorizationVote(question: Question, date: Int) : Question {
+  public func openCategorizationVote(question: Question, date: Int, categories: [Category]) : Question {
     switch(question.status){
       case(#OPEN({stage; iteration;})) {
         switch(stage){
           case(#OPINION) {
-            { question with status = #OPEN({ stage = #CATEGORIZATION; iteration; }); };
+            { question with status = #OPEN({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(iteration, date, categories); }); };
           };
           case(_) {
             Prelude.unreachable();

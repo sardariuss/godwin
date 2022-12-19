@@ -2,6 +2,7 @@ import Vote "vote";
 import Types "../types";
 import Polarization "../representation/polarization";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
+import Categories "../categories";
 
 import Option "mo:base/Option";
 import Prelude "mo:base/Prelude";
@@ -19,12 +20,17 @@ module {
   type Polarization = Types.Polarization;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type Category = Types.Category;
 
   public func new(opinion_date: Int, categorization_date: Int) : Iteration {
     {
       opinion = Vote.new<Cursor, Polarization>(opinion_date, Polarization.nil());
-      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(categorization_date, Trie.empty<Text, Polarization>()); 
+      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(categorization_date, CategoryPolarizationTrie.nil([])); 
     };
+  };
+
+  public func openCategorization(iteration: Iteration, date: Int, categories: [Category]) : Iteration {
+    { iteration with categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(date, CategoryPolarizationTrie.nil(categories)); }
   };
 
   public func putOpinion(iteration: Iteration, principal: Principal, opinion: Cursor) : Iteration {

@@ -79,14 +79,14 @@ module {
       (questions, null);
     };
 
-    public func openCategorizationVote(questions: Questions, time_now: Time) : (Questions, ?Question) {
+    public func openCategorizationVote(questions: Questions, time_now: Time, categories: [Category]) : (Questions, ?Question) {
       switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #FWD)){
         case(null){};
         case(?question){
           let opinion = Question.unwrapIteration(question).opinion;
           // If opinion duration is over, open categorization vote
           if (time_now > opinion.date + Utils.toTime(params_.opinion_duration)) {
-            let updated_question = Question.openCategorizationVote(question, time_now);
+            let updated_question = Question.openCategorizationVote(question, time_now, categories);
             return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };
         };

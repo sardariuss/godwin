@@ -29,8 +29,14 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - the admin is be able to add or remove a category
 
 ### TO DO
-- the query module probably needs some additional order_by for the frontend (e.g. hotness), and @todo shall be fixed
-- a user shall be able to set a username, which is unique among all users.
+- implement hotness for #CANDIDATES and #CLOSED questions
+- implement removal of #REJECTED questions in Scheduler, add removal time
+- add public getters for getters for every status of questions (#CANDIDATE, #OPEN(#OPINION), #OPEN(#CATEGORIZATION), #CLOSED, #REJECTED)
+  -> implement hotness for #CANDIDATE and #CLOSED questions, and remaining Queries.OrderBy needed
+- add setUsername for user
+- fix users @todos (need to call getOrCreateUser, need to check anonymous, add utests)
+- add tests for convictions decay
+- remove #OPEN state, use directly #OPINION and #CATEGORIZATION and add into Iteration when closing the question
 - add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet.
 - add decay on vote, so the older the vote the less change on user profile
 

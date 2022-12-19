@@ -90,6 +90,14 @@ module {
     updated_register;
   };
 
+  public func addCategory(register: Register, category: Category) : Register {
+    var updated_register = Trie.clone(register);
+    for ((principal, user) in Trie.iter(register)) {
+      updated_register := putUser(updated_register, { user with convictions = Trie.put(user.convictions, Types.keyText(category), Text.equal, Polarization.nil()).0 });
+    };
+    updated_register;
+  };
+
   // Warning: assumes that the question is not closed yet but will be after convictions have been updated
   public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], categories: [Category], decay: ?Float) : Register {
     var updated_register = Trie.clone(register);
@@ -97,13 +105,17 @@ module {
     let new_categorization = new_iteration.categorization.aggregate;
 
     // Process the ballos from the question's history of iterations
-    for (old_iteration in Array.vals(old_iterations)){
-      for ((principal, opinion) in Trie.iter(old_iteration.opinion.ballots))
-      {
-        updated_register := putUser(
-          updated_register, 
-          updateBallotContribution(getUser(updated_register, principal), opinion, old_iteration.opinion.date, categories, decay, new_categorization, ?old_iteration.categorization.aggregate)
-        );
+    if (old_iterations.size() > 0){
+      // The categorization used to compute all convictions from the history is the last one
+      let old_categorization = old_iterations[old_iterations.size() - 1].categorization.aggregate;
+      for (old_iteration in Array.vals(old_iterations)){
+        for ((principal, opinion) in Trie.iter(old_iteration.opinion.ballots))
+        {
+          updated_register := putUser(
+            updated_register, 
+            updateBallotContribution(getUser(updated_register, principal), opinion, old_iteration.opinion.date, categories, decay, new_categorization, ?old_categorization)
+          );
+        };
       };
     };
 

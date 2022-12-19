@@ -143,27 +143,27 @@ module {
       // and selection duration is 300.
 
       // 2.1 Archive a first question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 900));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 900, Categories.toArray(categories)));
       assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1300));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1300, Categories.toArray(categories)));
       assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1501));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1501, Categories.toArray(categories)));
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 2.2 Archive a second question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1600));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1600, Categories.toArray(categories)));
       assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1750));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1750, Categories.toArray(categories)));
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
       
       // 2.3 Archive a third question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 2400));
+      question := updateQuestions(scheduler.openCategorizationVote(questions_, 2400, Categories.toArray(categories)));
       switch(question){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };

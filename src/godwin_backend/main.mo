@@ -48,11 +48,6 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     scheduler_.share().params;
   };
 
-  // @todo
-  public func getTime() : async Int {
-    Time.now();
-  };
-
   public query func getCategories() : async [Category] {
     Categories.toArray(categories_);
   };
@@ -65,7 +60,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public shared({caller}) func addCategory(category: Category) : async Result<(), AddCategoryError> {
     Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func () {
       if (Categories.contains(categories_, category)) { #err(#CategoryAlreadyExists); }
-      else { #ok(categories_ := Categories.add(categories_, category)); };
+      else { 
+        categories_ := Categories.add(categories_, category);
+        // Also add the category to users' profile
+        users_ := Users.addCategory(users_, category);
+        #ok;
+      };
     });
   };
 
@@ -174,7 +174,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     let time_now = Time.now();
     questions_ := scheduler_.rejectQuestions(questions_, time_now).0;
     questions_ := scheduler_.openOpinionVote(questions_, time_now).0;
-    questions_ := scheduler_.openCategorizationVote(questions_, time_now).0;
+    questions_ := scheduler_.openCategorizationVote(questions_, time_now, Categories.toArray(categories_)).0;
     questions_ := scheduler_.closeQuestion(questions_, time_now).0;
   };
 
