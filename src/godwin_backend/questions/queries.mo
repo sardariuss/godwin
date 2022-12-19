@@ -34,7 +34,6 @@ module {
 
   // Public types
   public type OrderBy = {
-    #ID;
     #AUTHOR;
     #TITLE;
     #TEXT;
@@ -51,7 +50,6 @@ module {
   public type QuestionKey = {
     id: Nat32;
     data: {
-      #ID;
       #AUTHOR: TextEntry;
       #TITLE: TextEntry;
       #TEXT: TextEntry;
@@ -74,7 +72,6 @@ module {
   // To be able to use OrderBy as key in a Trie
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
-      case(#ID){ "ID"; };
       case(#AUTHOR){ "AUTHOR"; };
       case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
@@ -98,7 +95,6 @@ module {
   // Init functions
   func initQuestionKey(question: Question, order_by: OrderBy) : ?QuestionKey {
     switch(order_by){
-      case(#ID){ ?{ id = question.id; data = #ID; } };
       case(#AUTHOR){ initAuthorEntry(question); };
       case(#TITLE){ initTitleEntry(question); };
       case(#TEXT){ initTextEntry(question); };
@@ -136,12 +132,6 @@ module {
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
     let default_order = Nat32.compare(a.id, b.id);
     switch(a.data){
-      case(#ID){
-        switch(b.data){
-          case(#ID){ default_order; };
-          case(_){Debug.trap("Cannot compare entries of different types")};
-        };
-      };
       case(#AUTHOR(entry_a)){
         switch(b.data){
           case(#AUTHOR(entry_b)){ compareTextEntry(entry_a, entry_b, default_order); };

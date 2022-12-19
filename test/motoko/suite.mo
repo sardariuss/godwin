@@ -9,16 +9,11 @@ import TestUsers "testUsers";
 
 import Suite "mo:matchers/Suite";
 
-//Suite.run(TestQueries.TestQueries().getSuite());
+Suite.run(TestQueries.TestQueries().getSuite());
 Suite.run(TestQuestions.TestQuestions().getSuite());
-//Suite.run(TestInterests.TestInterests().getSuite());
-//Suite.run(TestOpinions.TestOpinions().getSuite());
-//Suite.run(TestCategorizations.TestCategorizations().getSuite());
-//Suite.run(TestScheduler.TestScheduler().getSuite());
-//Suite.run(TestUsers.TestUsers().getSuite());
+Suite.run(TestInterests.TestInterests().getSuite());
+Suite.run(TestOpinions.TestOpinions().getSuite());
+Suite.run(TestCategorizations.TestCategorizations().getSuite());
+Suite.run(TestScheduler.TestScheduler().getSuite());
+Suite.run(TestUsers.TestUsers().getSuite());
 //Suite.run(TestHotRanking.TestHotRanking().getSuite());
-
-
-// @todo: test perCategorizationStage module
-// @todo: test perSelectionStage module
-// @todo: test stageHistory module
