@@ -2,6 +2,8 @@ import Types "../types";
 import Interests "../votes/interests";
 import Vote "../votes/vote";
 import Iteration "../votes/iteration";
+import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
+import CategoryCursorTrie "../representation/categoryCursorTrie";
 import Utils "../utils";
 import Categories "../categories";
 
@@ -13,6 +15,7 @@ import Int "mo:base/Int";
 import Text "mo:base/Text";
 import Prelude "mo:base/Prelude";
 import Result "mo:base/Result";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
@@ -50,6 +53,11 @@ module {
 
   type VoteError = {
     #InvalidVotingStage;
+  };
+
+  type CategorizationError = {
+    #InvalidVotingStage;
+    #InvalidCategorization;
   };
 
   public func getStatus(question: Question) : Status {
@@ -200,11 +208,14 @@ module {
     };
   };
 
-  public func putCategorization(question: Question, principal: Principal, categorization: CategoryCursorTrie) : Result<Question, VoteError> {
+  public func putCategorization(question: Question, principal: Principal, categorization: CategoryCursorTrie) : Result<Question, CategorizationError> {
     switch(question.status) {
       case(#OPEN({ stage; iteration; })) {
         switch(stage){
           case(#CATEGORIZATION) {
+            if(not TrieSet.equal(CategoryPolarizationTrie.keys(iteration.categorization.aggregate), CategoryCursorTrie.keys(categorization), Text.equal)){
+              return #err(#InvalidCategorization);
+            };
             #ok({ question with status = #OPEN({ stage; iteration = Iteration.putCategorization(iteration, principal, categorization); }); });
           };
           case(_){ #err(#InvalidVotingStage); };
@@ -253,6 +264,20 @@ module {
   public func unwrapIteration(question: Question) : Iteration {
     switch(question.status){
       case(#OPEN({stage; iteration;})){ iteration; };
+      case(_) { Prelude.unreachable(); };
+    };
+  };
+
+  public func unwrapRejectedDate(question: Question) : Int {
+    switch(question.status){
+      case(#REJECTED(date)){ date; };
+      case(_) { Prelude.unreachable(); };
+    };
+  };
+
+  public func unwrapClosedDate(question: Question) : Int {
+    switch(question.status){
+      case(#CLOSED(date)){ date; };
       case(_) { Prelude.unreachable(); };
     };
   };

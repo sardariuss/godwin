@@ -1,14 +1,17 @@
 import Types "../types";
 import Cursor "cursor";
 import Categories "../categories";
+import Utils "../utils";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
   // For convenience: from base module
+  type Set<K> = TrieSet.Set<K>;
   type Trie<K, V> = Trie.Trie<K, V>;
 
   // For convenience: from types module
@@ -39,17 +42,12 @@ module {
     true;
   };
 
-  public func equal(trie_1: CategoryCursorTrie, trie_2: CategoryCursorTrie) : Bool {
-    if (Trie.size(trie_1) != Trie.size(trie_2)){
-      return false;
-    };
-    for ((category_1, cursor_1) in Trie.iter(trie_1)){
-      switch(Trie.get(trie_2, Types.keyText(category_1), Text.equal)){
-        case(null) { return false; };
-        case(?cursor_2) { if (not Cursor.equal(cursor_1, cursor_2)) { return false; }; };
-      };
-    };
-    return true;
+  public func keys(cursor_trie: CategoryCursorTrie) : Set<Category> {
+    Utils.keys(cursor_trie, Types.keyText, Text.equal);
+  };
+
+  public func equal(a: CategoryCursorTrie, b: CategoryCursorTrie) : Bool {
+    Trie.equalStructure(a, b, Text.equal, Cursor.equal);
   };
 
   public func toText(cursor_trie: CategoryCursorTrie) : Text {

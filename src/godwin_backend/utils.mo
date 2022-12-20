@@ -42,6 +42,14 @@ module {
     buffer.toArray();
   };
 
+  public func keys<K, V>(trie: Trie<K, V>, key: (K) -> Key<K>, equal: (K, K) -> Bool) : Set<K> {
+    var set = TrieSet.empty<K>();
+    for ((k, _) in Trie.iter(trie)){
+      set := Trie.put(set, key(k), equal, ()).0;
+    };
+    set;
+  };
+
   public func toTime(duration: Duration) : Time {
     switch(duration) {
       case(#DAYS(days)){ days * 24 * 60 * 60 * 1_000_000_000; };

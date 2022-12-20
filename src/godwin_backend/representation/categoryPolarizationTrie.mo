@@ -6,9 +6,12 @@ import Text "mo:base/Text";
 import Trie "mo:base/Trie";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
+  // For convenience: from base module
+  type Set<K> = TrieSet.Set<K>;
   // For convenience: from types module
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
@@ -62,9 +65,12 @@ module {
     Trie.mapFilter(polarization_trie, func(_: Text, polarization: Polarization) : ?Cursor { ?Polarization.toCursor(polarization); });
   };
 
-  // @todo: check if the test on size is really required.
+  public func keys(polarization_trie: CategoryPolarizationTrie) : Set<Category> {
+    Utils.keys(polarization_trie, Types.keyText, Text.equal);
+  };
+
   public func equal(a: CategoryPolarizationTrie, b: CategoryPolarizationTrie) : Bool {
-    (Trie.size(a) == Trie.size(b)) and Trie.equalStructure(a, b, Text.equal, Polarization.equal);
+    Trie.equalStructure(a, b, Text.equal, Polarization.equal);
   };
 
   public func toText(polarization_trie: CategoryPolarizationTrie) : Text {

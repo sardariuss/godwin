@@ -30,7 +30,6 @@ module {
   
   public class TestUsers() = {
 
-    // @todo: remove asserts, use matchers instead
     public func getSuite() : Suite.Suite {
 
       let tests = Buffer.Buffer<Suite.Suite>(0);
@@ -94,7 +93,7 @@ module {
       iteration := { iteration with categorization; };
       questions := Questions.replaceQuestion(questions, { Questions.getQuestion(questions, 0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
 
-      users := Users.updateConvictions(users, iteration, [], Categories.toArray(categories), null);
+      users := Users.updateConvictions(users, iteration, [], null);
 
       // Verify the convictions shall be updated for users who answered this question
       // User 0
@@ -124,90 +123,73 @@ module {
           ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
           ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
         ], Types.keyText, Text.equal)))));
-//
-//      // Test adding a new category
-//      categories.add("JUSTICE");
-//      // User 0
-//      user := Users.getUser(users, principals[0]);
-//      user := users.updateConvictions(principals[0], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 0 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
-//          ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
-//      // User 1
-//      user := Users.getUser(users, principals[1]);
-//      user := users.updateConvictions(principals[1], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 1 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
-//          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
-//      // User 2
-//      user := Users.getUser(users, principals[2]);
-//      user := users.updateConvictions(principals[2], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 2 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
-//
-//      // Test removing an old category
-//      categories.remove("ECONOMY");
-//      // User 0
-//      user := Users.getUser(users, principals[0]);
-//      user := users.updateConvictions(principals[0], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 0 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
-//      // User 1
-//      user := Users.getUser(users, principals[1]);
-//      user := users.updateConvictions(principals[1], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 1 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
-//      // User 2
-//      user := Users.getUser(users, principals[2]);
-//      user := users.updateConvictions(principals[2], questions, opinions);
-//      assert(not user.convictions.to_update);
-//      tests.add(test(
-//        "User 2 convictions",
-//        Utils.arrayToTrie(user.convictions, Types.keyText, Text.equal),
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
-//          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
-//          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+
+      // Test adding a new category
+      users := Users.addCategory(users, "JUSTICE");
+      // User 0
+      tests.add(test(
+        "User 0 convictions",
+        Users.getUser(users, principals[0]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
+          ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
+      // User 1
+      tests.add(test(
+        "User 1 convictions",
+        Users.getUser(users, principals[1]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
+          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
+      // User 2
+      tests.add(test(
+        "User 2 convictions",
+        Users.getUser(users, principals[2]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
+          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
+
+      // Test removing an old category
+      users := Users.removeCategory(users, "ECONOMY");
+      // User 0
+      tests.add(test(
+        "User 0 convictions",
+        Users.getUser(users, principals[0]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
+      // User 1
+      tests.add(test(
+        "User 1 convictions",
+        Users.getUser(users, principals[1]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
+      // User 2
+      tests.add(test(
+        "User 2 convictions",
+        Users.getUser(users, principals[2]).convictions,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
+          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
+          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
+          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
+        ], Types.keyText, Text.equal)))));
       
 
       // @todo: need to have a more complete test on categorization computation
+      // @todo: have a test for the user name
 
       suite("Test Users module", tests.toArray());
     };

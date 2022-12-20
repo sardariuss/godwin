@@ -11,6 +11,7 @@ import Debug "mo:base/Debug";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Float "mo:base/Float";
+import TrieSet "mo:base/TrieSet";
 
 module {
 
@@ -53,6 +54,10 @@ module {
   /// \return Null if the principal is anonymous, the user otherwise.
   public func findUser(register: Register, principal: Principal) : ?User {
     Trie.get(register, Types.keyPrincipal(principal), Principal.equal);
+  };
+
+  public func setUserName(register: Register, principal: Principal, name: Text) : Register {
+    putUser(register, {getUser(register, principal) with name = ?name; });
   };
 
   public func getOrCreateUser(register: Register, principal: Principal, categories: [Category]) : (Register, User) {
@@ -99,7 +104,7 @@ module {
   };
 
   // Warning: assumes that the question is not closed yet but will be after convictions have been updated
-  public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], categories: [Category], decay: ?Float) : Register {
+  public func updateConvictions(register: Register, new_iteration: Iteration, old_iterations: [Iteration], decay: ?Float) : Register {
     var updated_register = Trie.clone(register);
 
     let new_categorization = new_iteration.categorization.aggregate;
@@ -113,7 +118,7 @@ module {
         {
           updated_register := putUser(
             updated_register, 
-            updateBallotContribution(getUser(updated_register, principal), opinion, old_iteration.opinion.date, categories, decay, new_categorization, ?old_categorization)
+            updateBallotContribution(getUser(updated_register, principal), opinion, old_iteration.opinion.date, decay, new_categorization, ?old_categorization)
           );
         };
       };
@@ -123,14 +128,22 @@ module {
     for ((principal, opinion) in Trie.iter(new_iteration.opinion.ballots)) {
       updated_register := putUser(
         updated_register, 
-        updateBallotContribution(getUser(updated_register, principal), opinion, new_iteration.opinion.date, categories, decay, new_categorization, null)
+        updateBallotContribution(getUser(updated_register, principal), opinion, new_iteration.opinion.date, decay, new_categorization, null)
       );
     };
 
     updated_register;
   };
 
-  func updateBallotContribution(user: User, opinion: Cursor, date: Int, categories: [Category], decay: ?Float, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
+  // \note To compute the users convictions, the user's opinion (cursor converted into a polarization) 
+  // is multiplied by the categorization (polarization converted into a cursor)
+  // This is done for every category using a trie of polarization initialized with the opinion.
+  // The CategoryPolarizationTrie.mul uses a leftJoin, so that the resulting convictions contains
+  // only the categories from the definitions.
+  func updateBallotContribution(user: User, opinion: Cursor, date: Int, decay: ?Float, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
+    // Get the categories from the convictions
+    let categories = TrieSet.toArray(CategoryPolarizationTrie.keys(user.convictions));
+    
     // Create a Polarization trie from the cursor, based on given categories.
     let opinion_trie = Utils.make(categories, Types.keyText, Text.equal, Cursor.toPolarization(opinion));
 

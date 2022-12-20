@@ -27,6 +27,7 @@ module {
     interest_duration: Duration;
     opinion_duration: Duration;
     categorization_duration: Duration;
+    rejected_duration: Duration;
   };
 
   public type Parameters = {

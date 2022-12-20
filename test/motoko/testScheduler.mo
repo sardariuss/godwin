@@ -10,6 +10,10 @@ import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
 import Option "mo:base/Option";
+import Debug "mo:base/Debug";
+import Nat32 "mo:base/Nat32";
+import Nat "mo:base/Nat";
+
 
 module {
 
@@ -26,6 +30,7 @@ module {
   // For convenience: from other modules
   type Questions = Questions.Register;
   
+  // @todo: This test is too complex to follow through, it needs to be simplified
   public class TestScheduler() = {
 
     var questions_ = Questions.empty();
@@ -86,9 +91,10 @@ module {
 
       let scheduler_params : SchedulerParams = {
         selection_rate = #NS(150);
-        interest_duration = #NS(300);
+        interest_duration = #NS(500);
         opinion_duration = #NS(300);
         categorization_duration = #NS(500);
+        rejected_duration = #NS(400);
       };
 
       let scheduler = Scheduler.Scheduler({
@@ -139,10 +145,39 @@ module {
         case(?question) { assert(question.id == 8); };
       };
 
+      // 2.1 Reject some questions
+      let (after_reject_1, rejected_questions_1) = scheduler.rejectQuestions(questions_, 700);
+      questions_ := after_reject_1;
+
+      assert(rejected_questions_1[0].id == 9);
+      assert(rejected_questions_1[1].id == 5);
+
+      // 2.2 Reject additional questions
+      let (after_reject_2, rejected_questions_2) = scheduler.rejectQuestions(questions_, 1200);
+      questions_ := after_reject_2;
+      assert(rejected_questions_2[0].id == 1);
+      assert(rejected_questions_2[1].id == 4);
+      assert(rejected_questions_2[2].id == 0);
+
+      // 3.1. Delete rejected questions (1)
+      let (after_delete_1, delete_questions_1) = scheduler.deleteQuestions(questions_, 1150);
+      questions_ := after_delete_1;
+      assert(delete_questions_1.size() == 2);
+
+      // 3.2 Delete rejected questions (2)
+      let (after_delete_2, delete_questions_2) = scheduler.deleteQuestions(questions_, 1400);
+      questions_ := after_delete_2;
+      assert(delete_questions_2.size() == 0);
+
+      // 3.3 Delete rejected questions (3)
+      let (after_delete_3, delete_questions_3) = scheduler.deleteQuestions(questions_, 1800);
+      questions_ := after_delete_3;
+      assert(delete_questions_3.size() == 3);
+
       // 5 questions have been selected at timestamp: 1200, 1400, 2000, 2200, 2400
       // and selection duration is 300.
 
-      // 2.1 Archive a first question
+      // 4.1 Archive a first question
       question := updateQuestions(scheduler.openCategorizationVote(questions_, 900, Categories.toArray(categories)));
       assert(question == null);
       question := updateQuestions(scheduler.openCategorizationVote(questions_, 1300, Categories.toArray(categories)));
@@ -153,7 +188,7 @@ module {
         case(?question) { assert(question.id == 3); };
       };
 
-      // 2.2 Archive a second question
+      // 4.2 Archive a second question
       question := updateQuestions(scheduler.openCategorizationVote(questions_, 1600, Categories.toArray(categories)));
       assert(question == null);
       question := updateQuestions(scheduler.openCategorizationVote(questions_, 1750, Categories.toArray(categories)));
@@ -162,7 +197,7 @@ module {
         case(?question) { assert(question.id == 6); };
       };
       
-      // 2.3 Archive a third question
+      // 4.3 Archive a third question
       question := updateQuestions(scheduler.openCategorizationVote(questions_, 2400, Categories.toArray(categories)));
       switch(question){
         case(null) { assert(false); };
@@ -172,7 +207,7 @@ module {
       // 3 questions have been archived at timestamp: 1501, 1750, 2400
       // and categorization duration is 500.
 
-      // 3.1 Close categorization of a first question
+      // 5.1 Close categorization of a first question
       question := updateQuestions(scheduler.closeQuestion(questions_, 1501));
       assert(not resetOnClosing());
       assert(question == null);
@@ -186,7 +221,7 @@ module {
         case(?question) { assert(question.id == 3); };
       };
 
-      // 3.2 Close categorization of a second question
+      // 5.2 Close categorization of a second question
       question := updateQuestions(scheduler.closeQuestion(questions_, 2200));
       assert(not resetOnClosing());
       assert(question == null);

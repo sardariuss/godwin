@@ -2,11 +2,14 @@ import Vote "vote";
 import Types "../types";
 import Polarization "../representation/polarization";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
+import CategoryCursorTrie "../representation/categoryCursorTrie";
 import Categories "../categories";
 
+import TrieSet "mo:base/TrieSet";
 import Option "mo:base/Option";
 import Prelude "mo:base/Prelude";
 import Trie "mo:base/Trie";
+import Text "mo:base/Text";
 
 module {
 
@@ -42,6 +45,7 @@ module {
   };
 
   public func putCategorization(iteration: Iteration, principal: Principal, cat: CategoryCursorTrie) : Iteration {
+    assert(TrieSet.equal(CategoryPolarizationTrie.keys(iteration.categorization.aggregate), CategoryCursorTrie.keys(cat), Text.equal));
     { iteration with categorization = Vote.putBallot(iteration.categorization, principal, cat, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie); };
   };
 

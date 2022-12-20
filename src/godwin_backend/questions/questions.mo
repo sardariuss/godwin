@@ -86,6 +86,19 @@ module {
     };
   };
 
+  public func removeQuestion(register: Register, question_id: Nat32) : (Register, Question) {
+    let (questions, removed_question) = Trie.remove(register.questions, Types.keyNat32(question_id), Nat32.equal);
+    switch(removed_question){
+      case(null) { Debug.trap("Cannot remove a question that does not exist"); };
+      case(?old_question){
+        (
+          { register with questions; rbts = Queries.remove(register.rbts, old_question); },
+          old_question
+        );
+      };
+    };
+  };
+
   public func iter(register: Register, order_by: Queries.OrderBy, direction: Queries.QueryDirection) : Iter<(Queries.QuestionKey, ())>{
     Queries.entries(register.rbts, order_by, direction);
   };
@@ -93,7 +106,9 @@ module {
   public func next(register: Register, iter: Iter<(Queries.QuestionKey, ())>) : ?Question {
     switch(iter.next()){
       case(null) { null; };
-      case(?(question_key, _)){ ?getQuestion(register, question_key.id); };
+      case(?(question_key, _)){ 
+        ?getQuestion(register, question_key.id); 
+      };
     };
   };
 

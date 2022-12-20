@@ -8,6 +8,7 @@ dfx deploy godwin_backend --argument '(record {
     interest_duration = variant { DAYS = 3 };
     opinion_duration = variant { DAYS = 2 };
     categorization_duration = variant { DAYS = 5 };
+    rejected_duration = variant { DAYS = 5 };
   };
   categories = vec {
     "IDENTITY";

@@ -14,7 +14,6 @@ import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
 
-// @todo: one need to call getOrCreateUser when voting or doing anything that takes the caller as input
 shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   // For convenience: from base module
@@ -37,7 +36,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   stable var questions_ = Questions.empty();
   // The compiler requires this function to be defined before its passed to the scheduler 
   func onClosingQuestion(question: Question) {
-    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, Categories.toArray(categories_), convictions_decay_);
+    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, convictions_decay_);
   };
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); }, onClosingQuestion);
 
@@ -86,7 +85,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     });
   };
 
-  public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), VerifyCredentialsError> {
+  public type SetSchedulerParamsError = {
+    #InsufficientCredentials;
+  };
+
+  public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), SetSchedulerParamsError> {
     Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(caller), func () {
       scheduler_.setParams(scheduler_params);
     });
@@ -100,69 +103,84 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
   };
 
-  public shared({caller}) func openQuestion(title: Text, text: Text) : async Question {
-    let (questions, question) = Questions.createQuestion(questions_, caller, Time.now(), title, text);
-    questions_ := questions;
-    question;
+  public type OpenQuestionError = {
+    #PrincipalIsAnonymous;
+  };
+
+  public shared({caller}) func openQuestion(title: Text, text: Text) : async Result<Question, OpenQuestionError> {
+    Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
+      let (questions, question) = Questions.createQuestion(questions_, caller, Time.now(), title, text);
+      questions_ := questions;
+      question;
+    });
   };
 
   public shared({caller}) func reopenQuestion(question_id: Nat32) : async Result<(), InterestError> {
-    Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
-      Result.mapOk<Question, (), InterestError>(Question.reopenQuestion(question), func(question) {
-        questions_ := Questions.replaceQuestion(questions_, question);
-      });
-    });
-  };
-
-  public type InterestError = {
-    #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public shared({caller}) func setInterest(question_id: Nat32, interest: Interest) : async Result<(), InterestError> {
-    Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
-      Result.mapOk<Question, (), InterestError>(Question.putInterest(question, caller, interest), func(question) {
-        questions_ := Questions.replaceQuestion(questions_, question);
-      });
-    });
-  };
-
-  public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
-    Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
-      Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, caller), func(question) {
-        questions_ := Questions.replaceQuestion(questions_, question);
-      });
-    });
-  };
-
-  public type OpinionError = {
-    #InvalidOpinion;
-    #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
-    Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-      Result.chain<Question, (), OpinionError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
-        Result.mapOk<Question, (), OpinionError>(Question.putOpinion(question, caller, cursor), func(question) {
+    Result.chain<User, (), InterestError>(getUser(caller), func(_) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+        Result.mapOk<Question, (), InterestError>(Question.reopenQuestion(question), func(question) {
           questions_ := Questions.replaceQuestion(questions_, question);
         });
       })
     });
   };
 
-  public type CategorizationError = {
+  public type InterestError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
     #InvalidVotingStage;
-    #InsufficientCredentials;
+  };
+
+  public shared({caller}) func setInterest(question_id: Nat32, interest: Interest) : async Result<(), InterestError> {
+    Result.chain<User, (), InterestError>(getUser(caller), func(_) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+        Result.mapOk<Question, (), InterestError>(Question.putInterest(question, caller, interest), func(question) {
+          questions_ := Questions.replaceQuestion(questions_, question);
+        });
+      })
+    });
+  };
+
+  public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
+    Result.chain<User, (), InterestError>(getUser(caller), func(_) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+        Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, caller), func(question) {
+          questions_ := Questions.replaceQuestion(questions_, question);
+        });
+      })
+    });
+  };
+
+  public type OpinionError = {
+    #PrincipalIsAnonymous;
+    #InvalidOpinion;
+    #QuestionNotFound;
+    #InvalidVotingStage;
+  };
+
+  public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
+    Result.chain<User, (), OpinionError>(getUser(caller), func(_) {
+      Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
+        Result.chain<Question, (), OpinionError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<Question, (), OpinionError>(Question.putOpinion(question, caller, cursor), func(question) {
+            questions_ := Questions.replaceQuestion(questions_, question);
+          });
+        })
+      })
+    });
+  };
+
+  public type CategorizationError = {
+    #PrincipalIsAnonymous;
+    #InvalidVotingStage;
     #InvalidCategorization;
     #QuestionNotFound;
   };
 
   public shared({caller}) func setCategorization(question_id: Nat32, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
-    Result.chain<(), (), CategorizationError>(verifyCredentials(caller), func () {
+    Result.chain<User, (), CategorizationError>(getUser(caller), func(_) {
       Result.chain<Question, (), CategorizationError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
         let cursor_trie = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal);
-        if (not CategoryCursorTrie.isValid(cursor_trie, categories_)) { return #err(#InvalidCategorization); };
         Result.mapOk<Question, (), CategorizationError>(Question.putCategorization(question, caller, cursor_trie), func(question) {
           questions_ := Questions.replaceQuestion(questions_, question);
         });
@@ -172,21 +190,25 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func run() {
     let time_now = Time.now();
-    questions_ := scheduler_.rejectQuestions(questions_, time_now).0;
     questions_ := scheduler_.openOpinionVote(questions_, time_now).0;
     questions_ := scheduler_.openCategorizationVote(questions_, time_now, Categories.toArray(categories_)).0;
     questions_ := scheduler_.closeQuestion(questions_, time_now).0;
+    questions_ := scheduler_.rejectQuestions(questions_, time_now).0;
+    questions_ := scheduler_.deleteQuestions(questions_, time_now).0;
   };
 
-  public type GetUserError = {
-    #IsAnonymous;
+  public shared func findUser(principal: Principal) : async ?User {
+    Users.findUser(users_, principal);
   };
 
-  public shared func findUser(principal: Principal) : async Result<User, GetUserError> {
-    // @todo: do case if anonymous
-    let (users, user) = Users.getOrCreateUser(users_, principal, Categories.toArray(categories_));
-    users_ := users;
-    #ok(user);
+  type SetUserNameError = {
+    #PrincipalIsAnonymous;
+  };
+
+  public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
+    Result.mapOk<User, (), SetUserNameError>(getUser(caller), func(_) {
+      users_ := Users.setUserName(users_, caller, name);
+    });
   };
 
   public type VerifyCredentialsError = {
@@ -196,6 +218,19 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   func verifyCredentials(caller: Principal) : Result<(), VerifyCredentialsError> {
     if (caller != admin_) { #err(#InsufficientCredentials); }
     else { #ok; };
+  };
+
+  public type GetUserError = {
+    #PrincipalIsAnonymous;
+  };
+
+  func getUser(principal: Principal) : Result<User, GetUserError> {
+    if (Principal.isAnonymous(principal)) { #err(#PrincipalIsAnonymous); }
+    else { 
+      let (users, user) = Users.getOrCreateUser(users_, principal, Categories.toArray(categories_));
+      users_ := users;
+      #ok(user);
+    };
   };
 
   system func preupgrade(){

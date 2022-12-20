@@ -217,16 +217,16 @@ module {
   public func replace(rbts: QuestionRBTs, old_question: Question, new_question: Question) : QuestionRBTs {
     var new_rbts = rbts;
     for ((order_by, rbt) in Trie.iter(rbts)){
+      var single_rbt = rbt;
       // Remove the old key
       Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
-        let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
-        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+        single_rbt := RBT.remove(single_rbt, compareQuestionKey, question_key).1;
       });
       // Add the new key
       Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
-        let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
-        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+        single_rbt := RBT.put(single_rbt, compareQuestionKey, question_key, ());
       });
+      new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, single_rbt).0;
     };
     new_rbts;
   };

@@ -49,14 +49,14 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      let categories = Categories.fromArray(["IDENTITY", "ECONOMY", "CULTURE"]);
+      var categories = Categories.fromArray(["IDENTITY", "ECONOMY", "CULTURE"]);
       var question_0 : Question = { 
         id = 0; 
         author = principal_0;
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.new(0, 0); });
+        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0, 0), 0, Categories.toArray(categories)); } );
         interests_history = [];
         vote_history = []; 
       };
@@ -79,7 +79,7 @@ module {
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.new(0, 0); });
+        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0, 0), 0, Categories.toArray(categories)); });
         interests_history = [];
         vote_history = []; 
       };
@@ -96,85 +96,50 @@ module {
       Result.iterate(Question.putCategorization(question_1, principal_8, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
       Result.iterate(Question.putCategorization(question_1, principal_9, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
 
-//      tests.add(test(
-//        "Get aggregate",
-//        Question.unwrapIteration(question_1).categorization.aggregate,
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-//          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-//           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-//           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
-//        Types.keyText, Text.equal)))
-//      ));
+      tests.add(test(
+        "Get aggregate (1)",
+        Question.unwrapIteration(question_1).categorization.aggregate,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
+          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
+        Types.keyText, Text.equal)))
+      ));
 
-//      // Add a new category
-//      categories.add("JUSTICE");
-//
-//      // The aggregate shall contain the new category
-//      tests.add(test(
-//        "Get aggregate with new category before voting again",
-//        Question.unwrapIteration(question_1).categorization.aggregate,
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-//          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-//           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-//           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),
-//           ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })],
-//        Types.keyText, Text.equal)))
-//      ));
-//
-//      // Without the added category, voting shall trap
-//      //Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      
-//      // Update some votes, the non-updated ballots do not impact the aggregate (meaning they won't even be considered as 0.0)
-//      Result.iterate(Question.putCategorization(question_1, principal_5, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_6, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_7, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_8, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_9, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//
-//      // The aggregate shall contain the new category
-//      tests.add(test(
-//        "Get aggregate with new category after voting again",
-//        Question.unwrapIteration(question_1).categorization.aggregate,
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-//          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-//           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-//           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),
-//           ("JUSTICE",  { left = 5.0; center = 0.0; right = 0.0; })], // For justice, total is 5 and not 10 because only 5 people updated their vote with the new category
-//        Types.keyText, Text.equal)))
-//      ));
-//
-//      // Remove an old category
-//      categories.remove("ECONOMY");
-//
-//      // The aggregate shall not have the removed category
-//      tests.add(test(
-//        "Get aggregate with new category before voting again",
-//        Question.unwrapIteration(question_1).categorization.aggregate,
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-//          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-//           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),
-//           ("JUSTICE",  { left = 5.0; center = 0.0; right = 0.0; })],
-//        Types.keyText, Text.equal)))
-//      ));
-//
-//      // With the removed category, voting shall trap
-//      //Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5), ("JUSTICE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      // Update some votes
-//      Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_1, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_2, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_3, Utils.arrayToTrie([("IDENTITY",  1.0), ("CULTURE",  0.0), ("JUSTICE",  1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      Result.iterate(Question.putCategorization(question_1, principal_4, Utils.arrayToTrie([("IDENTITY",  0.5), ("CULTURE", -0.5), ("JUSTICE",  1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-//      // The aggregate shall not have the removed category
-//      tests.add(test(
-//        "Get aggregate with new category after voting again",
-//        Question.unwrapIteration(question_1).categorization.aggregate,
-//        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-//          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-//           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; }),
-//           ("JUSTICE",  { left = 5.0; center = 0.0; right = 5.0; })],
-//        Types.keyText, Text.equal)))
-//      ));
+      // Update some votes, the non-updated ballots do not impact the aggregate (meaning they won't even be considered as 0.0)
+      Result.iterate(Question.putCategorization(question_1, principal_5, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_6, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_7, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_8, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_9, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+
+      // The aggregate shall contain the new category
+      tests.add(test(
+        "Get aggregate (2)",
+        Question.unwrapIteration(question_1).categorization.aggregate,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
+          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
+        Types.keyText, Text.equal)))
+      ));
+
+      // Update some votes
+      Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_2, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_3, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      Result.iterate(Question.putCategorization(question_1, principal_4, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      // The aggregate shall not have the removed category
+      tests.add(test(
+        "Get aggregate (3)",
+        Question.unwrapIteration(question_1).categorization.aggregate,
+        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
+          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
+        Types.keyText, Text.equal)))
+      ));
 
       suite("Test Categorizations module", tests.toArray());
     };

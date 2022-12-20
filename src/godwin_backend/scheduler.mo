@@ -22,6 +22,7 @@ module {
 
   public type OnClosingQuestion = (Question) -> ();
 
+  // @todo: make the return of functions uniform (always return an array of questions)
   public class Scheduler(args: Shareable, on_closing_callback: OnClosingQuestion){
     
     /// Members
@@ -40,10 +41,6 @@ module {
       params_ := params;
     };
 
-    public func getLastSelectionDate() : Time {
-      last_selection_date_;
-    };
-
     public func rejectQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
       var updated_questions = questions;
       let buffer = Buffer.Buffer<Question>(0);
@@ -57,8 +54,29 @@ module {
             if (time_now < interest.date + Utils.toTime(params_.interest_duration)){ break iter_oldest; };
             // If old enough, reject the question
             let updated_question = Question.rejectQuestion(question, time_now);
-            updated_questions := Questions.replaceQuestion(questions, updated_question);
+            updated_questions := Questions.replaceQuestion(updated_questions, updated_question);
             buffer.add(updated_question);
+          };
+        };
+      };
+      (updated_questions, buffer.toArray());
+    };
+
+    
+    public func deleteQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
+      var updated_questions = questions;
+      let buffer = Buffer.Buffer<Question>(0);
+      let iter = Questions.iter(questions, #STATUS_DATE(#REJECTED), #FWD);
+      label iter_oldest while(true){
+        switch(Questions.next(questions, iter)){
+          case(null){ break iter_oldest; };
+          case(?question){
+            // Stop iterating here if the question is not old enough
+            if (time_now < Question.unwrapRejectedDate(question) + Utils.toTime(params_.rejected_duration)){ break iter_oldest; };
+            // If old enough, delete the question
+            let removal = Questions.removeQuestion(updated_questions, question.id);
+            updated_questions := removal.0;
+            buffer.add(removal.1);
           };
         };
       };
@@ -83,9 +101,8 @@ module {
       switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #FWD)){
         case(null){};
         case(?question){
-          let opinion = Question.unwrapIteration(question).opinion;
-          // If opinion duration is over, open categorization vote
-          if (time_now > opinion.date + Utils.toTime(params_.opinion_duration)) {
+          // If categorization date has come, open categorization vote
+          if (time_now > Question.unwrapIteration(question).categorization.date) {
             let updated_question = Question.openCategorizationVote(question, time_now, categories);
             return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };
