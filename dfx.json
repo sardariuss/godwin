@@ -27,7 +27,6 @@
       "subnet_type": "system"
     }
   },
-  "dfx": "0.12.1",
   "networks": {
     "local": {
       "bind": "127.0.0.1:4943",
