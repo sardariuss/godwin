@@ -2,7 +2,10 @@
   "canisters": {
     "godwin_backend": {
       "main": "src/godwin_backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "declarations": {
+        "output" :  "src/godwin_frontend/declarations"
+      }
     },
     "godwin_frontend": {
       "dependencies": [

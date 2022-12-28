@@ -44,7 +44,7 @@ module {
     public func rejectQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
       var updated_questions = questions;
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #FWD);
+      let iter = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #fwd);
       label iter_oldest while(true){
         switch(Questions.next(questions, iter)){
           case(null){ break iter_oldest; };
@@ -66,7 +66,7 @@ module {
     public func deleteQuestions(questions: Questions, time_now: Time) : (Questions, [Question]) {
       var updated_questions = questions;
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = Questions.iter(questions, #STATUS_DATE(#REJECTED), #FWD);
+      let iter = Questions.iter(questions, #STATUS_DATE(#REJECTED), #fwd);
       label iter_oldest while(true){
         switch(Questions.next(questions, iter)){
           case(null){ break iter_oldest; };
@@ -85,7 +85,7 @@ module {
 
     public func openOpinionVote(questions: Questions, time_now: Time) : (Questions, ?Question) {
       if (time_now > last_selection_date_ + Utils.toTime(params_.selection_rate)) {
-        switch(Questions.first(questions, #INTEREST, #BWD)){
+        switch(Questions.first(questions, #INTEREST, #bwd)){
           case(null){};
           case(?question){ 
             let updated_question = Question.openOpinionVote(question, time_now, time_now + Utils.toTime(params_.opinion_duration));
@@ -98,7 +98,7 @@ module {
     };
 
     public func openCategorizationVote(questions: Questions, time_now: Time, categories: [Category]) : (Questions, ?Question) {
-      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #FWD)){
+      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
         case(null){};
         case(?question){
           // If categorization date has come, open categorization vote
@@ -112,7 +112,7 @@ module {
     };
 
     public func closeQuestion(questions: Questions, time_now: Time) : (Questions, ?Question) {
-      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #FWD)){
+      switch(Questions.first(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
         case(null){};
         case(?question){
           let iteration = Question.unwrapIteration(question);

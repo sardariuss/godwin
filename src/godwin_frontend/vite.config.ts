@@ -28,7 +28,7 @@ const canisterDefinitions = Object.entries(canisterIds).reduce(
 	{}
 );
 
-const DFX_PORT = 8000;
+const DFX_PORT = 4943;
 
 export default defineConfig({
 

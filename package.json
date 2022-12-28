@@ -1,5 +1,6 @@
 {
   "scripts": {
-    "build": "cd src/godwin_frontend && npm run build"
+    "build": "cd src/godwin_frontend && npm run build",
+    "dev": "cd src/godwin_frontend && npm run dev"
   }
 }

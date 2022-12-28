@@ -12,6 +12,7 @@
 
 # generated files
 src/declarations/
+src/godwin_frontend/declarations/
 
 # frontend code
 node_modules/

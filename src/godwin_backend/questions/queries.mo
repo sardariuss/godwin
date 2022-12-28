@@ -44,8 +44,8 @@ module {
 
   public type QueryQuestionsResult = { ids: [Nat32]; next_id: ?Nat32 };
   public type QueryDirection = {
-    #FWD;
-    #BWD;
+    #fwd;
+    #bwd;
   };
   public type QuestionKey = {
     id: Nat32;
@@ -280,8 +280,8 @@ module {
       case(null){ Debug.trap("Cannot find rbt for this order_by"); };
       case(?rbt){ 
         switch(direction){
-          case(#FWD) { RBT.entries(rbt); };
-          case(#BWD) { RBT.entriesRev(rbt); };
+          case(#fwd) { RBT.entries(rbt); };
+          case(#bwd) { RBT.entriesRev(rbt); };
         };
       };
     };

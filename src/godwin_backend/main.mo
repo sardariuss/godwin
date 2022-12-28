@@ -1,5 +1,6 @@
 import Question "questions/question";
 import Questions "questions/questions";
+import Queries "questions/queries";
 import CategoryCursorTrie "representation/categoryCursorTrie";
 import Cursor "representation/cursor";
 import Types "types";
@@ -13,6 +14,8 @@ import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
+import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 
 shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
@@ -101,6 +104,15 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
     Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
+  };
+
+  public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat) : async [Question] {
+    let query_result = Questions.queryQuestions(questions_, order_by, direction, limit);
+    let buffer = Buffer.Buffer<Question>(query_result.ids.size());
+    for (question_id in Array.vals(query_result.ids)){
+      buffer.add(Questions.getQuestion(questions_, question_id));
+    };
+    buffer.toArray();
   };
 
   public type OpenQuestionError = {

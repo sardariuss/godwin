@@ -78,21 +78,21 @@ module {
       };
       
       // Test iterating on selection stage
-      let iter_candidate = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #FWD);
+      let iter_candidate = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #fwd);
       tests.add(test("Iter on candidate question (1)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[6]))));
       tests.add(test("Iter on candidate question (2)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[1]))));
       tests.add(test("Iter on candidate question (3)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[0]))));
       // @todo: fix this
       //tests.add(test("Iter on candidate question (4)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_opinion = Questions.iter(questions, #STATUS_DATE(#OPEN(#OPINION)), #FWD);
+      let iter_opinion = Questions.iter(questions, #STATUS_DATE(#OPEN(#OPINION)), #fwd);
       tests.add(test("Iter on opinioned question (1)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[5]))));
       tests.add(test("Iter on opinioned question (2)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[8]))));
       tests.add(test("Iter on opinioned question (3)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[4]))));
       tests.add(test("Iter on opinioned question (4)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[9]))));
       tests.add(test("Iter on opinioned question (5)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_categorization = Questions.iter(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #FWD);
+      let iter_categorization = Questions.iter(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
       tests.add(test("Iter on categorized question (1)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[3]))));
       tests.add(test("Iter on categorized question (2)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[2]))));
       tests.add(test("Iter on categorized question (3)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));

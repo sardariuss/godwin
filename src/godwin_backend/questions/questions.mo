@@ -116,4 +116,13 @@ module {
     next(register, iter(register, order_by, direction));
   };
 
+  public func queryQuestions(
+    register: Register,
+    order_by: Queries.OrderBy,
+    direction: Queries.QueryDirection,
+    limit: Nat
+  ) : Queries.QueryQuestionsResult {
+    Queries.queryQuestions(register.rbts, order_by, null, null, direction, limit);
+  };
+
 };
