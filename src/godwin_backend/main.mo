@@ -8,6 +8,7 @@ import Categories "categories";
 import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
+import Decay "decay";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -31,15 +32,16 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type Iteration = Types.Iteration;
+  type DecayParams = Types.DecayParams;
 
   /// Members
   stable var categories_ = Categories.fromArray(parameters.categories);
-  stable var convictions_decay_ = parameters.convictions_decay;
+  stable var decay_params_ = Decay.computeOptDecayParams(Time.now(), parameters.convictions_half_life);
   stable var users_ = Users.empty();
   stable var questions_ = Questions.empty();
   // The compiler requires this function to be defined before its passed to the scheduler 
   func onClosingQuestion(question: Question) {
-    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, convictions_decay_);
+    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, decay_params_);
   };
   var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); }, onClosingQuestion);
 
@@ -48,6 +50,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public query func getSchedulerParams() : async SchedulerParams {
     scheduler_.share().params;
+  };
+
+  // Required to normalize the convictions in the front-end
+  public query func getDecayParams() : async ?DecayParams {
+    decay_params_;
   };
 
   public query func getCategories() : async [Category] {

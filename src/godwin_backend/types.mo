@@ -33,7 +33,12 @@ module {
   public type Parameters = {
     scheduler: SchedulerParams;
     categories: [Category];
-    convictions_decay: ?Float;
+    convictions_half_life: ?Duration;
+  };
+
+  public type DecayParams = {
+    lambda: Float;
+    shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
   public type Status = {

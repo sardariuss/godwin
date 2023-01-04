@@ -20,5 +20,5 @@ dfx deploy godwin_backend --argument '(record {
     "JUSTICE";
     "CHANGE";
   };
-  convictions_decay = null;
+  convictions_half_life = null;
 })'

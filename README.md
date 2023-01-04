@@ -24,20 +24,19 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - most interesting questions get selected
 - users can give their opinion on selected questions
 - selected questions get archived after a while, opinion aggregate is saved
-- admin can vote to categorize questions that have just been archived
+- users can vote to categorize questions that have just been archived
 - categorization closes after a while, categorization aggregate is saved, users' convictions get updated
-- the admin is be able to add or remove a category
 
 ### TO DO
-- implement hotness for #CANDIDATES and #CLOSED questions
-- add public getters for getters for every status of questions (#CANDIDATE, #OPEN(#OPINION), #OPEN(#CATEGORIZATION), #CLOSED, #REJECTED)
-  -> implement hotness for #CANDIDATE and #CLOSED questions, and remaining Queries.OrderBy needed
-- add tests for convictions decay
-- add public getters to get created/selected/archived questions. For selected questions, the getter automatically set the user's opinion to center for every selected question if no vote yet.
-
-### TO THINK
-- reward/penalize users with tokens.
-- categorization shall be made by randomly picked users
+- verify the queries module, some ORDER_BY could be missing
+- create a scenario through ic-repl to be able to easily test the front-end
+- implement the token (requires to find rules first)
+- add the main canister, be able to create sub-godwins
+- fix the convictions decay
+- investigate the elastic search
+- find out a new way to select the questions? what if no question to select, update last_selection_date ?
+- find out how to randomly select users for categorization
+- add tests (e.g. for convictions decay
 
 ### FOR LATER
 - being able to tag questions as duplicate
@@ -47,4 +46,3 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
  - be able to follow users
  - add political parties (as an average of profiles of its members.)
  - add ranking (or title) based on participation
- - per country platform + translations
