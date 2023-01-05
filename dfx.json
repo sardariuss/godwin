@@ -2,7 +2,10 @@
   "canisters": {
     "godwin_backend": {
       "main": "src/godwin_backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_backend"
+      }
     },
     "godwin_frontend": {
       "dependencies": [
@@ -15,7 +18,25 @@
         "src/godwin_frontend/assets",
         "src/godwin_frontend/dist"
       ],
-      "type": "assets"
+      "type": "assets",
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_frontend"
+      }
+    },
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm",
+      "shrink": false,
+      "remote": {
+        "candid": "internet_identity.did",
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/internet_identity"
+      }
     }
   },
   "defaults": {

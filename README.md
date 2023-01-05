@@ -28,6 +28,7 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - categorization closes after a while, categorization aggregate is saved, users' convictions get updated
 
 ### TO DO
+- remove access to complete question type in the main canister, and add missing getters (e.g. for interest)
 - verify the queries module, some ORDER_BY could be missing
 - create a scenario through ic-repl to be able to easily test the front-end
 - implement the token (requires to find rules first)

@@ -28,7 +28,7 @@ const canisterDefinitions = Object.entries(canisterIds).reduce(
 	{}
 );
 
-const DFX_PORT = 4943;
+const REPLICA_PORT = process.env.DFX_REPLICA_PORT ?? "4943";
 
 export default defineConfig({
 
@@ -39,6 +39,7 @@ export default defineConfig({
 		"process.env.NODE_ENV": JSON.stringify(
 			isDev ? "development" : "production"
 		),
+		"process.env.REPLICA_PORT": REPLICA_PORT
 	},
 
 	optimizeDeps: {
@@ -60,7 +61,7 @@ export default defineConfig({
 
 		proxy: {
 			"/api": {
-				target: isDev ? `http://localhost:${DFX_PORT}` : `https://ic0.app`,
+				target: isDev ? `http://localhost:${REPLICA_PORT}` : `https://ic0.app`,
 				changeOrigin: true,
 				secure: isDev ? false : true,
 				//rewrite: (path) => path.replace(/^\/api/, "/api"),

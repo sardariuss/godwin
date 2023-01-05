@@ -1,41 +1,20 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { AuthClient } from "@dfinity/auth-client";
-import { Actor, HttpAgent } from "@dfinity/agent";
-import { idlFactory } from "../../../declarations/godwin_backend/index";
 
-function Header() {
+import ActorContext from "../ActorContext"
 
-  const login = async () => {
-    console.log("Try to login!");
+import { _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
-    const authClient = await AuthClient.create();
-    
-    authClient.login({
-      // 7 days in nanoseconds
-      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
-      onSuccess: async () => {
-        await handleAuthenticated(authClient);
-      },
-    });
-  };
+import { useEffect, useState, useContext } from "react";
+import { ActorSubclass } from "@dfinity/agent";
 
-  const handleAuthenticated = async (authClient: AuthClient) => {
-    console.log("Successfully logged in!");
+type ActorContextValues = {
+  actor: ActorSubclass<_SERVICE>,
+  logged_in: boolean
+};
 
-    const canisterId = `${process.env.CYCLESPROVIDER_CANISTER_ID}`;
+function Header({login}: any) {
 
-    const identity = await authClient.getIdentity();
-    const actor = Actor.createActor(idlFactory, {
-      agent: new HttpAgent({
-        identity,
-      }),
-      canisterId,
-    });
-
-    const question_1 = await actor.openQuestion('Does it work to ask questions?', '');
-    console.log(question_1);
-  };
+  const {logged_in} = useContext(ActorContext) as ActorContextValues;
 
   return (
 		<>
@@ -63,7 +42,9 @@ function Header() {
                 <a href="#/archives" className="block py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-gray-400 md:dark:hover:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">Archives</a>
               </li>
               <li>
-                <button type="button" onClick={login} className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2">Log in</button>
+                <button type="button" onClick={login} className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2">
+                  { logged_in ? "Log out" : "Log in" }
+                </button>
               </li>
             </ul>
           </div>

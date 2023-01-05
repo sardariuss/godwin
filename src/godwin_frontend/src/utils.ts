@@ -1,4 +1,4 @@
-import { QuestionStatus } from "../../declarations/godwin_backend/godwin_backend.did";
+import { QuestionStatus } from "./../declarations/godwin_backend/godwin_backend.did";
 
 export const statusToString = (status: QuestionStatus) => {
   if (status['REJECTED'] !== undefined) { return 'REJECTED'; };
@@ -13,7 +13,7 @@ export const statusToString = (status: QuestionStatus) => {
 };
 
 export const nsToStrDate = (ns: bigint) => {
-  let date = new Date(Number(ns / 1000000n));
+  let date = new Date(Number(ns) / 1000000);
 	return date.toLocaleString("en-US", {
     year: "numeric",
 		hour: "numeric",
