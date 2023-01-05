@@ -1,5 +1,4 @@
 import Types "../types";
-import Interests "../votes/interests";
 import Vote "../votes/vote";
 import Queries "queries";
 
@@ -18,11 +17,8 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from types module
   type Question = Types.Question;
-  type Vote<B, A> = Types.Vote<B, A>;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-
-  type Time = Int;
 
   public type Register = {
     questions: Trie<Nat32, Question>;
@@ -56,7 +52,7 @@ module {
     Trie.get(register.questions, Types.keyNat32(question_id), Nat32.equal);
   };
 
-  public func createQuestion(register: Register, author: Principal, date: Time, title: Text, text: Text) : (Register, Question) {
+  public func createQuestion(register: Register, author: Principal, date: Int, title: Text, text: Text) : (Register, Question) {
     let question = {
       id = register.question_index;
       author;

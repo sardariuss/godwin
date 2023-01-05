@@ -46,7 +46,7 @@ module {
 
       var questions = Questions.empty();
       questions := Questions.createQuestion(questions, principals[0], 0, "Sexual orientation is a social construct", "").0;
-      questions := Questions.replaceQuestion(questions, Question.openOpinionVote(Questions.getQuestion(questions, 0), 0, 0));
+      questions := Questions.replaceQuestion(questions, Question.openOpinionVote(Questions.getQuestion(questions, 0), 0));
 
       // Create the users
       for (principal in Array.vals(principals)){

@@ -25,10 +25,10 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Category = Types.Category;
 
-  public func new(opinion_date: Int, categorization_date: Int) : Iteration {
+  public func new(date: Int) : Iteration {
     {
-      opinion = Vote.new<Cursor, Polarization>(opinion_date, Polarization.nil());
-      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(categorization_date, CategoryPolarizationTrie.nil([])); 
+      opinion = Vote.new<Cursor, Polarization>(date, Polarization.nil());
+      categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(0, CategoryPolarizationTrie.nil([])); 
     };
   };
 

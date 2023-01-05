@@ -88,7 +88,7 @@ module {
         switch(Questions.first(questions, #INTEREST, #bwd)){
           case(null){};
           case(?question){ 
-            let updated_question = Question.openOpinionVote(question, time_now, time_now + Utils.toTime(params_.opinion_duration));
+            let updated_question = Question.openOpinionVote(question, time_now);
             last_selection_date_ := time_now;
             return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };
@@ -101,8 +101,9 @@ module {
       switch(Questions.first(questions, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
         case(null){};
         case(?question){
+          let iteration = Question.unwrapIteration(question);
           // If categorization date has come, open categorization vote
-          if (time_now > Question.unwrapIteration(question).categorization.date) {
+          if (time_now > iteration.opinion.date + Utils.toTime(params_.opinion_duration)) {
             let updated_question = Question.openCategorizationVote(question, time_now, categories);
             return (Questions.replaceQuestion(questions, updated_question), ?updated_question);
           };

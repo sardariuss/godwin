@@ -50,7 +50,7 @@ module {
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0, 0); });
+        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0); });
         interests_history = [];
         vote_history = []; 
       };
@@ -61,7 +61,7 @@ module {
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0, 0); });
+        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0); });
         interests_history = [];
         vote_history = []; 
       };

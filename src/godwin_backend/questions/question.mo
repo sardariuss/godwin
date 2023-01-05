@@ -5,9 +5,7 @@ import Iteration "../votes/iteration";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 import CategoryCursorTrie "../representation/categoryCursorTrie";
 import Utils "../utils";
-import Categories "../categories";
 
-import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Nat32 "mo:base/Nat32";
 import Principal "mo:base/Principal";
@@ -25,7 +23,6 @@ module {
   type InterestAggregate = Types.InterestAggregate;
   type Cursor = Types.Cursor;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type Polarization = Types.Polarization;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Vote<B, A> = Types.Vote<B, A>;
   type Iteration = Types.Iteration;
@@ -62,15 +59,15 @@ module {
 
   public func getStatus(question: Question) : Status {
     switch(question.status) {
-      case(#CANDIDATE(_)) { #CANDIDATE; };
+      case(#CANDIDATE(_))       { #CANDIDATE;             };
       case(#OPEN({stage;})) { 
         switch(stage){
           case(#OPINION)        { #OPEN(#OPINION);        };
           case(#CATEGORIZATION) { #OPEN(#CATEGORIZATION); };
         };
       };
-      case(#CLOSED(_)) { #CLOSED; };
-      case(#REJECTED(_)) { #REJECTED; };
+      case(#CLOSED(_))          { #CLOSED;                };
+      case(#REJECTED(_))        { #REJECTED;              };
     };
   };
 
@@ -103,12 +100,12 @@ module {
     };
   };
 
-  public func openOpinionVote(question: Question, opinion_date: Int, categorization_date: Int) : Question {
+  public func openOpinionVote(question: Question, date: Int) : Question {
     switch(question.status){
       case(#CANDIDATE(interests)) {
         { 
           question with 
-          status = #OPEN({ stage = #OPINION; iteration = Iteration.new(opinion_date, categorization_date); });
+          status = #OPEN({ stage = #OPINION; iteration = Iteration.new(date); });
           interests_history = Utils.append(question.interests_history, [interests]);
         };
       };

@@ -56,7 +56,7 @@ module {
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0, 0), 0, Categories.toArray(categories)); } );
+        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 0, Categories.toArray(categories)); } );
         interests_history = [];
         vote_history = []; 
       };
@@ -79,7 +79,7 @@ module {
         title = "";
         text = "";
         date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0, 0), 0, Categories.toArray(categories)); });
+        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 0, Categories.toArray(categories)); });
         interests_history = [];
         vote_history = []; 
       };
