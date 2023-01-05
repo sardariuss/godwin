@@ -16,4 +16,4 @@ Suite.run(TestOpinions.TestOpinions().getSuite());
 Suite.run(TestCategorizations.TestCategorizations().getSuite());
 Suite.run(TestScheduler.TestScheduler().getSuite());
 Suite.run(TestUsers.TestUsers().getSuite());
-//Suite.run(TestHotRanking.TestHotRanking().getSuite());
+Suite.run(TestHotRanking.TestHotRanking().getSuite());

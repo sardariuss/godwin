@@ -40,6 +40,7 @@ module {
     #CREATION_DATE;
     #STATUS_DATE: Status;
     #INTEREST;
+    #INTEREST_HOT;
   };
 
   public type QueryQuestionsResult = { ids: [Nat32]; next_id: ?Nat32 };
@@ -56,6 +57,7 @@ module {
       #CREATION_DATE: DateEntry;
       #STATUS_DATE: DateEntry;
       #INTEREST: InterestEntry;
+      #INTEREST_HOT: InterestHotEntry;
     };
   };
 
@@ -63,6 +65,7 @@ module {
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
   type InterestEntry = Int;
+  type InterestHotEntry = Float;
   type StatusDateEntry = {
     status: Status;
     date: Int;
@@ -86,6 +89,7 @@ module {
         };
       };
       case(#INTEREST) { "INTEREST"; };
+      case(#INTEREST_HOT) { "INTEREST_HOT"; };
     };
   };
   func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -101,6 +105,7 @@ module {
       case(#CREATION_DATE){ initDateEntry(question); };
       case(#STATUS_DATE(status)) { initStatusDateEntry(status, question); };
       case(#INTEREST) { initInterestEntry(question); };
+      case(#INTEREST_HOT) { initInterestHotEntry(question); };
     };
   };
   func initDateEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #CREATION_DATE({date = question.date; }); }};
@@ -120,13 +125,19 @@ module {
     };
   };
 
-//  func initCreationHotEntry(question: Question) : CreationHotEntry { 
-//    // When based on creation date, the hot algorithm assumes the date is in the past
-//    // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
-//    // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
-//    // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
-//    Float.log(Float.max(Float.fromInt(question.interests.score), 1.0)) / 2.303 + Float.fromInt(question.date * 1_000_000_000) / 45000.0;
-//  };
+  func initInterestHotEntry(question: Question) : ?QuestionKey {
+    switch(question.status){
+      case(#CANDIDATE(vote)) { 
+        // When based on creation date, the hot algorithm assumes the date is in the past
+        // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
+        // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
+        // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
+        let hot = Float.log(Float.max(Float.fromInt(vote.aggregate.score), 1.0)) / 2.303 + Float.fromInt(vote.date * 1_000_000_000) / 45000.0;
+        ?{ id = question.id; data = #INTEREST_HOT(hot); }; 
+      };
+      case(_) { null; };
+    };
+  };
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
@@ -168,6 +179,12 @@ module {
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
+      case(#INTEREST_HOT(entry_a)){
+        switch(b.data){
+          case(#INTEREST_HOT(entry_b)) { compareFloat(entry_a, entry_b, default_order); };
+          case(_){Debug.trap("Cannot compare entries of different types")};
+        };
+      };
     };
   };
 
@@ -186,6 +203,9 @@ module {
   };
   func compareTextEntry(a: TextEntry, b: TextEntry, default_order: Order) : Order {
     compare<Text>(a.text, b.text, Text.compare, compareDateEntry(a, b, default_order));
+  };
+  func compareFloat(a: Float, b: Float, default_order: Order) : Order {
+    compare<Float>(a, b, Float.compare, default_order);
   };
 
   // Public functions
