@@ -32,11 +32,10 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - create a scenario through ic-repl to be able to easily test the front-end
 - implement the token (requires to find rules first)
 - add the main canister, be able to create sub-godwins
-- fix the convictions decay
 - investigate the elastic search
 - find out a new way to select the questions? what if no question to select, update last_selection_date ?
 - find out how to randomly select users for categorization
-- add tests (e.g. for convictions decay
+- add tests (e.g. for convictions decay)
 
 ### FOR LATER
 - being able to tag questions as duplicate

@@ -93,7 +93,7 @@ module {
   func keyOrderBy(order_by: OrderBy) : Key<OrderBy> { { key = order_by; hash = hashOrderBy(order_by); } };
 
   // Init functions
-  func initQuestionKey(question: Question, order_by: OrderBy) : ?QuestionKey {
+  public func initQuestionKey(question: Question, order_by: OrderBy) : ?QuestionKey {
     switch(order_by){
       case(#AUTHOR){ initAuthorEntry(question); };
       case(#TITLE){ initTitleEntry(question); };

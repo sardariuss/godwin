@@ -113,13 +113,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
   };
 
-  public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat) : async [Question] {
-    let query_result = Questions.queryQuestions(questions_, order_by, direction, limit);
-    let buffer = Buffer.Buffer<Question>(query_result.ids.size());
-    for (question_id in Array.vals(query_result.ids)){
-      buffer.add(Questions.getQuestion(questions_, question_id));
-    };
-    buffer.toArray();
+  public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat32) : async Queries.QueryQuestionsResult {
+    Questions.queryQuestions(questions_, order_by, direction, limit, previous_id);
   };
 
   public type OpenQuestionError = {

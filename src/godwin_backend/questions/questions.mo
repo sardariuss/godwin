@@ -8,6 +8,7 @@ import Nat32 "mo:base/Nat32";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
+import Option "mo:base/Option";
 
 module {
 
@@ -120,9 +121,20 @@ module {
     register: Register,
     order_by: Queries.OrderBy,
     direction: Queries.QueryDirection,
-    limit: Nat
+    limit: Nat,
+    previous_id: ?Nat32
   ) : Queries.QueryQuestionsResult {
-    Queries.queryQuestions(register.rbts, order_by, null, null, direction, limit);
+    let bound = Option.chain(previous_id, func(id: Nat32) : ?Queries.QuestionKey {
+      Queries.initQuestionKey(getQuestion(register, id), order_by);
+    });
+    switch(direction){
+      case(#fwd){
+        Queries.queryQuestions(register.rbts, order_by, bound, null, direction, limit);
+      };
+      case(#bwd){
+        Queries.queryQuestions(register.rbts, order_by, null, bound, direction, limit);
+      };
+    };
   };
 
 };
