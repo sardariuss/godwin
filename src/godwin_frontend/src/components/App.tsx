@@ -7,8 +7,8 @@ import { _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did
 
 import { ActorSubclass, Actor, Identity, AnonymousIdentity } from "@dfinity/agent";
 
-import { Route, Routes, HashRouter } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
+import { useState } from "react";
 
 import { AuthClient } from "@dfinity/auth-client";
 import { godwin_backend } from "./../../declarations/godwin_backend";
@@ -61,15 +61,46 @@ function App() {
   return (
 		<>
       <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900 justify-between">
-        <HashRouter>
-          <ActorProvider value={{actor, logged_in}}>
-            <div className="flex flex-col">    
-              <Header login={login}/>
-              <ListQuestions/>
+        <ActorProvider value={{actor, logged_in}}>
+          <div className="flex flex-col">    
+            <Header login={login}/>
+            <div className="border border-none">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <ListQuestions key={"list_interest"} order_by={{ 'INTEREST' : null }} query_direction={{ 'bwd' : null }}/>
+                }
+              />
+              <Route
+                path="/opinion"
+                element={
+                  <ListQuestions key={"list_opinion"} order_by={{ 'STATUS_DATE' : { 'OPEN' : { 'OPINION' : null } }}} query_direction={{ 'fwd' : null }}/>
+                }
+              />
+                <Route
+                path="/categorization"
+                element={
+                  <ListQuestions key={"list_categorization"} order_by={{ 'STATUS_DATE' : { 'OPEN' : { 'CATEGORIZATION' : null } }}} query_direction={{ 'fwd' : null }}/>
+                }
+              />
+                <Route
+                path="/archives"
+                element={
+                  <ListQuestions key={"list_archive"} order_by={{ 'STATUS_DATE' : { 'CLOSED' : null } }} query_direction={{ 'fwd' : null }}/>
+                }
+              />
+              <Route
+                path="/rejected"
+                element={
+                  <ListQuestions key={"list_rejected"} order_by={{ 'STATUS_DATE' : { 'REJECTED' : null } }} query_direction={{ 'fwd' : null }}/>
+                }
+              />
+              </Routes>
             </div>
-            <Footer/>
-          </ActorProvider>
-        </HashRouter>
+          </div>
+          <Footer/>
+        </ActorProvider>
       </div>
     </>
   );

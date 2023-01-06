@@ -3,6 +3,8 @@ import Questions "questions/questions";
 import Queries "questions/queries";
 import CategoryCursorTrie "representation/categoryCursorTrie";
 import Cursor "representation/cursor";
+import Iteration "votes/iteration";
+import Vote "votes/vote";
 import Types "types";
 import Categories "categories";
 import Users "users";
@@ -33,6 +35,8 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryCursorArray = Types.CategoryCursorArray;
   type Iteration = Types.Iteration;
   type DecayParams = Types.DecayParams;
+  type Status = Types.Status;
+  type InterestAggregate = Types.InterestAggregate;
 
   /// Members
   stable var categories_ = Categories.fromArray(parameters.categories);
@@ -115,6 +119,35 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat32) : async Queries.QueryQuestionsResult {
     Questions.queryQuestions(questions_, order_by, direction, limit, previous_id);
+  };
+
+  public type CreateQuestionError = {
+    #PrincipalIsAnonymous;
+    #InsufficientCredentials;
+  };
+
+  public shared({caller}) func createQuestions(titles: [Text], status: Status) : async Result<[Question], CreateQuestionError> {
+    Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(caller), func () {
+      Result.mapOk<User, [Question], CreateQuestionError>(getUser(caller), func(_) {
+        let buffer = Buffer.Buffer<Question>(titles.size());
+        for (title in Array.vals(titles)){
+          let date = Time.now();
+          let (questions, question) = Questions.createQuestion(questions_, caller, date, title, "");
+          questions_ := questions;
+          // Update the question based on status
+          let updated_question = switch(status){
+            case(#CANDIDATE){ question; };
+            case(#OPEN(#OPINION)) { { question with status = #OPEN({ stage = #OPINION; iteration = Iteration.new(date); }); } };
+            case(#OPEN(#CATEGORIZATION)) { { question with status = #OPEN({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(date), date, Categories.toArray(categories_)); }); } };
+            case(#CLOSED){ { question with status = #CLOSED(date); interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = 0; })]; vote_history = [Iteration.openCategorization(Iteration.new(date), date, Categories.toArray(categories_))] } };
+            case(#REJECTED){ { question with status = #REJECTED(date); } };
+          };
+          questions_ := Questions.replaceQuestion(questions_, updated_question);
+          buffer.add(updated_question);
+        };
+        buffer.toArray();
+      })
+    });
   };
 
   public type OpenQuestionError = {
