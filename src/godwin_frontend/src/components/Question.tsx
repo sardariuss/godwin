@@ -3,6 +3,7 @@ import ActorContext from "../ActorContext"
 import VoteInterest from "./votes/Interest";
 import VoteOpinion from "./votes/Opinion";
 import VoteCategorization from "./votes/Categorization";
+import Aggregates from "./votes/Aggregates";
 
 import { statusToString, nsToStrDate } from "../utils";
 
@@ -35,20 +36,23 @@ const QuestionBody = ({question_id, categories}: Props) => {
 	}
 
 	// @todo: need to check status and handle case where history is empty
-	const getInterestAggregate = async () => {
+	const getInterestAggregate = () => {
 		const interests : Vote[] = question?.interests_history === undefined ? [] : question?.interests_history;
+		if (interests.length == 0) { return undefined; }
 		return interests[interests.length - 1].aggregate;
 	};
 
 	// @todo: need to check status and handle case where history is empty
-	const getOpinionAggregate = async () => {
+	const getOpinionAggregate = () => {
 		const iterations : Iteration[] = question?.vote_history === undefined ? [] : question?.vote_history;
+		if (iterations.length == 0) { return undefined; }
 		return iterations[iterations.length - 1].opinion.aggregate;
 	};
 
 	// @todo: need to check status and handle case where history is empty
-	const getCategorizationAggregate = async () => {
+	const getCategorizationAggregate = () => {
 		const iterations : Iteration[] = question?.vote_history === undefined ? [] : question?.vote_history;
+		if (iterations.length == 0) { return undefined; }
 		return iterations[iterations.length - 1].categorization.aggregate;
 	};
 
@@ -69,7 +73,11 @@ const QuestionBody = ({question_id, categories}: Props) => {
 						<VoteCategorization question_id={question_id} categories={categories}/> :
 						<div>@todo impossible</div>
 					) : question?.status['CLOSED'] !== undefined || question?.status['REJECTED'] !== undefined ?
-						<div>Revealed</div> : <div>@todo impossible</div>
+						<Aggregates 
+							interest_aggregate={getInterestAggregate()}
+							opinion_aggregate={getOpinionAggregate()}
+							categorization_aggregate={getCategorizationAggregate()}
+						/> : <div>@todo impossible</div>
 				}
 				<div className="flex flex-col justify-start gap-x-10 text-lg font-semibold">
 					<div className="flex flex-row justify-start gap-x-10 text-lg font-semibold">

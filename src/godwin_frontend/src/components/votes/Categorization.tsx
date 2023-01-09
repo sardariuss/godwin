@@ -21,9 +21,7 @@ const VoteCategorization = ({question_id, categories}: Props) => {
   const [categorization, setCategorization] = useState<Map<string, number>>(new Map(categories.map(category => [category, 0.0])));
 
   const updateCategorization = async () => {
-		console.log("updateCategorization");
-		let categorizationResult = await actor.setCategorization(question_id, Array.from(categorization));
-		console.log(categorizationResult);
+		await actor.setCategorization(question_id, Array.from(categorization));
 	}
 
   const updateCategory = (category: string, cursor: number) => {

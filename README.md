@@ -28,6 +28,8 @@ Some [tools](https://www.reddit.com/r/PoliticalCompass/) do exist to give to ind
 - categorization closes after a while, categorization aggregate is saved, users' convictions get updated
 
 ### TO DO
+- remove the TempStatus and createQuestions; find another way to create scenarios
+- remove trieToArray function from canister: create a new type PublicQuestion with Status instead of QuestionStatus, and aggregates as array in both histories
 - remove access to complete question type in the main canister, and add missing getters (e.g. for interest)
 - create a scenario through ic-repl to be able to easily test the front-end
 - implement the token (requires to find rules first)

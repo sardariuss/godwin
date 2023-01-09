@@ -1,24 +1,20 @@
 import Question "questions/question";
 import Questions "questions/questions";
 import Queries "questions/queries";
-import CategoryCursorTrie "representation/categoryCursorTrie";
 import Cursor "representation/cursor";
-import Iteration "votes/iteration";
-import Vote "votes/vote";
 import Types "types";
 import Categories "categories";
 import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
 import Decay "decay";
+import Admin "admin";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
-import Buffer "mo:base/Buffer";
-import Array "mo:base/Array";
 
 shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
@@ -33,10 +29,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
-  type Iteration = Types.Iteration;
   type DecayParams = Types.DecayParams;
-  type Status = Types.Status;
-  type InterestAggregate = Types.InterestAggregate;
 
   /// Members
   stable var categories_ = Categories.fromArray(parameters.categories);
@@ -126,26 +119,12 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     #InsufficientCredentials;
   };
 
-  public shared({caller}) func createQuestions(titles: [Text], status: Status) : async Result<[Question], CreateQuestionError> {
+  public shared({caller}) func createQuestions(inputs: [(Text, Admin.CreateQuestionStatus)]) : async Result<[Question], CreateQuestionError> {
     Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(caller), func () {
       Result.mapOk<User, [Question], CreateQuestionError>(getUser(caller), func(_) {
-        let buffer = Buffer.Buffer<Question>(titles.size());
-        for (title in Array.vals(titles)){
-          let date = Time.now();
-          let (questions, question) = Questions.createQuestion(questions_, caller, date, title, "");
-          questions_ := questions;
-          // Update the question based on status
-          let updated_question = switch(status){
-            case(#CANDIDATE){ question; };
-            case(#OPEN(#OPINION)) { { question with status = #OPEN({ stage = #OPINION; iteration = Iteration.new(date); }); } };
-            case(#OPEN(#CATEGORIZATION)) { { question with status = #OPEN({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(date), date, Categories.toArray(categories_)); }); } };
-            case(#CLOSED){ { question with status = #CLOSED(date); interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = 0; })]; vote_history = [Iteration.openCategorization(Iteration.new(date), date, Categories.toArray(categories_))] } };
-            case(#REJECTED){ { question with status = #REJECTED(date); } };
-          };
-          questions_ := Questions.replaceQuestion(questions_, updated_question);
-          buffer.add(updated_question);
-        };
-        buffer.toArray();
+        let (questions, output) = Admin.createQuestions(questions_, caller, inputs);
+        questions_ := questions;
+        output;
       })
     });
   };
@@ -278,6 +257,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
       users_ := users;
       #ok(user);
     };
+  };
+
+  // @todo: remove
+  public query func polarizationTrieToArray(trie: Types.CategoryPolarizationTrie) : async Types.CategoryPolarizationArray {
+    Utils.trieToArray(trie);
   };
 
   system func preupgrade(){

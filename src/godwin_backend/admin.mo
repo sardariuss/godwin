@@ -1,0 +1,104 @@
+import Types "types";
+import Question "questions/question";
+import Questions "questions/questions";
+import Vote "votes/vote";
+import Utils "utils";
+
+import Result "mo:base/Result";
+import Time "mo:base/Time";
+import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
+import Text "mo:base/Text";
+import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
+
+module {
+
+  // For convenience: from base module
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  // For convenience: from types module
+  type Question = Types.Question;
+  type InterestAggregate = Types.InterestAggregate;
+  type Polarization = Types.Polarization;
+  type CategoryCursorTrie = Types.CategoryCursorTrie;
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type CategoryPolarizationArray = Types.CategoryPolarizationArray;
+  type Interest = Types.Interest;
+  type Cursor = Types.Cursor;
+  type Register = Questions.Register;
+
+  public type CreateQuestionError = {
+    #PrincipalIsAnonymous;
+    #InsufficientCredentials;
+  };
+
+  public type CreateQuestionStatus = {
+    #CANDIDATE: { interest_score: Int; };
+    #OPEN: {
+      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
+      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+    };
+    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+    #REJECTED : { interest_score: Int; };
+  };
+
+  public func createQuestions(register: Register, principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : (Register, [Question]){
+    var updated_register = register;
+    let buffer = Buffer.Buffer<Question>(inputs.size());
+    for (input in Array.vals(inputs)){
+      let date = Time.now();
+      let (questions, question) = Questions.createQuestion(updated_register, principal, date, input.0, "");
+      updated_register := questions;
+      // Update the question based on status
+      let updated_question = switch(input.1){
+        case(#CANDIDATE({ interest_score; })){ 
+          { 
+            question with 
+            status = #CANDIDATE(Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = interest_score; })) 
+          } 
+        };
+        case(#OPEN(#OPINION({ interest_score; opinion_aggregate; }))) { 
+          { 
+            question with 
+            interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = interest_score; })]; 
+            status = #OPEN({ stage = #OPINION; iteration = { 
+              opinion = Vote.new<Cursor, Polarization>(date, opinion_aggregate); 
+              categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(0, CategoryPolarizationTrie.nil([])); 
+            }; }); 
+          }
+        };
+        case(#OPEN(#CATEGORIZATION({ interest_score; opinion_aggregate; categorization_aggregate; }))) { 
+          { 
+            question with 
+            interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = 0; })]; 
+            status = #OPEN({ stage = #CATEGORIZATION; iteration = { 
+              opinion = Vote.new<Cursor, Polarization>(date, opinion_aggregate); 
+              categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(0, Utils.arrayToTrie(categorization_aggregate, Types.keyText, Text.equal));
+            };});
+          } 
+        };
+        case(#CLOSED({ interest_score; opinion_aggregate; categorization_aggregate; })){
+          { 
+            question with 
+            status = #CLOSED(date);
+            interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = interest_score; })];
+            vote_history = [{ 
+              opinion = Vote.new<Cursor, Polarization>(date, opinion_aggregate);
+              categorization = Vote.new<CategoryCursorTrie, CategoryPolarizationTrie>(0, Utils.arrayToTrie(categorization_aggregate, Types.keyText, Text.equal)); 
+            }]
+          }
+        };
+        case(#REJECTED({ interest_score; })){ 
+          { 
+            question with 
+            status = #REJECTED(date);
+            interests_history = [Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = interest_score; })];
+          }
+        };
+      };
+      updated_register := Questions.replaceQuestion(updated_register, updated_question);
+      buffer.add(updated_question);
+    };
+    (updated_register, buffer.toArray());
+  };
+
+};
