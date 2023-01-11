@@ -24,7 +24,7 @@ module {
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
   type Interest = Types.Interest;
   type Cursor = Types.Cursor;
-  type Register = Questions.Register;
+  type Questions = Questions.Questions;
 
   public type CreateQuestionError = {
     #PrincipalIsAnonymous;
@@ -41,13 +41,11 @@ module {
     #REJECTED : { interest_score: Int; };
   };
 
-  public func createQuestions(register: Register, principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : (Register, [Question]){
-    var updated_register = register;
+  public func createQuestions(questions: Questions, principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : [Question] {
     let buffer = Buffer.Buffer<Question>(inputs.size());
     for (input in Array.vals(inputs)){
       let date = Time.now();
-      let (questions, question) = Questions.createQuestion(updated_register, principal, date, input.0, "");
-      updated_register := questions;
+      let question = questions.createQuestion(principal, date, input.0, "");
       // Update the question based on status
       let updated_question = switch(input.1){
         case(#CANDIDATE({ interest_score; })){ 
@@ -95,10 +93,10 @@ module {
           }
         };
       };
-      updated_register := Questions.replaceQuestion(updated_register, updated_question);
+      questions.replaceQuestion(updated_question);
       buffer.add(updated_question);
     };
-    (updated_register, buffer.toArray());
+    buffer.toArray();
   };
 
 };

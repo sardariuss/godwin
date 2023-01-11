@@ -32,11 +32,14 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryCursorArray = Types.CategoryCursorArray;
   type DecayParams = Types.DecayParams;
 
-  /// Members
+  /// Stable types
   stable var categories_ = Categories.fromArray(parameters.categories);
   stable var decay_params_ = Decay.computeOptDecayParams(Time.now(), parameters.convictions_half_life);
   stable var users_ = Users.empty();
-  stable var questions_ = Questions.empty();
+  stable var questions_register_ = Questions.initRegister();
+
+  /// Members
+  let questions_ = Questions.Questions(questions_register_);
   // The compiler requires this function to be defined before its passed to the scheduler 
   func onClosingQuestion(question: Question) {
     users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, decay_params_);
@@ -108,11 +111,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
-    Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound);
+    Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
   };
 
   public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat32) : async Queries.QueryQuestionsResult {
-    Questions.queryQuestions(questions_, order_by, direction, limit, previous_id);
+    questions_.queryQuestions(order_by, direction, limit, previous_id);
   };
 
   public type CreateQuestionError = {
@@ -123,9 +126,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public shared({caller}) func createQuestions(inputs: [(Text, Admin.CreateQuestionStatus)]) : async Result<[Question], CreateQuestionError> {
     Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(caller), func () {
       Result.mapOk<User, [Question], CreateQuestionError>(getUser(caller), func(_) {
-        let (questions, output) = Admin.createQuestions(questions_, caller, inputs);
-        questions_ := questions;
-        output;
+        Admin.createQuestions(questions_, caller, inputs);
       })
     });
   };
@@ -136,17 +137,15 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func openQuestion(title: Text, text: Text) : async Result<Question, OpenQuestionError> {
     Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
-      let (questions, question) = Questions.createQuestion(questions_, caller, Time.now(), title, text);
-      questions_ := questions;
-      question;
+      questions_.createQuestion(caller, Time.now(), title, text);
     });
   };
 
   public shared({caller}) func reopenQuestion(question_id: Nat32) : async Result<(), InterestError> {
     Result.chain<User, (), InterestError>(getUser(caller), func(_) {
-      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         Result.mapOk<Question, (), InterestError>(Question.reopenQuestion(question), func(question) {
-          questions_ := Questions.replaceQuestion(questions_, question);
+          questions_.replaceQuestion(question);
         });
       })
     });
@@ -160,9 +159,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func setInterest(question_id: Nat32, interest: Interest) : async Result<(), InterestError> {
     Result.chain<User, (), InterestError>(getUser(caller), func(_) {
-      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         Result.mapOk<Question, (), InterestError>(Question.putInterest(question, caller, interest), func(question) {
-          questions_ := Questions.replaceQuestion(questions_, question);
+          questions_.replaceQuestion(question);
         });
       })
     });
@@ -170,9 +169,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
     Result.chain<User, (), InterestError>(getUser(caller), func(_) {
-      Result.chain<Question, (), InterestError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+      Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, caller), func(question) {
-          questions_ := Questions.replaceQuestion(questions_, question);
+          questions_.replaceQuestion(question);
         });
       })
     });
@@ -188,9 +187,9 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
     Result.chain<User, (), OpinionError>(getUser(caller), func(_) {
       Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-        Result.chain<Question, (), OpinionError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+        Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<Question, (), OpinionError>(Question.putOpinion(question, caller, cursor), func(question) {
-            questions_ := Questions.replaceQuestion(questions_, question);
+            questions_.replaceQuestion(question);
           });
         })
       })
@@ -206,10 +205,10 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func setCategorization(question_id: Nat32, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     Result.chain<User, (), CategorizationError>(getUser(caller), func(_) {
-      Result.chain<Question, (), CategorizationError>(Result.fromOption(Questions.findQuestion(questions_, question_id), #QuestionNotFound), func(question) {
+      Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         let cursor_trie = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal);
         Result.mapOk<Question, (), CategorizationError>(Question.putCategorization(question, caller, cursor_trie), func(question) {
-          questions_ := Questions.replaceQuestion(questions_, question);
+          questions_.replaceQuestion(question);
         });
       })
     });
@@ -217,11 +216,11 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func run() {
     let time_now = Time.now();
-    questions_ := scheduler_.openOpinionVote(questions_, time_now).0;
-    questions_ := scheduler_.openCategorizationVote(questions_, time_now, Categories.toArray(categories_)).0;
-    questions_ := scheduler_.closeQuestion(questions_, time_now).0;
-    questions_ := scheduler_.rejectQuestions(questions_, time_now).0;
-    questions_ := scheduler_.deleteQuestions(questions_, time_now).0;
+    ignore scheduler_.openOpinionVote(questions_, time_now);
+    ignore scheduler_.openCategorizationVote(questions_, time_now, Categories.toArray(categories_));
+    ignore scheduler_.closeQuestion(questions_, time_now);
+    ignore scheduler_.rejectQuestions(questions_, time_now);
+    ignore scheduler_.deleteQuestions(questions_, time_now);
   };
 
   public query func findUser(principal: Principal) : async ?User {

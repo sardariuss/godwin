@@ -44,9 +44,9 @@ module {
 
       var users = Users.empty();
 
-      var questions = Questions.empty();
-      questions := Questions.createQuestion(questions, principals[0], 0, "Sexual orientation is a social construct", "").0;
-      questions := Questions.replaceQuestion(questions, Question.openOpinionVote(Questions.getQuestion(questions, 0), 0));
+      var questions = Questions.Questions(Questions.initRegister());
+      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
+      questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 
       // Create the users
       for (principal in Array.vals(principals)){
@@ -74,16 +74,16 @@ module {
       };
 
       // Users 0 and 1 give their opinions
-      Result.iterate(Question.putOpinion(Questions.getQuestion(questions, 0), principals[0], 0.0), func(question: Question) {
-        questions := Questions.replaceQuestion(questions, question);
+      Result.iterate(Question.putOpinion(questions.getQuestion(0), principals[0], 0.0), func(question: Question) {
+        questions.replaceQuestion(question);
       });
       
-      Result.iterate(Question.putOpinion(Questions.getQuestion(questions, 0), principals[1], 1.0), func(question: Question) {
-        questions := Questions.replaceQuestion(questions, question);
+      Result.iterate(Question.putOpinion(questions.getQuestion(0), principals[1], 1.0), func(question: Question) {
+        questions.replaceQuestion(question);
       });
 
       // Categorize the question
-      var iteration = Question.unwrapIteration(Questions.getQuestion(questions, 0));
+      var iteration = Question.unwrapIteration(questions.getQuestion(0));
       var categorization = iteration.categorization;
       categorization := { categorization with aggregate = Utils.arrayToTrie([
             ("IDENTITY", {left = 0.0; center = 0.0; right = 1.0;}),
@@ -91,7 +91,7 @@ module {
             ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
           ], Types.keyText, Text.equal); };
       iteration := { iteration with categorization; };
-      questions := Questions.replaceQuestion(questions, { Questions.getQuestion(questions, 0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
+      questions.replaceQuestion({ questions.getQuestion(0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
 
       users := Users.updateConvictions(users, iteration, [], null);
 

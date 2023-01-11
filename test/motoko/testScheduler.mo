@@ -33,7 +33,7 @@ module {
   // @todo: This test is too complex to follow through, it needs to be simplified
   public class TestScheduler() = {
 
-    var questions_ = Questions.empty();
+    let questions_ = Questions.Questions(Questions.initRegister());
 
     var on_closing_called_ : Bool = false;
 
@@ -60,11 +60,11 @@ module {
       { date = 102; author = Principal.fromText("zoyw4-o2dcy-xajcf-e2nvu-436rg-ghrbs-35bzk-nakpb-mvs7t-x4byt-nqe"); title = "The police should be armed.";                text = ""; },
     ];
 
-    func updateQuestions(update: (Questions, ?Question)) : ?Question {
-      Option.iterate(update.1, func(question: Question) {
-        questions_ := Questions.replaceQuestion(update.0, question);
+    func updateQuestions(opt_question: ?Question) : ?Question {
+      Option.iterate(opt_question, func(question: Question) {
+        questions_.replaceQuestion(question);
       });
-      update.1;
+      opt_question
     };
 
     public func getSuite() : Suite.Suite {
@@ -74,20 +74,20 @@ module {
       // Add the questions
       for (index in Array.keys(question_inputs_)){
         let question = question_inputs_[index];
-        questions_ := Questions.createQuestion(questions_, question.author, question.date, question.title, question.text).0;
+        ignore questions_.createQuestion(question.author, question.date, question.title, question.text);
       };
 
       // Set a specific total of interests for each question
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 0) with status = #CANDIDATE({ date = 493; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 1) with status = #CANDIDATE({ date = 243; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 2; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 2) with status = #CANDIDATE({ date = 432; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 3) with status = #CANDIDATE({ date = 123; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 4) with status = #CANDIDATE({ date = 312; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 5) with status = #CANDIDATE({ date = 132; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 6) with status = #CANDIDATE({ date = 213; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 7) with status = #CANDIDATE({ date = 532; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 8) with status = #CANDIDATE({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 9) with status = #CANDIDATE({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(0) with status = #CANDIDATE({ date = 493; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(1) with status = #CANDIDATE({ date = 243; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 2; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(2) with status = #CANDIDATE({ date = 432; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(3) with status = #CANDIDATE({ date = 123; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(4) with status = #CANDIDATE({ date = 312; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(5) with status = #CANDIDATE({ date = 132; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(6) with status = #CANDIDATE({ date = 213; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(7) with status = #CANDIDATE({ date = 532; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(8) with status = #CANDIDATE({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(9) with status = #CANDIDATE({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
 
       let scheduler_params : SchedulerParams = {
         selection_rate = #NS(150);
@@ -146,32 +146,27 @@ module {
       };
 
       // 2.1 Reject some questions
-      let (after_reject_1, rejected_questions_1) = scheduler.rejectQuestions(questions_, 700);
-      questions_ := after_reject_1;
+      let rejected_questions_1 = scheduler.rejectQuestions(questions_, 700);
 
       assert(rejected_questions_1[0].id == 9);
       assert(rejected_questions_1[1].id == 5);
 
       // 2.2 Reject additional questions
-      let (after_reject_2, rejected_questions_2) = scheduler.rejectQuestions(questions_, 1200);
-      questions_ := after_reject_2;
+      let rejected_questions_2 = scheduler.rejectQuestions(questions_, 1200);
       assert(rejected_questions_2[0].id == 1);
       assert(rejected_questions_2[1].id == 4);
       assert(rejected_questions_2[2].id == 0);
 
       // 3.1. Delete rejected questions (1)
-      let (after_delete_1, delete_questions_1) = scheduler.deleteQuestions(questions_, 1150);
-      questions_ := after_delete_1;
+      let delete_questions_1 = scheduler.deleteQuestions(questions_, 1150);
       assert(delete_questions_1.size() == 2);
 
       // 3.2 Delete rejected questions (2)
-      let (after_delete_2, delete_questions_2) = scheduler.deleteQuestions(questions_, 1400);
-      questions_ := after_delete_2;
+      let delete_questions_2 = scheduler.deleteQuestions(questions_, 1400);
       assert(delete_questions_2.size() == 0);
 
       // 3.3 Delete rejected questions (3)
-      let (after_delete_3, delete_questions_3) = scheduler.deleteQuestions(questions_, 1800);
-      questions_ := after_delete_3;
+      let delete_questions_3 = scheduler.deleteQuestions(questions_, 1800);
       assert(delete_questions_3.size() == 3);
 
       // 5 questions have been selected at timestamp: 1200, 1400, 2000, 2200, 2400
