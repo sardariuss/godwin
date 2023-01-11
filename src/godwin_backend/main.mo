@@ -1,6 +1,7 @@
 import Question "questions/question";
 import Questions "questions/questions";
 import Queries "questions/queries";
+import Ballots "votes/ballots";
 import Cursor "representation/cursor";
 import Types "types";
 import Categories "categories";
@@ -223,7 +224,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
     questions_ := scheduler_.deleteQuestions(questions_, time_now).0;
   };
 
-  public shared func findUser(principal: Principal) : async ?User {
+  public query func findUser(principal: Principal) : async ?User {
     Users.findUser(users_, principal);
   };
 

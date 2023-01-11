@@ -1,6 +1,7 @@
 import Header from "./Header";
 import Footer from "./Footer";
 import ListQuestions from "./ListQuestions";
+import UserComponent from "./User";
 import { ActorProvider } from "../ActorContext";
 
 import { _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
@@ -8,7 +9,7 @@ import { _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did
 import { ActorSubclass, Actor, Identity, AnonymousIdentity } from "@dfinity/agent";
 
 import { Route, Routes } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { AuthClient } from "@dfinity/auth-client";
 import { godwin_backend } from "./../../declarations/godwin_backend";
@@ -16,16 +17,18 @@ import { godwin_backend } from "./../../declarations/godwin_backend";
 // @todo: manage logout and stay logged in on F5
 function App() {
   
-  const [actor, setActor] = useState<ActorSubclass<_SERVICE>>(godwin_backend);
+  const actor : ActorSubclass<_SERVICE> = godwin_backend;
+
   const [logged_in, setLoggedIn] = useState<boolean>(false);
 
   const login = async () => {
-    const authClient = await AuthClient.create({
-      idleOptions: {
-        idleTimeout: 1000 * 60 * 5, // set to 5 minutes
-        disableDefaultIdleCallback: true,
-      }});
 
+    let authClient = await createAuthClient();
+
+    if (await authClient.isAuthenticated()){
+      console.error("AuthClient is already authenticated");
+      return;
+    }
     authClient.login({
       // 7 days in nanoseconds
       identityProvider:
@@ -37,26 +40,49 @@ function App() {
         await handleAuthenticated(authClient);
       },
     });
-  };
+  }
 
   const handleAuthenticated = async (authClient: AuthClient) => {
     const identity = (await authClient.getIdentity()) as unknown as Identity;
 
-    setActor(actor => {
-      Actor.agentOf(actor)?.replaceIdentity?.(identity);
-      setLoggedIn(true);
-      return actor;
-    });
+    Actor.agentOf(actor)?.replaceIdentity?.(identity);
 
-    // Invalidate identity then render login when user goes idle
-    authClient.idleManager?.registerCallback(() => {
-      setActor(actor => {
-        Actor.agentOf(actor)?.replaceIdentity?.(new AnonymousIdentity());
-        setLoggedIn(false);
-        return actor;
-      });
-    });
-  };
+    setLoggedIn(true);
+  }
+
+  const createAuthClient = async() => {
+    const authClient = await AuthClient.create({
+      idleOptions: {
+        idleTimeout: 1000 * 60 * 10, // set to 10 minutes
+        disableDefaultIdleCallback: true,
+        onIdle: async () => {
+          await logout();
+          console.log("You have been logged out due to inactivity");
+        },
+      },
+    })
+
+    const logout = async () => {
+      await authClient.logout();
+      setLoggedIn(false);
+    }
+    
+    return authClient;
+  }
+
+  const refresh = async () => {
+    let authClient = await createAuthClient();
+
+    if (await authClient.isAuthenticated()){
+      await handleAuthenticated(authClient);
+    } else {
+      setLoggedIn(false);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   return (
 		<>
@@ -94,6 +120,12 @@ function App() {
                 path="/rejected"
                 element={
                   <ListQuestions key={"list_rejected"} order_by={{ 'STATUS_DATE' : { 'REJECTED' : null } }} query_direction={{ 'fwd' : null }}/>
+                }
+              />
+              <Route
+                path="/user"
+                element={
+                  <UserComponent/>
                 }
               />
               </Routes>

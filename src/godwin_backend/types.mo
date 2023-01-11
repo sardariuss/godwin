@@ -4,6 +4,7 @@ import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
+import Nat32 "mo:base/Nat32";
 
 module {
 
@@ -89,6 +90,7 @@ module {
 
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t); } };
   public func keyNat32(n: Nat32) : Key<Nat32> { { key = n; hash = n; } };
+  public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Nat32.fromNat(n); } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
   
   public type Interest = {
