@@ -57,46 +57,45 @@ module {
     public func getSuite() : Suite.Suite {
 
       let tests = Buffer.Buffer<Suite.Suite>(array_originals_.size() * 4);
-      var questions = Questions.empty();
+      let questions = Questions.Questions(Questions.initRegister());
       
       // Test that created questions are equal to original questions
       for (index in Array.keys(array_originals_)){
         let original = array_originals_[index];
-        let (updated_questions, new_question) = Questions.createQuestion(questions, original.author, original.date, original.title, original.text);
-        questions := Questions.replaceQuestion(updated_questions, new_question);
+        let new_question = questions.createQuestion(original.author, original.date, original.title, original.text);
         tests.add(test(
           "Create question " # Nat.toText(index), ?original, Matchers.equals(TestableItems.optQuestion(?new_question))));
       };
       
       // Test replacing the questions
       for (index in Array.keys(array_modified_)){
-        questions := Questions.replaceQuestion(questions, array_modified_[index]);
+        questions.replaceQuestion(array_modified_[index]);
         tests.add(test(
           "Replace question " # Nat.toText(index),
-          Questions.findQuestion(questions, Nat32.fromNat(index)),
+          questions.findQuestion(Nat32.fromNat(index)),
           Matchers.equals(TestableItems.optQuestion(?array_modified_[index]))));
       };
       
       // Test iterating on selection stage
-      let iter_candidate = Questions.iter(questions, #STATUS_DATE(#CANDIDATE), #fwd);
-      tests.add(test("Iter on candidate question (1)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[6]))));
-      tests.add(test("Iter on candidate question (2)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[1]))));
-      tests.add(test("Iter on candidate question (3)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[0]))));
+      let iter_candidate = questions.iter(#STATUS_DATE(#CANDIDATE), #fwd);
+      tests.add(test("Iter on candidate question (1)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[6]))));
+      tests.add(test("Iter on candidate question (2)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[1]))));
+      tests.add(test("Iter on candidate question (3)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[0]))));
       // @todo: fix this
-      //tests.add(test("Iter on candidate question (4)", Questions.next(questions, iter_candidate), Matchers.equals(TestableItems.optQuestion(null))));
+      //tests.add(test("Iter on candidate question (4)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_opinion = Questions.iter(questions, #STATUS_DATE(#OPEN(#OPINION)), #fwd);
-      tests.add(test("Iter on opinioned question (1)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[5]))));
-      tests.add(test("Iter on opinioned question (2)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[8]))));
-      tests.add(test("Iter on opinioned question (3)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[4]))));
-      tests.add(test("Iter on opinioned question (4)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[9]))));
-      tests.add(test("Iter on opinioned question (5)", Questions.next(questions, iter_opinion), Matchers.equals(TestableItems.optQuestion(null))));
+      let iter_opinion = questions.iter(#STATUS_DATE(#OPEN(#OPINION)), #fwd);
+      tests.add(test("Iter on opinioned question (1)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[5]))));
+      tests.add(test("Iter on opinioned question (2)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[8]))));
+      tests.add(test("Iter on opinioned question (3)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[4]))));
+      tests.add(test("Iter on opinioned question (4)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[9]))));
+      tests.add(test("Iter on opinioned question (5)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_categorization = Questions.iter(questions, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
-      tests.add(test("Iter on categorized question (1)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[3]))));
-      tests.add(test("Iter on categorized question (2)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[2]))));
-      tests.add(test("Iter on categorized question (3)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));
-      tests.add(test("Iter on categorized question (4)", Questions.next(questions, iter_categorization), Matchers.equals(TestableItems.optQuestion(null))));
+      let iter_categorization = questions.iter(#STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
+      tests.add(test("Iter on categorized question (1)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[3]))));
+      tests.add(test("Iter on categorized question (2)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[2]))));
+      tests.add(test("Iter on categorized question (3)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));
+      tests.add(test("Iter on categorized question (4)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(null))));
 
       suite("Test Questions module", tests.toArray());
     };

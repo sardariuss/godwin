@@ -42,16 +42,15 @@ module {
 
       let categories = Categories.fromArray(["IDENTITY", "ECONOMY", "CULTURE"]);
 
-      var users = Users.empty();
+      let users = Users.Users(Users.initRegister());
 
-      var questions = Questions.empty();
-      questions := Questions.createQuestion(questions, principals[0], 0, "Sexual orientation is a social construct", "").0;
-      questions := Questions.replaceQuestion(questions, Question.openOpinionVote(Questions.getQuestion(questions, 0), 0));
+      var questions = Questions.Questions(Questions.initRegister());
+      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
+      questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 
       // Create the users
       for (principal in Array.vals(principals)){
-        let (updated_users, user) = Users.getOrCreateUser(users, principal, Categories.toArray(categories)); 
-        users := updated_users;
+        let user = users.getOrCreateUser(principal, Categories.toArray(categories)); 
         assert(user.principal == principal);
         assert(user.name == null);
         for ((_, conviction) in Trie.iter(user.convictions)){
@@ -61,7 +60,7 @@ module {
 
       // Find the users
       for (principal in Array.vals(principals)){
-        switch(Users.findUser(users, principal)){
+        switch(users.findUser(principal)){
           case(null) { assert(false); };
           case(?user) { 
             assert(user.principal == principal);
@@ -74,16 +73,16 @@ module {
       };
 
       // Users 0 and 1 give their opinions
-      Result.iterate(Question.putOpinion(Questions.getQuestion(questions, 0), principals[0], 0.0), func(question: Question) {
-        questions := Questions.replaceQuestion(questions, question);
+      Result.iterate(Question.putOpinion(questions.getQuestion(0), principals[0], 0.0), func(question: Question) {
+        questions.replaceQuestion(question);
       });
       
-      Result.iterate(Question.putOpinion(Questions.getQuestion(questions, 0), principals[1], 1.0), func(question: Question) {
-        questions := Questions.replaceQuestion(questions, question);
+      Result.iterate(Question.putOpinion(questions.getQuestion(0), principals[1], 1.0), func(question: Question) {
+        questions.replaceQuestion(question);
       });
 
       // Categorize the question
-      var iteration = Question.unwrapIteration(Questions.getQuestion(questions, 0));
+      var iteration = Question.unwrapIteration(questions.getQuestion(0));
       var categorization = iteration.categorization;
       categorization := { categorization with aggregate = Utils.arrayToTrie([
             ("IDENTITY", {left = 0.0; center = 0.0; right = 1.0;}),
@@ -91,15 +90,15 @@ module {
             ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
           ], Types.keyText, Text.equal); };
       iteration := { iteration with categorization; };
-      questions := Questions.replaceQuestion(questions, { Questions.getQuestion(questions, 0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
+      questions.replaceQuestion({ questions.getQuestion(0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
 
-      users := Users.updateConvictions(users, iteration, [], null);
+      users.updateConvictions(iteration, [], null);
 
       // Verify the convictions shall be updated for users who answered this question
       // User 0
       tests.add(test(
         "User 0 convictions",
-        Users.getUser(users, principals[0]).convictions,
+        users.getUser(principals[0]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
@@ -108,7 +107,7 @@ module {
       // User 1
       tests.add(test(
         "User 1 convictions",
-        Users.getUser(users, principals[1]).convictions,
+        users.getUser(principals[1]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
@@ -117,7 +116,7 @@ module {
       // User 2
       tests.add(test(
         "User 1 convictions",
-        Users.getUser(users, principals[2]).convictions,
+        users.getUser(principals[2]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
@@ -125,11 +124,11 @@ module {
         ], Types.keyText, Text.equal)))));
 
       // Test adding a new category
-      users := Users.addCategory(users, "JUSTICE");
+      users.addCategory("JUSTICE");
       // User 0
       tests.add(test(
         "User 0 convictions",
-        Users.getUser(users, principals[0]).convictions,
+        users.getUser(principals[0]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
@@ -139,7 +138,7 @@ module {
       // User 1
       tests.add(test(
         "User 1 convictions",
-        Users.getUser(users, principals[1]).convictions,
+        users.getUser(principals[1]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
@@ -149,7 +148,7 @@ module {
       // User 2
       tests.add(test(
         "User 2 convictions",
-        Users.getUser(users, principals[2]).convictions,
+        users.getUser(principals[2]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
           ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
@@ -158,11 +157,11 @@ module {
         ], Types.keyText, Text.equal)))));
 
       // Test removing an old category
-      users := Users.removeCategory(users, "ECONOMY");
+      users.removeCategory("ECONOMY");
       // User 0
       tests.add(test(
         "User 0 convictions",
-        Users.getUser(users, principals[0]).convictions,
+        users.getUser(principals[0]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
           ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
@@ -171,7 +170,7 @@ module {
       // User 1
       tests.add(test(
         "User 1 convictions",
-        Users.getUser(users, principals[1]).convictions,
+        users.getUser(principals[1]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
           ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
@@ -180,7 +179,7 @@ module {
       // User 2
       tests.add(test(
         "User 2 convictions",
-        Users.getUser(users, principals[2]).convictions,
+        users.getUser(principals[2]).convictions,
         Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie([
           ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
           ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),

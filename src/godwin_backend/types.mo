@@ -147,4 +147,15 @@ module {
   public type CategoryPolarizationTrie = Trie<Category, Polarization>;
   public type CategoryPolarizationArray = [(Category, Polarization)];
 
+  // @todo: temporary
+  public type CreateQuestionStatus = {
+    #CANDIDATE: { interest_score: Int; };
+    #OPEN: {
+      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
+      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+    };
+    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+    #REJECTED : { interest_score: Int; };
+  };
+
 };

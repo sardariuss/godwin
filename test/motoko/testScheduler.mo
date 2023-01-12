@@ -1,6 +1,7 @@
 import Types "../../src/godwin_backend/types";
 import Questions "../../src/godwin_backend/questions/questions";
 import Scheduler "../../src/godwin_backend/scheduler";
+import Users "../../src/godwin_backend/users";
 import Categories "../../src/godwin_backend/categories";
 
 import Matchers "mo:matchers/Matchers";
@@ -13,7 +14,6 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat32 "mo:base/Nat32";
 import Nat "mo:base/Nat";
-
 
 module {
 
@@ -31,21 +31,11 @@ module {
   type Questions = Questions.Register;
   
   // @todo: This test is too complex to follow through, it needs to be simplified
+  // @todo: Needs to test that the convictions are updated
   public class TestScheduler() = {
 
-    var questions_ = Questions.empty();
-
-    var on_closing_called_ : Bool = false;
-
-    func onClosingQuestion(question: Question) {
-      on_closing_called_ := true;
-    };
-
-    func resetOnClosing() : Bool {
-      let to_return = on_closing_called_;
-      on_closing_called_ := false;
-      to_return;
-    };
+    let questions_ = Questions.Questions(Questions.initRegister());
+    let users_ = Users.Users(Users.initRegister());
 
     let question_inputs_ = [
       { date = 493; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Sexual orientation is a social construct";   text = ""; },
@@ -60,11 +50,11 @@ module {
       { date = 102; author = Principal.fromText("zoyw4-o2dcy-xajcf-e2nvu-436rg-ghrbs-35bzk-nakpb-mvs7t-x4byt-nqe"); title = "The police should be armed.";                text = ""; },
     ];
 
-    func updateQuestions(update: (Questions, ?Question)) : ?Question {
-      Option.iterate(update.1, func(question: Question) {
-        questions_ := Questions.replaceQuestion(update.0, question);
+    func updateOptQuestions(opt_question: ?Question) : ?Question {
+      Option.iterate(opt_question, func(question: Question) {
+        questions_.replaceQuestion(question);
       });
-      update.1;
+      opt_question
     };
 
     public func getSuite() : Suite.Suite {
@@ -74,132 +64,109 @@ module {
       // Add the questions
       for (index in Array.keys(question_inputs_)){
         let question = question_inputs_[index];
-        questions_ := Questions.createQuestion(questions_, question.author, question.date, question.title, question.text).0;
+        ignore questions_.createQuestion(question.author, question.date, question.title, question.text);
       };
 
       // Set a specific total of interests for each question
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 0) with status = #CANDIDATE({ date = 493; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 1) with status = #CANDIDATE({ date = 243; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 2; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 2) with status = #CANDIDATE({ date = 432; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 3) with status = #CANDIDATE({ date = 123; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 4) with status = #CANDIDATE({ date = 312; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 5) with status = #CANDIDATE({ date = 132; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 6) with status = #CANDIDATE({ date = 213; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 7) with status = #CANDIDATE({ date = 532; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 8) with status = #CANDIDATE({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
-      questions_ := Questions.replaceQuestion(questions_, { Questions.getQuestion(questions_, 9) with status = #CANDIDATE({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(0) with status = #CANDIDATE({ date = 493; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(1) with status = #CANDIDATE({ date = 243; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 2;  } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(2) with status = #CANDIDATE({ date = 432; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(3) with status = #CANDIDATE({ date = 123; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(4) with status = #CANDIDATE({ date = 312; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(5) with status = #CANDIDATE({ date = 132; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(6) with status = #CANDIDATE({ date = 213; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(7) with status = #CANDIDATE({ date = 532; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(8) with status = #CANDIDATE({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(9) with status = #CANDIDATE({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
 
       let scheduler_params : SchedulerParams = {
-        selection_rate = #NS(150);
-        interest_duration = #NS(500);
-        opinion_duration = #NS(300);
+        selection_rate          = #NS(150);
+        interest_duration       = #NS(500);
+        opinion_duration        = #NS(300);
         categorization_duration = #NS(500);
-        rejected_duration = #NS(400);
+        rejected_duration       = #NS(400);
       };
 
-      let scheduler = Scheduler.Scheduler({
-        params = scheduler_params;
-        last_selection_date = 1000;
-      }, onClosingQuestion);
+      let scheduler = Scheduler.Scheduler(Scheduler.initRegister(scheduler_params, 1000), questions_, users_, null);
 
       // 1.1 Select a first question
-      var question = updateQuestions(scheduler.openOpinionVote(questions_, 900));
-      assert(question == null);
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 1100));
-      assert(question == null);
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 1200));
-      switch(question){
+      assert(updateOptQuestions(scheduler.openOpinionVote(900)) == null);
+      assert(updateOptQuestions(scheduler.openOpinionVote(1100)) == null);
+      switch(updateOptQuestions(scheduler.openOpinionVote(1200))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 1.2 Select a second question
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 1300));
-      assert(question == null);
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 1400));
-      switch(question){
+      assert(updateOptQuestions(scheduler.openOpinionVote(1300)) == null);
+      switch(updateOptQuestions(scheduler.openOpinionVote(1400))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
 
       // 1.3 Select a third question
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 1450));
-      assert(question == null);
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 2000));
-      switch(question){
+      assert(updateOptQuestions(scheduler.openOpinionVote(1450)) == null);
+      switch(updateOptQuestions(scheduler.openOpinionVote(2000))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };
       };
 
       // 1.4 Select a fourth question
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 2200));
-      switch(question){
+      switch(updateOptQuestions(scheduler.openOpinionVote(2200))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 7); };
       };
 
       // 1.5 Select a fifth question
-      question := updateQuestions(scheduler.openOpinionVote(questions_, 2400));
-      switch(question){
+      switch(updateOptQuestions(scheduler.openOpinionVote(2400))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 8); };
       };
 
       // 2.1 Reject some questions
-      let (after_reject_1, rejected_questions_1) = scheduler.rejectQuestions(questions_, 700);
-      questions_ := after_reject_1;
+      let rejected_questions_1 = scheduler.rejectQuestions(700);
 
       assert(rejected_questions_1[0].id == 9);
       assert(rejected_questions_1[1].id == 5);
 
       // 2.2 Reject additional questions
-      let (after_reject_2, rejected_questions_2) = scheduler.rejectQuestions(questions_, 1200);
-      questions_ := after_reject_2;
+      let rejected_questions_2 = scheduler.rejectQuestions(1200);
       assert(rejected_questions_2[0].id == 1);
       assert(rejected_questions_2[1].id == 4);
       assert(rejected_questions_2[2].id == 0);
 
       // 3.1. Delete rejected questions (1)
-      let (after_delete_1, delete_questions_1) = scheduler.deleteQuestions(questions_, 1150);
-      questions_ := after_delete_1;
+      let delete_questions_1 = scheduler.deleteQuestions(1150);
       assert(delete_questions_1.size() == 2);
 
       // 3.2 Delete rejected questions (2)
-      let (after_delete_2, delete_questions_2) = scheduler.deleteQuestions(questions_, 1400);
-      questions_ := after_delete_2;
+      let delete_questions_2 = scheduler.deleteQuestions(1400);
       assert(delete_questions_2.size() == 0);
 
       // 3.3 Delete rejected questions (3)
-      let (after_delete_3, delete_questions_3) = scheduler.deleteQuestions(questions_, 1800);
-      questions_ := after_delete_3;
+      let delete_questions_3 = scheduler.deleteQuestions(1800);
       assert(delete_questions_3.size() == 3);
 
       // 5 questions have been selected at timestamp: 1200, 1400, 2000, 2200, 2400
       // and selection duration is 300.
 
       // 4.1 Archive a first question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 900, Categories.toArray(categories)));
-      assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1300, Categories.toArray(categories)));
-      assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1501, Categories.toArray(categories)));
-      switch(question){
+      assert(updateOptQuestions(scheduler.openCategorizationVote(900, Categories.toArray(categories))) == null);
+      assert(updateOptQuestions(scheduler.openCategorizationVote(1300, Categories.toArray(categories))) == null);
+      switch(updateOptQuestions(scheduler.openCategorizationVote(1501, Categories.toArray(categories)))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 4.2 Archive a second question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1600, Categories.toArray(categories)));
-      assert(question == null);
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 1750, Categories.toArray(categories)));
-      switch(question){
+      assert(updateOptQuestions(scheduler.openCategorizationVote(1600, Categories.toArray(categories))) == null);
+      switch(updateOptQuestions(scheduler.openCategorizationVote(1750, Categories.toArray(categories)))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
       
       // 4.3 Archive a third question
-      question := updateQuestions(scheduler.openCategorizationVote(questions_, 2400, Categories.toArray(categories)));
-      switch(question){
+      switch(updateOptQuestions(scheduler.openCategorizationVote(2400, Categories.toArray(categories)))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };
       };
@@ -208,26 +175,16 @@ module {
       // and categorization duration is 500.
 
       // 5.1 Close categorization of a first question
-      question := updateQuestions(scheduler.closeQuestion(questions_, 1501));
-      assert(not resetOnClosing());
-      assert(question == null);
-      question := updateQuestions(scheduler.closeQuestion(questions_, 1900));
-      assert(not resetOnClosing());
-      assert(question == null);
-      question := updateQuestions(scheduler.closeQuestion(questions_, 2050));
-      assert(resetOnClosing());
-      switch(question){
+      assert(updateOptQuestions(scheduler.closeQuestion(1501)) == null);
+      assert(updateOptQuestions(scheduler.closeQuestion(1900)) == null);
+      switch(updateOptQuestions(scheduler.closeQuestion(2050))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 5.2 Close categorization of a second question
-      question := updateQuestions(scheduler.closeQuestion(questions_, 2200));
-      assert(not resetOnClosing());
-      assert(question == null);
-      question := updateQuestions(scheduler.closeQuestion(questions_, 2260));
-      assert(resetOnClosing());
-      switch(question){
+      assert(updateOptQuestions(scheduler.closeQuestion(2200)) == null);
+      switch(updateOptQuestions(scheduler.closeQuestion(2260))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
