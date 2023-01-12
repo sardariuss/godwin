@@ -20,7 +20,7 @@ module {
   type Users = Users.Users;
   type Time = Int;
 
-  type Register = {
+  public type Register = {
     var params: SchedulerParams;
     var last_selection_date: Time;
   };

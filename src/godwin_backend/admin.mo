@@ -24,21 +24,12 @@ module {
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
   type Interest = Types.Interest;
   type Cursor = Types.Cursor;
+  type CreateQuestionStatus = Types.CreateQuestionStatus;
   type Questions = Questions.Questions;
-
+  
   public type CreateQuestionError = {
     #PrincipalIsAnonymous;
     #InsufficientCredentials;
-  };
-
-  public type CreateQuestionStatus = {
-    #CANDIDATE: { interest_score: Int; };
-    #OPEN: {
-      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
-    };
-    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
-    #REJECTED : { interest_score: Int; };
   };
 
   public func createQuestions(questions: Questions, principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : [Question] {
