@@ -1,7 +1,6 @@
 import Question "questions/question";
 import Questions "questions/questions";
 import Queries "questions/queries";
-import Ballots "votes/ballots";
 import Cursor "representation/cursor";
 import Types "types";
 import Categories "categories";
@@ -31,26 +30,23 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type DecayParams = Types.DecayParams;
+  type Status = Types.Status;
+  type Duration = Types.Duration;
 
   /// Stable types
   stable var categories_ = Categories.fromArray(parameters.categories);
   stable var decay_params_ = Decay.computeOptDecayParams(Time.now(), parameters.convictions_half_life);
-  stable var users_ = Users.empty();
+  stable var users_register_ = Users.initRegister();
   stable var questions_register_ = Questions.initRegister();
+  stable var scheduler_register_ = Scheduler.initRegister(parameters.scheduler, Time.now());
 
   /// Members
+  let users_ = Users.Users(users_register_);
   let questions_ = Questions.Questions(questions_register_);
-  // The compiler requires this function to be defined before its passed to the scheduler 
-  func onClosingQuestion(question: Question) {
-    users_ := Users.updateConvictions(users_, Question.unwrapIteration(question), question.vote_history, decay_params_);
-  };
-  var scheduler_ = Scheduler.Scheduler({ params = parameters.scheduler; last_selection_date = Time.now(); }, onClosingQuestion);
-
-  /// For upgrades
-  stable var scheduler_shareable_ = scheduler_.share();
+  let scheduler_ = Scheduler.Scheduler(scheduler_register_, questions_, users_, decay_params_);
 
   public query func getSchedulerParams() : async SchedulerParams {
-    scheduler_.share().params;
+    scheduler_.getParams();
   };
 
   // Required to normalize the convictions in the front-end
@@ -73,7 +69,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
       else { 
         categories_ := Categories.add(categories_, category);
         // Also add the category to users' profile
-        users_ := Users.addCategory(users_, category);
+        users_.addCategory(category);
         #ok;
       };
     });
@@ -90,19 +86,19 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
       else { 
         categories_ := Categories.remove(categories_, category); 
         // Also remove the category from users' profile
-        users_ := Users.removeCategory(users_, category);
+        users_.removeCategory(category);
         #ok;
       };
     });
   };
 
-  public type SetSchedulerParamsError = {
+  public type SetSchedulerParamError = {
     #InsufficientCredentials;
   };
 
-  public shared({caller}) func setSchedulerParams(scheduler_params : SchedulerParams) : async Result<(), SetSchedulerParamsError> {
+  public shared({caller}) func setSchedulerParam(status: Status, duration: Duration) : async Result<(), SetSchedulerParamError> {
     Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(caller), func () {
-      scheduler_.setParams(scheduler_params);
+      scheduler_.setParam(status, duration);
     });
   };
 
@@ -216,15 +212,15 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func run() {
     let time_now = Time.now();
-    ignore scheduler_.openOpinionVote(questions_, time_now);
-    ignore scheduler_.openCategorizationVote(questions_, time_now, Categories.toArray(categories_));
-    ignore scheduler_.closeQuestion(questions_, time_now);
-    ignore scheduler_.rejectQuestions(questions_, time_now);
-    ignore scheduler_.deleteQuestions(questions_, time_now);
+    ignore scheduler_.openOpinionVote(time_now);
+    ignore scheduler_.openCategorizationVote(time_now, Categories.toArray(categories_));
+    ignore scheduler_.closeQuestion(time_now);
+    ignore scheduler_.rejectQuestions(time_now);
+    ignore scheduler_.deleteQuestions(time_now);
   };
 
   public query func findUser(principal: Principal) : async ?User {
-    Users.findUser(users_, principal);
+    users_.findUser(principal);
   };
 
   type SetUserNameError = {
@@ -233,7 +229,7 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
     Result.mapOk<User, (), SetUserNameError>(getUser(caller), func(_) {
-      users_ := Users.setUserName(users_, caller, name);
+      users_.setUserName(caller, name);
     });
   };
 
@@ -253,23 +249,13 @@ shared({ caller = admin_ }) actor class Godwin(parameters: Types.Parameters) = {
   func getUser(principal: Principal) : Result<User, GetUserError> {
     if (Principal.isAnonymous(principal)) { #err(#PrincipalIsAnonymous); }
     else { 
-      let (users, user) = Users.getOrCreateUser(users_, principal, Categories.toArray(categories_));
-      users_ := users;
-      #ok(user);
+      #ok(users_.getOrCreateUser(principal, Categories.toArray(categories_)));
     };
   };
 
   // @todo: remove
   public query func polarizationTrieToArray(trie: Types.CategoryPolarizationTrie) : async Types.CategoryPolarizationArray {
     Utils.trieToArray(trie);
-  };
-
-  system func preupgrade(){
-    scheduler_shareable_ := scheduler_.share();
-  };
-
-  system func postupgrade(){
-    scheduler_ := Scheduler.Scheduler(scheduler_shareable_, onClosingQuestion);
   };
 
 };
