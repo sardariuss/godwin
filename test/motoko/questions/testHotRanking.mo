@@ -5,6 +5,8 @@ import TestableItems "../testableItems";
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
 
+import RBT "mo:stableRBT/StableRBTree";
+
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
@@ -39,24 +41,26 @@ module {
     public func getSuite() : Suite.Suite {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var rbts = Queries.init();
+      var rbts = Trie.empty<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
       rbts := Queries.addOrderBy(rbts, #INTEREST_HOT);
+
+      let queries = Queries.Queries({ var rbts; });
       
       // Add questions
-      rbts := Queries.add(rbts, question_0);
-      rbts := Queries.add(rbts, question_1);
-      rbts := Queries.add(rbts, question_2);
-      rbts := Queries.add(rbts, question_3);
-      rbts := Queries.add(rbts, question_4);
-      tests.add(test("Query by #INTEREST_HOT, interest 0", { ids : [Nat32] = [4, 3, 2, 1, 0]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #INTEREST_HOT, null, null, #fwd, 10)))));
+      queries.add(question_0);
+      queries.add(question_1);
+      queries.add(question_2);
+      queries.add(question_3);
+      queries.add(question_4);
+      tests.add(test("Query by #INTEREST_HOT, interest 0", { ids : [Nat32] = [4, 3, 2, 1, 0]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
       
       // Replace questions      
-      rbts := Queries.replace(rbts, question_0, question_0_update);
-      rbts := Queries.replace(rbts, question_1, question_1_update);
-      rbts := Queries.replace(rbts, question_2, question_2_update);
-      rbts := Queries.replace(rbts, question_3, question_3_update);
-      rbts := Queries.replace(rbts, question_4, question_4_update);
-      tests.add(test("Query by #INTEREST_HOT, date 0", { ids : [Nat32] = [0, 1, 2, 3, 4]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #INTEREST_HOT, null, null, #fwd, 10)))));
+      queries.replace(question_0, question_0_update);
+      queries.replace(question_1, question_1_update);
+      queries.replace(question_2, question_2_update);
+      queries.replace(question_3, question_3_update);
+      queries.replace(question_4, question_4_update);
+      tests.add(test("Query by #INTEREST_HOT, date 0", { ids : [Nat32] = [0, 1, 2, 3, 4]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
 
       suite("Test Hot ranking", tests.toArray());
     };

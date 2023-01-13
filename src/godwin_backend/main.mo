@@ -24,20 +24,18 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Status = Types.Status;
   type Duration = Types.Duration;
   type CreateQuestionStatus = Types.CreateQuestionStatus;
-
-  // For convenience: from game module
-  type AddCategoryError = Game.AddCategoryError;
-  type RemoveCategoryError = Game.RemoveCategoryError;
-  type SetSchedulerParamError = Game.SetSchedulerParamError;
-  type GetQuestionError = Game.GetQuestionError;
-  type CreateQuestionError = Game.CreateQuestionError;
-  type OpenQuestionError = Game.OpenQuestionError;
-  type InterestError = Game.InterestError;
-  type OpinionError = Game.OpinionError;
-  type CategorizationError = Game.CategorizationError;
-  type SetUserNameError = Game.SetUserNameError;
-  type VerifyCredentialsError = Game.VerifyCredentialsError;
-  type GetUserError = Game.GetUserError;
+  type AddCategoryError = Types.AddCategoryError;
+  type RemoveCategoryError = Types.RemoveCategoryError;
+  type SetSchedulerParamError = Types.SetSchedulerParamError;
+  type GetQuestionError = Types.GetQuestionError;
+  type CreateQuestionError = Types.CreateQuestionError;
+  type OpenQuestionError = Types.OpenQuestionError;
+  type InterestError = Types.InterestError;
+  type OpinionError = Types.OpinionError;
+  type CategorizationError = Types.CategorizationError;
+  type SetUserNameError = Types.SetUserNameError;
+  type VerifyCredentialsError = Types.VerifyCredentialsError;
+  type GetUserError = Types.GetUserError;
 
   stable var game_register_ = Game.initRegister(caller, parameters, Time.now());
 

@@ -22,6 +22,7 @@ module {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Time = Time.Time;
+
   // For convenience: from types module
   type Parameters = Types.Parameters;
   type Question = Types.Question;
@@ -35,65 +36,18 @@ module {
   type Status = Types.Status;
   type Duration = Types.Duration;
   type CreateQuestionStatus = Types.CreateQuestionStatus;
-
-  public type AddCategoryError = {
-    #InsufficientCredentials;
-    #CategoryAlreadyExists;
-  };
-
-  public type RemoveCategoryError = {
-    #InsufficientCredentials;
-    #CategoryDoesntExist;
-  };
-
-  public type SetSchedulerParamError = {
-    #InsufficientCredentials;
-  };
-
-  public type GetQuestionError = {
-    #QuestionNotFound;
-  };
-
-  public type CreateQuestionError = {
-    #PrincipalIsAnonymous;
-    #InsufficientCredentials;
-  };
-
-  public type OpenQuestionError = {
-    #PrincipalIsAnonymous;
-  };
-
-  public type InterestError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public type OpinionError = {
-    #PrincipalIsAnonymous;
-    #InvalidOpinion;
-    #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public type CategorizationError = {
-    #PrincipalIsAnonymous;
-    #InvalidVotingStage;
-    #InvalidCategorization;
-    #QuestionNotFound;
-  };
-
-  public type SetUserNameError = {
-    #PrincipalIsAnonymous;
-  };
-
-  public type VerifyCredentialsError = {
-    #InsufficientCredentials;
-  };
-
-  public type GetUserError = {
-    #PrincipalIsAnonymous;
-  };
+  type AddCategoryError = Types.AddCategoryError;
+  type RemoveCategoryError = Types.RemoveCategoryError;
+  type SetSchedulerParamError = Types.SetSchedulerParamError;
+  type GetQuestionError = Types.GetQuestionError;
+  type CreateQuestionError = Types.CreateQuestionError;
+  type OpenQuestionError = Types.OpenQuestionError;
+  type InterestError = Types.InterestError;
+  type OpinionError = Types.OpinionError;
+  type CategorizationError = Types.CategorizationError;
+  type SetUserNameError = Types.SetUserNameError;
+  type VerifyCredentialsError = Types.VerifyCredentialsError;
+  type GetUserError = Types.GetUserError;
 
   type Register = {
     var categories: Categories.Categories;
@@ -101,6 +55,7 @@ module {
     users_register: Users.Register;
     questions_register: Questions.Register;
     scheduler_register: Scheduler.Register;
+    queries_register: Queries.Register;
     admin: Principal;
   };
 
@@ -111,18 +66,23 @@ module {
       users_register = Users.initRegister();
       questions_register = Questions.initRegister();
       scheduler_register = Scheduler.initRegister(parameters.scheduler, Time.now());
+      queries_register = Queries.initRegister();
       admin;
     };
   };
 
   public class Game(register_: Register) = {
 
-    /// Members
+    // Members
     let users_ = Users.Users(register_.users_register);
     let questions_ = Questions.Questions(register_.questions_register);
-    let scheduler_ = Scheduler.Scheduler(register_.scheduler_register, questions_, users_, register_.decay_params);
+    let queries_ = Queries.Queries(register_.queries_register);
+    let scheduler_ = Scheduler.Scheduler(register_.scheduler_register, questions_, users_, queries_, register_.decay_params);
 
-    // Required to normalize the convictions in the front-end
+    // Add observers to sync queries
+    questions_.addObs(#QUESTION_ADDED, queries_.add);
+    questions_.addObs(#QUESTION_REMOVED, queries_.remove);
+
     public func getDecayParams() : ?DecayParams {
       register_.decay_params;
     };
@@ -170,7 +130,7 @@ module {
     };
 
     public func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat32) : Queries.QueryQuestionsResult {
-      questions_.queryQuestions(order_by, direction, limit, previous_id);
+      questions_.queryQuestions(queries_, order_by, direction, limit, previous_id);
     };
 
     public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {

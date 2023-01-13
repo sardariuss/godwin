@@ -158,4 +158,63 @@ module {
     #REJECTED : { interest_score: Int; };
   };
 
+   public type AddCategoryError = {
+    #InsufficientCredentials;
+    #CategoryAlreadyExists;
+  };
+
+  public type RemoveCategoryError = {
+    #InsufficientCredentials;
+    #CategoryDoesntExist;
+  };
+
+  public type SetSchedulerParamError = {
+    #InsufficientCredentials;
+  };
+
+  public type GetQuestionError = {
+    #QuestionNotFound;
+  };
+
+  public type CreateQuestionError = {
+    #PrincipalIsAnonymous;
+    #InsufficientCredentials;
+  };
+
+  public type OpenQuestionError = {
+    #PrincipalIsAnonymous;
+  };
+
+  public type InterestError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidVotingStage;
+  };
+
+  public type OpinionError = {
+    #PrincipalIsAnonymous;
+    #InvalidOpinion;
+    #QuestionNotFound;
+    #InvalidVotingStage;
+  };
+
+  public type CategorizationError = {
+    #PrincipalIsAnonymous;
+    #InvalidVotingStage;
+    #InvalidCategorization;
+    #QuestionNotFound;
+  };
+
+  public type SetUserNameError = {
+    #PrincipalIsAnonymous;
+  };
+
+  public type VerifyCredentialsError = {
+    #InsufficientCredentials;
+  };
+
+  public type GetUserError = {
+    #PrincipalIsAnonymous;
+  };
+
 };

@@ -1,5 +1,6 @@
 import Types "../../../src/godwin_backend/types";
 import Questions "../../../src/godwin_backend/questions/questions";
+import Queries "../../../src/godwin_backend/questions/queries";
 import Iteration "../../../src/godwin_backend/votes/iteration";
 import TestableItems "../testableItems";
 
@@ -58,6 +59,11 @@ module {
 
       let tests = Buffer.Buffer<Suite.Suite>(array_originals_.size() * 4);
       let questions = Questions.Questions(Questions.initRegister());
+      let queries = Queries.Queries(Queries.initRegister());
+
+      // Add observers to sync queries
+      questions.addObs(#QUESTION_ADDED, queries.add);
+      questions.addObs(#QUESTION_REMOVED, queries.remove);
       
       // Test that created questions are equal to original questions
       for (index in Array.keys(array_originals_)){
@@ -77,21 +83,21 @@ module {
       };
       
       // Test iterating on selection stage
-      let iter_candidate = questions.iter(#STATUS_DATE(#CANDIDATE), #fwd);
+      let iter_candidate = queries.entries(#STATUS_DATE(#CANDIDATE), #fwd);
       tests.add(test("Iter on candidate question (1)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[6]))));
       tests.add(test("Iter on candidate question (2)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[1]))));
       tests.add(test("Iter on candidate question (3)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(?array_modified_[0]))));
       // @todo: fix this
       //tests.add(test("Iter on candidate question (4)", questions.next(iter_candidate), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_opinion = questions.iter(#STATUS_DATE(#OPEN(#OPINION)), #fwd);
+      let iter_opinion = queries.entries(#STATUS_DATE(#OPEN(#OPINION)), #fwd);
       tests.add(test("Iter on opinioned question (1)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[5]))));
       tests.add(test("Iter on opinioned question (2)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[8]))));
       tests.add(test("Iter on opinioned question (3)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[4]))));
       tests.add(test("Iter on opinioned question (4)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[9]))));
       tests.add(test("Iter on opinioned question (5)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(null))));
 
-      let iter_categorization = questions.iter(#STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
+      let iter_categorization = queries.entries(#STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
       tests.add(test("Iter on categorized question (1)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[3]))));
       tests.add(test("Iter on categorized question (2)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[2]))));
       tests.add(test("Iter on categorized question (3)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));

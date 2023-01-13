@@ -1,6 +1,7 @@
 import Types "types";
 import Questions "questions/questions";
 import Question "questions/question";
+import Queries "questions/queries";
 import Users "users";
 import Utils "utils";
 
@@ -18,6 +19,7 @@ module {
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
+  type Queries = Queries.Queries;
   type Time = Int;
 
   public type Register = {
@@ -33,7 +35,7 @@ module {
   };
 
   // @todo: make the return of functions uniform (always return an array of questions)
-  public class Scheduler(register_: Register, questions_: Questions, users_: Users, decay_params_: ?DecayParams){
+  public class Scheduler(register_: Register, questions_: Questions, users_: Users, queries_: Queries, decay_params_: ?DecayParams){
     
     public func getParams() : SchedulerParams {
       register_.params;
@@ -51,7 +53,7 @@ module {
 
     public func rejectQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = questions_.iter(#STATUS_DATE(#CANDIDATE), #fwd);
+      let iter = queries_.entries(#STATUS_DATE(#CANDIDATE), #fwd);
       label iter_oldest while(true){
         switch(questions_.next(iter)){
           case(null){ break iter_oldest; };
@@ -72,7 +74,7 @@ module {
     
     public func deleteQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = questions_.iter(#STATUS_DATE(#REJECTED), #fwd);
+      let iter = queries_.entries(#STATUS_DATE(#REJECTED), #fwd);
       label iter_oldest while(true){
         switch(questions_.next(iter)){
           case(null){ break iter_oldest; };
@@ -89,7 +91,7 @@ module {
 
     public func openOpinionVote(time_now: Time) : ?Question {
       if (time_now > register_.last_selection_date + Utils.toTime(register_.params.selection_rate)) {
-        switch(questions_.first(#INTEREST, #bwd)){
+        switch(questions_.first(queries_, #INTEREST, #bwd)){
           case(null){};
           case(?question){ 
             let updated_question = Question.openOpinionVote(question, time_now);
@@ -103,7 +105,7 @@ module {
     };
 
     public func openCategorizationVote(time_now: Time, categories: [Category]) : ?Question {
-      switch(questions_.first(#STATUS_DATE(#OPEN(#OPINION)), #fwd)){
+      switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
         case(null){};
         case(?question){
           let iteration = Question.unwrapIteration(question);
@@ -119,7 +121,7 @@ module {
     };
 
     public func closeQuestion(time_now: Time) : ?Question {
-      switch(questions_.first(#STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
+      switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
         case(null){};
         case(?question){
           let iteration = Question.unwrapIteration(question);

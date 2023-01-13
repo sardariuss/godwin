@@ -1,5 +1,6 @@
 import Types "../../src/godwin_backend/types";
 import Questions "../../src/godwin_backend/questions/questions";
+import Queries "../../src/godwin_backend/questions/queries";
 import Scheduler "../../src/godwin_backend/scheduler";
 import Users "../../src/godwin_backend/users";
 import Categories "../../src/godwin_backend/categories";
@@ -36,6 +37,11 @@ module {
 
     let questions_ = Questions.Questions(Questions.initRegister());
     let users_ = Users.Users(Users.initRegister());
+    let queries_ = Queries.Queries(Queries.initRegister());
+
+    // Add observers to sync queries
+    questions_.addObs(#QUESTION_ADDED, queries_.add);
+    questions_.addObs(#QUESTION_REMOVED, queries_.remove);
 
     let question_inputs_ = [
       { date = 493; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Sexual orientation is a social construct";   text = ""; },
@@ -87,7 +93,7 @@ module {
         rejected_duration       = #NS(400);
       };
 
-      let scheduler = Scheduler.Scheduler(Scheduler.initRegister(scheduler_params, 1000), questions_, users_, null);
+      let scheduler = Scheduler.Scheduler(Scheduler.initRegister(scheduler_params, 1000), questions_, users_, queries_, null);
 
       // 1.1 Select a first question
       assert(updateOptQuestions(scheduler.openOpinionVote(900)) == null);

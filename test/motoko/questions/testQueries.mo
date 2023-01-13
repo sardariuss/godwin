@@ -1,9 +1,10 @@
 import Types "../../../src/godwin_backend/types";
 import Polarization "../../../src/godwin_backend/representation/polarization";
 import Iteration "../../../src/godwin_backend/votes/iteration";
-
 import Queries "../../../src/godwin_backend/questions/queries";
 import TestableItems "../testableItems";
+
+import RBT "mo:stableRBT/StableRBTree";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -47,47 +48,49 @@ module {
     public func getSuite() : Suite.Suite {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var rbts = Queries.init();
+      var rbts = Trie.empty<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
       rbts := Queries.addOrderBy(rbts, #TITLE);
       rbts := Queries.addOrderBy(rbts, #CREATION_DATE);
       rbts := Queries.addOrderBy(rbts, #INTEREST);
       rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#OPINION)));
       rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
 
+      let queries = Queries.Queries({ var rbts; });
+
       // Add questions
-      rbts := Queries.add(rbts, question_0);
-      rbts := Queries.add(rbts, question_1);
-      rbts := Queries.add(rbts, question_2);
-      rbts := Queries.add(rbts, question_3);
-      rbts := Queries.add(rbts, question_4);
-      tests.add(test("Query by #TITLE",                               { ids : [Nat32] = [4, 3];          next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #TITLE,                                null,                                        null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #TITLE",                               { ids : [Nat32] = [2, 1];          next_id : ?Nat32 = ?0;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #TITLE,                                Queries.initQuestionKey(question_2, #TITLE), null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids : [Nat32] = [4, 0];          next_id : ?Nat32 = ?3;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #CREATION_DATE,                        null,                                        null,                                                #bwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids : [Nat32] = [3, 2];          next_id : ?Nat32 = ?1;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #CREATION_DATE,                        null,                                        Queries.initQuestionKey(question_3, #CREATION_DATE), #bwd, 2 )))));
-      tests.add(test("Query by #INTEREST",                            { ids : [Nat32] = [3, 0];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #INTEREST,                             null,                                        null,                                                #bwd, 5 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION))",        { ids : [Nat32] = [2, 4];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #STATUS_DATE(#OPEN(#OPINION)),         null,                                        null,                                                #fwd, 5 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION))", { ids : [Nat32] = [1];             next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)),  null,                                        null,                                                #fwd, 5 )))));
+      queries.add(question_0);
+      queries.add(question_1);
+      queries.add(question_2);
+      queries.add(question_3);
+      queries.add(question_4);
+      tests.add(test("Query by #TITLE",                               { ids : [Nat32] = [4, 3];          next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                                null,                                        null,                                                #fwd, 2 )))));
+      tests.add(test("Query by #TITLE",                               { ids : [Nat32] = [2, 1];          next_id : ?Nat32 = ?0;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                                Queries.initQuestionKey(question_2, #TITLE), null,                                                #fwd, 2 )))));
+      tests.add(test("Query by #CREATION_DATE",                       { ids : [Nat32] = [4, 0];          next_id : ?Nat32 = ?3;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                        null,                                        null,                                                #bwd, 2 )))));
+      tests.add(test("Query by #CREATION_DATE",                       { ids : [Nat32] = [3, 2];          next_id : ?Nat32 = ?1;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                        null,                                        Queries.initQuestionKey(question_3, #CREATION_DATE), #bwd, 2 )))));
+      tests.add(test("Query by #INTEREST",                            { ids : [Nat32] = [3, 0];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                             null,                                        null,                                                #bwd, 5 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION))",        { ids : [Nat32] = [2, 4];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#OPINION)),         null,                                        null,                                                #fwd, 5 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION))", { ids : [Nat32] = [1];             next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#CATEGORIZATION)),  null,                                        null,                                                #fwd, 5 )))));
       
       // Replace questions
-      var rbts_replaced = Queries.replace(rbts, question_0, question_0_text_update);
-      rbts_replaced := Queries.replace(rbts_replaced, question_1, question_1_date_update);
-      rbts_replaced := Queries.replace(rbts_replaced, question_2, question_2_interests_update);
-      rbts_replaced := Queries.replace(rbts_replaced, question_3, question_3_selection_stage_update);
-      rbts_replaced := Queries.replace(rbts_replaced, question_4, question_4_categorization_update);
-      tests.add(test("Query by #TITLE (after replace)",                               { ids : [Nat32] = [0, 4, 3];    next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after replace)",                       { ids : [Nat32] = [4, 0, 1, 3]; next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after replace)",                            { ids : [Nat32] = [0];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION)) (after replace)",        { ids : [Nat32] = [2, 4];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #STATUS_DATE(#OPEN(#OPINION)),        null, null, #fwd, 5 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION)) (after replace)", { ids : [Nat32] = [1, 3];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_replaced, #STATUS_DATE(#OPEN(#CATEGORIZATION)), null, null, #fwd, 5 )))));
+      queries.replace(question_0, question_0_text_update);
+      queries.replace(question_1, question_1_date_update);
+      queries.replace(question_2, question_2_interests_update);
+      queries.replace(question_3, question_3_selection_stage_update);
+      queries.replace(question_4, question_4_categorization_update);
+      tests.add(test("Query by #TITLE (after replace)",                               { ids : [Nat32] = [0, 4, 3];    next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after replace)",                       { ids : [Nat32] = [4, 0, 1, 3]; next_id : ?Nat32 = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
+      tests.add(test("Query by #INTEREST (after replace)",                            { ids : [Nat32] = [0];          next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION)) (after replace)",        { ids : [Nat32] = [2, 4];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#OPINION)),        null, null, #fwd, 5 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION)) (after replace)", { ids : [Nat32] = [1, 3];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#CATEGORIZATION)), null, null, #fwd, 5 )))));
 
       // Remove questions
-      var rbts_removed = Queries.remove(rbts, question_0);
-      rbts_removed := Queries.remove(rbts_removed, question_1);
-      tests.add(test("Query by #TITLE (after remove)",                               { ids : [Nat32] = [4, 3, 2]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after remove)",                       { ids : [Nat32] = [4, 3, 2]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after remove)",                            { ids : [Nat32] = [3];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION)) (after remove)",        { ids : [Nat32] = [2, 4];    next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #STATUS_DATE(#OPEN(#OPINION)),        null, null, #fwd, 4 )))));
-      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION)) (after remove)", { ids : [Nat32] = [];        next_id : ?Nat32 = null; }, Matchers.equals(testQuery(Queries.queryQuestions(rbts_removed, #STATUS_DATE(#OPEN(#CATEGORIZATION)), null, null, #fwd, 4 )))));
+      queries.remove(question_0_text_update);
+      queries.remove(question_1_date_update);
+      tests.add(test("Query by #TITLE (after remove)",                               { ids : [Nat32] = [4, 3, 2]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after remove)",                       { ids : [Nat32] = [4, 3, 2]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
+      tests.add(test("Query by #INTEREST (after remove)",                            { ids : [Nat32] = [];        next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#OPINION)) (after remove)",        { ids : [Nat32] = [2, 4];    next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#OPINION)),        null, null, #fwd, 4 )))));
+      tests.add(test("Query by #STATUS_DATE(#OPEN(#CATEGORIZATION)) (after remove)", { ids : [Nat32] = [3];       next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS_DATE(#OPEN(#CATEGORIZATION)), null, null, #fwd, 4 )))));
 
       suite("Test Queries module", tests.toArray());
     };

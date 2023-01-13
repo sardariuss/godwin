@@ -188,6 +188,23 @@ module {
     };
   };
 
+  func equalOptKeys(a: ?QuestionKey, b: ?QuestionKey) : Bool {
+    switch(a){
+      case(null) {
+        switch(b){
+          case(null) { true; };
+          case(_) { false; };
+        };
+      };
+      case(?q1) {
+        switch(b){
+          case(null) { false; };
+          case(?q2) { compareQuestionKey(q1, q2) == #equal; };
+        };
+      };
+    };
+  };
+
   func compare<T>(a: T, b: T, compare: (T, T) -> Order, on_equality: Order) : Order {
     switch(compare(a, b)){
       case(#greater) { #greater; };
@@ -210,101 +227,113 @@ module {
 
   // Public functions
 
-  public func init() : QuestionRBTs { 
-    Trie.empty<OrderBy, RBT.Tree<QuestionKey, ()>>();
+  public func addOrderBy(rbts: Trie<OrderBy, RBT.Tree<QuestionKey, ()>>, order_by: OrderBy) : Trie<OrderBy, RBT.Tree<QuestionKey, ()>> {
+    Trie.put(rbts, keyOrderBy(order_by), equalOrderBy, RBT.init<QuestionKey, ()>()).0;
+  };
+
+  public type Register = {
+    var rbts: Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
   };
 
   // @todo: this is done for optimization (mostly to reduce memory usage) but brings some issues:
   // (queryQuestions and entries can trap). Alternative would be to init with every OrderBy
   // possible in init method.
-  public func addOrderBy(rbts: QuestionRBTs, order_by: OrderBy) : QuestionRBTs {
-    Trie.put(rbts, keyOrderBy(order_by), equalOrderBy, RBT.init<QuestionKey, ()>()).0;
+  public func initRegister() : Register {
+    var rbts = Trie.empty<OrderBy, RBT.Tree<QuestionKey, ()>>();
+    rbts := addOrderBy(rbts, #STATUS_DATE(#CANDIDATE));
+    rbts := addOrderBy(rbts, #STATUS_DATE(#OPEN(#OPINION)));
+    rbts := addOrderBy(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
+    rbts := addOrderBy(rbts, #STATUS_DATE(#CLOSED));
+    rbts := addOrderBy(rbts, #STATUS_DATE(#REJECTED));
+    rbts := addOrderBy(rbts, #INTEREST);
+    { var rbts; };
   };
 
-  public func add(rbts: QuestionRBTs, new_question: Question) : QuestionRBTs {
-    var new_rbts = rbts;
-    for ((order_by, rbt) in Trie.iter(rbts)){
-      // Add the new key
-      Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
-        let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
-        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
-      });
+  public class Queries(register_: Register) {
+  
+    public func add(new_question: Question) {
+      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+        // Add the new key
+        Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
+          let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
+          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+        });
+      };
     };
-    new_rbts;
-  };
-
-  // @todo: once tested, use add and remove instead
-  public func replace(rbts: QuestionRBTs, old_question: Question, new_question: Question) : QuestionRBTs {
-    var new_rbts = rbts;
-    for ((order_by, rbt) in Trie.iter(rbts)){
-      var single_rbt = rbt;
-      // Remove the old key
-      Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
-        single_rbt := RBT.remove(single_rbt, compareQuestionKey, question_key).1;
-      });
-      // Add the new key
-      Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
-        single_rbt := RBT.put(single_rbt, compareQuestionKey, question_key, ());
-      });
-      new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, single_rbt).0;
+  
+    // @todo: once tested, use add and remove instead
+    public func replace(old_question: Question, new_question: Question) {
+      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+        let old_key = initQuestionKey(old_question, order_by);
+        let new_key = initQuestionKey(new_question, order_by);
+        if (not equalOptKeys(old_key, new_key)){
+          var single_rbt = rbt;
+          // Remove the old key
+          Option.iterate(old_key, func(question_key: QuestionKey) {
+            single_rbt := RBT.remove(single_rbt, compareQuestionKey, question_key).1;
+          });
+          // Add the new key
+          Option.iterate(new_key, func(question_key: QuestionKey) {
+            single_rbt := RBT.put(single_rbt, compareQuestionKey, question_key, ());
+          });
+          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, single_rbt).0;
+        };
+      };
     };
-    new_rbts;
-  };
-
-  public func remove(rbts: QuestionRBTs, old_question: Question) : QuestionRBTs {
-    var new_rbts = rbts;
-    for ((order_by, rbt) in Trie.iter(rbts)){
-      // Remove the old key
-      Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
-        let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
-        new_rbts := Trie.put(new_rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
-      });
+  
+    public func remove(old_question: Question) {
+      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+        // Remove the old key
+        Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
+          let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
+          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+        });
+      };
     };
-    new_rbts;
-  };
-
-  // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
-  // @todo: fix lower_bound and upper_bound should not require the question id...
-  public func queryQuestions(
-    rbts: QuestionRBTs,
-    order_by: OrderBy,
-    lower_bound: ?QuestionKey,
-    upper_bound: ?QuestionKey,
-    direction: RBT.Direction,
-    limit: Nat
-  ) : QueryQuestionsResult {
-    switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
-      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
-      case(?rbt){
-        switch(RBT.entries(rbt).next()){
-          case(null){ { ids = []; next_id = null; } };
-          case(?first){
-            switch(RBT.entriesRev(rbt).next()){
-              case(null){ { ids = []; next_id = null; } };
-              case(?last){
-                let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
-                {
-                  ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat32 { key_value.0.id; });
-                  next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat32 { ?key.id; }, null);
-                }
+  
+    // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
+    // @todo: fix lower_bound and upper_bound should not require the question id...
+    public func queryQuestions(
+      order_by: OrderBy,
+      lower_bound: ?QuestionKey,
+      upper_bound: ?QuestionKey,
+      direction: RBT.Direction,
+      limit: Nat
+    ) : QueryQuestionsResult {
+      switch(Trie.get(register_.rbts, keyOrderBy(order_by), equalOrderBy)){
+        case(null){ Debug.trap("Cannot find rbt for this order_by"); };
+        case(?rbt){
+          switch(RBT.entries(rbt).next()){
+            case(null){ { ids = []; next_id = null; } };
+            case(?first){
+              switch(RBT.entriesRev(rbt).next()){
+                case(null){ { ids = []; next_id = null; } };
+                case(?last){
+                  let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
+                  {
+                    ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat32 { key_value.0.id; });
+                    next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat32 { ?key.id; }, null);
+                  }
+                };
               };
             };
           };
         };
       };
     };
-  };
-
-  public func entries(rbts: QuestionRBTs, order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
-    switch(Trie.get(rbts, keyOrderBy(order_by), equalOrderBy)){
-      case(null){ Debug.trap("Cannot find rbt for this order_by"); };
-      case(?rbt){ 
-        switch(direction){
-          case(#fwd) { RBT.entries(rbt); };
-          case(#bwd) { RBT.entriesRev(rbt); };
+  
+    public func entries(order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+      switch(Trie.get(register_.rbts, keyOrderBy(order_by), equalOrderBy)){
+        case(null){ Debug.trap("Cannot find rbt for this order_by"); };
+        case(?rbt){ 
+          switch(direction){
+            case(#fwd) { RBT.entries(rbt); };
+            case(#bwd) { RBT.entriesRev(rbt); };
+          };
         };
       };
     };
+
   };
 
 };
