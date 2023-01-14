@@ -9,12 +9,18 @@ import Question "questions/question";
 import Questions "questions/questions";
 import Queries "questions/queries";
 import Cursor "representation/cursor";
+import Polarization "representation/polarization";
+import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
+import Votes "votes/votes";
+import Interests "votes/interests";
+import WrappedRef "ref/wrappedRef";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
+import Trie "mo:base/Trie";
 
 module {
 
@@ -22,6 +28,9 @@ module {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Time = Time.Time;
+  type Trie<K, V> = Trie.Trie<K, V>;
+  type Trie2D<K1, K2, V> = Trie.Trie2D<K1, K2, V>;
+  type Trie3D<K1, K2, K3, V> = Trie.Trie3D<K1, K2, K3, V>;
 
   // For convenience: from types module
   type Parameters = Types.Parameters;
@@ -32,10 +41,16 @@ module {
   type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
+  type CategoryCursorTrie = Types.CategoryCursorTrie;
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type DecayParams = Types.DecayParams;
   type Status = Types.Status;
   type Duration = Types.Duration;
+  type Polarization = Types.Polarization;
   type CreateQuestionStatus = Types.CreateQuestionStatus;
+  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type Timestamp<T> = Votes.Timestamp<T>;
+  type InterestAggregate = Types.InterestAggregate;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
   type SetSchedulerParamError = Types.SetSchedulerParamError;
@@ -50,34 +65,66 @@ module {
   type GetUserError = Types.GetUserError;
 
   type Register = {
-    var categories: Categories.Categories;
-    decay_params: ?DecayParams;
-    users_register: Users.Register;
-    questions_register: Questions.Register;
-    scheduler_register: Scheduler.Register;
-    queries_register: Queries.Register;
-    admin: Principal;
+    var categories      : Categories.Categories;
+    decay_params        : ?DecayParams;
+    users_register      : Users.Register;
+    questions_register  : Questions.Register;
+    scheduler_register  : Scheduler.Register;
+    queries_register    : Queries.Register;
+    interest_votes      : {
+      ballots             : WrappedRef<Trie3D<Principal, Nat32, Nat, Timestamp<Interest>>>;
+      aggregates          : WrappedRef<Trie2D<Nat32, Nat, Timestamp<InterestAggregate>>>;
+    };
+    opinion_votes      : {
+      ballots             : WrappedRef<Trie3D<Principal, Nat32, Nat, Timestamp<Cursor>>>;
+      aggregates          : WrappedRef<Trie2D<Nat32, Nat, Timestamp<Polarization>>>;
+    };
+    categorization_votes: {
+      ballots             : WrappedRef<Trie3D<Principal, Nat32, Nat, Timestamp<CategoryCursorTrie>>>;
+      aggregates          : WrappedRef<Trie2D<Nat32, Nat, Timestamp<CategoryPolarizationTrie>>>;
+    };
+    admin               : Principal;
   };
 
   public func initRegister(admin: Principal, parameters: Parameters, now: Time) : Register {
     {
-      var categories = Categories.fromArray(parameters.categories);
-      decay_params = Decay.computeOptDecayParams(Time.now(), parameters.convictions_half_life);
-      users_register = Users.initRegister();
-      questions_register = Questions.initRegister();
-      scheduler_register = Scheduler.initRegister(parameters.scheduler, Time.now());
-      queries_register = Queries.initRegister();
+      var categories      = Categories.fromArray(parameters.categories);
+      decay_params        = Decay.computeOptDecayParams(Time.now(), parameters.convictions_half_life);
+      users_register      = Users.initRegister();
+      questions_register  = Questions.initRegister();
+      scheduler_register  = Scheduler.initRegister(parameters.scheduler, Time.now());
+      queries_register    = Queries.initRegister();
+      interest_votes      = {
+        ballots             = WrappedRef.init(Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<Interest>>>>());
+        aggregates          = WrappedRef.init(Trie.empty<Nat32, Trie<Nat, Timestamp<InterestAggregate>>>());
+      };
+      opinion_votes      = {
+        ballots             = WrappedRef.init(Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<Cursor>>>>());
+        aggregates          = WrappedRef.init(Trie.empty<Nat32, Trie<Nat, Timestamp<Polarization>>>());
+      };
+      categorization_votes = {
+        ballots             = WrappedRef.init(Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<CategoryCursorTrie>>>>());
+        aggregates          = WrappedRef.init(Trie.empty<Nat32, Trie<Nat, Timestamp<CategoryPolarizationTrie>>>());
+      };
       admin;
     };
   };
 
   public class Game(register_: Register) = {
 
+    // @todo: put this in a factory?
     // Members
     let users_ = Users.Users(register_.users_register);
     let questions_ = Questions.Questions(register_.questions_register);
     let queries_ = Queries.Queries(register_.queries_register);
     let scheduler_ = Scheduler.Scheduler(register_.scheduler_register, questions_, users_, queries_, register_.decay_params);
+    let interest_votes_ = Votes.Votes(register_.interest_votes.ballots, register_.interest_votes.aggregates, Interests.emptyAggregate, Interests.addToAggregate, Interests.removeFromAggregate);
+    let polarization_votes_ = Votes.Votes(register_.opinion_votes.ballots, register_.opinion_votes.aggregates, Polarization.nil, Polarization.addCursor, Polarization.subCursor);
+    // @todo: temp empty function, normally requires the categories
+    func emptyCategoryPolarizationTrie() : CategoryPolarizationTrie {
+      Trie.empty<Category, Polarization>();
+    };
+    let categorization_votes_ = Votes.Votes(register_.categorization_votes.ballots, register_.categorization_votes.aggregates, emptyCategoryPolarizationTrie, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
 
     // Add observers to sync queries
     questions_.addObs(#QUESTION_ADDED, queries_.add);
@@ -143,7 +190,9 @@ module {
 
     public func openQuestion(principal: Principal, title: Text, text: Text) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(principal), func(_) {
-        questions_.createQuestion(principal, Time.now(), title, text);
+        let question = questions_.createQuestion(principal, Time.now(), title, text);
+        interest_votes_.newVote(question.id, 0, Time.now());
+        question;
       });
     };
 
@@ -159,20 +208,33 @@ module {
 
     public func setInterest(principal: Principal, question_id: Nat32, interest: Interest) : Result<(), InterestError> {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<Question, (), InterestError>(Question.putInterest(question, principal, interest), func(question) {
-            questions_.replaceQuestion(question);
-          });
+        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          interest_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = interest });
+          //Result.mapOk<Question, (), InterestError>(Question.putInterest(question, principal, interest), func(question) {
+          //  questions_.replaceQuestion(question);
+          //});
         })
       });
     };
 
     public func removeInterest(principal: Principal, question_id: Nat32) : Result<(), InterestError> {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, principal), func(question) {
-            questions_.replaceQuestion(question);
-          });
+        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          interest_votes_.removeBallot(principal, question_id, 0);
+          //Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, principal), func(question) {
+            //questions_.replaceQuestion(question);
+          //});
+        })
+      });
+    };
+
+    public func getInterest(principal: Principal, question_id: Nat32) : Result<?Timestamp<Interest>, InterestError> {
+      Result.chain<User, ?Timestamp<Interest>, InterestError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Timestamp<Interest>, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          interest_votes_.getBallot(principal, question_id, 0);
+          //Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, principal), func(question) {
+            //questions_.replaceQuestion(question);
+          //});
         })
       });
     };

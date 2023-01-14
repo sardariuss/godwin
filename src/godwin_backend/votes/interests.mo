@@ -8,7 +8,7 @@ module {
   type B = Types.Interest;
   type A = Types.InterestAggregate;
 
-  func emptyAggregate() : A {
+  public func emptyAggregate() : A {
     { ups = 0; downs = 0; score = 0; };
   };
 

@@ -1,6 +1,7 @@
 import Types "types";
 import Game "game";
 import Queries "questions/queries"; // @todo
+import Votes "votes/votes"; // @todo
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -36,6 +37,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
+
+  // @todo
+  type Timestamp<T> = Votes.Timestamp<T>;
 
   stable var game_register_ = Game.initRegister(caller, parameters, Time.now());
 
@@ -91,6 +95,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
     game_.removeInterest(caller, question_id);
+  };
+
+  public shared({caller}) func getInterest(question_id: Nat32) : async Result<?Timestamp<Interest>, InterestError> {
+    game_.getInterest(caller, question_id);
   };
 
   public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
