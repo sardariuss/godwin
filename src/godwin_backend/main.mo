@@ -97,12 +97,16 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeInterest(caller, question_id);
   };
 
-  public shared({caller}) func getInterest(question_id: Nat32) : async Result<?Timestamp<Interest>, InterestError> {
-    game_.getInterest(caller, question_id);
+  public shared({caller}) func getInterest(question_id: Nat32, iteration: Nat) : async Result<?Timestamp<Interest>, InterestError> {
+    game_.getInterest(caller, question_id, iteration);
   };
 
   public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
     game_.setOpinion(caller, question_id, cursor);
+  };
+
+  public shared({caller}) func getOpinion(question_id: Nat32, iteration: Nat) : async Result<?Timestamp<Cursor>, OpinionError> {
+    game_.getOpinion(caller, question_id, iteration);
   };
 
   public shared({caller}) func setCategorization(question_id: Nat32, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {

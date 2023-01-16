@@ -75,7 +75,7 @@ module {
       ballots             : WrappedRef<Trie3D<Principal, Nat32, Nat, Timestamp<Interest>>>;
       aggregates          : WrappedRef<Trie2D<Nat32, Nat, Timestamp<InterestAggregate>>>;
     };
-    opinion_votes      : {
+    opinion_votes       : {
       ballots             : WrappedRef<Trie3D<Principal, Nat32, Nat, Timestamp<Cursor>>>;
       aggregates          : WrappedRef<Trie2D<Nat32, Nat, Timestamp<Polarization>>>;
     };
@@ -119,7 +119,7 @@ module {
     let queries_ = Queries.Queries(register_.queries_register);
     let scheduler_ = Scheduler.Scheduler(register_.scheduler_register, questions_, users_, queries_, register_.decay_params);
     let interest_votes_ = Votes.Votes(register_.interest_votes.ballots, register_.interest_votes.aggregates, Interests.emptyAggregate, Interests.addToAggregate, Interests.removeFromAggregate);
-    let polarization_votes_ = Votes.Votes(register_.opinion_votes.ballots, register_.opinion_votes.aggregates, Polarization.nil, Polarization.addCursor, Polarization.subCursor);
+    let opinion_votes_ = Votes.Votes(register_.opinion_votes.ballots, register_.opinion_votes.aggregates, Polarization.nil, Polarization.addCursor, Polarization.subCursor);
     // @todo: temp empty function, normally requires the categories
     func emptyCategoryPolarizationTrie() : CategoryPolarizationTrie {
       Trie.empty<Category, Polarization>();
@@ -209,10 +209,8 @@ module {
     public func setInterest(principal: Principal, question_id: Nat32, interest: Interest) : Result<(), InterestError> {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
         Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          // @todo: verify question status, get the current iteration
           interest_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = interest });
-          //Result.mapOk<Question, (), InterestError>(Question.putInterest(question, principal, interest), func(question) {
-          //  questions_.replaceQuestion(question);
-          //});
         })
       });
     };
@@ -220,21 +218,16 @@ module {
     public func removeInterest(principal: Principal, question_id: Nat32) : Result<(), InterestError> {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
         Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          // @todo: verify question status, get the current iteration
           interest_votes_.removeBallot(principal, question_id, 0);
-          //Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, principal), func(question) {
-            //questions_.replaceQuestion(question);
-          //});
         })
       });
     };
 
-    public func getInterest(principal: Principal, question_id: Nat32) : Result<?Timestamp<Interest>, InterestError> {
+    public func getInterest(principal: Principal, question_id: Nat32, iteration: Nat) : Result<?Timestamp<Interest>, InterestError> {
       Result.chain<User, ?Timestamp<Interest>, InterestError>(getUser(principal), func(_) {
         Result.mapOk<Question, ?Timestamp<Interest>, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          interest_votes_.getBallot(principal, question_id, 0);
-          //Result.mapOk<Question, (), InterestError>(Question.removeInterest(question, principal), func(question) {
-            //questions_.replaceQuestion(question);
-          //});
+          interest_votes_.getBallot(principal, question_id, iteration);
         })
       });
     };
@@ -242,22 +235,35 @@ module {
     public func setOpinion(principal: Principal, question_id: Nat32, cursor: Cursor) : Result<(), OpinionError> {
       Result.chain<User, (), OpinionError>(getUser(principal), func(_) {
         Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-          Result.chain<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-            Result.mapOk<Question, (), OpinionError>(Question.putOpinion(question, principal, cursor), func(question) {
-              questions_.replaceQuestion(question);
-            });
+          Result.mapOk<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+            // @todo: verify question status, get the current iteration
+            opinion_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = cursor });
           })
+        })
+      });
+    };
+
+    public func getOpinion(principal: Principal, question_id: Nat32, iteration: Nat) : Result<?Timestamp<Cursor>, OpinionError> {
+      Result.chain<User, ?Timestamp<Cursor>, OpinionError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Timestamp<Cursor>, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          opinion_votes_.getBallot(principal, question_id, iteration);
         })
       });
     };
 
     public func setCategorization(principal: Principal, question_id: Nat32, cursor_array: CategoryCursorArray) : Result<(), CategorizationError> {
       Result.chain<User, (), CategorizationError>(getUser(principal), func(_) {
-        Result.chain<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          let cursor_trie = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal);
-          Result.mapOk<Question, (), CategorizationError>(Question.putCategorization(question, principal, cursor_trie), func(question) {
-            questions_.replaceQuestion(question);
-          });
+        Result.mapOk<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          // @todo: verify question status, get the current iteration
+          categorization_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal) });
+        })
+      });
+    };
+
+    public func getCategorization(principal: Principal, question_id: Nat32, iteration: Nat) : Result<?Timestamp<CategoryCursorTrie>, CategorizationError> {
+      Result.chain<User, ?Timestamp<CategoryCursorTrie>, CategorizationError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Timestamp<CategoryCursorTrie>, CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          categorization_votes_.getBallot(principal, question_id, iteration);
         })
       });
     };
