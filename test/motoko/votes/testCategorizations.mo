@@ -1,9 +1,8 @@
 import Types "../../../src/godwin_backend/types";
 import Utils "../../../src/godwin_backend/utils";
-import Categories "../../../src/godwin_backend/categories";
-import Question "../../../src/godwin_backend/questions/question";
-import Iteration "../../../src/godwin_backend/votes/iteration";
-import Polarization "../../../src/godwin_backend/representation/polarization";
+import Votes "../../../src/godwin_backend/votes/votes";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
+import CategoryPolarizationTrie "../../../src/godwin_backend/representation/categoryPolarizationTrie";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -13,23 +12,28 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
-import Result "mo:base/Result";
 
 module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Time = Int;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
-  type Question = Types.Question;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type CategoryCursorArray = Types.CategoryCursorArray;
+  type CategoryPolarizationArray = Types.CategoryPolarizationArray;
+  type Timestamp<T> = Types.Timestamp<T>;
 
-  func unwrapBallot(question: Question, principal: Principal) : ?CategoryCursorTrie {
-    Trie.get<Principal, CategoryCursorTrie>(Question.unwrapIteration(question).categorization.ballots, Types.keyPrincipal(principal), Principal.equal);
+  func toCursorTrie(categorization: CategoryCursorArray): CategoryCursorTrie {
+    Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
+  };
+
+  func toPolarizationTrie(categorization: CategoryPolarizationArray): CategoryPolarizationTrie {
+    Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
   };
 
   public class TestCategorizations() = {
@@ -49,97 +53,122 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var categories = Categories.fromArray(["IDENTITY", "ECONOMY", "CULTURE"]);
-      var question_0 : Question = { 
-        id = 0; 
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 0, Categories.toArray(categories)); } );
-        interests_history = [];
-        vote_history = []; 
-      };
+      let categories = ["IDENTITY", "ECONOMY", "CULTURE"];
+
+      let ballots_ref = WrappedRef.init<Trie<Principal, Trie<Nat32, Trie<Nat, Timestamp<CategoryCursorTrie>>>>>(
+        Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<CategoryCursorTrie>>>>()
+      );
+      let aggregates_ref = WrappedRef.init<Trie<Nat32, Trie<Nat, Timestamp<CategoryPolarizationTrie>>>>(
+        Trie.empty<Nat32, Trie<Nat, Timestamp<CategoryPolarizationTrie>>>());
+
+      let votes = Votes.Votes(
+        ballots_ref,
+        aggregates_ref,
+        CategoryPolarizationTrie.nil(categories),
+        CategoryPolarizationTrie.addCategoryCursorTrie,
+        CategoryPolarizationTrie.subCategoryCursorTrie
+      );
+
+      // Question 0 : arbitrary question_id, iteration and date
+      let question_0 : Nat32 = 0;
+      let iteration_0 : Nat = 0;
+      let date_0 : Time = 123456789;
+      votes.newAggregate(question_0, iteration_0, date_0);
 
       // Add categorization
-      var categorization = Utils.arrayToTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)], Types.keyText, Text.equal);
-      Result.iterate(Question.putCategorization(question_0, principal_0, categorization), func(q: Question) { question_0 := q; });
-      tests.add(test("Add ballot", unwrapBallot(question_0, principal_0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
+      var categorization = toCursorTrie([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)]);
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, categorization);
+      tests.add(test(
+        "Add ballot", 
+        votes.getBallot(principal_0, question_0, iteration_0), 
+        Matchers.equals(TestableItems.optCategorizationBallot(?{ date = date_0; elem = categorization; }))
+      ));
       // Update categorization
-      categorization := Utils.arrayToTrie([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)], Types.keyText, Text.equal);
-      Result.iterate(Question.putCategorization(question_0, principal_0, categorization), func(q: Question) { question_0 := q; });
-      tests.add(test("Update ballot", unwrapBallot(question_0, principal_0), Matchers.equals(TestableItems.optCategoryCursorTrie(?categorization))));
+      categorization := toCursorTrie([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)]);
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, categorization);
+      tests.add(test(
+        "Update ballot",
+        votes.getBallot(principal_0, 0, 0),
+        Matchers.equals(TestableItems.optCategorizationBallot(?{ date = date_0; elem = categorization; }))
+      ));
       // Remove categorization
-      Result.iterate(Question.removeCategorization(question_0, principal_0), func(q: Question) { question_0 := q; });
-      tests.add(test("Remove ballot", unwrapBallot(question_0, principal_0), Matchers.equals(TestableItems.optCategoryCursorTrie(null))));
+      votes.removeBallot(principal_0, question_0, iteration_0);
+      tests.add(test(
+        "Remove ballot",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optCategorizationBallot(null))
+      ));
 
-      var question_1 : Question = { 
-        id = 0; 
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 0, Categories.toArray(categories)); });
-        interests_history = [];
-        vote_history = []; 
-      };
-      
-      // Test aggregate
-      Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_2, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_3, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_4, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_5, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_6, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_7, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_8, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_9, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      // Question 1 : arbitrary question_id, iteration and date
+      let question_1 : Nat32 = 1;
+      let iteration_1 : Nat = 1;
+      let date_1 : Time = 987654321;
+      votes.newAggregate(question_1, iteration_1, date_1);
+
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]));
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]));
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]));
 
       tests.add(test(
         "Get aggregate (1)",
-        Question.unwrapIteration(question_1).categorization.aggregate,
-        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
-        Types.keyText, Text.equal)))
-      ));
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optCategorizationAggregate(?{
+          date = date_1;
+          elem = toPolarizationTrie(
+            [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+             ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })]
+          )
+        })
+      )));
 
       // Update some votes, the non-updated ballots do not impact the aggregate (meaning they won't even be considered as 0.0)
-      Result.iterate(Question.putCategorization(question_1, principal_5, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_6, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_7, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_8, Utils.arrayToTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_9, Utils.arrayToTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]));
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]));
 
       // The aggregate shall contain the new category
       tests.add(test(
         "Get aggregate (2)",
-        Question.unwrapIteration(question_1).categorization.aggregate,
-        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
-        Types.keyText, Text.equal)))
-      ));
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optCategorizationAggregate(?{
+          date = date_1;
+          elem = toPolarizationTrie(
+            [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+             ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })]
+          )
+        })
+      )));
 
       // Update some votes
-      Result.iterate(Question.putCategorization(question_1, principal_0, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_1, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_2, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_3, Utils.arrayToTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putCategorization(question_1, principal_4, Utils.arrayToTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)], Types.keyText, Text.equal)), func(q: Question) { question_1 := q; });
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]));
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]));
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, toCursorTrie([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]));
       // The aggregate shall not have the removed category
       tests.add(test(
         "Get aggregate (3)",
-        Question.unwrapIteration(question_1).categorization.aggregate,
-        Matchers.equals(TestableItems.categoryPolarizationTrie(Utils.arrayToTrie(
-          [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
-           ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
-           ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })],
-        Types.keyText, Text.equal)))
-      ));
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optCategorizationAggregate(?{
+          date = date_1;
+          elem = toPolarizationTrie(
+            [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
+             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
+             ("CULTURE",  { left = 5.5; center = 4.0; right = 0.5; })]
+          )
+        })
+      )));
 
       suite("Test Categorizations module", tests.toArray());
     };

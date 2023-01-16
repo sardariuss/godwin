@@ -1,6 +1,7 @@
 import Types "../../../src/godwin_backend/types";
-import Question "../../../src/godwin_backend/questions/question";
-import Iteration "../../../src/godwin_backend/votes/iteration";
+import Votes "../../../src/godwin_backend/votes/votes";
+import Polarization "../../../src/godwin_backend/representation/polarization";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -8,24 +9,20 @@ import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
-import Result "mo:base/Result";
 import Trie "mo:base/Trie";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Time = Int;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
-  type Question = Types.Question;
   type Cursor = Types.Cursor;
-
-  func unwrapOpinion(question: Question, principal: Principal) : ?Cursor {
-    Trie.get<Principal, Cursor>(Question.unwrapIteration(question).opinion.ballots, Types.keyPrincipal(principal), Principal.equal);
-  };
+  type Polarization = Types.Polarization;
+  type Timestamp<T> = Types.Timestamp<T>;
 
   public class TestOpinions() = {
 
@@ -44,51 +41,67 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var question_0 : Question = { 
-        id = 0; 
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0); });
-        interests_history = [];
-        vote_history = []; 
-      };
+      let ballots_ref = WrappedRef.init<Trie<Principal, Trie<Nat32, Trie<Nat, Timestamp<Cursor>>>>>(
+        Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<Cursor>>>>()
+      );
+      let aggregates_ref = WrappedRef.init<Trie<Nat32, Trie<Nat, Timestamp<Polarization>>>>(
+        Trie.empty<Nat32, Trie<Nat, Timestamp<Polarization>>>());
 
-      var question_1 : Question = { 
-        id = 1; 
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #OPEN( { stage = #OPINION; iteration = Iteration.new(0); });
-        interests_history = [];
-        vote_history = []; 
-      };
+      let votes = Votes.Votes(
+        ballots_ref,
+        aggregates_ref,
+        Polarization.nil(),
+        Polarization.addCursor,
+        Polarization.subCursor
+      );
+
+      // Question 0 : arbitrary question_id, iteration and date
+      let question_0 : Nat32 = 0;
+      let iteration_0 : Nat = 0;
+      let date_0 : Time = 123456789;
+      votes.newAggregate(question_0, iteration_0, date_0);
 
       // Test put/remove
-      Result.iterate(Question.putOpinion(question_0, principal_0, 0.0), func(q: Question) { question_0 := q; });
-      tests.add(test("Add ballot", unwrapOpinion(question_0, principal_0), Matchers.equals(TestableItems.optCursor(?0.0))));
-      Result.iterate(Question.putOpinion(question_0, principal_0, 1.0), func(q: Question) { question_0 := q; });
-      tests.add(test("Update ballot", unwrapOpinion(question_0, principal_0), Matchers.equals(TestableItems.optCursor(?1.0))));
-      Result.iterate(Question.removeOpinion(question_0, principal_0), func(q: Question) { question_0 := q; });
-      tests.add(test("Remove ballot", unwrapOpinion(question_0, principal_0), Matchers.equals(TestableItems.optCursor(null))));
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, 0.0);
+      tests.add(test(
+        "Add ballot",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optOpinionBallot(?{ elem = 0.0; date = date_0; }))
+      ));
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, 1.0);
+      tests.add(test(
+        "Update ballot",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optOpinionBallot(?{ elem = 1.0; date = date_0; }))
+      ));
+      votes.removeBallot(principal_0, question_0, iteration_0);
+      tests.add(test(
+        "Remove ballot",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optOpinionBallot(null))
+      ));
+
+      // Question 1 : arbitrary question_id, iteration and date
+      let question_1 : Nat32 = 1;
+      let iteration_1 : Nat = 1;
+      let date_1 : Time = 987654321;
+      votes.newAggregate(question_1, iteration_1, date_1);
       
       // Test aggregate
-      Result.iterate(Question.putOpinion(question_1, principal_0,  1.0), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_1,  0.5), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_2,  0.5), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_3,  0.5), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_4,  0.5), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_5,  0.5), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_6,  0.0), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_7,  0.0), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_8, -1.0), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putOpinion(question_1, principal_9, -1.0), func(q: Question) { question_1 := q; });
+      votes.putBallot(principal_0, question_1, iteration_1, date_1,  1.0);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1,  0.5);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1,  0.5);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1,  0.5);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1,  0.5);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1,  0.5);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1,  0.0);
+      votes.putBallot(principal_7, question_1, iteration_1, date_1,  0.0);
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, -1.0);
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, -1.0);
       tests.add(test(
         "Opinion aggregate",
-        Question.unwrapIteration(question_1).opinion.aggregate,
-        Matchers.equals(TestableItems.polarization({left = 2.0; center = 4.5; right = 3.5;}))));
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optOpinionAggregate(?{ date = date_1; elem = {left = 2.0; center = 4.5; right = 3.5;} }))));
 
       suite("Test Opinions module", tests.toArray());
     };

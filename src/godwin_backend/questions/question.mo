@@ -48,10 +48,6 @@ module {
        and Int.equal(q1.date, q2.date);
   };
 
-  type VoteError = {
-    #InvalidVotingStage;
-  };
-
   type CategorizationError = {
     #InvalidVotingStage;
     #InvalidCategorization;
@@ -152,87 +148,6 @@ module {
       case(_){
         Prelude.unreachable(); 
       };
-    };
-  };
-
-  public func putInterest(question: Question, principal: Principal, interest: Interest) : Result<Question, VoteError> {
-    switch(question.status){
-      case(#CANDIDATE(vote)) {
-        #ok({ question with status = #CANDIDATE(Vote.putBallot(vote, principal, interest, Interests.addToAggregate, Interests.removeFromAggregate)); });
-      };
-      case(_) {
-        #err(#InvalidVotingStage);
-      };
-    };
-  };
-
-  public func removeInterest(question: Question, principal: Principal) : Result<Question, VoteError> {
-    switch(question.status) {
-      case(#CANDIDATE(vote)) {
-        #ok({ question with status = #CANDIDATE(Vote.removeBallot(vote, principal, Interests.addToAggregate, Interests.removeFromAggregate)); });
-      };
-      case(_) {
-        #err(#InvalidVotingStage);
-      };
-    };
-  };
-
-  public func putOpinion(question: Question, principal: Principal, opinion: Cursor) : Result<Question, VoteError> {
-    switch(question.status) {
-      case(#OPEN({ stage; iteration; })) {
-        switch(stage){
-          case(#OPINION) {
-            #ok({ question with status = #OPEN({ stage; iteration = Iteration.putOpinion(iteration, principal, opinion); }); });
-          };
-          case(_){ #err(#InvalidVotingStage); };
-        };
-      };
-      case(_) { #err(#InvalidVotingStage); };
-    };
-  };
-
-  public func removeOpinion(question: Question, principal: Principal) : Result<Question, VoteError> {
-    switch(question.status) {
-      case(#OPEN({ stage; iteration; })) {
-        switch(stage){
-          case(#OPINION) {
-            #ok({ question with status = #OPEN({ stage; iteration = Iteration.removeOpinion(iteration, principal); }); });
-          };
-          case(_){ #err(#InvalidVotingStage); };
-        };
-      };
-      case(_) { #err(#InvalidVotingStage); };
-    };
-  };
-
-  public func putCategorization(question: Question, principal: Principal, categorization: CategoryCursorTrie) : Result<Question, CategorizationError> {
-    switch(question.status) {
-      case(#OPEN({ stage; iteration; })) {
-        switch(stage){
-          case(#CATEGORIZATION) {
-            if(not TrieSet.equal(CategoryPolarizationTrie.keys(iteration.categorization.aggregate), CategoryCursorTrie.keys(categorization), Text.equal)){
-              return #err(#InvalidCategorization);
-            };
-            #ok({ question with status = #OPEN({ stage; iteration = Iteration.putCategorization(iteration, principal, categorization); }); });
-          };
-          case(_){ #err(#InvalidVotingStage); };
-        };
-      };
-      case(_) { #err(#InvalidVotingStage); };
-    };
-  };
-
-  public func removeCategorization(question: Question, principal: Principal) : Result<Question, VoteError> {
-    switch(question.status) {
-      case(#OPEN({ stage; iteration; })) {
-        switch(stage){
-          case(#CATEGORIZATION) {
-            #ok({ question with status = #OPEN({ stage; iteration = Iteration.removeCategorization(iteration, principal); }); });
-          };
-          case(_){ #err(#InvalidVotingStage); };
-        };
-      };
-      case(_) { #err(#InvalidVotingStage); };
     };
   };
 

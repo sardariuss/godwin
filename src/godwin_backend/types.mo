@@ -3,7 +3,6 @@ import TrieSet "mo:base/TrieSet";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Principal "mo:base/Principal";
-import Time "mo:base/Time";
 import Nat32 "mo:base/Nat32";
 
 module {
@@ -13,7 +12,7 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
   type Set<K> = TrieSet.Set<K>;
   type Principal = Principal.Principal;
-  type Time = Time.Time;
+  type Time = Int;
 
   public type Duration = {
     #DAYS: Nat;
@@ -158,7 +157,12 @@ module {
     #REJECTED : { interest_score: Int; };
   };
 
-   public type AddCategoryError = {
+  public type Timestamp<T> = {
+    elem: T;
+    date: Time;
+  };
+
+  public type AddCategoryError = {
     #InsufficientCredentials;
     #CategoryAlreadyExists;
   };

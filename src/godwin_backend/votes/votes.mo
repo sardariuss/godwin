@@ -19,18 +19,14 @@ module {
 
   // For convenience
   type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type Timestamp<T> = Types.Timestamp<T>;
   type QuestionId = Nat32;
   type Iteration = Nat;
-
-  public type Timestamp<T> = {
-    elem: T;
-    date: Time;
-  };
 
   public class Votes<B, A>(
     ballots: WrappedRef<Trie3D<Principal, QuestionId, Iteration, Timestamp<B>>>,
     aggregates: WrappedRef<Trie2D<QuestionId, Iteration, Timestamp<A>>>,
-    new_aggregate: () -> A,
+    empty_aggregate_: A,
     add_to_aggregate_: (A, B) -> A,
     remove_from_aggregate_: (A, B) -> A
   ) {
@@ -41,24 +37,29 @@ module {
     let aggregates_ = TrieRef.Trie2DRef<QuestionId, Iteration, Timestamp<A>>(
       aggregates, Types.keyNat32, Nat32.equal, Types.keyNat, Nat.equal);
 
-    public func newVote(question_id: QuestionId, iteration: Iteration, date: Int){
-      if (Option.isSome(aggregates_.put(question_id, iteration, {elem = new_aggregate(); date;}))){
-        Debug.trap("A vote already exist for this question and iteration");
+    public func newAggregate(question_id: QuestionId, iteration: Iteration, date: Time){
+      if (Option.isSome(aggregates_.put(question_id, iteration, {elem = empty_aggregate_; date;}))){
+        Debug.trap("An aggregate already exist for this question and iteration");
       };
+    };
+
+    public func getAggregate(question_id: QuestionId, iteration: Iteration) : ?Timestamp<A> {
+      aggregates_.get(question_id, iteration);
     };
 
     public func getBallot(principal: Principal, question_id: QuestionId, iteration: Iteration) : ?Timestamp<B> {
       ballots_.get(principal, question_id, iteration);
     };
 
-    public func putBallot(principal: Principal, question_id: QuestionId, iteration: Iteration, ballot: Timestamp<B>) {
+    public func putBallot(principal: Principal, question_id: QuestionId, iteration: Iteration, date: Time, ballot: B) {
+      let new_ballot = { elem = ballot; date; };
       // Add the ballot
-      let old_ballot = ballots_.put(principal, question_id, iteration, ballot);
+      let old_ballot = ballots_.put(principal, question_id, iteration, new_ballot);
       // Update the aggregate
       switch(aggregates_.get(question_id, iteration)){
-        case(null) { Debug.trap("The vote shall exist"); };
+        case(null) { Debug.trap("The aggregate shall exist"); };
         case(?aggregate) {
-          ignore aggregates_.put(question_id, iteration, updateAggregate(aggregate, ?ballot, old_ballot));
+          ignore aggregates_.put(question_id, iteration, updateAggregate(aggregate, ?new_ballot, old_ballot));
         };
       };
     };
@@ -68,7 +69,7 @@ module {
       let old_ballot = ballots_.remove(principal, question_id, iteration);
       // Update the aggregate
        switch(aggregates_.get(question_id, iteration)){
-        case(null) { Debug.trap("The vote shall exist"); };
+        case(null) { Debug.trap("The aggregate shall exist"); };
         case(?aggregate) {
           ignore aggregates_.put(question_id, iteration, updateAggregate(aggregate, null, old_ballot));
         };

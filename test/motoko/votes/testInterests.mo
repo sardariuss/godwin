@@ -1,6 +1,7 @@
 import Types "../../../src/godwin_backend/types";
 import Interests "../../../src/godwin_backend/votes/interests";
-import Question "../../../src/godwin_backend/questions/question";
+import Votes "../../../src/godwin_backend/votes/votes";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -9,27 +10,19 @@ import Suite "mo:matchers/Suite";
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
-import Result "mo:base/Result";
-
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Trie<K, V> = Trie.Trie<K, V>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Time = Int;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
   type Interest = Types.Interest;
-  type Question = Types.Question;
-
-  let testOptInterestAggregate = TestableItems.testOptInterestAggregate;
-  let testOptInterest = TestableItems.testOptInterest;
-
-  func unwrapBallot(question: Question, principal: Principal) : ?Interest {
-    Trie.get<Principal, Interest>(Question.unwrapInterest(question).ballots, Types.keyPrincipal(principal), Principal.equal);
-  };
+  type Timestamp<T> = Types.Timestamp<T>;
+  type InterestAggregate = Types.InterestAggregate;
 
   public class TestInterests() = {
 
@@ -48,100 +41,151 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var question_0 : Question = { 
-        id = 0;
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #CANDIDATE({ date = 0; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; });
-        interests_history = [];
-        vote_history = [];
-      };
+      let ballots_ref = WrappedRef.init<Trie<Principal, Trie<Nat32, Trie<Nat, Timestamp<Interest>>>>>(
+        Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<Interest>>>>()
+        );
+      let aggregates_ref = WrappedRef.init<Trie<Nat32, Trie<Nat, Timestamp<InterestAggregate>>>>(
+        Trie.empty<Nat32, Trie<Nat, Timestamp<InterestAggregate>>>());
 
-      var question_1 : Question = { 
-        id = 1;
-        author = principal_0;
-        title = "";
-        text = "";
-        date = 0;
-        status = #CANDIDATE({ date = 0; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; });
-        interests_history = [];
-        vote_history = [];
-      };
+      let votes = Votes.Votes(
+        ballots_ref,
+        aggregates_ref,
+        Interests.emptyAggregate(),
+        Interests.addToAggregate,
+        Interests.removeFromAggregate
+      );
+
+      // Question 0 : arbitrary question_id, iteration and date
+      let question_0 : Nat32 = 0;
+      let iteration_0 : Nat = 0;
+      let date_0 : Time = 123456789;
+      votes.newAggregate(question_0, iteration_0, date_0);
 
       // Test put/remove
-      Result.iterate(Question.putInterest(question_0, principal_0, #UP), func(q: Question) { question_0 := q; });
-      tests.add(test("Get user interest", unwrapBallot(question_0, principal_0), Matchers.equals(testOptInterest(?#UP))));
-      Result.iterate(Question.putInterest(question_0, principal_0, #DOWN), func(q: Question) { question_0 := q; });
-      tests.add(test("Get user interest", unwrapBallot(question_0, principal_0), Matchers.equals(testOptInterest(?#DOWN))));
-      Result.iterate(Question.removeInterest(question_0, principal_0), func(q: Question) { question_0 := q; });
-      tests.add(test("Get user interest", unwrapBallot(question_0, principal_0), Matchers.equals(testOptInterest(null))));
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, #UP);
+      tests.add(test(
+        "Add interest",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optInterestBallot(?{ elem = #UP; date = date_0; }))
+      ));
+      votes.putBallot(principal_0, question_0, iteration_0, date_0, #DOWN);
+      tests.add(test(
+        "Update interest",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optInterestBallot(?{ elem = #DOWN; date = date_0; }))
+      ));
+      votes.removeBallot(principal_0, question_0, iteration_0);
+      tests.add(test(
+        "Remove interest",
+        votes.getBallot(principal_0, question_0, iteration_0),
+        Matchers.equals(TestableItems.optInterestBallot(null))
+      ));
+
+      // Question 1 : arbitrary question_id, iteration and date
+      let question_1 : Nat32 = 1;
+      let iteration_1 : Nat = 1;
+      let date_1 : Time = 987654321;
+      votes.newAggregate(question_1, iteration_1, date_1);
 
       // Test only ups ( 10 VS 0 )
-      Result.iterate(Question.putInterest(question_1, principal_0, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_1, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_2, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_3, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_4, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_5, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_6, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_7, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_8, #UP), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_9, #UP), func(q: Question) { question_1 := q; });
-      assert(Question.unwrapInterest(question_1).aggregate == { ups = 10; downs = 0; score = 10; });
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, #UP);
+      tests.add(test(
+        "Get aggregate (1)",
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optInterestAggregate(?{
+          date = date_1;
+          elem = { ups = 10; downs = 0; score = 10; };
+        })
+      )));
 
       // Test only downs ( 0 VS 10 )
-      Result.iterate(Question.putInterest(question_1, principal_0, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_1, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_2, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_3, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_4, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_5, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_6, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_7, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_8, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_9, #DOWN), func(q: Question) { question_1 := q; });
-      assert(Question.unwrapInterest(question_1).aggregate == { ups = 0; downs = 10; score = -10; });
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
+      tests.add(test(
+        "Get aggregate (2)",
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optInterestAggregate(?{
+          date = date_1;
+          elem = { ups = 0; downs = 10; score = -10; };
+        })
+      )));
 
       // Test as many ups than downs ( 5 VS 5 )
-      Result.iterate(Question.putInterest(question_1, principal_0, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_1, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_2, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_3, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_4, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_5, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_6, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_7, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_8, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_9, #DOWN), func(q: Question) { question_1 := q; });
-      assert(Question.unwrapInterest(question_1).aggregate == { ups = 5; downs = 5; score = 0; });
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
+      tests.add(test(
+        "Get aggregate (3)",
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optInterestAggregate(?{
+          date = date_1;
+          elem = { ups = 5; downs = 5; score = 0; };
+        })
+      )));
 
       // Test almost only ups ( 9 VS 1 )
-      Result.iterate(Question.putInterest(question_1, principal_0, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_1, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_2, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_3, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_4, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_5, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_6, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_7, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_8, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_9, #DOWN), func(q: Question) { question_1 := q; });
-      assert(Question.unwrapInterest(question_1).aggregate == { ups = 9; downs = 1; score = 9; }); // down votes have no effect
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_7, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_8, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
+      tests.add(test(
+        "Get aggregate (4)",
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optInterestAggregate(?{
+          date = date_1;
+          elem = { ups = 9; downs = 1; score = 9; }; // down votes have no effect
+        })
+      )));
 
       // Test slight majority of ups ( 4 VS 3 )
-      Result.iterate(Question.putInterest(question_1, principal_0, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_1, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_2, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_3, #UP),   func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_4, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_5, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.putInterest(question_1, principal_6, #DOWN), func(q: Question) { question_1 := q; });
-      Result.iterate(Question.removeInterest(question_1, principal_7),     func(q: Question) { question_1 := q; });
-      Result.iterate(Question.removeInterest(question_1, principal_8),     func(q: Question) { question_1 := q; });
-      Result.iterate(Question.removeInterest(question_1, principal_9),     func(q: Question) { question_1 := q; });
-      assert(Question.unwrapInterest(question_1).aggregate == { ups = 4; downs = 3; score = 3; }); // down votes have a slight effect
+      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
+      votes.putBallot(principal_4, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
+      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
+      votes.removeBallot(principal_7, question_1, iteration_1);
+      votes.removeBallot(principal_8, question_1, iteration_1);
+      votes.removeBallot(principal_9, question_1, iteration_1);
+      tests.add(test(
+        "Get aggregate (1)",
+        votes.getAggregate(question_1, iteration_1),
+        Matchers.equals(TestableItems.optInterestAggregate(?{
+          date = date_1;
+          elem = { ups = 4; downs = 3; score = 3; }; // down votes have a slight effect
+        })
+      )));
 
       suite("Test Interests module", tests.toArray());
     };

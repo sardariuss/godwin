@@ -49,7 +49,7 @@ module {
   type Polarization = Types.Polarization;
   type CreateQuestionStatus = Types.CreateQuestionStatus;
   type WrappedRef<T> = WrappedRef.WrappedRef<T>;
-  type Timestamp<T> = Votes.Timestamp<T>;
+  type Timestamp<T> = Types.Timestamp<T>;
   type InterestAggregate = Types.InterestAggregate;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -118,13 +118,9 @@ module {
     let questions_ = Questions.Questions(register_.questions_register);
     let queries_ = Queries.Queries(register_.queries_register);
     let scheduler_ = Scheduler.Scheduler(register_.scheduler_register, questions_, users_, queries_, register_.decay_params);
-    let interest_votes_ = Votes.Votes(register_.interest_votes.ballots, register_.interest_votes.aggregates, Interests.emptyAggregate, Interests.addToAggregate, Interests.removeFromAggregate);
-    let opinion_votes_ = Votes.Votes(register_.opinion_votes.ballots, register_.opinion_votes.aggregates, Polarization.nil, Polarization.addCursor, Polarization.subCursor);
-    // @todo: temp empty function, normally requires the categories
-    func emptyCategoryPolarizationTrie() : CategoryPolarizationTrie {
-      Trie.empty<Category, Polarization>();
-    };
-    let categorization_votes_ = Votes.Votes(register_.categorization_votes.ballots, register_.categorization_votes.aggregates, emptyCategoryPolarizationTrie, CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
+    let interest_votes_ = Votes.Votes(register_.interest_votes.ballots, register_.interest_votes.aggregates, Interests.emptyAggregate(), Interests.addToAggregate, Interests.removeFromAggregate);
+    let opinion_votes_ = Votes.Votes(register_.opinion_votes.ballots, register_.opinion_votes.aggregates, Polarization.nil(), Polarization.addCursor, Polarization.subCursor);
+    let categorization_votes_ = Votes.Votes(register_.categorization_votes.ballots, register_.categorization_votes.aggregates, CategoryPolarizationTrie.nil(Categories.toArray(register_.categories)), CategoryPolarizationTrie.addCategoryCursorTrie, CategoryPolarizationTrie.subCategoryCursorTrie);
 
     // Add observers to sync queries
     questions_.addObs(#QUESTION_ADDED, queries_.add);
@@ -191,7 +187,7 @@ module {
     public func openQuestion(principal: Principal, title: Text, text: Text) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(principal), func(_) {
         let question = questions_.createQuestion(principal, Time.now(), title, text);
-        interest_votes_.newVote(question.id, 0, Time.now());
+        interest_votes_.newAggregate(question.id, 0, Time.now());
         question;
       });
     };
@@ -210,7 +206,7 @@ module {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
         Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           // @todo: verify question status, get the current iteration
-          interest_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = interest });
+          interest_votes_.putBallot(principal, question_id, 0, Time.now(), interest);
         })
       });
     };
@@ -237,7 +233,7 @@ module {
         Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
           Result.mapOk<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
             // @todo: verify question status, get the current iteration
-            opinion_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = cursor });
+            opinion_votes_.putBallot(principal, question_id, 0, Time.now(), cursor);
           })
         })
       });
@@ -255,7 +251,7 @@ module {
       Result.chain<User, (), CategorizationError>(getUser(principal), func(_) {
         Result.mapOk<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           // @todo: verify question status, get the current iteration
-          categorization_votes_.putBallot(principal, question_id, 0, { date = Time.now(); elem = Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal) });
+          categorization_votes_.putBallot(principal, question_id, 0, Time.now(), Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal));
         })
       });
     };

@@ -13,6 +13,7 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat32 "mo:base/Nat32";
 import Buffer "mo:base/Buffer";
+import Int "mo:base/Int";
 
 module {
 
@@ -24,6 +25,7 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
+  type Timestamp<T> = Types.Timestamp<T>;
   
   // For convenience: from queries module
   type QueryQuestionsResult = Queries.QueryQuestionsResult;
@@ -62,6 +64,78 @@ module {
 
   public func optCategoryCursorTrie(cursor_trie: ?CategoryCursorTrie) : Testable.TestableItem<?CategoryCursorTrie> {
     testOptItem(cursor_trie, CategoryCursorTrie.toText, CategoryCursorTrie.equal);
+  };
+
+  public func optInterestBallot(interest_ballot: ?Timestamp<Interest>) : Testable.TestableItem<?Timestamp<Interest>> {
+    testOptItem(
+      interest_ballot,
+      func(interest_ballot: Timestamp<Interest>) : Text {
+        toTextTimestamp(interest_ballot, toTextInterest);
+      },
+      func(a: Timestamp<Interest>, b: Timestamp<Interest>) : Bool {
+        equalTimestamp(a, b, equalInterests);
+      }
+    );
+  };
+
+  public func optInterestAggregate(interest_aggregate: ?Timestamp<InterestAggregate>) : Testable.TestableItem<?Timestamp<InterestAggregate>> {
+    testOptItem(
+      interest_aggregate,
+      func(interest_aggregate: Timestamp<InterestAggregate>) : Text {
+        toTextTimestamp(interest_aggregate, toTextInterestAggregate);
+      },
+      func(a: Timestamp<InterestAggregate>, b: Timestamp<InterestAggregate>) : Bool {
+        equalTimestamp(a, b, equalInterestAggregate);
+      }
+    );
+  };
+
+  public func optOpinionBallot(opinion_ballot: ?Timestamp<Cursor>) : Testable.TestableItem<?Timestamp<Cursor>> {
+    testOptItem(
+      opinion_ballot,
+      func(opinion_ballot: Timestamp<Cursor>) : Text {
+        toTextTimestamp(opinion_ballot, Cursor.toText);
+      },
+      func(a: Timestamp<Cursor>, b: Timestamp<Cursor>) : Bool {
+        equalTimestamp(a, b, Cursor.equal);
+      }
+    );
+  };
+
+  public func optOpinionAggregate(opinion_aggregate: ?Timestamp<Polarization>) : Testable.TestableItem<?Timestamp<Polarization>> {
+    testOptItem(
+      opinion_aggregate,
+      func(opinion_aggregate: Timestamp<Polarization>) : Text {
+        toTextTimestamp(opinion_aggregate, Polarization.toText);
+      },
+      func(a: Timestamp<Polarization>, b: Timestamp<Polarization>) : Bool {
+        equalTimestamp(a, b, Polarization.equal);
+      }
+    );
+  };
+
+  public func optCategorizationBallot(categorization_ballot: ?Timestamp<CategoryCursorTrie>) : Testable.TestableItem<?Timestamp<CategoryCursorTrie>> {
+    testOptItem(
+      categorization_ballot,
+      func(categorization_ballot: Timestamp<CategoryCursorTrie>) : Text {
+        toTextTimestamp(categorization_ballot, CategoryCursorTrie.toText);
+      },
+      func(a: Timestamp<CategoryCursorTrie>, b: Timestamp<CategoryCursorTrie>) : Bool {
+        equalTimestamp(a, b, CategoryCursorTrie.equal);
+      }
+    );
+  };
+
+  public func optCategorizationAggregate(categorization_aggregate: ?Timestamp<CategoryPolarizationTrie>) : Testable.TestableItem<?Timestamp<CategoryPolarizationTrie>> {
+    testOptItem(
+      categorization_aggregate,
+      func(categorization_aggregate: Timestamp<CategoryPolarizationTrie>) : Text {
+        toTextTimestamp(categorization_aggregate, CategoryPolarizationTrie.toText);
+      },
+      func(a: Timestamp<CategoryPolarizationTrie>, b: Timestamp<CategoryPolarizationTrie>) : Bool {
+        equalTimestamp(a, b, CategoryPolarizationTrie.equal);
+      }
+    );
   };
 
   public func categoryPolarizationTrie(polarization_trie: CategoryPolarizationTrie) : Testable.TestableItem<CategoryPolarizationTrie> {
@@ -148,6 +222,14 @@ module {
 
   public func testOptInterestAggregate(total: ?InterestAggregate) : Testable.TestableItem<?InterestAggregate> {
     testOptItem(total, toTextInterestAggregate, equalInterestAggregate);
+  };
+
+  func toTextTimestamp<T>(timestamp : Timestamp<T>, to_text_elem : (T) -> (Text)) : Text {
+    "{ date = " # Int.toText(timestamp.date) # " (ns); elem = " # to_text_elem(timestamp.elem) # " }";
+  };
+
+  func equalTimestamp<T>(a : Timestamp<T>, b : Timestamp<T>, equal_elem : (T, T) -> (Bool)) : Bool {
+    a.date == b.date and equal_elem(a.elem, b.elem);
   };
 
 };

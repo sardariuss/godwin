@@ -39,7 +39,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetUserError = Types.GetUserError;
 
   // @todo
-  type Timestamp<T> = Votes.Timestamp<T>;
+  type Timestamp<T> = Types.Timestamp<T>;
 
   stable var game_register_ = Game.initRegister(caller, parameters, Time.now());
 
