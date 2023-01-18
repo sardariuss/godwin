@@ -3,7 +3,6 @@ import Utils "utils";
 import Polarization "representation/polarization";
 import Cursor "representation/cursor";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
-import WrappedRef "ref/wrappedRef";
 import WMap "wrappers/WMap";
 
 import Map "mo:map/Map";
@@ -34,8 +33,6 @@ module {
   type Iteration = Types.Iteration;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Decay = Types.Decay;
-  //type TrieRef<K, V> = TrieRef.TrieRef<K, V>;
-  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
   type WMap<K, V> = WMap.WMap<K, V>;
 
   public func build(register: Map<Principal, User>, decay_params: ?Decay) : Users {

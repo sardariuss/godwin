@@ -1,8 +1,6 @@
 import Votes "votes"; 
 import Interests "interests";
 import Types "../types";
-import WrappedRef "../ref/wrappedRef";
-import TrieRef "../ref/trieRef";
 import WMap "../wrappers/WMap";
 
 import Map "mo:map/Map";
@@ -18,7 +16,6 @@ module {
   type Trie2D<K1, K2, V> = Trie.Trie2D<K1, K2, V>;
   type Trie3D<K1, K2, K3, V> = Trie.Trie3D<K1, K2, K3, V>;
   type Votes<B, A> = Votes.Votes<B, A>;
-  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
   type Timestamp<T> = Types.Timestamp<T>;
 
   type Map<K, V> = Map.Map<K, V>;

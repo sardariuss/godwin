@@ -16,8 +16,6 @@ import Iter "mo:base/Iter";
 
 module {
 
-  type Set<K> = Set.Set<K>;
-
   type State = State.State;
 
   public func build(state_: State) : Game.Game {

@@ -1,7 +1,6 @@
 import Types "types";
 import Utils "utils";
 import Queries "questions/queries";
-import WrappedRef "ref/wrappedRef";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -41,7 +40,7 @@ module {
   type Status = Types.Status;
   type Duration = Types.Duration;
   type Polarization = Types.Polarization;
-  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type Ref<T> = Types.Ref<T>;
   type Timestamp<T> = Types.Timestamp<T>;
   type InterestAggregate = Types.InterestAggregate;
   type OrderBy = Queries.OrderBy;
@@ -57,14 +56,14 @@ module {
     };
     questions         : {
       register           : Map<Nat, Question>;
-      index              : WrappedRef<Nat>;
+      index              : Ref<Nat>;
     };
     queries           : {
       register           : Map<OrderBy, RBT<QuestionKey, ()>>;
     };
     scheduler         : {
-      last_selection_date: WrappedRef<Time>;
-      selection_rate:      WrappedRef<Duration>;
+      last_selection_date: Ref<Time>;
+      selection_rate:      Ref<Duration>;
       status_durations:    Map<Status, Duration>;
     };
     votes             : {
@@ -94,14 +93,14 @@ module {
       };
       questions         = {
         register           = Map.new<Nat, Question>();
-        index              = WrappedRef.init(0 : Nat);
+        index              = Types.initRef(0 : Nat);
       };
       queries           = {
         register           = Map.new<OrderBy, RBT<QuestionKey, ()>>();
       };
       scheduler         = {
-        last_selection_date = WrappedRef.init(creation_date);
-        selection_rate      = WrappedRef.init(parameters.scheduler.selection_rate);
+        last_selection_date = Types.initRef(creation_date);
+        selection_rate      = Types.initRef(parameters.scheduler.selection_rate);
         status_durations    = Map.fromIter(Array.vals(parameters.scheduler.status_durations), Types.statushash);
       };
       votes = {

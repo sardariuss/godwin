@@ -1,4 +1,3 @@
-//import TrieRef "../ref/trieRef";
 import WMap "../wrappers/WMap";
 import Types "../types";
 
@@ -6,7 +5,6 @@ import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
-//import Trie "mo:base/Trie";
 
 module {
 
@@ -15,8 +13,6 @@ module {
   type Time = Int;
 
   // For convenience
-  //type Trie2DRef<K1, K2, V> = TrieRef.Trie2DRef<K1, K2, V>;
-  //type Trie3DRef<K1, K2, K3, V> = TrieRef.Trie3DRef<K1, K2, K3, V>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type WMap3D<K1, K2, K3, V> = WMap.WMap3D<K1, K2, K3, V>;
   type Timestamp<T> = Types.Timestamp<T>;

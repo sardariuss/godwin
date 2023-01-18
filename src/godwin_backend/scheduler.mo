@@ -4,8 +4,7 @@ import Question "questions/question";
 import Queries "questions/queries";
 import Users "users";
 import Utils "utils";
-import WrappedRef "ref/wrappedRef";
-import TrieRef "ref/trieRef";
+import WRef "wrappers/WRef";
 import WMap "wrappers/WMap";
 
 import Map "mo:map/Map";
@@ -23,6 +22,7 @@ module {
   type Category = Types.Category;
   type Status = Types.Status;
   type Duration = Types.Duration;
+  type Ref<V> = Types.Ref<V>;
 
   // For convenience: from map module
   type Map<K, V> = Map.Map<K, V>;
@@ -31,22 +31,21 @@ module {
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type Queries = Queries.Queries;
-  type TrieRef<K, V> = TrieRef.TrieRef<K, V>;
-  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type WRef<T> = WRef.WRef<T>;
   type WMap<K, V> = WMap.WMap<K, V>;
 
   public func build(
-    selection_rate: WrappedRef<Duration>,
+    selection_rate: Ref<Duration>,
     status_durations: Map<Status, Duration>,
-    last_selection_date: WrappedRef<Time>,
+    last_selection_date: Ref<Time>,
     questions: Questions,
     users: Users,
     queries: Queries
   ) : Scheduler {
     Scheduler(
-      selection_rate,
+      WRef.WRef(selection_rate),
       WMap.WMap<Status, Duration>(status_durations, Types.statushash),
-      last_selection_date,
+      WRef.WRef(last_selection_date),
       questions,
       users,
       queries
@@ -55,20 +54,20 @@ module {
 
   // @todo: make the return of functions uniform (always return an array of questions)
   public class Scheduler(
-    selection_rate_: WrappedRef<Duration>,
+    selection_rate_: WRef<Duration>,
     status_durations_: WMap<Status, Duration>,
-    last_selection_date_: WrappedRef<Time>,
+    last_selection_date_: WRef<Time>,
     questions_: Questions,
     users_: Users,
     queries_: Queries
   ){
 
     public func getSelectionRate() : Duration {
-      selection_rate_.ref;
+      selection_rate_.get();
     };
 
     public func setSelectionRate(duration: Duration) {
-      selection_rate_.ref := duration;
+      selection_rate_.set(duration);
     };
 
     public func getStatusDuration(status: Status) : ?Duration {
@@ -122,13 +121,13 @@ module {
     };
 
     public func openOpinionVote(time_now: Time) : ?Question {
-      if (time_now > last_selection_date_.ref + Utils.toTime(selection_rate_.ref)) {
+      if (time_now > last_selection_date_.get() + Utils.toTime(selection_rate_.get())) {
         switch(questions_.first(queries_, #INTEREST, #bwd)){
           case(null){};
           case(?question){ 
             let updated_question = Question.openOpinionVote(question, time_now);
             questions_.replaceQuestion(updated_question);
-            last_selection_date_.ref := time_now;
+            last_selection_date_.set(time_now);
             return ?updated_question;
           };
         };

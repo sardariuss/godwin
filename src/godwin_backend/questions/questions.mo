@@ -2,8 +2,8 @@ import Types "../types";
 import Vote "../votes/vote";
 import Queries "queries";
 import Observers "../observers";
-import WrappedRef "../ref/wrappedRef";
 import WMap "../wrappers/WMap";
+import WRef "../wrappers/WRef";
 
 import Map "mo:map/Map";
 
@@ -29,7 +29,8 @@ module {
   type Question = Types.Question;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type Ref<V> = Types.Ref<V>;
+  type WRef<V> = WRef.WRef<V>;
   type WMap<K, V> = WMap.WMap<K, V>;
 
   type UpdateType = {
@@ -50,17 +51,17 @@ module {
     };
   };
 
-  public func build(register: Map<Nat, Question>, index: WrappedRef<Nat>) : Questions {
+  public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
     Questions(
       WMap.WMap(register, Map.nhash),
-      index,
+      WRef.WRef(index),
       Observers.Observers<UpdateType, Question>(equalUpdateType, hashUpdateType)
     );
   };
 
   public class Questions(
     register_: WMap<Nat, Question>,
-    index_: WrappedRef<Nat>,
+    index_: WRef<Nat>,
     observers_: Observers.Observers<UpdateType, Question>
   ) {
 
@@ -77,7 +78,7 @@ module {
 
     public func createQuestion(author: Principal, date: Int, title: Text, text: Text) : Question {
       let question = {
-        id = index_.ref;
+        id = index_.get();
         author;
         title;
         text;
@@ -87,7 +88,7 @@ module {
         vote_history = [];
       };
       register_.set(question.id, question);
-      index_.ref := index_.ref + 1;
+      index_.set(index_.get() + 1);
       observers_.callObs(#QUESTION_ADDED, question);
       question;
     };
