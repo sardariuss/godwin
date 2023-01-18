@@ -11,7 +11,6 @@ import Testable "mo:matchers/Testable";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Nat32 "mo:base/Nat32";
 import Buffer "mo:base/Buffer";
 import Int "mo:base/Int";
 
@@ -164,18 +163,18 @@ module {
         var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
         buffer.add("ids = [");
         for (id in Array.vals(query_result.ids)) {
-          buffer.add(Nat32.toText(id) # ", ");
+          buffer.add(Nat.toText(id) # ", ");
         };
         buffer.add("], next = ");
         switch(query_result.next_id){
           case(null){ buffer.add("null"); };
-          case(?id) { buffer.add(Nat32.toText(id)); };
+          case(?id) { buffer.add(Nat.toText(id)); };
         };
         Text.join("", buffer.vals());
       };
       equals = func (qr1: QueryQuestionsResult, qr2: QueryQuestionsResult) : Bool { 
-        let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat32, id2: Nat32) : Bool {
-          Nat32.equal(id1, id2);
+        let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat, id2: Nat) : Bool {
+          Nat.equal(id1, id2);
         });
         let equal_next = switch(qr1.next_id) {
           case(null) { 
@@ -187,7 +186,7 @@ module {
           case(?next_id1) {
             switch(qr2.next_id) {
               case(null) { false };
-              case(?next_id2) { Nat32.equal(next_id1, next_id2); };
+              case(?next_id2) { Nat.equal(next_id1, next_id2); };
             };
           };
         };

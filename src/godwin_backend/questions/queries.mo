@@ -239,7 +239,7 @@ module {
   // Public functions
 
   public func addOrderBy(register: Map<OrderBy, RBT.Tree<QuestionKey, ()>>, order_by: OrderBy) {
-    ignore Map.put(register, orderbyhash, order_by, RBT.init<QuestionKey, ()>());
+    Map.set(register, orderbyhash, order_by, RBT.init<QuestionKey, ()>());
   };
 
   // @todo: this is done for optimization (mostly to reduce memory usage) but brings some issues:
@@ -247,6 +247,8 @@ module {
   // possible in init method.
   public func initRegister() : Map<OrderBy, RBT.Tree<QuestionKey, ()>> {
     let register = Map.new<OrderBy, RBT.Tree<QuestionKey, ()>>();
+    addOrderBy(register, #TITLE);
+    addOrderBy(register, #CREATION_DATE);
     addOrderBy(register, #STATUS_DATE(#CANDIDATE));
     addOrderBy(register, #STATUS_DATE(#OPEN(#OPINION)));
     addOrderBy(register, #STATUS_DATE(#OPEN(#CATEGORIZATION)));

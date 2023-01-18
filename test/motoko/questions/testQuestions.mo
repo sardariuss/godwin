@@ -2,12 +2,10 @@ import Types "../../../src/godwin_backend/types";
 import Questions "../../../src/godwin_backend/questions/questions";
 import Queries "../../../src/godwin_backend/questions/queries";
 import Iteration "../../../src/godwin_backend/votes/iteration";
-import TrieRef "../../../src/godwin_backend/ref/trieRef";
-import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import Observers "../../../src/godwin_backend/observers";
 import TestableItems "../testableItems";
 
-import RBT "mo:stableRBT/StableRBTree";
+import Map "mo:map/Map";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -17,7 +15,6 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
-import Nat32 "mo:base/Nat32";
 
 module {
 
@@ -62,17 +59,9 @@ module {
 
       let tests = Buffer.Buffer<Suite.Suite>(array_originals_.size() * 4);
       
-      let questions = Questions.Questions(
-        TrieRef.TrieRef<Nat32, Question>(
-          WrappedRef.init(Trie.empty<Nat32, Question>()), Types.keyNat32, Nat32.equal),
-        WrappedRef.init(0 : Nat32),
-        Observers.Observers<Questions.UpdateType, Question>(Questions.equalUpdateType, Questions.hashUpdateType)
-      );
+      let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
 
-      let queries = Queries.Queries(
-        TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(
-          WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(Queries.initRegister()), Queries.keyOrderBy, Queries.equalOrderBy
-      ));
+      let queries = Queries.build(Queries.initRegister());
 
       // Add observers to sync queries
       questions.addObs(#QUESTION_ADDED, queries.add);
@@ -91,7 +80,7 @@ module {
         questions.replaceQuestion(array_modified_[index]);
         tests.add(test(
           "Replace question " # Nat.toText(index),
-          questions.findQuestion(Nat32.fromNat(index)),
+          questions.findQuestion(index),
           Matchers.equals(TestableItems.optQuestion(?array_modified_[index]))));
       };
       
@@ -116,7 +105,7 @@ module {
       tests.add(test("Iter on categorized question (3)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));
       tests.add(test("Iter on categorized question (4)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(null))));
 
-      suite("Test Questions module", tests.toArray());
+      suite("Test Questions module", Buffer.toArray(tests));
     };
   };
 

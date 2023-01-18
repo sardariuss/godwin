@@ -1,12 +1,11 @@
 import Types "../../../src/godwin_backend/types";
 import Queries "../../../src/godwin_backend/questions/queries";
-import TrieRef "../../../src/godwin_backend/ref/trieRef";
-import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
 
+import Map "mo:map/Map";
 import RBT "mo:stableRBT/StableRBTree";
 
 import Principal "mo:base/Principal";
@@ -42,14 +41,10 @@ module {
     public func getSuite() : Suite.Suite {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var rbts = Trie.empty<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
-      rbts := Queries.addOrderBy(rbts, #INTEREST_HOT);
+      let register = Map.new<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
+      Queries.addOrderBy(register, #INTEREST_HOT);
 
-      let wrapped_ref = WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(rbts);
-
-      let trie_ref = TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(wrapped_ref, Queries.keyOrderBy, Queries.equalOrderBy);
-
-      let queries = Queries.Queries(trie_ref);
+      let queries = Queries.build(register);
       
       // Add questions
       queries.add(question_0);
@@ -57,7 +52,7 @@ module {
       queries.add(question_2);
       queries.add(question_3);
       queries.add(question_4);
-      tests.add(test("Query by #INTEREST_HOT, interest 0", { ids : [Nat32] = [4, 3, 2, 1, 0]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
+      tests.add(test("Query by #INTEREST_HOT, interest 0", { ids = [4, 3, 2, 1, 0]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
       
       // Replace questions      
       queries.replace(question_0, question_0_update);
@@ -65,9 +60,9 @@ module {
       queries.replace(question_2, question_2_update);
       queries.replace(question_3, question_3_update);
       queries.replace(question_4, question_4_update);
-      tests.add(test("Query by #INTEREST_HOT, date 0", { ids : [Nat32] = [0, 1, 2, 3, 4]; next_id : ?Nat32 = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
+      tests.add(test("Query by #INTEREST_HOT, date 0", { ids = [0, 1, 2, 3, 4]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST_HOT, null, null, #fwd, 10)))));
 
-      suite("Test Hot ranking", tests.toArray());
+      suite("Test Hot ranking", Buffer.toArray(tests));
     };
 
   };

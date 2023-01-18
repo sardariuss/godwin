@@ -1,9 +1,11 @@
 import Types "../../../src/godwin_backend/types";
 import Utils "../../../src/godwin_backend/utils";
 import Votes "../../../src/godwin_backend/votes/votes";
-import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
+import Categorization "../../../src/godwin_backend/votes/categorization";
 import CategoryPolarizationTrie "../../../src/godwin_backend/representation/categoryPolarizationTrie";
 import TestableItems "../testableItems";
+
+import Map "mo:map/Map";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -27,6 +29,8 @@ module {
   type CategoryCursorArray = Types.CategoryCursorArray;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
   type Timestamp<T> = Types.Timestamp<T>;
+
+  type Map<K, V> = Map.Map<K, V>;
 
   func toCursorTrie(categorization: CategoryCursorArray): CategoryCursorTrie {
     Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
@@ -53,24 +57,14 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      let categories = ["IDENTITY", "ECONOMY", "CULTURE"];
-
-      let ballots_ref = WrappedRef.init<Trie<Principal, Trie<Nat32, Trie<Nat, Timestamp<CategoryCursorTrie>>>>>(
-        Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<CategoryCursorTrie>>>>()
-      );
-      let aggregates_ref = WrappedRef.init<Trie<Nat32, Trie<Nat, Timestamp<CategoryPolarizationTrie>>>>(
-        Trie.empty<Nat32, Trie<Nat, Timestamp<CategoryPolarizationTrie>>>());
-
-      let votes = Votes.Votes(
-        ballots_ref,
-        aggregates_ref,
-        CategoryPolarizationTrie.nil(categories),
-        CategoryPolarizationTrie.addCategoryCursorTrie,
-        CategoryPolarizationTrie.subCategoryCursorTrie
+      let votes = Categorization.build(
+        Map.new<Principal, Map<Nat, Map<Nat, Timestamp<CategoryCursorTrie>>>>(),
+        Map.new<Nat, Map<Nat, Timestamp<CategoryPolarizationTrie>>>(),
+        ["IDENTITY", "ECONOMY", "CULTURE"]
       );
 
       // Question 0 : arbitrary question_id, iteration and date
-      let question_0 : Nat32 = 0;
+      let question_0 : Nat = 0;
       let iteration_0 : Nat = 0;
       let date_0 : Time = 123456789;
       votes.newAggregate(question_0, iteration_0, date_0);
@@ -100,7 +94,7 @@ module {
       ));
 
       // Question 1 : arbitrary question_id, iteration and date
-      let question_1 : Nat32 = 1;
+      let question_1 : Nat = 1;
       let iteration_1 : Nat = 1;
       let date_1 : Time = 987654321;
       votes.newAggregate(question_1, iteration_1, date_1);
@@ -170,7 +164,7 @@ module {
         })
       )));
 
-      suite("Test Categorizations module", tests.toArray());
+      suite("Test Categorizations module", Buffer.toArray(tests));
     };
   };
  

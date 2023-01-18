@@ -3,9 +3,11 @@ import Users "../../src/godwin_backend/users";
 import Polarization "../../src/godwin_backend/representation/polarization";
 import Questions "../../src/godwin_backend/questions/questions";
 import Question "../../src/godwin_backend/questions/question";
-import Categories "../../src/godwin_backend/categories";
 import Utils "../../src/godwin_backend/utils";
 import TestableItems "testableItems";
+
+import Map "mo:map/Map";
+import Set "mo:map/Set";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -16,6 +18,7 @@ import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
 import Result "mo:base/Result";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -25,8 +28,7 @@ module {
   let { run;test;suite; } = Suite;
   // For convenience: from types module
   type Question = Types.Question;
-  // For convenience: from other modules
-  type Users = Users.Register;
+  type User = Types.User;
   
   public class TestUsers() = {
 
@@ -40,17 +42,20 @@ module {
         Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe")
       ];
 
-      let categories = Categories.fromArray(["IDENTITY", "ECONOMY", "CULTURE"]);
+      let categories = Set.new<Text>();
+      Set.add(categories, Set.thash, "IDENTITY");
+      Set.add(categories, Set.thash, "ECONOMY");
+      Set.add(categories, Set.thash, "CULTURE");
 
-      let users = Users.Users(Users.initRegister());
+      let users = Users.build(Map.new<Principal, User>(), null);
 
-      var questions = Questions.Questions(Questions.initRegister());
+      let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
       ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
       questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 
       // Create the users
       for (principal in Array.vals(principals)){
-        let user = users.getOrCreateUser(principal, Categories.toArray(categories)); 
+        let user = users.getOrCreateUser(principal, Iter.toArray(Set.keys(categories))); 
         assert(user.principal == principal);
         assert(user.name == null);
         for ((_, conviction) in Trie.iter(user.convictions)){
@@ -192,7 +197,7 @@ module {
       // @todo: need to have a more complete test on categorization computation
       // @todo: have a test for the user name
 
-      suite("Test Users module", tests.toArray());
+      suite("Test Users module", Buffer.toArray(tests));
     };
   };
 

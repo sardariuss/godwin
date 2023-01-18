@@ -1,25 +1,16 @@
 import Types "types";
-import Utils "utils";
 import Queries "questions/queries";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
 import RBT "mo:stableRBT/StableRBTree";
 
-import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
-import Text "mo:base/Text";
-import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 
 module {
 
   type Time = Int;
-  //type Set<K> = TrieSet.Set<K>;
-  //type Trie<K, V> = Trie.Trie<K, V>;
-  //type Trie2D<K1, K2, V> = Trie.Trie2D<K1, K2, V>;
-  //type Trie3D<K1, K2, K3, V> = Trie.Trie3D<K1, K2, K3, V>;
   type Principal = Principal.Principal;
 
   type Set<K> = Set.Set<K>;

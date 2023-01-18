@@ -2,9 +2,10 @@ import Types "../../src/godwin_backend/types";
 import Questions "../../src/godwin_backend/questions/questions";
 import Queries "../../src/godwin_backend/questions/queries";
 import Scheduler "../../src/godwin_backend/scheduler";
-import TrieRef "../../src/godwin_backend/ref/trieRef";
-import WrappedRef "../../src/godwin_backend/ref/wrappedRef";
 import Users "../../src/godwin_backend/users";
+
+import Map "mo:map/Map";
+import Set "mo:map/Set";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -12,7 +13,7 @@ import Suite "mo:matchers/Suite";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
+import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat32 "mo:base/Nat32";
@@ -29,29 +30,17 @@ module {
   type Question = Types.Question;
   type Category = Types.Category;
   type Interest = Types.Interest;
+  type User = Types.User;
   
   // @todo: This test is too complex to follow through, it needs to be simplified
   // @todo: Needs to test that the convictions are updated
   public class TestScheduler() = {
 
-    let questions = Questions.Questions(
-      TrieRef.TrieRef<Nat32, Question>(
-        WrappedRef.init(Trie.empty<Nat32, Question>()), Types.keyNat32, Nat32.equal),
-      WrappedRef.init(0 : Nat32),
-      Observers.Observers<Questions.UpdateType, Question>(Questions.equalUpdateType, Questions.hashUpdateType)
-    );
+    let users_ = Users.build(Map.new<Principal, User>(), null);
 
-    let queries = Queries.Queries(
-      TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(
-        WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(Queries.initRegister()), Queries.keyOrderBy, Queries.equalOrderBy
-    ));
+    let questions_ = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
 
-    // Add observers to sync queries
-    questions.addObs(#QUESTION_ADDED, queries.add);
-    questions.addObs(#QUESTION_REMOVED, queries.remove);
-    
-    let users_ = Users.Users(Users.initRegister());
-    let queries_ = Queries.Queries(Queries.initRegister());
+    let queries_ = Queries.build(Queries.initRegister());
 
     // Add observers to sync queries
     questions_.addObs(#QUESTION_ADDED, queries_.add);
@@ -79,7 +68,7 @@ module {
 
     public func getSuite() : Suite.Suite {
       
-      let categories = TrieSet.empty<Text>();
+      let categories = Set.new<Text>();
       
       // Add the questions
       for (index in Array.keys(question_inputs_)){
@@ -99,15 +88,25 @@ module {
       questions_.replaceQuestion({ questions_.getQuestion(8) with status = #CANDIDATE({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
       questions_.replaceQuestion({ questions_.getQuestion(9) with status = #CANDIDATE({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
 
-      let scheduler_params : SchedulerParams = {
-        selection_rate          = #NS(150);
-        interest_duration       = #NS(500);
-        opinion_duration        = #NS(300);
-        categorization_duration = #NS(500);
-        rejected_duration       = #NS(400);
-      };
+      let selection_rate = #NS(150);
 
-      let scheduler = Scheduler.Scheduler(Scheduler.initRegister(scheduler_params, 1000), questions_, users_, queries_, null);
+      let status_durations = [
+        (#CANDIDATE, #NS(500)),
+        (#OPEN(#OPINION), #NS(300)),
+        (#OPEN(#CATEGORIZATION), #NS(500)),
+        (#REJECTED, #NS(400))
+      ];
+
+      let last_selection_date = 1000;
+
+      let scheduler = Scheduler.build(
+        Types.initRef(selection_rate),
+        Map.fromIter(Array.vals(status_durations), Types.statushash),
+        Types.initRef(last_selection_date),
+        questions_,
+        users_,
+        queries_
+      );
 
       // 1.1 Select a first question
       assert(updateOptQuestions(scheduler.openOpinionVote(900)) == null);
@@ -171,22 +170,22 @@ module {
       // and selection duration is 300.
 
       // 4.1 Archive a first question
-      assert(updateOptQuestions(scheduler.openCategorizationVote(900, Categories.toArray(categories))) == null);
-      assert(updateOptQuestions(scheduler.openCategorizationVote(1300, Categories.toArray(categories))) == null);
-      switch(updateOptQuestions(scheduler.openCategorizationVote(1501, Categories.toArray(categories)))){
+      assert(updateOptQuestions(scheduler.openCategorizationVote(900, Iter.toArray(Set.keys(categories)))) == null);
+      assert(updateOptQuestions(scheduler.openCategorizationVote(1300, Iter.toArray(Set.keys(categories)))) == null);
+      switch(updateOptQuestions(scheduler.openCategorizationVote(1501, Iter.toArray(Set.keys(categories))))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 3); };
       };
 
       // 4.2 Archive a second question
-      assert(updateOptQuestions(scheduler.openCategorizationVote(1600, Categories.toArray(categories))) == null);
-      switch(updateOptQuestions(scheduler.openCategorizationVote(1750, Categories.toArray(categories)))){
+      assert(updateOptQuestions(scheduler.openCategorizationVote(1600, Iter.toArray(Set.keys(categories)))) == null);
+      switch(updateOptQuestions(scheduler.openCategorizationVote(1750, Iter.toArray(Set.keys(categories))))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 6); };
       };
       
       // 4.3 Archive a third question
-      switch(updateOptQuestions(scheduler.openCategorizationVote(2400, Categories.toArray(categories)))){
+      switch(updateOptQuestions(scheduler.openCategorizationVote(2400, Iter.toArray(Set.keys(categories))))){
         case(null) { assert(false); };
         case(?question) { assert(question.id == 2); };
       };

@@ -24,15 +24,19 @@ module {
     #NS: Nat; // To be able to ease the tests on the scheduler
   };
 
+  public type UserParameters = {
+    convictions_half_life: ?Duration;
+  };
+
+  public type SchedulerParameters = {
+    selection_rate: Duration;
+    status_durations: [(Status, Duration)];
+  };
+
   public type Parameters = {
     categories: [Category];
-    users: {
-      convictions_half_life: ?Duration;
-    };
-    scheduler: {
-      selection_rate: Duration;
-      status_durations: [(Status, Duration)];
-    };
+    users: UserParameters;
+    scheduler: SchedulerParameters;
   };
 
   public type Decay = {

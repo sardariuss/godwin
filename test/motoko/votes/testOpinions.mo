@@ -1,8 +1,10 @@
 import Types "../../../src/godwin_backend/types";
 import Votes "../../../src/godwin_backend/votes/votes";
 import Polarization "../../../src/godwin_backend/representation/polarization";
-import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
+import Opinion "../../../src/godwin_backend/votes/opinion";
 import TestableItems "../testableItems";
+
+import Map "mo:map/Map";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -17,6 +19,7 @@ module {
   type Principal = Principal.Principal;
   type Trie<K, V> = Trie.Trie<K, V>;
   type Time = Int;
+  type Map<K, V> = Map.Map<K, V>;
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
@@ -41,22 +44,13 @@ module {
       
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      let ballots_ref = WrappedRef.init<Trie<Principal, Trie<Nat32, Trie<Nat, Timestamp<Cursor>>>>>(
-        Trie.empty<Principal, Trie<Nat32, Trie<Nat, Timestamp<Cursor>>>>()
-      );
-      let aggregates_ref = WrappedRef.init<Trie<Nat32, Trie<Nat, Timestamp<Polarization>>>>(
-        Trie.empty<Nat32, Trie<Nat, Timestamp<Polarization>>>());
-
-      let votes = Votes.Votes(
-        ballots_ref,
-        aggregates_ref,
-        Polarization.nil(),
-        Polarization.addCursor,
-        Polarization.subCursor
+      let votes = Opinion.build(
+        Map.new<Principal, Map<Nat, Map<Nat, Timestamp<Cursor>>>>(),
+        Map.new<Nat, Map<Nat, Timestamp<Polarization>>>()
       );
 
       // Question 0 : arbitrary question_id, iteration and date
-      let question_0 : Nat32 = 0;
+      let question_0 : Nat = 0;
       let iteration_0 : Nat = 0;
       let date_0 : Time = 123456789;
       votes.newAggregate(question_0, iteration_0, date_0);
@@ -82,7 +76,7 @@ module {
       ));
 
       // Question 1 : arbitrary question_id, iteration and date
-      let question_1 : Nat32 = 1;
+      let question_1 : Nat = 1;
       let iteration_1 : Nat = 1;
       let date_1 : Time = 987654321;
       votes.newAggregate(question_1, iteration_1, date_1);
@@ -103,7 +97,7 @@ module {
         votes.getAggregate(question_1, iteration_1),
         Matchers.equals(TestableItems.optOpinionAggregate(?{ date = date_1; elem = {left = 2.0; center = 4.5; right = 3.5;} }))));
 
-      suite("Test Opinions module", tests.toArray());
+      suite("Test Opinions module", Buffer.toArray(tests));
     };
   };
 
