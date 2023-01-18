@@ -5,6 +5,8 @@ import Int "mo:base/Int";
 import Principal "mo:base/Principal";
 import Nat32 "mo:base/Nat32";
 
+import Map "mo:map/Map";
+
 module {
 
   // For convenience: from base module
@@ -19,24 +21,21 @@ module {
     #HOURS: Nat;
     #MINUTES: Nat;
     #SECONDS: Nat;
-    #NS: Nat; // To be able to ease the test on the scheduler
-  };
-
-  public type SchedulerParams = {
-    selection_rate: Duration;
-    interest_duration: Duration;
-    opinion_duration: Duration;
-    categorization_duration: Duration;
-    rejected_duration: Duration;
+    #NS: Nat; // To be able to ease the tests on the scheduler
   };
 
   public type Parameters = {
-    scheduler: SchedulerParams;
     categories: [Category];
-    convictions_half_life: ?Duration;
+    users: {
+      convictions_half_life: ?Duration;
+    };
+    scheduler: {
+      selection_rate: Duration;
+      status_durations: [(Status, Duration)];
+    };
   };
 
-  public type DecayParams = {
+  public type Decay = {
     lambda: Float;
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
@@ -51,6 +50,16 @@ module {
     #REJECTED;
   };
 
+  public func statusToNat(status: Status) : Nat {
+    switch(status){
+      case(#CANDIDATE)             { 0; };
+      case(#OPEN(#OPINION))        { 1; };
+      case(#OPEN(#CATEGORIZATION)) { 2; };
+      case(#CLOSED)                { 3; };
+      case(#REJECTED)              { 4; };
+    };
+  };
+
   public type QuestionStatus = {
     #CANDIDATE: Vote<Interest, InterestAggregate>;
     #OPEN: { stage: VotingStage; iteration: Iteration; };
@@ -59,7 +68,7 @@ module {
   };
 
   public type Question = {
-    id: Nat32;
+    id: Nat;
     author: Principal;
     title: Text;
     text: Text;
@@ -91,6 +100,11 @@ module {
   public func keyNat32(n: Nat32) : Key<Nat32> { { key = n; hash = n; } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Nat32.fromNat(n); } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
+
+  let { nhash } = Map;
+  func hashStatus(a: Status) : Nat { nhash.0(statusToNat(a)); };
+  func equalStatus(a: Status, b: Status) : Bool { nhash.1(statusToNat(a), statusToNat(b)); };
+  public let statushash : Map.HashUtils<Status> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
   
   public type Interest = {
     #UP;

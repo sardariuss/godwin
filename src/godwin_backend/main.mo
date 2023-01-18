@@ -1,7 +1,7 @@
 import Types "types";
-import Game "game";
 import Queries "questions/queries"; // @todo
-import Votes "votes/votes"; // @todo
+import State "state";
+import Factory "factory";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -18,10 +18,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Interest = Types.Interest;
   type Cursor = Types.Cursor;
   type User = Types.User;
-  type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
-  type DecayParams = Types.DecayParams;
+  type Decay = Types.Decay;
   type Status = Types.Status;
   type Duration = Types.Duration;
   type CreateQuestionStatus = Types.CreateQuestionStatus;
@@ -37,16 +36,14 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
-
-  // @todo
   type Timestamp<T> = Types.Timestamp<T>;
 
-  stable var game_register_ = Game.initRegister(caller, parameters, Time.now());
+  stable var state_ = State.initState(caller, Time.now(), parameters);
 
-  let game_ = Game.Game(game_register_);
+  let game_ = Factory.build(state_);
 
-  public query func getDecayParams() : async ?DecayParams {
-    game_.getDecayParams();
+  public query func getDecay() : async ?Decay {
+    game_.getDecay();
   };
 
   public query func getCategories() : async [Category] {
@@ -61,19 +58,27 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeCategory(caller, category);
   };
 
-  public query func getSchedulerParams() : async SchedulerParams {
-    game_.getSchedulerParams();
+  public query func getSelectionRate() : async Duration {
+    game_.getSelectionRate();
   };
 
-  public shared({caller}) func setSchedulerParam(status: Status, duration: Duration) : async Result<(), SetSchedulerParamError> {
-    game_.setSchedulerParam(caller, status, duration);
+  public shared func setSelectionRate(duration: Duration) : async Result<(), SetSchedulerParamError> {
+    game_.setSelectionRate(caller, duration);
   };
 
-  public query func getQuestion(question_id: Nat32) : async Result<Question, GetQuestionError> {
+  public query func getStatusDuration(status: Status) : async ?Duration {
+    game_.getStatusDuration(status);
+  };
+
+  public shared func setStatusDuration(status: Status, duration: Duration) : async Result<(), SetSchedulerParamError> {
+    game_.setStatusDuration(caller, status, duration);
+  };
+
+  public query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
     game_.getQuestion(question_id);
   };
 
-  public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat32) : async Queries.QueryQuestionsResult {
+  public query func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat) : async Queries.QueryQuestionsResult {
     game_.getQuestions(order_by, direction, limit, previous_id);
   };
 
@@ -85,31 +90,31 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.openQuestion(caller, title, text);
   };
 
-  public shared({caller}) func reopenQuestion(question_id: Nat32) : async Result<(), InterestError> {
+  public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), InterestError> {
     game_.reopenQuestion(caller, question_id);
   };
 
-  public shared({caller}) func setInterest(question_id: Nat32, interest: Interest) : async Result<(), InterestError> {
+  public shared({caller}) func setInterest(question_id: Nat, interest: Interest) : async Result<(), InterestError> {
     game_.setInterest(caller, question_id, interest);
   };
 
-  public shared({caller}) func removeInterest(question_id: Nat32) : async Result<(), InterestError> {
+  public shared({caller}) func removeInterest(question_id: Nat) : async Result<(), InterestError> {
     game_.removeInterest(caller, question_id);
   };
 
-  public shared({caller}) func getInterest(question_id: Nat32, iteration: Nat) : async Result<?Timestamp<Interest>, InterestError> {
+  public shared({caller}) func getInterest(question_id: Nat, iteration: Nat) : async Result<?Timestamp<Interest>, InterestError> {
     game_.getInterest(caller, question_id, iteration);
   };
 
-  public shared({caller}) func setOpinion(question_id: Nat32, cursor: Cursor) : async Result<(), OpinionError> {
+  public shared({caller}) func setOpinion(question_id: Nat, cursor: Cursor) : async Result<(), OpinionError> {
     game_.setOpinion(caller, question_id, cursor);
   };
 
-  public shared({caller}) func getOpinion(question_id: Nat32, iteration: Nat) : async Result<?Timestamp<Cursor>, OpinionError> {
+  public shared({caller}) func getOpinion(question_id: Nat, iteration: Nat) : async Result<?Timestamp<Cursor>, OpinionError> {
     game_.getOpinion(caller, question_id, iteration);
   };
 
-  public shared({caller}) func setCategorization(question_id: Nat32, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
+  public shared({caller}) func setCategorization(question_id: Nat, cursor_array: CategoryCursorArray) : async Result<(), CategorizationError> {
     game_.setCategorization(caller, question_id, cursor_array);
   };
 

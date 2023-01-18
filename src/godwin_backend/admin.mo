@@ -87,7 +87,7 @@ module {
       questions.replaceQuestion(updated_question);
       buffer.add(updated_question);
     };
-    buffer.toArray();
+    Buffer.toArray(buffer);
   };
 
 };

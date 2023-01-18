@@ -2,11 +2,15 @@ import Types "../types";
 import Vote "../votes/vote";
 import Queries "queries";
 import Observers "../observers";
+import WrappedRef "../ref/wrappedRef";
+import WMap "../wrappers/WMap";
 
-import Trie "mo:base/Trie";
-import Nat32 "mo:base/Nat32";
+import Map "mo:map/Map";
+
+import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
+import Prelude "mo:base/Prelude";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Hash "mo:base/Hash";
@@ -14,26 +18,19 @@ import Hash "mo:base/Hash";
 module {
 
   // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
   type Iter<T> = Iter.Iter<T>;
   type Principal = Principal.Principal;
   type Hash = Hash.Hash;
+
+  // For convenience: from map module
+  type Map<K, V> = Map.Map<K, V>;
+
   // For convenience: from types module
   type Question = Types.Question;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-
-  public type Register = {
-    var questions: Trie<Nat32, Question>;
-    var question_index: Nat32;
-  };
-
-  public func initRegister() : Register {
-    {
-      var questions = Trie.empty<Nat32, Question>();
-      var question_index = 0;
-    };
-  };
+  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type WMap<K, V> = WMap.WMap<K, V>;
 
   type UpdateType = {
     #QUESTION_ADDED;
@@ -53,25 +50,34 @@ module {
     };
   };
 
-  public class Questions(register: Register) {
+  public func build(register: Map<Nat, Question>, index: WrappedRef<Nat>) : Questions {
+    Questions(
+      WMap.WMap(register, Map.nhash),
+      index,
+      Observers.Observers<UpdateType, Question>(equalUpdateType, hashUpdateType)
+    );
+  };
 
-    let register_ = register;
-    let observers_ = Observers.Observers<UpdateType, Question>(equalUpdateType, hashUpdateType);
+  public class Questions(
+    register_: WMap<Nat, Question>,
+    index_: WrappedRef<Nat>,
+    observers_: Observers.Observers<UpdateType, Question>
+  ) {
 
-    public func getQuestion(question_id: Nat32) : Question {
+    public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
         case(null) { Debug.trap("The question does not exist."); };
         case(?question) { question; };
       };
     };
 
-    public func findQuestion(question_id: Nat32) : ?Question {
-      Trie.get(register_.questions, Types.keyNat32(question_id), Nat32.equal);
+    public func findQuestion(question_id: Nat) : ?Question {
+      register_.get(question_id);
     };
 
     public func createQuestion(author: Principal, date: Int, title: Text, text: Text) : Question {
       let question = {
-        id = register_.question_index;
+        id = index_.ref;
         author;
         title;
         text;
@@ -80,30 +86,32 @@ module {
         interests_history = [];
         vote_history = [];
       };
-      register_.questions := Trie.put(register_.questions, Types.keyNat32(question.id), Nat32.equal, question).0;
-      register_.question_index := register_.question_index + 1;
+      register_.set(question.id, question);
+      index_.ref := index_.ref + 1;
       observers_.callObs(#QUESTION_ADDED, question);
       question;
     };
 
     public func replaceQuestion(question: Question) {
-      let (questions, removed_question) = Trie.put(register_.questions, Types.keyNat32(question.id), Nat32.equal, question);
-      switch(removed_question){
-        case(null) { Debug.trap("Cannot replace a question that does not exist"); };
+      if (Option.isNull(register_.get(question.id))){
+        Debug.trap("Cannot replace a question that does not exist");
+      };
+      switch(register_.put(question.id, question)){
+        case(null) { Prelude.unreachable(); };
         case(?old_question) {
-          register_.questions := questions;
           observers_.callObs(#QUESTION_REMOVED, old_question);
           observers_.callObs(#QUESTION_ADDED,   question    );
         };
       };
     };
 
-    public func removeQuestion(question_id: Nat32) : Question {
-      let (questions, removed_question) = Trie.remove(register_.questions, Types.keyNat32(question_id), Nat32.equal);
-      switch(removed_question){
-        case(null) { Debug.trap("Cannot remove a question that does not exist"); };
-        case(?old_question){
-          register_.questions := questions;
+    public func removeQuestion(question_id: Nat) : Question {
+      if (Option.isNull(register_.get(question_id))){
+        Debug.trap("Cannot remove a question that does not exist");
+      };
+      switch(register_.remove(question_id)){
+        case(null) { Prelude.unreachable(); };
+        case(?old_question) {
           observers_.callObs(#QUESTION_REMOVED, old_question);
           old_question;
         };
@@ -128,9 +136,9 @@ module {
       order_by: Queries.OrderBy,
       direction: Queries.QueryDirection,
       limit: Nat,
-      previous_id: ?Nat32
+      previous_id: ?Nat
     ) : Queries.QueryQuestionsResult {
-      let bound = Option.chain(previous_id, func(id: Nat32) : ?Queries.QuestionKey {
+      let bound = Option.chain(previous_id, func(id: Nat) : ?Queries.QuestionKey {
         Queries.initQuestionKey(getQuestion(id), order_by);
       });
       switch(direction){

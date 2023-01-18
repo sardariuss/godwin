@@ -10,6 +10,7 @@ module {
   type Trie2D<K1, K2, V>     = Trie.Trie2D<K1, K2, V>;
   type Trie3D<K1, K2, K3, V> = Trie.Trie3D<K1, K2, K3, V>;
   type Key<K>                = Trie.Key<K>;
+  type Iter<T>               = { next : () -> ?T };
 
   type WrappedRef<T> = WrappedRef.WrappedRef<T>;
 
@@ -18,6 +19,10 @@ module {
     key_gen: (K) -> Key<K>,
     key_eq: (K, K) -> Bool
   ) {
+
+    public func share() : Trie<K, V> {
+      trie_.ref;
+    };
 
     public func put(k: K, v: V) : ?V {
       let (trie, old_v) = Trie.put(trie_.ref, key_gen(k), key_eq, v);
@@ -33,6 +38,14 @@ module {
       let (trie, old_v) = Trie.remove(trie_.ref, key_gen(k), key_eq);
       trie_.ref        := trie;
       old_v;
+    };
+
+    public func iter() : Iter<(K, V)> {
+      Trie.iter(trie_.ref);
+    };
+
+    public func size() : Nat {
+      Trie.size(trie_.ref);
     };
 
   };

@@ -7,7 +7,7 @@ import CategoryCursorTrie "../representation/categoryCursorTrie";
 import Utils "../utils";
 
 import Buffer "mo:base/Buffer";
-import Nat32 "mo:base/Nat32";
+import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
@@ -32,7 +32,7 @@ module {
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
-    buffer.add("id: " # Nat32.toText(question.id) # ", ");
+    buffer.add("id: " # Nat.toText(question.id) # ", ");
     buffer.add("author: " # Principal.toText(question.author) # ", ");
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
@@ -41,7 +41,7 @@ module {
   };
   
   public func equal(q1: Question, q2: Question) : Bool {
-    return Nat32.equal(q1.id, q2.id)
+    return Nat.equal(q1.id, q2.id)
        and Principal.equal(q1.author, q2.author)
        and Text.equal(q1.title, q2.title)
        and Text.equal(q1.text, q2.text)

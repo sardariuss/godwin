@@ -2,8 +2,9 @@ import Types "../../src/godwin_backend/types";
 import Questions "../../src/godwin_backend/questions/questions";
 import Queries "../../src/godwin_backend/questions/queries";
 import Scheduler "../../src/godwin_backend/scheduler";
+import TrieRef "../../src/godwin_backend/ref/trieRef";
+import WrappedRef "../../src/godwin_backend/ref/wrappedRef";
 import Users "../../src/godwin_backend/users";
-import Categories "../../src/godwin_backend/categories";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -11,6 +12,7 @@ import Suite "mo:matchers/Suite";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat32 "mo:base/Nat32";
@@ -26,16 +28,28 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Category = Types.Category;
-  type SchedulerParams = Types.SchedulerParams;
   type Interest = Types.Interest;
-  // For convenience: from other modules
-  type Questions = Questions.Register;
   
   // @todo: This test is too complex to follow through, it needs to be simplified
   // @todo: Needs to test that the convictions are updated
   public class TestScheduler() = {
 
-    let questions_ = Questions.Questions(Questions.initRegister());
+    let questions = Questions.Questions(
+      TrieRef.TrieRef<Nat32, Question>(
+        WrappedRef.init(Trie.empty<Nat32, Question>()), Types.keyNat32, Nat32.equal),
+      WrappedRef.init(0 : Nat32),
+      Observers.Observers<Questions.UpdateType, Question>(Questions.equalUpdateType, Questions.hashUpdateType)
+    );
+
+    let queries = Queries.Queries(
+      TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(
+        WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(Queries.initRegister()), Queries.keyOrderBy, Queries.equalOrderBy
+    ));
+
+    // Add observers to sync queries
+    questions.addObs(#QUESTION_ADDED, queries.add);
+    questions.addObs(#QUESTION_REMOVED, queries.remove);
+    
     let users_ = Users.Users(Users.initRegister());
     let queries_ = Queries.Queries(Queries.initRegister());
 
@@ -65,7 +79,7 @@ module {
 
     public func getSuite() : Suite.Suite {
       
-      let categories = Categories.fromArray([]);
+      let categories = TrieSet.empty<Text>();
       
       // Add the questions
       for (index in Array.keys(question_inputs_)){

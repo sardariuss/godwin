@@ -3,6 +3,10 @@ import Utils "utils";
 import Polarization "representation/polarization";
 import Cursor "representation/cursor";
 import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
+import WrappedRef "ref/wrappedRef";
+import WMap "wrappers/WMap";
+
+import Map "mo:map/Map";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -19,6 +23,8 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
 
+  type Map<K, V> = Map.Map<K, V>;
+
   // For convenience: from types module
   type User = Types.User;
   type Question = Types.Question;
@@ -27,21 +33,20 @@ module {
   type Polarization = Types.Polarization;
   type Iteration = Types.Iteration;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type DecayParams = Types.DecayParams;
+  type Decay = Types.Decay;
+  //type TrieRef<K, V> = TrieRef.TrieRef<K, V>;
+  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type WMap<K, V> = WMap.WMap<K, V>;
 
-  public type Register = {
-    var users : Trie<Principal, User>;
+  public func build(register: Map<Principal, User>, decay_params: ?Decay) : Users {
+    Users(WMap.WMap(register, Map.phash), decay_params);
   };
 
-  public func initRegister() : Register {
-    {
-      var users = Trie.empty<Principal, User>();
+  public class Users(register_: WMap<Principal, User>, decay_params_: ?Decay) {
+
+    public func getDecay() : ?Decay {
+      decay_params_;
     };
-  };
-
-  public class Users(register: Register) {
-
-    let register_ = register;
 
     /// Get the user associated with the given principal.
     /// \param[in] principal The principal associated to the user.
@@ -59,26 +64,29 @@ module {
     /// \param[in] principal The principal associated to the user.
     /// \return Null if the principal is anonymous, the user otherwise.
     public func findUser(principal: Principal) : ?User {
-      Trie.get(register_.users, Types.keyPrincipal(principal), Principal.equal);
+      register_.get(principal);
     };
 
     public func setUserName(principal: Principal, name: Text) {
-      putUser({getUser(principal) with name = ?name; });
+      register_.set(principal, {getUser(principal) with name = ?name; });
     };
 
     public func getOrCreateUser(principal: Principal, categories: [Category]) : User {
       if (Principal.isAnonymous(principal)){
         Debug.trap("User's principal cannot be anonymous.");
       };
-      let user = Option.get(Trie.get(register_.users, Types.keyPrincipal(principal), Principal.equal),
-        {
-          principal;
-          name = null;
-          convictions = CategoryPolarizationTrie.nil(categories);
-        }
-      );
-      putUser(user);
-      user;
+      switch (register_.get(principal)){
+        case(?user) { user; };
+        case(null) {
+          let new_user = {
+            principal;
+            name = null;
+            convictions = CategoryPolarizationTrie.nil(categories);
+          };
+          putUser(new_user);
+          new_user;
+        };
+      };
     };
 
     /// Put the user in the register.
@@ -88,23 +96,23 @@ module {
       if (Principal.isAnonymous(user.principal)){
         Debug.trap("User's principal cannot be anonymous.");
       };
-      register_.users := Trie.put(register_.users, Types.keyPrincipal(user.principal), Principal.equal, user).0;
+      register_.set(user.principal, user);
     };
 
     public func removeCategory(category: Category) {
-      for ((principal, user) in Trie.iter(register_.users)) {
+      register_.forEach(func(principal, user) {
         putUser({ user with convictions = Trie.remove(user.convictions, Types.keyText(category), Text.equal).0 });
-      };
+      });
     };
 
     public func addCategory(category: Category) {
-      for ((principal, user) in Trie.iter(register_.users)) {
+      register_.forEach(func(principal, user) {
         putUser({ user with convictions = Trie.put(user.convictions, Types.keyText(category), Text.equal, Polarization.nil()).0 });
-      };
+      });
     };
 
     // Warning: assumes that the question is not closed yet but will be after convictions have been updated
-    public func updateConvictions(new_iteration: Iteration, old_iterations: [Iteration], decay_params: ?DecayParams) {
+    public func updateConvictions(new_iteration: Iteration, old_iterations: [Iteration]) {
 
       let new_categorization = new_iteration.categorization.aggregate;
 
@@ -114,14 +122,14 @@ module {
         let old_categorization = old_iterations[old_iterations.size() - 1].categorization.aggregate;
         for (old_iteration in Array.vals(old_iterations)){
           for ((principal, opinion) in Trie.iter(old_iteration.opinion.ballots)){
-            putUser(updateBallotContribution(getUser(principal), opinion, old_iteration.opinion.date, decay_params, new_categorization, ?old_categorization));
+            putUser(updateBallotContribution(getUser(principal), opinion, old_iteration.opinion.date, new_categorization, ?old_categorization));
           };
         };
       };
 
       // Process the ballos from the question's current iteration
       for ((principal, opinion) in Trie.iter(new_iteration.opinion.ballots)) {
-        putUser(updateBallotContribution(getUser(principal), opinion, new_iteration.opinion.date, decay_params, new_categorization, null));
+        putUser(updateBallotContribution(getUser(principal), opinion, new_iteration.opinion.date, new_categorization, null));
       };
     };
 
@@ -130,7 +138,7 @@ module {
     // This is done for every category using a trie of polarization initialized with the opinion.
     // The CategoryPolarizationTrie.mul uses a leftJoin, so that the resulting convictions contains
     // only the categories from the definitions.
-    func updateBallotContribution(user: User, opinion: Cursor, date: Int, decay_params: ?DecayParams, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
+    func updateBallotContribution(user: User, opinion: Cursor, date: Int, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
       // Get the categories from the convictions
       let categories = TrieSet.toArray(CategoryPolarizationTrie.keys(user.convictions));
       
@@ -138,7 +146,7 @@ module {
       let opinion_trie = Utils.make(categories, Types.keyText, Text.equal, Cursor.toPolarization(opinion));
 
       // Compute the decay coefficient
-      let decay_coef = Option.getMapped(decay_params, func(params: DecayParams) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
+      let decay_coef = Option.getMapped(decay_params_, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
 
       // Add the opinion times new categorization.
       var contribution = CategoryPolarizationTrie.mul(

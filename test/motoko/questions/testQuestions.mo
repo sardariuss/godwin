@@ -2,7 +2,12 @@ import Types "../../../src/godwin_backend/types";
 import Questions "../../../src/godwin_backend/questions/questions";
 import Queries "../../../src/godwin_backend/questions/queries";
 import Iteration "../../../src/godwin_backend/votes/iteration";
+import TrieRef "../../../src/godwin_backend/ref/trieRef";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
+import Observers "../../../src/godwin_backend/observers";
 import TestableItems "../testableItems";
+
+import RBT "mo:stableRBT/StableRBTree";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
@@ -24,8 +29,6 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Interest = Types.Interest;
-  // For convenience: from other modules
-  type Questions = Questions.Register;
   
   public class TestQuestions() = {
 
@@ -58,8 +61,18 @@ module {
     public func getSuite() : Suite.Suite {
 
       let tests = Buffer.Buffer<Suite.Suite>(array_originals_.size() * 4);
-      let questions = Questions.Questions(Questions.initRegister());
-      let queries = Queries.Queries(Queries.initRegister());
+      
+      let questions = Questions.Questions(
+        TrieRef.TrieRef<Nat32, Question>(
+          WrappedRef.init(Trie.empty<Nat32, Question>()), Types.keyNat32, Nat32.equal),
+        WrappedRef.init(0 : Nat32),
+        Observers.Observers<Questions.UpdateType, Question>(Questions.equalUpdateType, Questions.hashUpdateType)
+      );
+
+      let queries = Queries.Queries(
+        TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(
+          WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(Queries.initRegister()), Queries.keyOrderBy, Queries.equalOrderBy
+      ));
 
       // Add observers to sync queries
       questions.addObs(#QUESTION_ADDED, queries.add);

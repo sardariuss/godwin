@@ -1,7 +1,10 @@
 import Types "../types";
+import WMap "../wrappers/WMap";
 import Question "question";
 
 import RBT "mo:stableRBT/StableRBTree";
+
+import Map "mo:map/Map";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -15,7 +18,7 @@ import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Float "mo:base/Float";
 import Int "mo:base/Int";
-import Nat32 "mo:base/Nat32";
+import Nat "mo:base/Nat";
 
 module {
 
@@ -27,6 +30,15 @@ module {
   type Hash = Hash.Hash;
   type Key<K> = Trie.Key<K>;
   type Iter<T> = Iter.Iter<T>;
+
+  type WMap<K, V> = WMap.WMap<K, V>;
+
+  // For convenience: from map module
+  type Map<K, V> = Map.Map<K, V>;
+  let { thash } = Map;
+  func hashOrderBy(order_by: OrderBy) : Nat { thash.0(toTextOrderBy(order_by)); };
+  func equalOrderBy(a: OrderBy, b: OrderBy) : Bool { thash.1(toTextOrderBy(a), toTextOrderBy(b)); };
+  let orderbyhash : Map.HashUtils<OrderBy> = ( func(a) = hashOrderBy(a), func(a, b) = equalOrderBy(a, b));
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -43,13 +55,13 @@ module {
     #INTEREST_HOT;
   };
 
-  public type QueryQuestionsResult = { ids: [Nat32]; next_id: ?Nat32 };
+  public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
   public type QueryDirection = {
     #fwd;
     #bwd;
   };
   public type QuestionKey = {
-    id: Nat32;
+    id: Nat;
     data: {
       #AUTHOR: TextEntry;
       #TITLE: TextEntry;
@@ -70,7 +82,6 @@ module {
     status: Status;
     date: Int;
   };
-  public type QuestionRBTs = Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
 
   // To be able to use OrderBy as key in a Trie
   func toTextOrderBy(order_by: OrderBy) : Text {
@@ -92,9 +103,9 @@ module {
       case(#INTEREST_HOT) { "INTEREST_HOT"; };
     };
   };
-  func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
-  func equalOrderBy(a: OrderBy, b: OrderBy) : Bool { a == b; };
-  func keyOrderBy(order_by: OrderBy) : Key<OrderBy> { { key = order_by; hash = hashOrderBy(order_by); } };
+  //func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
+  //func equalOrderBy(a: OrderBy, b: OrderBy) : Bool { a == b; };
+  //func keyOrderBy(order_by: OrderBy) : Key<OrderBy> { { key = order_by; hash = hashOrderBy(order_by); } };
 
   // Init functions
   public func initQuestionKey(question: Question, order_by: OrderBy) : ?QuestionKey {
@@ -141,7 +152,7 @@ module {
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
-    let default_order = Nat32.compare(a.id, b.id);
+    let default_order = Nat.compare(a.id, b.id);
     switch(a.data){
       case(#AUTHOR(entry_a)){
         switch(b.data){
@@ -227,43 +238,43 @@ module {
 
   // Public functions
 
-  public func addOrderBy(rbts: Trie<OrderBy, RBT.Tree<QuestionKey, ()>>, order_by: OrderBy) : Trie<OrderBy, RBT.Tree<QuestionKey, ()>> {
-    Trie.put(rbts, keyOrderBy(order_by), equalOrderBy, RBT.init<QuestionKey, ()>()).0;
-  };
-
-  public type Register = {
-    var rbts: Trie<OrderBy, RBT.Tree<QuestionKey, ()>>;
+  public func addOrderBy(register: Map<OrderBy, RBT.Tree<QuestionKey, ()>>, order_by: OrderBy) {
+    ignore Map.put(register, orderbyhash, order_by, RBT.init<QuestionKey, ()>());
   };
 
   // @todo: this is done for optimization (mostly to reduce memory usage) but brings some issues:
   // (queryQuestions and entries can trap). Alternative would be to init with every OrderBy
   // possible in init method.
-  public func initRegister() : Register {
-    var rbts = Trie.empty<OrderBy, RBT.Tree<QuestionKey, ()>>();
-    rbts := addOrderBy(rbts, #STATUS_DATE(#CANDIDATE));
-    rbts := addOrderBy(rbts, #STATUS_DATE(#OPEN(#OPINION)));
-    rbts := addOrderBy(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
-    rbts := addOrderBy(rbts, #STATUS_DATE(#CLOSED));
-    rbts := addOrderBy(rbts, #STATUS_DATE(#REJECTED));
-    rbts := addOrderBy(rbts, #INTEREST);
-    { var rbts; };
+  public func initRegister() : Map<OrderBy, RBT.Tree<QuestionKey, ()>> {
+    let register = Map.new<OrderBy, RBT.Tree<QuestionKey, ()>>();
+    addOrderBy(register, #STATUS_DATE(#CANDIDATE));
+    addOrderBy(register, #STATUS_DATE(#OPEN(#OPINION)));
+    addOrderBy(register, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
+    addOrderBy(register, #STATUS_DATE(#CLOSED));
+    addOrderBy(register, #STATUS_DATE(#REJECTED));
+    addOrderBy(register, #INTEREST);
+    register;
   };
 
-  public class Queries(register_: Register) {
+  public func build(register: Map<OrderBy, RBT.Tree<QuestionKey, ()>>) : Queries {
+    Queries(WMap.WMap(register, orderbyhash));
+  };
+
+  public class Queries(register_: WMap<OrderBy, RBT.Tree<QuestionKey, ()>>) {
   
     public func add(new_question: Question) {
-      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+      register_.forEach(func(order_by, rbt){
         // Add the new key
         Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
           let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
-          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+          register_.set(order_by, new_rbt);
         });
-      };
+      });
     };
   
     // @todo: once tested, use add and remove instead
     public func replace(old_question: Question, new_question: Question) {
-      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+      register_.forEach(func(order_by, rbt){
         let old_key = initQuestionKey(old_question, order_by);
         let new_key = initQuestionKey(new_question, order_by);
         if (not equalOptKeys(old_key, new_key)){
@@ -276,19 +287,19 @@ module {
           Option.iterate(new_key, func(question_key: QuestionKey) {
             single_rbt := RBT.put(single_rbt, compareQuestionKey, question_key, ());
           });
-          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, single_rbt).0;
+          register_.set(order_by, single_rbt);
         };
-      };
+      });
     };
   
     public func remove(old_question: Question) {
-      for ((order_by, rbt) in Trie.iter(register_.rbts)){
+      register_.forEach(func(order_by, rbt){
         // Remove the old key
         Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
           let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
-          register_.rbts := Trie.put(register_.rbts, keyOrderBy(order_by), equalOrderBy, new_rbt).0;
+          register_.set(order_by, new_rbt);
         });
-      };
+      });
     };
   
     // @todo: if lower or upper bound QuestionKey data is not of the same type as OrderBy, what happens ? traps ?
@@ -300,7 +311,7 @@ module {
       direction: RBT.Direction,
       limit: Nat
     ) : QueryQuestionsResult {
-      switch(Trie.get(register_.rbts, keyOrderBy(order_by), equalOrderBy)){
+      switch(register_.get(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?rbt){
           switch(RBT.entries(rbt).next()){
@@ -311,8 +322,8 @@ module {
                 case(?last){
                   let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
                   {
-                    ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat32 { key_value.0.id; });
-                    next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat32 { ?key.id; }, null);
+                    ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat { key_value.0.id; });
+                    next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
                   }
                 };
               };
@@ -323,7 +334,7 @@ module {
     };
   
     public func entries(order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
-      switch(Trie.get(register_.rbts, keyOrderBy(order_by), equalOrderBy)){
+      switch(register_.get(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?rbt){ 
           switch(direction){

@@ -3,7 +3,6 @@ import Types "../types";
 import Polarization "../representation/polarization";
 import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 import CategoryCursorTrie "../representation/categoryCursorTrie";
-import Categories "../categories";
 
 import TrieSet "mo:base/TrieSet";
 import Option "mo:base/Option";

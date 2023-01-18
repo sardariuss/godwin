@@ -1,12 +1,12 @@
 import Types "../types";
 import Cursor "cursor";
-import Categories "../categories";
 import Utils "../utils";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
 import TrieSet "mo:base/TrieSet";
+import Option "mo:base/Option";
 
 module {
 
@@ -19,23 +19,23 @@ module {
   type Category = Types.Category; 
   type CategoryCursorTrie = Types.CategoryCursorTrie;
 
-  public func init(categories: Categories.Categories) : CategoryCursorTrie {
+  public func init(categories: Set<Category>) : CategoryCursorTrie {
     var trie = Trie.empty<Category, Cursor>();
-    for (category in Categories.vals(categories)){
+    for (category in Utils.setIter(categories)){
       trie := Trie.put(trie, Types.keyText(category), Text.equal, Cursor.init()).0;
     };
     trie;
   };
 
-  public func isValid(cursor_trie: CategoryCursorTrie, categories: Categories.Categories) : Bool {
-    if (Trie.size(cursor_trie) != Categories.size(categories)){
+  public func isValid(cursor_trie: CategoryCursorTrie, categories: Set<Category>) : Bool {
+    if (Trie.size(cursor_trie) != TrieSet.size(categories)){
       return false;
     };
     for ((category, cursor) in Trie.iter(cursor_trie)){
       if (not Cursor.isValid(cursor)){
         return false;
       };
-      if (not Categories.contains(categories, category)){
+      if (Option.isNull(Trie.get(categories, Types.keyText(category), Text.equal))){
         return false;
       };
     };

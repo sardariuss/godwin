@@ -4,99 +4,131 @@ import Question "questions/question";
 import Queries "questions/queries";
 import Users "users";
 import Utils "utils";
+import WrappedRef "ref/wrappedRef";
+import TrieRef "ref/trieRef";
+import WMap "wrappers/WMap";
+
+import Map "mo:map/Map";
 
 import Buffer "mo:base/Buffer";
+import Trie "mo:base/Trie";
+import Option "mo:base/Option";
 
 module {
-
+  // For convenience: from base module
+  type Time = Int;
+  type Trie<K, V> = Trie.Trie<K, V>;
   // For convenience: from types module
   type Question = Types.Question;
-  type SchedulerParams = Types.SchedulerParams;
   type Category = Types.Category;
-  type DecayParams = Types.DecayParams;
   type Status = Types.Status;
   type Duration = Types.Duration;
+
+  // For convenience: from map module
+  type Map<K, V> = Map.Map<K, V>;
+
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type Queries = Queries.Queries;
-  type Time = Int;
+  type TrieRef<K, V> = TrieRef.TrieRef<K, V>;
+  type WrappedRef<T> = WrappedRef.WrappedRef<T>;
+  type WMap<K, V> = WMap.WMap<K, V>;
 
-  public type Register = {
-    var params: SchedulerParams;
-    var last_selection_date: Time;
-  };
-
-  public func initRegister(params: SchedulerParams, last_selection_date: Time) : Register {
-    {
-      var params = params;
-      var last_selection_date = last_selection_date;
-    };
+  public func build(
+    selection_rate: WrappedRef<Duration>,
+    status_durations: Map<Status, Duration>,
+    last_selection_date: WrappedRef<Time>,
+    questions: Questions,
+    users: Users,
+    queries: Queries
+  ) : Scheduler {
+    Scheduler(
+      selection_rate,
+      WMap.WMap<Status, Duration>(status_durations, Types.statushash),
+      last_selection_date,
+      questions,
+      users,
+      queries
+    );
   };
 
   // @todo: make the return of functions uniform (always return an array of questions)
-  public class Scheduler(register_: Register, questions_: Questions, users_: Users, queries_: Queries, decay_params_: ?DecayParams){
-    
-    public func getParams() : SchedulerParams {
-      register_.params;
+  public class Scheduler(
+    selection_rate_: WrappedRef<Duration>,
+    status_durations_: WMap<Status, Duration>,
+    last_selection_date_: WrappedRef<Time>,
+    questions_: Questions,
+    users_: Users,
+    queries_: Queries
+  ){
+
+    public func getSelectionRate() : Duration {
+      selection_rate_.ref;
     };
 
-    public func setParam(status: Status, duration: Duration){
-      switch(status){
-        case(#CANDIDATE)             { register_.params := { register_.params with selection_rate          = duration; } };
-        case(#OPEN(#OPINION))        { register_.params := { register_.params with interest_duration       = duration; } };
-        case(#OPEN(#CATEGORIZATION)) { register_.params := { register_.params with opinion_duration        = duration; } };
-        case(#CLOSED)                { register_.params := { register_.params with categorization_duration = duration; } };
-        case(#REJECTED)              { register_.params := { register_.params with rejected_duration       = duration; } };
-      };
+    public func setSelectionRate(duration: Duration) {
+      selection_rate_.ref := duration;
+    };
+
+    public func getStatusDuration(status: Status) : ?Duration {
+      status_durations_.get(status);
+    };
+
+    public func setStatusDuration(status: Status, duration: Duration) {
+      ignore status_durations_.put(status, duration);
     };
 
     public func rejectQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = queries_.entries(#STATUS_DATE(#CANDIDATE), #fwd);
-      label iter_oldest while(true){
-        switch(questions_.next(iter)){
-          case(null){ break iter_oldest; };
-          case(?question){
-            let interest = Question.unwrapInterest(question);
-            // Stop iterating here if the question is not old enough
-            if (time_now < interest.date + Utils.toTime(register_.params.interest_duration)){ break iter_oldest; };
-            // If old enough, reject the question
-            let rejected_question = Question.rejectQuestion(question, time_now);
-            questions_.replaceQuestion(rejected_question);
-            buffer.add(rejected_question);
+      Option.iterate(status_durations_.get(#CANDIDATE), func(duration: Duration){
+        let iter = queries_.entries(#STATUS_DATE(#CANDIDATE), #fwd);
+        label iter_oldest while(true){
+          switch(questions_.next(iter)){
+            case(null){ break iter_oldest; };
+            case(?question){
+              let interest = Question.unwrapInterest(question);
+              // Stop iterating here if the question is not old enough
+              if (time_now < interest.date + Utils.toTime(duration)){ break iter_oldest; };
+              // If old enough, reject the question
+              let rejected_question = Question.rejectQuestion(question, time_now);
+              questions_.replaceQuestion(rejected_question);
+              buffer.add(rejected_question);
+            };
           };
         };
-      };
-      buffer.toArray();
+      });
+      Buffer.toArray(buffer);
     };
 
     
     public func deleteQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = queries_.entries(#STATUS_DATE(#REJECTED), #fwd);
-      label iter_oldest while(true){
-        switch(questions_.next(iter)){
-          case(null){ break iter_oldest; };
-          case(?question){
-            // Stop iterating here if the question is not old enough
-            if (time_now < Question.unwrapRejectedDate(question) + Utils.toTime(register_.params.rejected_duration)){ break iter_oldest; };
-            // If old enough, delete the question
-            buffer.add(questions_.removeQuestion(question.id));
+      Option.iterate(status_durations_.get(#REJECTED), func(duration: Duration){
+        let iter = queries_.entries(#STATUS_DATE(#REJECTED), #fwd);
+        label iter_oldest while(true){
+          switch(questions_.next(iter)){
+            case(null){ break iter_oldest; };
+            case(?question){
+              // Stop iterating here if the question is not old enough
+              if (time_now < Question.unwrapRejectedDate(question) + Utils.toTime(duration)){ break iter_oldest; };
+              // If old enough, delete the question
+              buffer.add(questions_.removeQuestion(question.id));
+            };
           };
         };
-      };
-      buffer.toArray();
+      });
+      Buffer.toArray(buffer);
     };
 
     public func openOpinionVote(time_now: Time) : ?Question {
-      if (time_now > register_.last_selection_date + Utils.toTime(register_.params.selection_rate)) {
+      if (time_now > last_selection_date_.ref + Utils.toTime(selection_rate_.ref)) {
         switch(questions_.first(queries_, #INTEREST, #bwd)){
           case(null){};
           case(?question){ 
             let updated_question = Question.openOpinionVote(question, time_now);
             questions_.replaceQuestion(updated_question);
-            register_.last_selection_date := time_now;
+            last_selection_date_.ref := time_now;
             return ?updated_question;
           };
         };
@@ -105,38 +137,42 @@ module {
     };
 
     public func openCategorizationVote(time_now: Time, categories: [Category]) : ?Question {
-      switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
-        case(null){};
-        case(?question){
-          let iteration = Question.unwrapIteration(question);
-          // If categorization date has come, open categorization vote
-          if (time_now > iteration.opinion.date + Utils.toTime(register_.params.opinion_duration)) {
-            let updated_question = Question.openCategorizationVote(question, time_now, categories);
-            questions_.replaceQuestion(updated_question);
-            return ?updated_question;
+      Option.chain(status_durations_.get(#OPEN(#OPINION)), func(duration: Duration) : ?Question{
+        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
+          case(null){};
+          case(?question){
+            let iteration = Question.unwrapIteration(question);
+            // If categorization date has come, open categorization vote
+            if (time_now > iteration.opinion.date + Utils.toTime(duration)) {
+              let updated_question = Question.openCategorizationVote(question, time_now, categories);
+              questions_.replaceQuestion(updated_question);
+              return ?updated_question;
+            };
           };
         };
-      };
-      null;
+        null;
+      });
     };
 
     public func closeQuestion(time_now: Time) : ?Question {
-      switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
-        case(null){};
-        case(?question){
-          let iteration = Question.unwrapIteration(question);
-          // If categorization duration is over, close votes
-          if (time_now > iteration.categorization.date + Utils.toTime(register_.params.categorization_duration)) {
-            // Need to update the users convictions
-            users_.updateConvictions(Question.unwrapIteration(question), question.vote_history, decay_params_);
-            // Finally close the question
-            let closed_question = Question.closeQuestion(question, time_now);
-            questions_.replaceQuestion(closed_question);
-            return ?closed_question;
+      Option.chain(status_durations_.get(#OPEN(#CATEGORIZATION)), func(duration: Duration) : ?Question{
+        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
+          case(null){};
+          case(?question){
+            let iteration = Question.unwrapIteration(question);
+            // If categorization duration is over, close votes
+            if (time_now > iteration.categorization.date + Utils.toTime(duration)) {
+              // Need to update the users convictions
+              users_.updateConvictions(Question.unwrapIteration(question), question.vote_history);
+              // Finally close the question
+              let closed_question = Question.closeQuestion(question, time_now);
+              questions_.replaceQuestion(closed_question);
+              return ?closed_question;
+            };
           };
         };
-      };
-      null;
+        null;
+      });
     };
 
   };

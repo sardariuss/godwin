@@ -3,13 +3,6 @@ dfx start --background --clean
 
 # Deploy the backend
 dfx deploy godwin_backend --argument '(record {
-  scheduler = record {
-    selection_rate = variant { SECONDS = 0 };
-    interest_duration = variant { SECONDS = 0 };
-    opinion_duration = variant { SECONDS = 0 };
-    categorization_duration = variant { SECONDS = 0 };
-    rejected_duration = variant { DAYS = 1 };
-  };
   categories = vec {
     "IDENTITY";
     "COOPERATION";
@@ -20,5 +13,17 @@ dfx deploy godwin_backend --argument '(record {
     "JUSTICE";
     "CHANGE";
   };
-  convictions_half_life = null;
+  users = record {
+    convictions_half_life = null;
+  };
+  scheduler = record {
+    selection_rate = variant { SECONDS = 0 };
+    status_durations = vec {
+      record { variant { CANDIDATE }; variant { SECONDS = 0 }; };
+      record { variant { OPEN = variant { OPINION } }; variant { SECONDS = 0 }; };
+      record { variant { OPEN = variant { CATEGORIZATION } }; variant { SECONDS = 0 }; };
+      record { variant { CLOSED }; variant { SECONDS = 0 }; };
+      record { variant { REJECTED }; variant { DAYS = 1 }; };
+    };
+  };
 })'

@@ -2,6 +2,8 @@ import Types "../../../src/godwin_backend/types";
 import Polarization "../../../src/godwin_backend/representation/polarization";
 import Iteration "../../../src/godwin_backend/votes/iteration";
 import Queries "../../../src/godwin_backend/questions/queries";
+import TrieRef "../../../src/godwin_backend/ref/trieRef";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import TestableItems "../testableItems";
 
 import RBT "mo:stableRBT/StableRBTree";
@@ -13,11 +15,11 @@ import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
 
-
 module {
   
   type Interest = Types.Interest;
   type Polarization = Types.Polarization;
+  type Trie<K, V> = Trie.Trie<K, V>;
 
   // @todo: add tests on lower and upper bounds for the queryQuestions function
   // @todo: add tests on entries and entriesRev functions
@@ -29,8 +31,6 @@ module {
     let { run;test;suite; } = Suite;
     // For convenience: from types module
     type Question = Types.Question;
-    // For convenience: from queries module
-    type QuestionRBTs = Queries.QuestionRBTs;
     
     let testQuery = TestableItems.testQueryQuestionsResult;
 
@@ -48,14 +48,11 @@ module {
     public func getSuite() : Suite.Suite {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
-      var rbts = Trie.empty<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
-      rbts := Queries.addOrderBy(rbts, #TITLE);
-      rbts := Queries.addOrderBy(rbts, #CREATION_DATE);
-      rbts := Queries.addOrderBy(rbts, #INTEREST);
-      rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#OPINION)));
-      rbts := Queries.addOrderBy(rbts, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
+      let wrapped_ref = WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(Queries.initRegister());
 
-      let queries = Queries.Queries({ var rbts; });
+      let trie_ref = TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(wrapped_ref, Queries.keyOrderBy, Queries.equalOrderBy);
+
+      let queries = Queries.Queries(trie_ref);
 
       // Add questions
       queries.add(question_0);

@@ -1,5 +1,7 @@
 import Types "../../../src/godwin_backend/types";
 import Queries "../../../src/godwin_backend/questions/queries";
+import TrieRef "../../../src/godwin_backend/ref/trieRef";
+import WrappedRef "../../../src/godwin_backend/ref/wrappedRef";
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -24,7 +26,6 @@ module {
     type Question = Types.Question;
     type Interest = Types.Interest;
     // For convenience: from queries module
-    type QuestionRBTs = Queries.QuestionRBTs;
     let testQuery = TestableItems.testQueryQuestionsResult;
 
     let question_0 :        Question = { id = 0; status = #CANDIDATE({ date = 10000; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0;    }}); date = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; interests_history = []; vote_history = []; };
@@ -44,7 +45,11 @@ module {
       var rbts = Trie.empty<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>();
       rbts := Queries.addOrderBy(rbts, #INTEREST_HOT);
 
-      let queries = Queries.Queries({ var rbts; });
+      let wrapped_ref = WrappedRef.init<Trie<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>>(rbts);
+
+      let trie_ref = TrieRef.TrieRef<Queries.OrderBy, RBT.Tree<Queries.QuestionKey, ()>>(wrapped_ref, Queries.keyOrderBy, Queries.equalOrderBy);
+
+      let queries = Queries.Queries(trie_ref);
       
       // Add questions
       queries.add(question_0);

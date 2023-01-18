@@ -5,6 +5,9 @@ import TrieSet "mo:base/TrieSet";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
+import Result "mo:base/Result";
+
+import Map "mo:map/Map";
 
 module {
 
@@ -14,8 +17,14 @@ module {
   type Buffer<T> = Buffer.Buffer<T>;
   type Set<K> = TrieSet.Set<K>;
   type Time = Time.Time;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Iter<T> = { next : () -> ?T };
   // For convenience: from types module
   type Duration = Types.Duration;
+
+  // For convenience: from map module
+  type Map<K, V> = Map.Map<K, V>;
+  type HashUtils<K> = Map.HashUtils<K>;
 
   /// Creates a buffer from an array
   public func toBuffer<T>(x :[T]) : Buffer<T>{
@@ -39,7 +48,7 @@ module {
     for (key_val in Trie.iter(trie)) {
       buffer.add(key_val);
     };
-    buffer.toArray();
+    Buffer.toArray(buffer);
   };
 
   public func keys<K, V>(trie: Trie<K, V>, key: (K) -> Key<K>, equal: (K, K) -> Bool) : Set<K> {
@@ -68,7 +77,7 @@ module {
     for(val in right.vals()){
       buffer.add(val);
     };
-    return buffer.toArray();
+    return Buffer.toArray(buffer);
   };
 
   public func leftJoin<K, V, W, X>(tl : Trie<K, V>, tr : Trie<K, W>, k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, vbin : (V, ?W) -> X) : Trie<K, X> {
@@ -88,4 +97,67 @@ module {
     trie;
   };
 
+  public func setIter<K>(set: Set<K>) : Iter<K> {
+    Array.vals(TrieSet.toArray(set));
+  };
+
+  public func toResult<Err>(bool: Bool, err: Err) : Result<(), Err> {
+    if (bool) { #ok(); }
+    else      { #err(err); };
+  };
+
+  type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
+
+  public func put2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, v: V) : ?V {
+    let map1D = Option.get(Map.get(map2D, k1_hash, k1), Map.new<K2, V>());
+    let old_v = Map.put(map1D, k2_hash, k2, v);
+    ignore Map.put(map2D, k1_hash, k1, map1D); // @todo: might be required only if the inner map is new
+    old_v;
+  };
+
+  public func get2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2) : ?V {
+    Option.chain(Map.get(map2D, k1_hash, k1), func(map1D: Map<K2, V>) : ?V {
+      Map.get(map1D, k2_hash, k2);
+    });
+  };
+
+  // @todo: optimization: remove emptied sub trie if any
+  public func remove2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2) : ?V {
+    Option.chain(Map.get(map2D, k1_hash, k1), func(map1D: Map<K2, V>) : ?V {
+      let old_v = Map.remove(map1D, k2_hash, k2);
+      ignore Map.put(map2D, k1_hash, k1, map1D); // @todo: might not be required
+      old_v;
+    });
+  };
+
+  type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
+
+  public func put3D<K1, K2, K3, V>(map3D: Map3D<K1, K2, K3, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, k3_hash: HashUtils<K3>, k3: K3, v: V) : ?V {
+    let map2D = Option.get(Map.get(map3D, k1_hash, k1), Map.new<K2, Map<K3, V>>());
+    let map1D = Option.get(Map.get(map2D, k2_hash, k2), Map.new<K3, V>());
+    let old_v = Map.put(map1D, k3_hash, k3, v);
+    ignore Map.put(map2D, k2_hash, k2, map1D); // @todo: might be required only if the inner map is new
+    ignore Map.put(map3D, k1_hash, k1, map2D); // @todo: might be required only if the inner map is new
+    old_v;
+  };
+
+  public func get3D<K1, K2, K3, V>(map3D: Map3D<K1, K2, K3, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, k3_hash: HashUtils<K3>, k3: K3) : ?V {
+    Option.chain(Map.get(map3D, k1_hash, k1), func(map2D: Map<K2, Map<K3, V>>) : ?V {
+      Option.chain(Map.get(map2D, k2_hash, k2), func(map1D: Map<K3, V>) : ?V {
+        Map.get(map1D, k3_hash, k3);
+      })
+    });
+  };
+
+  // @todo: optimization: remove emptied sub trie if any
+  public func remove3D<K1, K2, K3, V>(map3D: Map3D<K1, K2, K3, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, k3_hash: HashUtils<K3>, k3: K3) : ?V {
+    Option.chain(Map.get(map3D, k1_hash, k1), func(map2D: Map<K2, Map<K3, V>>) : ?V {
+      Option.chain(Map.get(map2D, k2_hash, k2), func(map1D: Map<K3, V>) : ?V {
+        let old_v = Map.remove(map1D, k3_hash, k3);
+        ignore Map.put(map2D, k2_hash, k2, map1D); // @todo: might not be required
+        ignore Map.put(map3D, k1_hash, k1, map2D); // @todo: might not be required
+        old_v;
+      })
+    });
+  };
 };
