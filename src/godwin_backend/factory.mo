@@ -56,8 +56,7 @@ module {
     );
 
     // Add observers to sync queries
-    questions.addObs(#QUESTION_ADDED, queries.add);
-    questions.addObs(#QUESTION_REMOVED, queries.remove);
+    questions.addObs(#RECORD, queries.replace);
 
     Game.Game(
       admin,

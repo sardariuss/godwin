@@ -6,16 +6,21 @@ import CategoryPolarizationTrie "../representation/categoryPolarizationTrie";
 import CategoryCursorTrie "../representation/categoryCursorTrie";
 import Utils "../utils";
 
+import Map "mo:map/Map";
+
 import Buffer "mo:base/Buffer";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
 import Prelude "mo:base/Prelude";
+import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 import TrieSet "mo:base/TrieSet";
 
 module {
+
+  type Time = Int;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -29,6 +34,9 @@ module {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Status = Types.Status;
   type Category = Types.Category;
+  type Status2 = Types.Status2;
+  type IndexedStatus = Types.IndexedStatus;
+  type StatusInfo = Types.StatusInfo;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -51,6 +59,37 @@ module {
   type CategorizationError = {
     #InvalidVotingStage;
     #InvalidCategorization;
+  };
+
+  public func updateStatus(question: Question, status: Status2, date: Time) : Question {
+    // Get status info
+    let current = question.status_info.current;
+    let history = Buffer.fromArray<IndexedStatus>(question.status_info.history);
+    let iterations = Utils.arrayToMap<Status2, Nat>(question.status_info.iterations, Types.status2hash);
+    // Add current to history
+    history.add(current);
+    // @todo: use Map.update when available
+//    // Update the current index for the new status
+//    let index = Map.update(iterations, Types.status2hash, status, func(status: Status2, opt_idx: ?Nat){
+//      switch(opt_idx){
+//        case(null) { Debug.trap("The status index is missing"); };
+//        case(?idx) { idx + 1; };
+//      };
+//    });
+    let index = switch(Map.get(iterations, Types.status2hash, status)){
+      case(null) { Debug.trap("The status index is missing"); };
+      case(?idx) { idx + 1; };
+    };
+    // Update iteration index for this status
+    Map.set(iterations, Types.status2hash, status, index);
+    // Return the updated status info
+    { question with status_info = 
+      {
+        current = { status; date; index; };
+        history = Buffer.toArray(history);
+        iterations = Utils.mapToArray<Status2, Nat>(iterations);
+      };
+    };
   };
 
   public func getStatus(question: Question) : Status {

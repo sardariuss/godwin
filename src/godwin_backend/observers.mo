@@ -7,7 +7,7 @@ module {
 
   type Hash = Hash.Hash;
   
-  type Callback<A> = (A) -> ();
+  type Callback<A> = (?A, ?A) -> ();
 
   public class Observers<T, A>(equal: (T, T) -> Bool, hash: (T) -> Hash) {
 
@@ -19,10 +19,10 @@ module {
       observers_.put(obs_type, buffer);
     };
 
-    public func callObs(obs_type: T, obs_args: A) {
+    public func callObs(obs_type: T, old: ?A, new: ?A) {
       Option.iterate(observers_.get(obs_type), func(buffer: Buffer.Buffer<Callback<A>>) {
         for (obs_func in buffer.vals()){
-          obs_func(obs_args)
+          obs_func(old, new)
         };
       });
     };

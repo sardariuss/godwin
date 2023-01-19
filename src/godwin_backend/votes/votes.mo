@@ -19,6 +19,9 @@ module {
   type QuestionId = Nat;
   type Iteration = Nat;
 
+  // For every principal, have the ballots in order (BallotKey)
+  // Map<Principal, RBT<(Date, QuestionId, Iteration), ()>>
+  // What pattern for obs <-> queries ?
   public class Votes<B, A>(
     ballots_: WMap3D<Principal, QuestionId, Iteration, Timestamp<B>>,
     aggregates_: WMap2D<QuestionId, Iteration, Timestamp<A>>,

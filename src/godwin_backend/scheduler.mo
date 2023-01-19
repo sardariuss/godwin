@@ -81,7 +81,7 @@ module {
     public func rejectQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
       Option.iterate(status_durations_.get(#CANDIDATE), func(duration: Duration){
-        let iter = queries_.entries(#STATUS_DATE(#CANDIDATE), #fwd);
+        let iter = queries_.entries(#STATUS_DATE(#CANDIDATE), #FWD);
         label iter_oldest while(true){
           switch(questions_.next(iter)){
             case(null){ break iter_oldest; };
@@ -104,7 +104,7 @@ module {
     public func deleteQuestions(time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
       Option.iterate(status_durations_.get(#REJECTED), func(duration: Duration){
-        let iter = queries_.entries(#STATUS_DATE(#REJECTED), #fwd);
+        let iter = queries_.entries(#STATUS_DATE(#REJECTED), #FWD);
         label iter_oldest while(true){
           switch(questions_.next(iter)){
             case(null){ break iter_oldest; };
@@ -122,7 +122,7 @@ module {
 
     public func openOpinionVote(time_now: Time) : ?Question {
       if (time_now > last_selection_date_.get() + Utils.toTime(selection_rate_.get())) {
-        switch(questions_.first(queries_, #INTEREST, #bwd)){
+        switch(questions_.first(queries_, #INTEREST, #BWD)){
           case(null){};
           case(?question){ 
             let updated_question = Question.openOpinionVote(question, time_now);
@@ -137,7 +137,7 @@ module {
 
     public func openCategorizationVote(time_now: Time, categories: [Category]) : ?Question {
       Option.chain(status_durations_.get(#OPEN(#OPINION)), func(duration: Duration) : ?Question{
-        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#OPINION)), #fwd)){
+        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#OPINION)), #FWD)){
           case(null){};
           case(?question){
             let iteration = Question.unwrapIteration(question);
@@ -155,7 +155,7 @@ module {
 
     public func closeQuestion(time_now: Time) : ?Question {
       Option.chain(status_durations_.get(#OPEN(#CATEGORIZATION)), func(duration: Duration) : ?Question{
-        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd)){
+        switch(questions_.first(queries_, #STATUS_DATE(#OPEN(#CATEGORIZATION)), #FWD)){
           case(null){};
           case(?question){
             let iteration = Question.unwrapIteration(question);

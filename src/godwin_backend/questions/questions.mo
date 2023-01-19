@@ -1,5 +1,6 @@
 import Types "../types";
 import Vote "../votes/vote";
+import Question "question";
 import Queries "queries";
 import Observers "../observers";
 import WMap "../wrappers/WMap";
@@ -21,6 +22,7 @@ module {
   type Iter<T> = Iter.Iter<T>;
   type Principal = Principal.Principal;
   type Hash = Hash.Hash;
+  type Time = Int;
 
   // For convenience: from map module
   type Map<K, V> = Map.Map<K, V>;
@@ -29,16 +31,19 @@ module {
   type Question = Types.Question;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
+  type Status2 = Types.Status2;
   type Ref<V> = Types.Ref<V>;
   type WRef<V> = WRef.WRef<V>;
   type WMap<K, V> = WMap.WMap<K, V>;
 
   type UpdateType = {
-    #QUESTION_ADDED;
-    #QUESTION_REMOVED;
+    #RECORD;
+    #FIELD: {
+      #CURRENT_STATUS;
+    };
   };
 
-  type UpdateCallback = (Question) -> ();
+  type UpdateCallback = (?Question, ?Question) -> ();
 
   func equalUpdateType(obs_a: UpdateType, obs_b: UpdateType) : Bool {
     obs_a == obs_b;
@@ -46,8 +51,8 @@ module {
 
   func hashUpdateType(obs: UpdateType) : Hash {
     switch(obs){
-      case(#QUESTION_ADDED) { 0; };
-      case(#QUESTION_REMOVED) { 1; };
+      case(#RECORD)                 { 0; };
+      case(#FIELD(#CURRENT_STATUS)) { 1; };
     };
   };
 
@@ -86,10 +91,19 @@ module {
         status = #CANDIDATE(Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = 0; }));
         interests_history = [];
         vote_history = [];
+        status_info = {
+          current = {
+            status = #CANDIDATE;
+            date;
+            index = 0;
+          };
+          history = [];
+          iterations = [(#CANDIDATE, 0)];
+        };
       };
       register_.set(question.id, question);
       index_.set(index_.get() + 1);
-      observers_.callObs(#QUESTION_ADDED, question);
+      observers_.callObs(#RECORD, null, ?question);
       question;
     };
 
@@ -100,8 +114,7 @@ module {
       switch(register_.put(question.id, question)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
-          observers_.callObs(#QUESTION_REMOVED, old_question);
-          observers_.callObs(#QUESTION_ADDED,   question    );
+          observers_.callObs(#RECORD, ?old_question, ?question);
         };
       };
     };
@@ -113,29 +126,37 @@ module {
       switch(register_.remove(question_id)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
-          observers_.callObs(#QUESTION_REMOVED, old_question);
+          observers_.callObs(#RECORD, ?old_question, null);
           old_question;
         };
       };
     };
 
-    public func next(iter: Iter<(Queries.QuestionKey, ())>) : ?Question {
-      switch(iter.next()){
-        case(null) { null; };
-        case(?(question_key, _)){ 
-          ?getQuestion(question_key.id); 
+    public func updateStatus(question_id: Nat, status: Status2, date: Time) {
+      let question = Question.updateStatus(getQuestion(question_id), status, date);
+      switch(register_.put(question.id, question)){
+        case(null) { Prelude.unreachable(); };
+        case(?old_question) {
+          observers_.callObs(#FIELD(#CURRENT_STATUS), ?old_question, ?question);
         };
       };
     };
 
-    public func first(queries: Queries.Queries, order_by: Queries.OrderBy, direction: Queries.QueryDirection) : ?Question {
+    public func next(iter: Iter<Queries.QuestionKey>) : ?Question {
+      switch(iter.next()){
+        case(null) { null; };
+        case(?key){ ?getQuestion(key.id); };
+      };
+    };
+
+    public func first(queries: Queries.Queries, order_by: Queries.OrderBy, direction: Queries.Direction) : ?Question {
       next(queries.entries(order_by, direction));
     };
 
     public func queryQuestions(
       queries: Queries.Queries,
       order_by: Queries.OrderBy,
-      direction: Queries.QueryDirection,
+      direction: Queries.Direction,
       limit: Nat,
       previous_id: ?Nat
     ) : Queries.QueryQuestionsResult {
@@ -143,10 +164,10 @@ module {
         Queries.initQuestionKey(getQuestion(id), order_by);
       });
       switch(direction){
-        case(#fwd){
+        case(#FWD){
           queries.queryQuestions(order_by, bound, null, direction, limit);
         };
-        case(#bwd){
+        case(#BWD){
           queries.queryQuestions(order_by, null, bound, direction, limit);
         };
       };

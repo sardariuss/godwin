@@ -1,9 +1,9 @@
 import Types "types";
 import Queries "questions/queries";
+import OrderedSet "OrderedSet";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
-import RBT "mo:stableRBT/StableRBTree";
 
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
@@ -17,7 +17,7 @@ module {
   type Map<K, V> = Map.Map<K, V>;
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
   type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
-  type RBT<K, V> = RBT.Tree<K, V>;
+  type OrderedSet<K> = OrderedSet.OrderedSet<K>;
 
   // For convenience: from types module
   type Parameters = Types.Parameters;
@@ -50,7 +50,7 @@ module {
       index              : Ref<Nat>;
     };
     queries           : {
-      register           : Map<OrderBy, RBT<QuestionKey, ()>>;
+      register           : Map<OrderBy, OrderedSet<QuestionKey>>;
     };
     scheduler         : {
       last_selection_date: Ref<Time>;
@@ -87,7 +87,7 @@ module {
         index              = Types.initRef(0 : Nat);
       };
       queries           = {
-        register           = Map.new<OrderBy, RBT<QuestionKey, ()>>();
+        register           = Queries.initRegister();
       };
       scheduler         = {
         last_selection_date = Types.initRef(creation_date);

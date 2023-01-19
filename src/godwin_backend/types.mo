@@ -80,6 +80,55 @@ module {
     status: QuestionStatus;
     interests_history: [Vote<Interest, InterestAggregate>];
     vote_history: [Iteration];
+    status_info: StatusInfo;
+  };
+
+  public type Trigger = {
+    #PICKED;
+    #TIMEOUT;
+  };
+
+  public type Transition = {
+    #NEXT_STATUS : Status2;
+    #DELETION;
+  };
+
+  public let transitions : [(Status2, Trigger, Transition)] = [
+    (#CANDIDATE,      #PICKED,   #NEXT_STATUS(#OPINION)),
+    (#CANDIDATE,      #TIMEOUT,  #NEXT_STATUS(#REJECTED)),
+    (#OPINION,        #TIMEOUT,  #NEXT_STATUS(#CATEGORIZATION)),
+    (#CATEGORIZATION, #TIMEOUT,  #NEXT_STATUS(#CLOSED)),
+    (#REJECTED,       #TIMEOUT,  #DELETION)
+  ];
+
+  public type StatusInfo = {
+    current: IndexedStatus;
+    history: [IndexedStatus];
+    iterations: [(Status2, Nat)];
+  };
+
+  public type Status2 = {
+    #CANDIDATE;
+    #OPINION;
+    #CATEGORIZATION;
+    #CLOSED;
+    #REJECTED;
+  };
+
+  public func status2ToNat(status: Status2) : Nat {
+    switch(status){
+      case(#CANDIDATE)      { 0; };
+      case(#OPINION)        { 1; };
+      case(#CATEGORIZATION) { 2; };
+      case(#CLOSED)         { 3; };
+      case(#REJECTED)       { 4; };
+    };
+  };
+
+  public type IndexedStatus = {
+    status: Status2;
+    date: Time;
+    index: Nat;
   };
 
   public type VotingStage = {
@@ -109,6 +158,10 @@ module {
   func hashStatus(a: Status) : Nat { nhash.0(statusToNat(a)); };
   func equalStatus(a: Status, b: Status) : Bool { nhash.1(statusToNat(a), statusToNat(b)); };
   public let statushash : Map.HashUtils<Status> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
+
+  func hashStatus2(a: Status2) : Nat { nhash.0(status2ToNat(a)); };
+  func equalStatus2(a: Status2, b: Status2) : Bool { nhash.1(status2ToNat(a), status2ToNat(b)); };
+  public let status2hash : Map.HashUtils<Status2> = ( func(a) = hashStatus2(a), func(a, b) = equalStatus2(a, b));
   
   public type Interest = {
     #UP;

@@ -25,7 +25,7 @@ module {
     type Question = Types.Question;
     type Interest = Types.Interest;
     // For convenience: from queries module
-    let testQuery = TestableItems.testQueryQuestionsResult;
+    let testQuery = TestableItems.testOrderedSet.ScanLimitResult;
 
     let question_0 :        Question = { id = 0; status = #CANDIDATE({ date = 10000; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0;    }}); date = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; interests_history = []; vote_history = []; };
     let question_0_update : Question = { id = 0; status = #CANDIDATE({ date = 0    ; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 45;   }}); date = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Above all is selfishness is the overriding drive in the human species";            text = ""; interests_history = []; vote_history = []; };

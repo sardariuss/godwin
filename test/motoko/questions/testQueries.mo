@@ -28,7 +28,7 @@ module {
     // For convenience: from types module
     type Question = Types.Question;
     
-    let testQuery = TestableItems.testQueryQuestionsResult;
+    let testQuery = TestableItems.testOrderedSet.ScanLimitResult;
 
     let question_0 :                        Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; status = #CANDIDATE({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };
     let question_0_text_update :            Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; status = #CANDIDATE({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };

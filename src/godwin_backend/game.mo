@@ -121,7 +121,7 @@ module {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func getQuestions(order_by: Queries.OrderBy, direction: Queries.QueryDirection, limit: Nat, previous_id: ?Nat) : Queries.QueryQuestionsResult {
+    public func getQuestions(order_by: Queries.OrderBy, direction: Queries.Direction, limit: Nat, previous_id: ?Nat) : Queries.QueryQuestionsResult {
       questions_.queryQuestions(queries_, order_by, direction, limit, previous_id);
     };
 

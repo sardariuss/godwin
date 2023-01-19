@@ -1,4 +1,7 @@
 import Types "types";
+
+import Map "mo:map/Map";
+
 import Array "mo:base/Array";
 import Trie "mo:base/Trie";
 import TrieSet "mo:base/TrieSet";
@@ -6,8 +9,7 @@ import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
 import Result "mo:base/Result";
-
-import Map "mo:map/Map";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -104,6 +106,14 @@ module {
   public func toResult<Err>(bool: Bool, err: Err) : Result<(), Err> {
     if (bool) { #ok(); }
     else      { #err(err); };
+  };
+
+  public func mapToArray<K, V>(map: Map<K, V>) : [(K, V)]{
+    Iter.toArray(Map.entries(map));
+  };
+
+  public func arrayToMap<K, V>(array: [(K, V)], hash: HashUtils<K>) : Map<K, V>{
+    Map.fromIter(Array.vals(array), hash);
   };
 
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;

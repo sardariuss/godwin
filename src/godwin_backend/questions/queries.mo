@@ -1,8 +1,7 @@
 import Types "../types";
 import WMap "../wrappers/WMap";
 import Question "question";
-
-import RBT "mo:stableRBT/StableRBTree";
+import OrderedSet "../OrderedSet";
 
 import Map "mo:map/Map";
 
@@ -30,6 +29,9 @@ module {
   type Hash = Hash.Hash;
   type Key<K> = Trie.Key<K>;
   type Iter<T> = Iter.Iter<T>;
+  type OrderedSet<K> = OrderedSet.OrderedSet<K>;
+  
+  public type Direction = OrderedSet.Direction;
 
   type WMap<K, V> = WMap.WMap<K, V>;
 
@@ -56,10 +58,7 @@ module {
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
-  public type QueryDirection = {
-    #fwd;
-    #bwd;
-  };
+  
   public type QuestionKey = {
     id: Nat;
     data: {
@@ -238,15 +237,15 @@ module {
 
   // Public functions
 
-  public func addOrderBy(register: Map<OrderBy, RBT.Tree<QuestionKey, ()>>, order_by: OrderBy) {
-    Map.set(register, orderbyhash, order_by, RBT.init<QuestionKey, ()>());
+  public func addOrderBy(register: Map<OrderBy, OrderedSet<QuestionKey>>, order_by: OrderBy) {
+    Map.set(register, orderbyhash, order_by, OrderedSet.init<QuestionKey>());
   };
 
   // @todo: this is done for optimization (mostly to reduce memory usage) but brings some issues:
   // (queryQuestions and entries can trap). Alternative would be to init with every OrderBy
   // possible in init method.
-  public func initRegister() : Map<OrderBy, RBT.Tree<QuestionKey, ()>> {
-    let register = Map.new<OrderBy, RBT.Tree<QuestionKey, ()>>();
+  public func initRegister() : Map<OrderBy, OrderedSet<QuestionKey>> {
+    let register = Map.new<OrderBy, OrderedSet<QuestionKey>>();
     addOrderBy(register, #TITLE);
     addOrderBy(register, #CREATION_DATE);
     addOrderBy(register, #STATUS_DATE(#CANDIDATE));
@@ -258,47 +257,49 @@ module {
     register;
   };
 
-  public func build(register: Map<OrderBy, RBT.Tree<QuestionKey, ()>>) : Queries {
+  public func build(register: Map<OrderBy, OrderedSet<QuestionKey>>) : Queries {
     Queries(WMap.WMap(register, orderbyhash));
   };
 
-  public class Queries(register_: WMap<OrderBy, RBT.Tree<QuestionKey, ()>>) {
+  public class Queries(register_: WMap<OrderBy, OrderedSet<QuestionKey>>) {
   
     public func add(new_question: Question) {
       register_.forEach(func(order_by, rbt){
         // Add the new key
         Option.iterate(initQuestionKey(new_question, order_by), func(question_key: QuestionKey) {
-          let new_rbt = RBT.put(rbt, compareQuestionKey, question_key, ());
+          let new_rbt = OrderedSet.put(rbt, compareQuestionKey, question_key);
           register_.set(order_by, new_rbt);
         });
       });
     };
   
-    // @todo: once tested, use add and remove instead
-    public func replace(old_question: Question, new_question: Question) {
-      register_.forEach(func(order_by, rbt){
-        let old_key = initQuestionKey(old_question, order_by);
-        let new_key = initQuestionKey(new_question, order_by);
-        if (not equalOptKeys(old_key, new_key)){
-          var single_rbt = rbt;
-          // Remove the old key
-          Option.iterate(old_key, func(question_key: QuestionKey) {
-            single_rbt := RBT.remove(single_rbt, compareQuestionKey, question_key).1;
-          });
-          // Add the new key
-          Option.iterate(new_key, func(question_key: QuestionKey) {
-            single_rbt := RBT.put(single_rbt, compareQuestionKey, question_key, ());
-          });
-          register_.set(order_by, single_rbt);
-        };
-      });
+    // @todo: the keys could use the Questions #UpdateType
+    public func replace(old_question: ?Question, new_question: ?Question) {
+      Option.iterate(old_question, func(old: Question) { remove(old); });
+      Option.iterate(new_question, func(new: Question) { add(new);    });
+//      register_.forEach(func(order_by, rbt){
+//        let old_key = initQuestionKey(old_question, order_by);
+//        let new_key = initQuestionKey(new_question, order_by);
+//        if (not equalOptKeys(old_key, new_key)){
+//          var single_rbt = rbt;
+//          // Remove the old key
+//          Option.iterate(old_key, func(question_key: QuestionKey) {
+//            single_rbt := OrderedSet.delete(single_rbt, compareQuestionKey, question_key);
+//          });
+//          // Add the new key
+//          Option.iterate(new_key, func(question_key: QuestionKey) {
+//            single_rbt := OrderedSet.put(single_rbt, compareQuestionKey, question_key);
+//          });
+//          register_.set(order_by, single_rbt);
+//        };
+//      });
     };
   
     public func remove(old_question: Question) {
       register_.forEach(func(order_by, rbt){
         // Remove the old key
         Option.iterate(initQuestionKey(old_question, order_by), func(question_key: QuestionKey) {
-          let new_rbt = RBT.remove(rbt, compareQuestionKey, question_key).1;
+          let new_rbt = OrderedSet.delete(rbt, compareQuestionKey, question_key);
           register_.set(order_by, new_rbt);
         });
       });
@@ -310,22 +311,22 @@ module {
       order_by: OrderBy,
       lower_bound: ?QuestionKey,
       upper_bound: ?QuestionKey,
-      direction: RBT.Direction,
+      direction: Direction,
       limit: Nat
     ) : QueryQuestionsResult {
       switch(register_.get(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?rbt){
-          switch(RBT.entries(rbt).next()){
+          switch(OrderedSet.keys(rbt).next()){
             case(null){ { ids = []; next_id = null; } };
             case(?first){
-              switch(RBT.entriesRev(rbt).next()){
+              switch(OrderedSet.keysRev(rbt).next()){
                 case(null){ { ids = []; next_id = null; } };
                 case(?last){
-                  let scan = RBT.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first.0), Option.get(upper_bound, last.0), direction, limit);
+                  let scan = OrderedSet.scanLimit(rbt, compareQuestionKey, Option.get(lower_bound, first), Option.get(upper_bound, last), direction, limit);
                   {
-                    ids = Array.map(scan.results, func(key_value: (QuestionKey, ())) : Nat { key_value.0.id; });
-                    next_id = Option.getMapped(scan.nextKey, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
+                    ids = Array.map(scan.keys, func(key: QuestionKey) : Nat { key.id; });
+                    next_id = Option.getMapped(scan.next, func(key : QuestionKey) : ?Nat { ?key.id; }, null);
                   }
                 };
               };
@@ -335,14 +336,11 @@ module {
       };
     };
   
-    public func entries(order_by: OrderBy, direction: QueryDirection) : Iter<(QuestionKey, ())> {
+    public func entries(order_by: OrderBy, direction: Direction) : Iter<QuestionKey> {
       switch(register_.get(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?rbt){ 
-          switch(direction){
-            case(#fwd) { RBT.entries(rbt); };
-            case(#bwd) { RBT.entriesRev(rbt); };
-          };
+          OrderedSet.iter(rbt, direction);
         };
       };
     };

@@ -1,6 +1,6 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, QueryDirection, QueryQuestionsResult, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { OrderBy, Direction, QueryQuestionsResult, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 import ActorContext from "../ActorContext"
 
 import { useEffect, useState, useContext } from "react";
@@ -24,7 +24,7 @@ type ActorContextValues = {
 
 type ListQuestionsInput = {
   order_by: OrderBy,
-  query_direction: QueryDirection
+  query_direction: Direction
 }
 
 const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
