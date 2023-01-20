@@ -5,35 +5,27 @@ import WMap "../wrappers/WMap";
 
 import Map "mo:map/Map";
 
-import Trie "mo:base/Trie";
-import Nat "mo:base/Nat";
-import Principal "mo:base/Principal"
-
 module {
 
   type Category = Types.Category;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type Trie2D<K1, K2, V> = Trie.Trie2D<K1, K2, V>;
-  type Trie3D<K1, K2, K3, V> = Trie.Trie3D<K1, K2, K3, V>;
-  type Votes<B, A> = Votes.Votes<B, A>;
-  type Timestamp<T> = Types.Timestamp<T>;
-
+  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;  
+  type Vote<T, A> = Types.Vote<T, A>;
+  type Votes<T, A> = Votes.Votes<T, A>;
   type Map<K, V> = Map.Map<K, V>;
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
-  type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
-
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
-  type WMap3D<K1, K2, K3, V> = WMap.WMap3D<K1, K2, K3, V>;
 
-  public func build(
-    ballots : Map3D<Principal, Nat, Nat, Timestamp<CategoryCursorTrie>>,
-    aggregates : Map2D<Nat, Nat, Timestamp<CategoryPolarizationTrie>>,
-    categories: [Category]
-  ) : Votes<CategoryCursorTrie, CategoryPolarizationTrie> {
+  public type Register = Map2D<Nat, Nat, Vote<CategoryCursorTrie, CategoryPolarizationTrie>>;
+  public type Categorizations = Votes<CategoryCursorTrie, CategoryPolarizationTrie>;
+
+  public func initRegister() : Register {
+    Map.new<Nat, Map<Nat, Vote<CategoryCursorTrie, CategoryPolarizationTrie>>>();
+  };
+
+  public func build(register: Register, categories: [Category]) : Categorizations {
     Votes.Votes(
-      WMap.WMap3D<Principal, Nat, Nat, Timestamp<CategoryCursorTrie>>(ballots, Map.phash, Map.nhash, Map.nhash),
-      WMap.WMap2D<Nat, Nat, Timestamp<CategoryPolarizationTrie>>(aggregates, Map.nhash, Map.nhash),
+      WMap.WMap2D<Nat, Nat, Vote<CategoryCursorTrie, CategoryPolarizationTrie>>(register, Map.nhash, Map.nhash),
       CategoryPolarizationTrie.nil(categories),
       CategoryPolarizationTrie.addCategoryCursorTrie,
       CategoryPolarizationTrie.subCategoryCursorTrie

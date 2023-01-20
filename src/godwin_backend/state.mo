@@ -1,6 +1,10 @@
 import Types "types";
 import Queries "questions/queries";
 import OrderedSet "OrderedSet";
+import Categorization "votes/categorization";
+import Interest "votes/interest";
+import Opinion "votes/opinion";
+import Scheduler "scheduler";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -28,12 +32,14 @@ module {
   type Category = Types.Category;
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type Status = Types.Status;
   type Duration = Types.Duration;
   type Polarization = Types.Polarization;
+  type Ballot<T> = Types.Ballot<T>;
+  type Vote<T, A> = Types.Vote<T, A>;
   type Ref<T> = Types.Ref<T>;
-  type Timestamp<T> = Types.Timestamp<T>;
   type InterestAggregate = Types.InterestAggregate;
+  type QuestionStatus = Types.QuestionStatus;
+
   type OrderBy = Queries.OrderBy;
   type QuestionKey = Queries.QuestionKey;
 
@@ -53,23 +59,12 @@ module {
       register           : Map<OrderBy, OrderedSet<QuestionKey>>;
     };
     scheduler         : {
-      last_selection_date: Ref<Time>;
-      selection_rate:      Ref<Duration>;
-      status_durations:    Map<Status, Duration>;
+      register:            Scheduler.Register;
     };
     votes             : {
-      interest           : {
-        ballots            : Map3D<Principal, Nat, Nat, Timestamp<Interest>>;
-        aggregates         : Map2D<Nat, Nat, Timestamp<InterestAggregate>>;
-      };
-      opinion            : {
-        ballots            : Map3D<Principal, Nat, Nat, Timestamp<Cursor>>;
-        aggregates         : Map2D<Nat, Nat, Timestamp<Polarization>>;
-      };
-      categorization     : {
-        ballots            : Map3D<Principal, Nat, Nat, Timestamp<CategoryCursorTrie>>;
-        aggregates         : Map2D<Nat, Nat, Timestamp<CategoryPolarizationTrie>>;
-      };
+      interest           : Interest.Register;
+      opinion            : Opinion.Register;
+      categorization     : Categorization.Register;
     };
   };
 
@@ -90,23 +85,12 @@ module {
         register           = Queries.initRegister();
       };
       scheduler         = {
-        last_selection_date = Types.initRef(creation_date);
-        selection_rate      = Types.initRef(parameters.scheduler.selection_rate);
-        status_durations    = Map.fromIter(Array.vals(parameters.scheduler.status_durations), Types.statushash);
+        register            = Scheduler.initRegister(parameters.scheduler, creation_date);
       };
       votes = {
-        interest        = {
-          ballots              = Map.new<Principal, Map<Nat, Map<Nat, Timestamp<Interest>>>>();
-          aggregates           = Map.new<Nat, Map<Nat, Timestamp<InterestAggregate>>>();
-        };
-        opinion         = {
-          ballots              = Map.new<Principal, Map<Nat, Map<Nat, Timestamp<Cursor>>>>();
-          aggregates           = Map.new<Nat, Map<Nat, Timestamp<Polarization>>>();
-        };
-        categorization  = {
-          ballots              = Map.new<Principal, Map<Nat, Map<Nat, Timestamp<CategoryCursorTrie>>>>();
-          aggregates           = Map.new<Nat, Map<Nat, Timestamp<CategoryPolarizationTrie>>>();
-        };
+        interest            = Interest.initRegister();
+        opinion             = Opinion.initRegister();
+        categorization      = Categorization.initRegister();
       };
     };
   };

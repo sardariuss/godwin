@@ -25,7 +25,7 @@ module {
   // For convenience: from other modules
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type Ballot<T> = Types.Ballot<T>;
 
   public class TestOpinions() = {
 

@@ -29,8 +29,11 @@ module {
   };
 
   public type SchedulerParameters = {
-    selection_rate: Duration;
-    status_durations: [(Status, Duration)];
+    candidate_pick_rate: Duration;
+    candidate_duration: Duration;
+    opinion_duration: Duration;
+    categorization_duration: Duration;
+    rejected_duration: Duration;
   };
 
   public type Parameters = {
@@ -44,70 +47,22 @@ module {
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
-  public type Status = {
-    #CANDIDATE;
-    #OPEN: {
-      #OPINION;
-      #CATEGORIZATION;
-    };
-    #CLOSED;
-    #REJECTED;
-  };
-
-  public func statusToNat(status: Status) : Nat {
-    switch(status){
-      case(#CANDIDATE)             { 0; };
-      case(#OPEN(#OPINION))        { 1; };
-      case(#OPEN(#CATEGORIZATION)) { 2; };
-      case(#CLOSED)                { 3; };
-      case(#REJECTED)              { 4; };
-    };
-  };
-
-  public type QuestionStatus = {
-    #CANDIDATE: Vote<Interest, InterestAggregate>;
-    #OPEN: { stage: VotingStage; iteration: Iteration; };
-    #CLOSED: Time;
-    #REJECTED: Time;
-  };
-
   public type Question = {
     id: Nat;
     author: Principal;
     title: Text;
     text: Text;
     date: Time;
-    status: QuestionStatus;
-    interests_history: [Vote<Interest, InterestAggregate>];
-    vote_history: [Iteration];
     status_info: StatusInfo;
   };
-
-  public type Trigger = {
-    #PICKED;
-    #TIMEOUT;
-  };
-
-  public type Transition = {
-    #NEXT_STATUS : Status2;
-    #DELETION;
-  };
-
-  public let transitions : [(Status2, Trigger, Transition)] = [
-    (#CANDIDATE,      #PICKED,   #NEXT_STATUS(#OPINION)),
-    (#CANDIDATE,      #TIMEOUT,  #NEXT_STATUS(#REJECTED)),
-    (#OPINION,        #TIMEOUT,  #NEXT_STATUS(#CATEGORIZATION)),
-    (#CATEGORIZATION, #TIMEOUT,  #NEXT_STATUS(#CLOSED)),
-    (#REJECTED,       #TIMEOUT,  #DELETION)
-  ];
 
   public type StatusInfo = {
     current: IndexedStatus;
     history: [IndexedStatus];
-    iterations: [(Status2, Nat)];
+    iterations: [(QuestionStatus, Nat)];
   };
 
-  public type Status2 = {
+  public type QuestionStatus = {
     #CANDIDATE;
     #OPINION;
     #CATEGORIZATION;
@@ -115,7 +70,7 @@ module {
     #REJECTED;
   };
 
-  public func status2ToNat(status: Status2) : Nat {
+  public func questionStatusToNat(status: QuestionStatus) : Nat {
     switch(status){
       case(#CANDIDATE)      { 0; };
       case(#OPINION)        { 1; };
@@ -126,25 +81,9 @@ module {
   };
 
   public type IndexedStatus = {
-    status: Status2;
+    status: QuestionStatus;
     date: Time;
     index: Nat;
-  };
-
-  public type VotingStage = {
-    #OPINION;
-    #CATEGORIZATION;
-  };
-
-  public type Iteration = {
-    opinion: Vote<Cursor, Polarization>;
-    categorization: Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
-  };
-
-  public type Vote<B, A> = {
-    date: Int;
-    ballots: Trie<Principal, B>;
-    aggregate: A;
   };
 
   public type Category = Text;
@@ -155,13 +94,10 @@ module {
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
 
   let { nhash } = Map;
-  func hashStatus(a: Status) : Nat { nhash.0(statusToNat(a)); };
-  func equalStatus(a: Status, b: Status) : Bool { nhash.1(statusToNat(a), statusToNat(b)); };
-  public let statushash : Map.HashUtils<Status> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
 
-  func hashStatus2(a: Status2) : Nat { nhash.0(status2ToNat(a)); };
-  func equalStatus2(a: Status2, b: Status2) : Bool { nhash.1(status2ToNat(a), status2ToNat(b)); };
-  public let status2hash : Map.HashUtils<Status2> = ( func(a) = hashStatus2(a), func(a, b) = equalStatus2(a, b));
+  func hashQuestionStatus(a: QuestionStatus) : Nat { nhash.0(questionStatusToNat(a)); };
+  func equalQuestionStatus(a: QuestionStatus, b: QuestionStatus) : Bool { nhash.1(questionStatusToNat(a), questionStatusToNat(b)); };
+  public let questionStatushash : Map.HashUtils<QuestionStatus> = ( func(a) = hashQuestionStatus(a), func(a, b) = equalQuestionStatus(a, b));
   
   public type Interest = {
     #UP;
@@ -218,19 +154,33 @@ module {
   public type CategoryPolarizationArray = [(Category, Polarization)];
 
   // @todo: temporary
-  public type CreateQuestionStatus = {
-    #CANDIDATE: { interest_score: Int; };
-    #OPEN: {
-      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
-    };
-    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
-    #REJECTED : { interest_score: Int; };
+//  public type CreateQuestionStatus = {
+//    #CANDIDATE: { interest_score: Int; };
+//    #OPEN: {
+//      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
+//      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+//    };
+//    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+//    #REJECTED : { interest_score: Int; };
+//  };
+
+  public type VoteStatus = {
+    #OPEN;
+    #CLOSED;
   };
 
-  public type Timestamp<T> = {
-    elem: T;
+  public type Ballot<T> = {
+    date: Int;
+    answer: T;
+  };
+
+  public type Vote<T, A> = {
+    question_id: Nat;
+    iteration: Nat;
     date: Time;
+    status: VoteStatus;
+    ballots: Map.Map<Principal, Ballot<T>>;
+    aggregate: A;
   };
 
   public type Ref<V> = {

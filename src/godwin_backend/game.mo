@@ -2,8 +2,7 @@ import Types "types";
 import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
-import Admin "admin";
-import Question "questions/question";
+//import Admin "admin";
 import Questions "questions/questions";
 import Queries "questions/queries";
 import Cursor "representation/cursor";
@@ -37,11 +36,11 @@ module {
   type CategoryCursorTrie = Types.CategoryCursorTrie;
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Decay = Types.Decay;
-  type Status = Types.Status;
   type Duration = Types.Duration;
   type Polarization = Types.Polarization;
-  type CreateQuestionStatus = Types.CreateQuestionStatus;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type QuestionStatus = Types.QuestionStatus;
+  //type CreateQuestionStatus = Types.CreateQuestionStatus;
+  type Ballot<T> = Types.Ballot<T>;
   type InterestAggregate = Types.InterestAggregate;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
@@ -97,25 +96,26 @@ module {
       });
     };
 
-    public func getSelectionRate() : Duration {
-      scheduler_.getSelectionRate();
-    };
-
-    public func setSelectionRate(principal: Principal, duration: Duration) : Result<(), SetSchedulerParamError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
-        scheduler_.setSelectionRate(duration);
-      });
-    };
-
-    public func getStatusDuration(status: Status) : ?Duration {
-      scheduler_.getStatusDuration(status);
-    };
-
-    public func setStatusDuration(principal: Principal, status: Status, duration: Duration) : Result<(), SetSchedulerParamError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
-        scheduler_.setStatusDuration(status, duration);
-      });
-    };
+// @todo
+//    public func getSelectionRate() : Duration {
+//      scheduler_.getSelectionRate();
+//    };
+//
+//    public func setSelectionRate(principal: Principal, duration: Duration) : Result<(), SetSchedulerParamError> {
+//      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
+//        scheduler_.setSelectionRate(duration);
+//      });
+//    };
+//
+//    public func getStatusDuration(status: QuestionStatus) : ?Duration {
+//      scheduler_.getStatusDuration(status);
+//    };
+//
+//    public func setStatusDuration(principal: Principal, status: QuestionStatus, duration: Duration) : Result<(), SetSchedulerParamError> {
+//      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
+//        scheduler_.setStatusDuration(status, duration);
+//      });
+//    };
 
     public func getQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
@@ -125,28 +125,31 @@ module {
       questions_.queryQuestions(queries_, order_by, direction, limit, previous_id);
     };
 
-    public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {
-      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
-        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
-          Admin.createQuestions(questions_, principal, inputs);
-        })
-      });
-    };
+  // @todo
+//    public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {
+//      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
+//        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
+//          Admin.createQuestions(questions_, principal, inputs);
+//        })
+//      });
+//    };
 
     public func openQuestion(principal: Principal, title: Text, text: Text) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(principal), func(_) {
         let question = questions_.createQuestion(principal, Time.now(), title, text);
-        interest_votes_.newAggregate(question.id, 0, Time.now());
+        interest_votes_.newVote(question.id, 0, Time.now());
         question;
       });
     };
 
     public func reopenQuestion(principal: Principal, question_id: Nat) : Result<(), InterestError> {
       Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.chain<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<Question, (), InterestError>(Question.reopenQuestion(question), func(question) {
-            questions_.replaceQuestion(question);
-          });
+        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          // @todo: verify status
+          ignore questions_.updateStatus(question_id, #CANDIDATE, Time.now());
+          //Result.mapOk<Question, (), InterestError>(Question.updateStatus(question, #CANDIDATE, Time.now()), func(question) {
+            //questions_.replaceQuestion(question);
+          //});
         })
       });
     };
@@ -169,9 +172,9 @@ module {
       });
     };
 
-    public func getInterest(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Timestamp<Interest>, InterestError> {
-      Result.chain<User, ?Timestamp<Interest>, InterestError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Timestamp<Interest>, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+    public func getInterest(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, InterestError> {
+      Result.chain<User, ?Ballot<Interest>, InterestError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Ballot<Interest>, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           interest_votes_.getBallot(principal, question_id, iteration);
         })
       });
@@ -188,9 +191,9 @@ module {
       });
     };
 
-    public func getOpinion(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Timestamp<Cursor>, OpinionError> {
-      Result.chain<User, ?Timestamp<Cursor>, OpinionError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Timestamp<Cursor>, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+    public func getOpinion(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, OpinionError> {
+      Result.chain<User, ?Ballot<Cursor>, OpinionError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Ballot<Cursor>, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           opinion_votes_.getBallot(principal, question_id, iteration);
         })
       });
@@ -205,21 +208,16 @@ module {
       });
     };
 
-    public func getCategorization(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Timestamp<CategoryCursorTrie>, CategorizationError> {
-      Result.chain<User, ?Timestamp<CategoryCursorTrie>, CategorizationError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Timestamp<CategoryCursorTrie>, CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+    public func getCategorization(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CategoryCursorTrie>, CategorizationError> {
+      Result.chain<User, ?Ballot<CategoryCursorTrie>, CategorizationError>(getUser(principal), func(_) {
+        Result.mapOk<Question, ?Ballot<CategoryCursorTrie>, CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           categorization_votes_.getBallot(principal, question_id, iteration);
         })
       });
     };
 
     public func run() {
-      let time_now = Time.now();
-      ignore scheduler_.openOpinionVote(time_now);
-      ignore scheduler_.openCategorizationVote(time_now, Iter.toArray(categories_.keys()));
-      ignore scheduler_.closeQuestion(time_now);
-      ignore scheduler_.rejectQuestions(time_now);
-      ignore scheduler_.deleteQuestions(time_now);
+      scheduler_.run(Time.now());
     };
 
     public func findUser(principal: Principal) : ?User {

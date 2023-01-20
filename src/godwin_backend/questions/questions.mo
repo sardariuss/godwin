@@ -1,6 +1,5 @@
 import Types "../types";
-import Vote "../votes/vote";
-import Question "question";
+import Utils "../utils";
 import Queries "queries";
 import Observers "../observers";
 import WMap "../wrappers/WMap";
@@ -15,6 +14,9 @@ import Prelude "mo:base/Prelude";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Hash "mo:base/Hash";
+import Buffer "mo:base/Buffer";
+import Text "mo:base/Text";
+import Int "mo:base/Int";
 
 module {
 
@@ -31,10 +33,29 @@ module {
   type Question = Types.Question;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-  type Status2 = Types.Status2;
+  type QuestionStatus = Types.QuestionStatus;
   type Ref<V> = Types.Ref<V>;
   type WRef<V> = WRef.WRef<V>;
   type WMap<K, V> = WMap.WMap<K, V>;
+  type IndexedStatus = Types.IndexedStatus;
+
+  public func toText(question: Question) : Text {
+    var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
+    buffer.add("id: " # Nat.toText(question.id) # ", ");
+    buffer.add("author: " # Principal.toText(question.author) # ", ");
+    buffer.add("title: " # question.title # ", ");
+    buffer.add("text: " # question.text # ", ");
+    buffer.add("date: " # Int.toText(question.date) # ", ");
+    Text.join("", buffer.vals());
+  };
+  
+  public func equal(q1: Question, q2: Question) : Bool {
+    return Nat.equal(q1.id, q2.id)
+       and Principal.equal(q1.author, q2.author)
+       and Text.equal(q1.title, q2.title)
+       and Text.equal(q1.text, q2.text)
+       and Int.equal(q1.date, q2.date);
+  };
 
   type UpdateType = {
     #RECORD;
@@ -88,9 +109,6 @@ module {
         title;
         text;
         date;
-        status = #CANDIDATE(Vote.new<Interest, InterestAggregate>(date, { ups = 0; downs = 0; score = 0; }));
-        interests_history = [];
-        vote_history = [];
         status_info = {
           current = {
             status = #CANDIDATE;
@@ -132,14 +150,39 @@ module {
       };
     };
 
-    public func updateStatus(question_id: Nat, status: Status2, date: Time) {
-      let question = Question.updateStatus(getQuestion(question_id), status, date);
+    public func updateStatus(question_id: Nat, status: QuestionStatus, date: Time) : Question {
+      // @todo: create a class StatusInfo
+      // Get the question
+      var question = getQuestion(question_id);
+      // Get status info
+      let current = question.status_info.current;
+      let history = Buffer.fromArray<IndexedStatus>(question.status_info.history);
+      let iterations = Utils.arrayToMap<QuestionStatus, Nat>(question.status_info.iterations, Types.questionStatushash);
+      // Add current to history
+      history.add(current);
+      let index = switch(Map.get(iterations, Types.questionStatushash, status)){
+        case(null) { Debug.trap("The status index is missing"); };
+        case(?idx) { idx + 1; };
+      };
+      // Update iteration index for this status
+      Map.set(iterations, Types.questionStatushash, status, index);
+      // Return the updated status info
+      question := { question with status_info = 
+        {
+          current = { status; date; index; };
+          history = Buffer.toArray(history);
+          iterations = Utils.mapToArray<QuestionStatus, Nat>(iterations);
+        };
+      };
+      // @todo: use update method instead
       switch(register_.put(question.id, question)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
           observers_.callObs(#FIELD(#CURRENT_STATUS), ?old_question, ?question);
         };
       };
+
+      question;
     };
 
     public func next(iter: Iter<Queries.QuestionKey>) : ?Question {

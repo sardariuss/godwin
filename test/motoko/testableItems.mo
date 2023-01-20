@@ -24,7 +24,7 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Interest = Types.Interest;
   type InterestAggregate = Types.InterestAggregate;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type Ballot<T> = Types.Ballot<T>;
   
   // For convenience: from queries module
   type QueryQuestionsResult = Queries.QueryQuestionsResult;
@@ -223,11 +223,11 @@ module {
     testOptItem(total, toTextInterestAggregate, equalInterestAggregate);
   };
 
-  func toTextTimestamp<T>(timestamp : Timestamp<T>, to_text_elem : (T) -> (Text)) : Text {
+  func toTextBallot<T>(timestamp : Ballot<T>, to_text_elem : (T) -> (Text)) : Text {
     "{ date = " # Int.toText(timestamp.date) # " (ns); elem = " # to_text_elem(timestamp.elem) # " }";
   };
 
-  func equalTimestamp<T>(a : Timestamp<T>, b : Timestamp<T>, equal_elem : (T, T) -> (Bool)) : Bool {
+  func equalBallot<T>(a : Ballot<T>, b : Ballot<T>, equal_elem : (T, T) -> (Bool)) : Bool {
     a.date == b.date and equal_elem(a.elem, b.elem);
   };
 

@@ -24,7 +24,7 @@ module {
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
   type Interest = Types.Interest;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type Ballot<T> = Types.Ballot<T>;
   type InterestAggregate = Types.InterestAggregate;
 
   public class TestInterests() = {

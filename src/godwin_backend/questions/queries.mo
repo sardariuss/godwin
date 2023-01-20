@@ -1,6 +1,5 @@
 import Types "../types";
 import WMap "../wrappers/WMap";
-import Question "question";
 import OrderedSet "../OrderedSet";
 
 import Map "mo:map/Map";
@@ -44,7 +43,6 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Status = Types.Status;
 
   // Public types
   public type OrderBy = {
@@ -52,9 +50,9 @@ module {
     #TITLE;
     #TEXT;
     #CREATION_DATE;
-    #STATUS_DATE: Status;
-    #INTEREST;
-    #INTEREST_HOT;
+    //#STATUS_DATE: Status;
+    //#INTEREST;
+    //#INTEREST_HOT;
   };
 
   public type QueryQuestionsResult = { ids: [Nat]; next_id: ?Nat };
@@ -66,21 +64,21 @@ module {
       #TITLE: TextEntry;
       #TEXT: TextEntry;
       #CREATION_DATE: DateEntry;
-      #STATUS_DATE: DateEntry;
-      #INTEREST: InterestEntry;
-      #INTEREST_HOT: InterestHotEntry;
+      //#STATUS_DATE: DateEntry;
+      //#INTEREST: InterestEntry;
+      //#INTEREST_HOT: InterestHotEntry;
     };
   };
 
   // Private types
   type DateEntry = { date: Time; };
   type TextEntry = { text: Text; date: Time; };
-  type InterestEntry = Int;
-  type InterestHotEntry = Float;
-  type StatusDateEntry = {
-    status: Status;
-    date: Int;
-  };
+//  type InterestEntry = Int;
+//  type InterestHotEntry = Float;
+//  type StatusDateEntry = {
+//    status: Status;
+//    date: Int;
+//  };
 
   // To be able to use OrderBy as key in a Trie
   func toTextOrderBy(order_by: OrderBy) : Text {
@@ -89,17 +87,17 @@ module {
       case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
       case(#CREATION_DATE){ "CREATION_DATE"; };
-      case(#STATUS_DATE(status)) { 
-        switch(status){
-          case(#CANDIDATE) { "CANDIDATE"; };
-          case(#OPEN(#OPINION)) { "OPEN_OPINION"; };
-          case(#OPEN(#CATEGORIZATION)) { "OPEN_CATEGORIZATION"; };
-          case(#CLOSED) { "CLOSED"; };
-          case(#REJECTED) { "REJECTED"; };
-        };
-      };
-      case(#INTEREST) { "INTEREST"; };
-      case(#INTEREST_HOT) { "INTEREST_HOT"; };
+//      case(#STATUS_DATE(status)) { 
+//        switch(status){
+//          case(#CANDIDATE) { "CANDIDATE"; };
+//          case(#OPEN(#OPINION)) { "OPEN_OPINION"; };
+//          case(#OPEN(#CATEGORIZATION)) { "OPEN_CATEGORIZATION"; };
+//          case(#CLOSED) { "CLOSED"; };
+//          case(#REJECTED) { "REJECTED"; };
+//        };
+//      };
+//      case(#INTEREST) { "INTEREST"; };
+//      case(#INTEREST_HOT) { "INTEREST_HOT"; };
     };
   };
   //func hashOrderBy(order_by: OrderBy) : Hash { Text.hash(toTextOrderBy(order_by)); };
@@ -113,9 +111,9 @@ module {
       case(#TITLE){ initTitleEntry(question); };
       case(#TEXT){ initTextEntry(question); };
       case(#CREATION_DATE){ initDateEntry(question); };
-      case(#STATUS_DATE(status)) { initStatusDateEntry(status, question); };
-      case(#INTEREST) { initInterestEntry(question); };
-      case(#INTEREST_HOT) { initInterestHotEntry(question); };
+      //case(#STATUS_DATE(status)) { initStatusDateEntry(status, question); };
+      //case(#INTEREST) { initInterestEntry(question); };
+      //case(#INTEREST_HOT) { initInterestHotEntry(question); };
     };
   };
   func initDateEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #CREATION_DATE({date = question.date; }); }};
@@ -123,31 +121,31 @@ module {
   func initTitleEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #TITLE({ text = question.title; date = question.date; }); }};
   func initTextEntry(question: Question) : ?QuestionKey { ?{ id = question.id; data = #TEXT({ text = question.text; date = question.date; }); }};
 
-  func initStatusDateEntry(status: Status, question: Question) : ?QuestionKey {
-    if (Question.getStatus(question) != status) { return null; };
-    ?{ id = question.id; data = #STATUS_DATE({ date = Question.unwrapStatusDate(question); }) };
-  };
-
-  func initInterestEntry(question: Question) : ?QuestionKey {
-    switch(question.status){
-      case(#CANDIDATE(vote)) { ?{ id = question.id; data = #INTEREST(vote.aggregate.score); }; };
-      case(_) { null; };
-    };
-  };
-
-  func initInterestHotEntry(question: Question) : ?QuestionKey {
-    switch(question.status){
-      case(#CANDIDATE(vote)) { 
-        // When based on creation date, the hot algorithm assumes the date is in the past
-        // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
-        // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
-        // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
-        let hot = Float.log(Float.max(Float.fromInt(vote.aggregate.score), 1.0)) / 2.303 + Float.fromInt(vote.date * 1_000_000_000) / 45000.0;
-        ?{ id = question.id; data = #INTEREST_HOT(hot); }; 
-      };
-      case(_) { null; };
-    };
-  };
+//  func initStatusDateEntry(status: Status, question: Question) : ?QuestionKey {
+//    if (Question.getStatus(question) != status) { return null; };
+//    ?{ id = question.id; data = #STATUS_DATE({ date = Question.unwrapStatusDate(question); }) };
+//  };
+//
+//  func initInterestEntry(question: Question) : ?QuestionKey {
+//    switch(question.status){
+//      case(#CANDIDATE(vote)) { ?{ id = question.id; data = #INTEREST(vote.aggregate.score); }; };
+//      case(_) { null; };
+//    };
+//  };
+//
+//  func initInterestHotEntry(question: Question) : ?QuestionKey {
+//    switch(question.status){
+//      case(#CANDIDATE(vote)) { 
+//        // When based on creation date, the hot algorithm assumes the date is in the past
+//        // @todo: cannot do assert(question.date <= Time.now()) here because it prevents from running the tests
+//        // Based on: https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
+//        // @todo: find out if the division coefficient (currently 45000) makes sense for godwin
+//        let hot = Float.log(Float.max(Float.fromInt(vote.aggregate.score), 1.0)) / 2.303 + Float.fromInt(vote.date * 1_000_000_000) / 45000.0;
+//        ?{ id = question.id; data = #INTEREST_HOT(hot); }; 
+//      };
+//      case(_) { null; };
+//    };
+//  };
 
   // Compare functions
   func compareQuestionKey(a: QuestionKey, b: QuestionKey) : Order {
@@ -177,24 +175,24 @@ module {
           case(_){Debug.trap("Cannot compare entries of different types")};
         };
       };
-      case(#STATUS_DATE(entry_a)){
-        switch(b.data){
-          case(#STATUS_DATE(entry_b)){ compareDateEntry(entry_a, entry_b, default_order); };
-          case(_){Debug.trap("Cannot compare entries of different types")};
-        };
-      };
-      case(#INTEREST(entry_a)){
-        switch(b.data){
-          case(#INTEREST(entry_b)) { compareInt(entry_a, entry_b, default_order); };
-          case(_){Debug.trap("Cannot compare entries of different types")};
-        };
-      };
-      case(#INTEREST_HOT(entry_a)){
-        switch(b.data){
-          case(#INTEREST_HOT(entry_b)) { compareFloat(entry_a, entry_b, default_order); };
-          case(_){Debug.trap("Cannot compare entries of different types")};
-        };
-      };
+//      case(#STATUS_DATE(entry_a)){
+//        switch(b.data){
+//          case(#STATUS_DATE(entry_b)){ compareDateEntry(entry_a, entry_b, default_order); };
+//          case(_){Debug.trap("Cannot compare entries of different types")};
+//        };
+//      };
+//      case(#INTEREST(entry_a)){
+//        switch(b.data){
+//          case(#INTEREST(entry_b)) { compareInt(entry_a, entry_b, default_order); };
+//          case(_){Debug.trap("Cannot compare entries of different types")};
+//        };
+//      };
+//      case(#INTEREST_HOT(entry_a)){
+//        switch(b.data){
+//          case(#INTEREST_HOT(entry_b)) { compareFloat(entry_a, entry_b, default_order); };
+//          case(_){Debug.trap("Cannot compare entries of different types")};
+//        };
+//      };
     };
   };
 
@@ -248,12 +246,12 @@ module {
     let register = Map.new<OrderBy, OrderedSet<QuestionKey>>();
     addOrderBy(register, #TITLE);
     addOrderBy(register, #CREATION_DATE);
-    addOrderBy(register, #STATUS_DATE(#CANDIDATE));
-    addOrderBy(register, #STATUS_DATE(#OPEN(#OPINION)));
-    addOrderBy(register, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
-    addOrderBy(register, #STATUS_DATE(#CLOSED));
-    addOrderBy(register, #STATUS_DATE(#REJECTED));
-    addOrderBy(register, #INTEREST);
+//    addOrderBy(register, #STATUS_DATE(#CANDIDATE));
+//    addOrderBy(register, #STATUS_DATE(#OPEN(#OPINION)));
+//    addOrderBy(register, #STATUS_DATE(#OPEN(#CATEGORIZATION)));
+//    addOrderBy(register, #STATUS_DATE(#CLOSED));
+//    addOrderBy(register, #STATUS_DATE(#REJECTED));
+//    addOrderBy(register, #INTEREST);
     register;
   };
 

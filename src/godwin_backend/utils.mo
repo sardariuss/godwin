@@ -140,6 +140,12 @@ module {
     });
   };
 
+  public func entries2D<K1, K2, V>(map2D: Map2D<K1, K2, V>) : Iter.Iter<(K1, Iter.Iter<(K2, V)>)> {
+    Iter.map<(K1, Map<K2, V>), (K1, Iter.Iter<(K2, V)>)>(Map.entries(map2D), func((k1, map1D): (K1, Map<K2, V>)) : (K1, Iter.Iter<(K2, V)>) {
+      (k1, Map.entries(map1D));
+    });
+  };
+
   type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
 
   public func put3D<K1, K2, K3, V>(map3D: Map3D<K1, K2, K3, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, k3_hash: HashUtils<K3>, k3: K3, v: V) : ?V {
@@ -170,4 +176,22 @@ module {
       })
     });
   };
+
+  public func equalOpt<T>(opt_a: ?T, opt_b: ?T, equal: (T, T) -> Bool) : Bool {
+    switch(opt_a){
+      case(null) {
+        switch(opt_b){
+          case(null) { true; };
+          case(_) { false; };
+        };
+      };
+      case(?a) {
+        switch(opt_b){
+          case(null) { false; };
+          case(?b) { equal(a, b); };
+        };
+      };
+    };
+  };
+
 };

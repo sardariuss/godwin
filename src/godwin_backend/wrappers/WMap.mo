@@ -96,6 +96,10 @@ module {
       Utils.remove2D(map_, hash1_, key1, hash2_, key2);
     };
 
+    public func entries(): Iter.Iter<(K1, Iter.Iter<(K2, V)>)> {
+      Utils.entries2D(map_);
+    };
+
   };
 
   public class WMap3D<K1, K2, K3, V>(map_: Map<K1, Map<K2, Map<K3, V>>>, hash1_: HashUtils<K1>, hash2_: HashUtils<K2>, hash3_: HashUtils<K3>) {

@@ -34,24 +34,19 @@ module {
       state_.queries.register
     );
     let scheduler = Scheduler.build(
-      state_.scheduler.selection_rate,
-      state_.scheduler.status_durations,
-      state_.scheduler.last_selection_date,
+      state_.scheduler.register,
       questions,
       users,
       queries
     );
     let interest_votes = Interest.build(
-      state_.votes.interest.ballots, 
-      state_.votes.interest.aggregates
+      state_.votes.interest,
     );
     let opinion_votes = Opinion.build(
-      state_.votes.opinion.ballots,
-      state_.votes.opinion.aggregates
+      state_.votes.opinion,
     );
     let categorization_votes = Categorization.build(
-      state_.votes.categorization.ballots,
-      state_.votes.categorization.aggregates,
+      state_.votes.categorization,
       Iter.toArray(categories.keys())
     );
 

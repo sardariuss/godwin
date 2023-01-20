@@ -21,9 +21,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Category = Types.Category;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type Decay = Types.Decay;
-  type Status = Types.Status;
   type Duration = Types.Duration;
-  type CreateQuestionStatus = Types.CreateQuestionStatus;
+  //type CreateQuestionStatus = Types.CreateQuestionStatus;
+  type QuestionStatus = Types.QuestionStatus;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
   type SetSchedulerParamError = Types.SetSchedulerParamError;
@@ -36,7 +36,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type Ballot<T> = Types.Ballot<T>;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -58,21 +58,22 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeCategory(caller, category);
   };
 
-  public query func getSelectionRate() : async Duration {
-    game_.getSelectionRate();
-  };
-
-  public shared func setSelectionRate(duration: Duration) : async Result<(), SetSchedulerParamError> {
-    game_.setSelectionRate(caller, duration);
-  };
-
-  public query func getStatusDuration(status: Status) : async ?Duration {
-    game_.getStatusDuration(status);
-  };
-
-  public shared func setStatusDuration(status: Status, duration: Duration) : async Result<(), SetSchedulerParamError> {
-    game_.setStatusDuration(caller, status, duration);
-  };
+// @todo
+//  public query func getSelectionRate() : async Duration {
+//    game_.getSelectionRate();
+//  };
+//
+//  public shared func setSelectionRate(duration: Duration) : async Result<(), SetSchedulerParamError> {
+//    game_.setSelectionRate(caller, duration);
+//  };
+//
+//  public query func getStatusDuration(status: QuestionStatus) : async ?Duration {
+//    game_.getStatusDuration(status);
+//  };
+//
+//  public shared func setStatusDuration(status: QuestionStatus, duration: Duration) : async Result<(), SetSchedulerParamError> {
+//    game_.setStatusDuration(caller, status, duration);
+//  };
 
   public query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
     game_.getQuestion(question_id);
@@ -82,9 +83,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getQuestions(order_by, direction, limit, previous_id);
   };
 
-  public shared({caller}) func createQuestions(inputs: [(Text, CreateQuestionStatus)]) : async Result<[Question], CreateQuestionError> {
-    game_.createQuestions(caller, inputs);
-  };
+  // @todo
+//  public shared({caller}) func createQuestions(inputs: [(Text, CreateQuestionStatus)]) : async Result<[Question], CreateQuestionError> {
+//    game_.createQuestions(caller, inputs);
+//  };
 
   public shared({caller}) func openQuestion(title: Text, text: Text) : async Result<Question, OpenQuestionError> {
     game_.openQuestion(caller, title, text);
@@ -102,7 +104,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeInterest(caller, question_id);
   };
 
-  public shared({caller}) func getInterest(question_id: Nat, iteration: Nat) : async Result<?Timestamp<Interest>, InterestError> {
+  public shared({caller}) func getInterest(question_id: Nat, iteration: Nat) : async Result<?Ballot<Interest>, InterestError> {
     game_.getInterest(caller, question_id, iteration);
   };
 
@@ -110,7 +112,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.setOpinion(caller, question_id, cursor);
   };
 
-  public shared({caller}) func getOpinion(question_id: Nat, iteration: Nat) : async Result<?Timestamp<Cursor>, OpinionError> {
+  public shared({caller}) func getOpinion(question_id: Nat, iteration: Nat) : async Result<?Ballot<Cursor>, OpinionError> {
     game_.getOpinion(caller, question_id, iteration);
   };
 

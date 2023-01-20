@@ -28,7 +28,7 @@ module {
   type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type CategoryCursorArray = Types.CategoryCursorArray;
   type CategoryPolarizationArray = Types.CategoryPolarizationArray;
-  type Timestamp<T> = Types.Timestamp<T>;
+  type Ballot<T> = Types.Ballot<T>;
 
   type Map<K, V> = Map.Map<K, V>;
 
