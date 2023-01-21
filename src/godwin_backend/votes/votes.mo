@@ -30,22 +30,6 @@ module {
     };
   };
 
-//  let vote_transitions : Map<?QuestionStatus, ?QuestionStatus>
-//
-//  CLOSE: 
-//  #CANDIDATE; #REJECTED; => CloseInterest
-//  #CANDIDATE; #OPINION; => CloseInterest
-//  #OPINION; #CATEGORIZATION; => CloseOpinion
-//
-//  OPEN:
-//  null; #CANDIDATE; => Interest
-//  #CANDIDATE; #OPINION; => OpenOpinion
-//  #OPINION; #CATEGORIZATION; => OpenCat
-//  #CLOSED; #CANDIDATE; => OpenInterest
-//
-//  DELETE:
-//  not null, null; => Delete vote for all history
-
   public class Votes<T, A>(
     votes_: WMap2D<QuestionId, Iteration, Vote<T, A>>,
     empty_aggregate_: A,
@@ -92,12 +76,11 @@ module {
       Map.get(getVote(question_id, iteration).ballots, Map.phash, principal);
     };
 
-    public func putBallot(principal: Principal, question_id: QuestionId, iteration: Iteration, date: Time, answer: T) {
+    public func putBallot(principal: Principal, question_id: QuestionId, iteration: Iteration, ballot: Ballot<T>) {
       let vote = getVote(question_id, iteration);
       verifyStatus(vote, #OPEN);
-      let new_ballot = { answer; date; };
-      let old_ballot = Map.put(vote.ballots, Map.phash, principal, new_ballot);
-      let aggregate = updateAggregate(vote.aggregate, ?new_ballot, old_ballot);
+      let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
+      let aggregate = updateAggregate(vote.aggregate, ?ballot, old_ballot);
       ignore votes_.put(question_id, iteration, { vote with aggregate; });
     };
 

@@ -63,20 +63,24 @@ module {
   };
 
   public type QuestionStatus = {
-    #CANDIDATE;
-    #OPINION;
-    #CATEGORIZATION;
+    #VOTING: VoteType;
     #CLOSED;
     #REJECTED;
   };
 
+  public type VoteType = {
+    #CANDIDATE;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
   public func questionStatusToNat(status: QuestionStatus) : Nat {
     switch(status){
-      case(#CANDIDATE)      { 0; };
-      case(#OPINION)        { 1; };
-      case(#CATEGORIZATION) { 2; };
-      case(#CLOSED)         { 3; };
-      case(#REJECTED)       { 4; };
+      case(#VOTING(#CANDIDATE))      { 0; };
+      case(#VOTING(#OPINION))        { 1; };
+      case(#VOTING(#CATEGORIZATION)) { 2; };
+      case(#CLOSED)                  { 3; };
+      case(#REJECTED)                { 4; };
     };
   };
 
@@ -153,7 +157,38 @@ module {
   public type CategoryPolarizationTrie = Trie<Category, Polarization>;
   public type CategoryPolarizationArray = [(Category, Polarization)];
 
+  public type CandidateBallot = Ballot<Interest>;
+  public type OpinionBallot = Ballot<Cursor>;
+  public type CategorizationBallot = Ballot<CategoryCursorTrie>;
+
+  public type TypedBallot = {
+    #CANDIDATE: Ballot<Interest>;
+    #OPINION: Ballot<Cursor>;
+    #CATEGORIZATION: Ballot<CategoryCursorTrie>;
+  };
+
+  public type TypedAnswer = {
+    #CANDIDATE: Interest;
+    #OPINION: Cursor;
+    #CATEGORIZATION: CategoryCursorTrie;
+  };
+
+  public type CandidateVote =  Vote<Interest, InterestAggregate>;
+  public type OpinionVote =  Vote<Cursor, Polarization>;
+  public type CategorizationVote =  Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
+
+  public type TypedVote = {
+    #CANDIDATE: CandidateVote;
+    #OPINION: OpinionVote;
+    #CATEGORIZATION: CategorizationVote;
+  };
+
   // @todo: temporary
+
+//  public type CreateQuestionError = {
+//    #PrincipalIsAnonymous;
+//    #InsufficientCredentials;
+//  };
 //  public type CreateQuestionStatus = {
 //    #CANDIDATE: { interest_score: Int; };
 //    #OPEN: {
@@ -201,41 +236,18 @@ module {
     #CategoryDoesntExist;
   };
 
-  public type SetSchedulerParamError = {
-    #InsufficientCredentials;
-  };
-
   public type GetQuestionError = {
     #QuestionNotFound;
-  };
-
-  public type CreateQuestionError = {
-    #PrincipalIsAnonymous;
-    #InsufficientCredentials;
   };
 
   public type OpenQuestionError = {
     #PrincipalIsAnonymous;
   };
-
-  public type InterestError = {
+  
+  public type ReopenQuestionError = {
     #PrincipalIsAnonymous;
     #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public type OpinionError = {
-    #PrincipalIsAnonymous;
-    #InvalidOpinion;
-    #QuestionNotFound;
-    #InvalidVotingStage;
-  };
-
-  public type CategorizationError = {
-    #PrincipalIsAnonymous;
-    #InvalidVotingStage;
-    #InvalidCategorization;
-    #QuestionNotFound;
+    #InvalidStatus;
   };
 
   public type SetUserNameError = {
@@ -249,5 +261,27 @@ module {
   public type GetUserError = {
     #PrincipalIsAnonymous;
   };
+
+  public type PutBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidStatus;
+  };
+
+  public type RemoveBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #NotAuthorized;
+    #InvalidStatus;
+  };
+
+  public type GetBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidIteration;
+  };
+
+  public type SetPickRateError = VerifyCredentialsError;
+  public type SetDurationError = VerifyCredentialsError;
 
 };

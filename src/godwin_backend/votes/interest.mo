@@ -1,5 +1,5 @@
 import Votes "votes"; 
-import Interests "interests";
+import InterestAggregate "../representation/interestAggregate";
 import Types "../types";
 import WMap "../wrappers/WMap";
 
@@ -25,9 +25,9 @@ module {
   public func build(register: Register) : Interests2 {
     Votes.Votes(
       WMap.WMap2D<Nat, Nat, Vote<Interest, InterestAggregate>>(register, Map.nhash, Map.nhash),
-      Interests.emptyAggregate(),
-      Interests.addToAggregate,
-      Interests.removeFromAggregate
+      InterestAggregate.emptyAggregate(),
+      InterestAggregate.addToAggregate,
+      InterestAggregate.removeFromAggregate
     );
   };
 

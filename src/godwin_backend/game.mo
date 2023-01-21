@@ -2,17 +2,15 @@ import Types "types";
 import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
-//import Admin "admin";
 import Questions "questions/questions";
 import Queries "questions/queries";
-import Cursor "representation/cursor";
 import Votes "votes/votes";
-import WSet "wrappers/WSet";
+import Manager "votes/manager";
+import Categories "Categories";
+import StatusInfoHelper "StatusInfoHelper";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
-import Time "mo:base/Time";
-import Text "mo:base/Text";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
@@ -22,50 +20,42 @@ module {
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
-  type Time = Time.Time;
-
-  type WSet<K> = WSet.WSet<K>;
+  type Time = Int;
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Interest = Types.Interest;
-  type Cursor = Types.Cursor;
   type User = Types.User;
   type Category = Types.Category;
-  type CategoryCursorArray = Types.CategoryCursorArray;
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
   type Decay = Types.Decay;
   type Duration = Types.Duration;
-  type Polarization = Types.Polarization;
   type QuestionStatus = Types.QuestionStatus;
-  //type CreateQuestionStatus = Types.CreateQuestionStatus;
-  type Ballot<T> = Types.Ballot<T>;
-  type InterestAggregate = Types.InterestAggregate;
+  type IndexedStatus = Types.IndexedStatus;
+  type VoteType = Types.VoteType;
+  type TypedBallot = Types.TypedBallot;
+  type TypedAnswer = Types.TypedAnswer;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
-  type SetSchedulerParamError = Types.SetSchedulerParamError;
   type GetQuestionError = Types.GetQuestionError;
-  type CreateQuestionError = Types.CreateQuestionError;
   type OpenQuestionError = Types.OpenQuestionError;
-  type InterestError = Types.InterestError;
-  type OpinionError = Types.OpinionError;
-  type CategorizationError = Types.CategorizationError;
+  type ReopenQuestionError = Types.ReopenQuestionError;
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
+  type PutBallotError = Types.PutBallotError;
+  type RemoveBallotError = Types.RemoveBallotError;
+  type GetBallotError = Types.GetBallotError;
+  type SetPickRateError = Types.SetPickRateError;
+  type SetDurationError = Types.SetDurationError;
 
   public class Game(
     admin_: Principal,
-    categories_: WSet<Category>,
+    categories_: Categories.Categories,
     users_: Users.Users,
     questions_: Questions.Questions,
     queries_: Queries.Queries,
     scheduler_: Scheduler.Scheduler,
-    interest_votes_: Votes.Votes<Interest, InterestAggregate>,
-    opinion_votes_: Votes.Votes<Cursor, Polarization>,
-    categorization_votes_: Votes.Votes<CategoryCursorTrie, CategoryPolarizationTrie>,
+    manager_: Manager.Manager
   ) = {
 
     public func getDecay() : ?Decay {
@@ -76,8 +66,8 @@ module {
       Iter.toArray(categories_.keys());
     };
 
-    public func addCategory(principal: Principal, category: Category) : Result<(), AddCategoryError> {
-      Result.chain<(), (), AddCategoryError>(verifyCredentials(principal), func() {
+    public func addCategory(caller: Principal, category: Category) : Result<(), AddCategoryError> {
+      Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func() {
         Result.mapOk<(), (), AddCategoryError>(Utils.toResult(not categories_.has(category), #CategoryAlreadyExists), func() {
           categories_.add(category);
           // Also add the category to users' profile // @todo: use an obs instead?
@@ -86,8 +76,8 @@ module {
       });
     };
 
-    public func removeCategory(principal: Principal, category: Category) : Result<(), RemoveCategoryError> {
-      Result.chain<(), (), RemoveCategoryError>(verifyCredentials(principal), func () {
+    public func removeCategory(caller: Principal, category: Category) : Result<(), RemoveCategoryError> {
+      Result.chain<(), (), RemoveCategoryError>(verifyCredentials(caller), func () {
         Result.mapOk<(), (), RemoveCategoryError>(Utils.toResult(categories_.has(category), #CategoryDoesntExist), func() {
           categories_.add(category);
           // Also remove the category from users' profile // @todo: use an obs instead?
@@ -96,26 +86,25 @@ module {
       });
     };
 
-// @todo
-//    public func getSelectionRate() : Duration {
-//      scheduler_.getSelectionRate();
-//    };
-//
-//    public func setSelectionRate(principal: Principal, duration: Duration) : Result<(), SetSchedulerParamError> {
-//      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
-//        scheduler_.setSelectionRate(duration);
-//      });
-//    };
-//
-//    public func getStatusDuration(status: QuestionStatus) : ?Duration {
-//      scheduler_.getStatusDuration(status);
-//    };
-//
-//    public func setStatusDuration(principal: Principal, status: QuestionStatus, duration: Duration) : Result<(), SetSchedulerParamError> {
-//      Result.mapOk<(), (), VerifyCredentialsError>(verifyCredentials(principal), func () {
-//        scheduler_.setStatusDuration(status, duration);
-//      });
-//    };
+    public func getPickRate(status: QuestionStatus) : Duration {
+      Utils.fromTime(scheduler_.getPickRate(status));
+    };
+
+    public func setPickRate(caller: Principal, status: QuestionStatus, rate: Duration) : Result<(), SetPickRateError> {
+      Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
+        scheduler_.setPickRate(status, Utils.toTime(rate));
+      });
+    };
+
+    public func getDuration(status: QuestionStatus) : Duration {
+      Utils.fromTime(scheduler_.getDuration(status));
+    };
+
+    public func setDuration(caller: Principal, status: QuestionStatus, duration: Duration) : Result<(), SetDurationError> {
+      Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
+        scheduler_.setDuration(status, Utils.toTime(duration));
+      });
+    };
 
     public func getQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
@@ -125,99 +114,69 @@ module {
       questions_.queryQuestions(queries_, order_by, direction, limit, previous_id);
     };
 
-  // @todo
-//    public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {
-//      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
-//        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
-//          Admin.createQuestions(questions_, principal, inputs);
-//        })
-//      });
-//    };
-
-    public func openQuestion(principal: Principal, title: Text, text: Text) : Result<Question, OpenQuestionError> {
-      Result.mapOk<User, Question, OpenQuestionError>(getUser(principal), func(_) {
-        let question = questions_.createQuestion(principal, Time.now(), title, text);
-        interest_votes_.newVote(question.id, 0, Time.now());
+    public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
+      Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
+        let question = questions_.createQuestion(caller, date, title, text);
+        manager_.openVote(question, #CANDIDATE);
         question;
       });
     };
 
-    public func reopenQuestion(principal: Principal, question_id: Nat) : Result<(), InterestError> {
-      Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          // @todo: verify status
-          ignore questions_.updateStatus(question_id, #CANDIDATE, Time.now());
-          //Result.mapOk<Question, (), InterestError>(Question.updateStatus(question, #CANDIDATE, Time.now()), func(question) {
-            //questions_.replaceQuestion(question);
-          //});
-        })
-      });
-    };
-
-    public func setInterest(principal: Principal, question_id: Nat, interest: Interest) : Result<(), InterestError> {
-      Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          // @todo: verify question status, get the current iteration
-          interest_votes_.putBallot(principal, question_id, 0, Time.now(), interest);
-        })
-      });
-    };
-
-    public func removeInterest(principal: Principal, question_id: Nat) : Result<(), InterestError> {
-      Result.chain<User, (), InterestError>(getUser(principal), func(_) {
-        Result.mapOk<Question, (), InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          // @todo: verify question status, get the current iteration
-          interest_votes_.removeBallot(principal, question_id, 0);
-        })
-      });
-    };
-
-    public func getInterest(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, InterestError> {
-      Result.chain<User, ?Ballot<Interest>, InterestError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Ballot<Interest>, InterestError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          interest_votes_.getBallot(principal, question_id, iteration);
-        })
-      });
-    };
-
-    public func setOpinion(principal: Principal, question_id: Nat, cursor: Cursor) : Result<(), OpinionError> {
-      Result.chain<User, (), OpinionError>(getUser(principal), func(_) {
-        Result.chain<Cursor, (), OpinionError>(Result.fromOption(Cursor.verifyIsValid(cursor), #InvalidOpinion), func(cursor) {
-          Result.mapOk<Question, (), OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-            // @todo: verify question status, get the current iteration
-            opinion_votes_.putBallot(principal, question_id, 0, Time.now(), cursor);
+    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
+      Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
+        Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusInfoHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
+            let question = questions_.updateStatus(question_id, #VOTING(#CANDIDATE), date);
+            manager_.openVote(question, #CANDIDATE);
           })
         })
       });
     };
 
-    public func getOpinion(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, OpinionError> {
-      Result.chain<User, ?Ballot<Cursor>, OpinionError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Ballot<Cursor>, OpinionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          opinion_votes_.getBallot(principal, question_id, iteration);
+    public func putBallot(caller: Principal, question_id: Nat, answer: TypedAnswer, date: Time) : Result<(), PutBallotError> {
+      Result.chain<User, (), PutBallotError>(getUser(caller), func(_) {
+        Result.chain<Question, (), PutBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<IndexedStatus, (), PutBallotError>(Result.fromOption(Manager.getVoteStatus(question, Manager.getVoteType(answer)), #InvalidStatus), func(_) {
+            manager_.putBallot(caller, question, answer, date);
+          })
         })
       });
     };
 
-    public func setCategorization(principal: Principal, question_id: Nat, cursor_array: CategoryCursorArray) : Result<(), CategorizationError> {
-      Result.chain<User, (), CategorizationError>(getUser(principal), func(_) {
-        Result.mapOk<Question, (), CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          // @todo: verify question status, get the current iteration
-          categorization_votes_.putBallot(principal, question_id, 0, Time.now(), Utils.arrayToTrie(cursor_array, Types.keyText, Text.equal));
+    public func removeBallot(caller: Principal, question_id: Nat, vote: VoteType) : Result<(), RemoveBallotError> {
+      Result.chain<User, (), RemoveBallotError>(getUser(caller), func(_) {
+        Result.chain<Question, (), RemoveBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.chain<(), (), RemoveBallotError>(Utils.toResult(vote == #CANDIDATE, #NotAuthorized), func() {
+            Result.mapOk<IndexedStatus, (), RemoveBallotError>(Result.fromOption(Manager.getVoteStatus(question, vote), #InvalidStatus), func(_) {
+              manager_.removeBallot(caller, question, vote);
+            })
+          })
         })
       });
     };
 
-    public func getCategorization(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CategoryCursorTrie>, CategorizationError> {
-      Result.chain<User, ?Ballot<CategoryCursorTrie>, CategorizationError>(getUser(principal), func(_) {
-        Result.mapOk<Question, ?Ballot<CategoryCursorTrie>, CategorizationError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          categorization_votes_.getBallot(principal, question_id, iteration);
+    public func getBallot(caller: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : Result<?TypedBallot, GetBallotError> {
+      Result.chain<User, ?TypedBallot, GetBallotError>(getUser(caller), func(_) {
+        Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isValidIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
+            manager_.getBallot(caller, question.id, iteration, vote);
+          })
         })
       });
     };
 
-    public func run() {
-      scheduler_.run(Time.now());
+    public func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : Result<?TypedBallot, GetBallotError> {
+      Result.chain<User, ?TypedBallot, GetBallotError>(getUser(principal), func(_) {
+        Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isHistoryIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
+            manager_.getBallot(principal, question.id, iteration, vote);
+          })
+        })
+      });
+    };
+
+    public func run(date: Time) {
+      scheduler_.run(date);
     };
 
     public func findUser(principal: Principal) : ?User {
@@ -244,6 +203,15 @@ module {
     public func polarizationTrieToArray(trie: Types.CategoryPolarizationTrie) : Types.CategoryPolarizationArray {
       Utils.trieToArray(trie);
     };
+
+    // @todo
+//    public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {
+//      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
+//        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
+//          Admin.createQuestions(questions_, principal, inputs);
+//        })
+//      });
+//    };
 
   };
 

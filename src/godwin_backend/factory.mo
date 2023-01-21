@@ -6,6 +6,7 @@ import Queries "questions/queries";
 import Interest "votes/interest";
 import Opinion "votes/opinion";
 import Categorization "votes/categorization";
+import Manager "votes/manager";
 import State "state";
 import Game "game";
 import WSet "wrappers/WSet";
@@ -33,21 +34,18 @@ module {
     let queries = Queries.build(
       state_.queries.register
     );
+    let manager = Manager.build(
+      state_.votes.interest,
+      state_.votes.opinion,
+      state_.votes.categorization,
+      Iter.toArray(categories.keys())
+    );
     let scheduler = Scheduler.build(
       state_.scheduler.register,
       questions,
       users,
-      queries
-    );
-    let interest_votes = Interest.build(
-      state_.votes.interest,
-    );
-    let opinion_votes = Opinion.build(
-      state_.votes.opinion,
-    );
-    let categorization_votes = Categorization.build(
-      state_.votes.categorization,
-      Iter.toArray(categories.keys())
+      queries,
+      manager
     );
 
     // Add observers to sync queries
@@ -60,9 +58,7 @@ module {
       questions,
       queries,
       scheduler,
-      interest_votes,
-      opinion_votes,
-      categorization_votes
+      manager
     );
   };
 

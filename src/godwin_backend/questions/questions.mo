@@ -4,6 +4,7 @@ import Queries "queries";
 import Observers "../observers";
 import WMap "../wrappers/WMap";
 import WRef "../wrappers/WRef";
+import StatusInfoHelper "../StatusInfoHelper";
 
 import Map "mo:map/Map";
 
@@ -111,12 +112,12 @@ module {
         date;
         status_info = {
           current = {
-            status = #CANDIDATE;
+            status = #VOTING(#CANDIDATE);
             date;
             index = 0;
           };
           history = [];
-          iterations = [(#CANDIDATE, 0)];
+          iterations = [(#VOTING(#CANDIDATE), 0)];
         };
       };
       register_.set(question.id, question);
@@ -137,7 +138,7 @@ module {
       };
     };
 
-    public func removeQuestion(question_id: Nat) : Question {
+    public func removeQuestion(question_id: Nat) {
       if (Option.isNull(register_.get(question_id))){
         Debug.trap("Cannot remove a question that does not exist");
       };
@@ -145,35 +146,17 @@ module {
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
           observers_.callObs(#RECORD, ?old_question, null);
-          old_question;
         };
       };
     };
 
     public func updateStatus(question_id: Nat, status: QuestionStatus, date: Time) : Question {
-      // @todo: create a class StatusInfo
       // Get the question
       var question = getQuestion(question_id);
-      // Get status info
-      let current = question.status_info.current;
-      let history = Buffer.fromArray<IndexedStatus>(question.status_info.history);
-      let iterations = Utils.arrayToMap<QuestionStatus, Nat>(question.status_info.iterations, Types.questionStatushash);
-      // Add current to history
-      history.add(current);
-      let index = switch(Map.get(iterations, Types.questionStatushash, status)){
-        case(null) { Debug.trap("The status index is missing"); };
-        case(?idx) { idx + 1; };
-      };
-      // Update iteration index for this status
-      Map.set(iterations, Types.questionStatushash, status, index);
-      // Return the updated status info
-      question := { question with status_info = 
-        {
-          current = { status; date; index; };
-          history = Buffer.toArray(history);
-          iterations = Utils.mapToArray<QuestionStatus, Nat>(iterations);
-        };
-      };
+      // Use the helper to update the status
+      let helper = StatusInfoHelper.build(question.status_info);
+      helper.setCurrent(status, date);
+      question := { question with status_info = helper.share() };
       // @todo: use update method instead
       switch(register_.put(question.id, question)){
         case(null) { Prelude.unreachable(); };

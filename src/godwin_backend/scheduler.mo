@@ -1,6 +1,7 @@
 import Types "types";
 import Questions "questions/questions";
 import Queries "questions/queries";
+import Manager "votes/manager";
 import Users "users";
 import Utils "utils";
 import WMap "wrappers/WMap";
@@ -26,10 +27,12 @@ module {
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type Queries = Queries.Queries;
+  type Manager = Manager.Manager;
   type WMap<K, V> = WMap.WMap<K, V>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type QuestionStatus = Types.QuestionStatus;
   type SchedulerParameters = Types.SchedulerParameters;
+  type VoteType = Types.VoteType;
 
   type TriggerType = {
     #PICK;
@@ -76,20 +79,21 @@ module {
 
   public func initRegister(params: SchedulerParameters, time_now: Time) : Register {
     let register = Map.new<QuestionStatus, Map<TriggerType, TriggerParams>>();
-    putHelper(register, #CANDIDATE,      #PICK,    #PICK   ({ rate     = Utils.toTime(params.candidate_pick_rate);     transition = #NEXT(#OPINION);        last_pick = time_now; }));
-    putHelper(register, #CANDIDATE,      #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.candidate_duration);      transition = #NEXT(#REJECTED);                             }));
-    putHelper(register, #OPINION,        #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);        transition = #NEXT(#CATEGORIZATION);                       }));
-    putHelper(register, #CATEGORIZATION, #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration); transition = #NEXT(#CLOSED);                               }));
-    putHelper(register, #REJECTED,       #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);       transition = #DELETE;                                      }));
+    putHelper(register, #VOTING(#CANDIDATE),      #PICK,    #PICK   ({ rate     = Utils.toTime(params.candidate_pick_rate);     transition = #NEXT(#VOTING(#OPINION));        last_pick = time_now; }));
+    putHelper(register, #VOTING(#CANDIDATE),      #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.candidate_duration);      transition = #NEXT(#REJECTED);                                      }));
+    putHelper(register, #VOTING(#OPINION),        #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);        transition = #NEXT(#VOTING(#CATEGORIZATION));                       }));
+    putHelper(register, #VOTING(#CATEGORIZATION), #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration); transition = #NEXT(#CLOSED);                                        }));
+    putHelper(register, #REJECTED,                #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);       transition = #DELETE;                                               }));
     register;
   };
 
-  public func build(register: Register, questions: Questions, users: Users, queries: Queries) : Scheduler {
+  public func build(register: Register, questions: Questions, users: Users, queries: Queries, manager: Manager) : Scheduler {
     Scheduler(
       WMap.WMap2D<QuestionStatus, TriggerType, TriggerParams>(register, Types.questionStatushash, triggerTypehash),
       questions,
       users,
-      queries
+      queries,
+      manager
     );
   };
 
@@ -97,7 +101,8 @@ module {
     register_: WMap2D<QuestionStatus, TriggerType, TriggerParams>,
     questions_: Questions,
     users_: Users,
-    queries_: Queries
+    queries_: Queries,
+    manager_: Manager
   ){
 
     public func getPickRate(status: QuestionStatus) : Time {
@@ -135,7 +140,7 @@ module {
           // Update the last pick
           ignore register_.put(status, #PICK, #PICK({ params with last_pick = time_now; }));
           // Perform the transition
-          question := ?transitQuestion(most_upvoted.id, params.transition, time_now);
+          question := ?transitQuestion(most_upvoted, params.transition, time_now);
         }); 
       };
       return question;
@@ -151,17 +156,34 @@ module {
             // Stop iterating here if the question is not old enough
             if (time_now < question.status_info.current.date + params.duration){ break iter_oldest; };
             // If old enough, handle the question
-            buffer.add(transitQuestion(question.id, params.transition, time_now));
+            buffer.add(transitQuestion(question, params.transition, time_now));
           };
         };
       };
       Buffer.toArray(buffer);
     };
 
-    func transitQuestion(question_id: Nat, transition: Transition, time_now: Time) : Question {
+    func transitQuestion(question: Question, transition: Transition, time_now: Time) : Question {
+      // Close the current vote if applicable
+      iterateVotingStatus(question, manager_.closeVote);
+      // Handle the transition
       switch(transition){
-        case(#NEXT(status)){ questions_.updateStatus(question_id, status, time_now); };
-        case(#DELETE){       questions_.removeQuestion(question_id);                 };
+        case(#NEXT(status)){ 
+          // Update the question's status
+          let question_updated = questions_.updateStatus(question.id, status, time_now);
+          // Open a new vote if applicable
+          iterateVotingStatus(question_updated, manager_.openVote);
+          // Return the updated question
+          question_updated;
+        };
+        case(#DELETE){
+          // Remove the question
+          questions_.removeQuestion(question.id);
+          // Delete the votes associated to this question
+          manager_.deleteVotes(question);
+          // Return the deleted question
+          question;
+        };
       };
     };
 
@@ -183,6 +205,13 @@ module {
       switch(getParams(status, #TIMEOUT)){
         case(#PICK(_)) { Debug.trap("@todo"); };
         case(#TIMEOUT(params)) { params; };
+      };
+    };
+
+    func iterateVotingStatus(question: Question, f: (Question, VoteType) -> ()) {
+      switch(question.status_info.current.status){
+        case(#VOTING(vote)) { f(question, vote); };
+        case(_){};
       };
     };
 
