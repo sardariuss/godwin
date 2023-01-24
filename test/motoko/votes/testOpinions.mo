@@ -1,4 +1,4 @@
-import Types "../../../src/godwin_backend/Types";
+import Types "../../../src/godwin_backend/model/Types";
 import Votes "../../../src/godwin_backend/votes/Votes";
 import Polarization "../../../src/godwin_backend/representation/Polarization";
 import Opinion "../../../src/godwin_backend/votes/Opinions";

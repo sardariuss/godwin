@@ -1,13 +1,13 @@
 import Types "Types";
-import Utils "Utils";
-import Polarization "representation/Polarization";
-import Cursor "representation/Cursor";
-import PolarizationMap "representation/PolarizationMap";
-import WMap "wrappers/WMap";
+import Polarization "votes/representation/Polarization";
+import Cursor "votes/representation/Cursor";
+import PolarizationMap "votes/representation/PolarizationMap";
 import Opinion "votes/Opinions";
 import Categorization "votes/Categorizations";
 import StatusInfoHelper "StatusInfoHelper";
-import Questions "questions/Questions";
+import Questions "Questions";
+import Utils "../utils/Utils";
+import WMap "../utils/wrappers/WMap";
 
 import Map "mo:map/Map";
 

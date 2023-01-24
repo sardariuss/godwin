@@ -1,13 +1,14 @@
 import Types "Types";
 import Users "Users";
-import Utils "Utils";
+import QuestionQueries "QuestionQueries";
 import Scheduler "Scheduler";
-import Questions "questions/Questions";
-import QuestionQueries2 "QuestionQueries";
+import Questions "Questions";
 import Votes "votes/Votes";
 import Polls "votes/Polls";
 import Categories "Categories";
 import StatusInfoHelper "StatusInfoHelper";
+import Duration "Duration";
+import Utils "../utils/Utils";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -53,7 +54,7 @@ module {
     categories_: Categories.Categories,
     users_: Users.Users,
     questions_: Questions.Questions,
-    queries_: QuestionQueries2.QuestionQueries,
+    queries_: QuestionQueries.QuestionQueries,
     scheduler_: Scheduler.Scheduler,
     manager_: Polls.Polls
   ) = {
@@ -87,22 +88,22 @@ module {
     };
 
     public func getPickRate(status: QuestionStatus) : Duration {
-      Utils.fromTime(scheduler_.getPickRate(status));
+      Duration.fromTime(scheduler_.getPickRate(status));
     };
 
     public func setPickRate(caller: Principal, status: QuestionStatus, rate: Duration) : Result<(), SetPickRateError> {
       Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
-        scheduler_.setPickRate(status, Utils.toTime(rate));
+        scheduler_.setPickRate(status, Duration.toTime(rate));
       });
     };
 
     public func getDuration(status: QuestionStatus) : Duration {
-      Utils.fromTime(scheduler_.getDuration(status));
+      Duration.fromTime(scheduler_.getDuration(status));
     };
 
     public func setDuration(caller: Principal, status: QuestionStatus, duration: Duration) : Result<(), SetDurationError> {
       Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
-        scheduler_.setDuration(status, Utils.toTime(duration));
+        scheduler_.setDuration(status, Duration.toTime(duration));
       });
     };
 
@@ -110,7 +111,7 @@ module {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func getQuestions(order_by: QuestionQueries2.OrderBy, direction: QuestionQueries2.Direction, limit: Nat, previous_id: ?Nat) : QuestionQueries2.QueryQuestionsResult {
+    public func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : QuestionQueries.QueryQuestionsResult {
       queries_.queryItems(order_by, direction, limit, Option.map(previous_id, func(id: Nat) : Question { questions_.getQuestion(id); }));
     };
 

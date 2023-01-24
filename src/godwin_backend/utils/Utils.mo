@@ -1,5 +1,3 @@
-import Types "Types";
-
 import Map "mo:map/Map";
 
 import Array "mo:base/Array";
@@ -10,8 +8,6 @@ import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
-import Float "mo:base/Float";
-import Int "mo:base/Int";
 
 module {
 
@@ -23,8 +19,6 @@ module {
   type Time = Time.Time;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Iter<T> = { next : () -> ?T };
-  // For convenience: from types module
-  type Duration = Types.Duration;
 
   // For convenience: from map module
   type Map<K, V> = Map.Map<K, V>;
@@ -61,35 +55,6 @@ module {
       set := Trie.put(set, key(k), equal, ()).0;
     };
     set;
-  };
-
-  public func toTime(duration: Duration) : Time {
-    switch(duration) {
-      case(#DAYS(days)){ days * 24 * 60 * 60 * 1_000_000_000; };
-      case(#HOURS(hours)){ hours * 60 * 60 * 1_000_000_000; };
-      case(#MINUTES(minutes)){ minutes * 60 * 1_000_000_000; };
-      case(#SECONDS(seconds)){ seconds * 1_000_000_000; };
-      case(#NS(ns)){ ns; };
-    };
-  };
-
-  public func fromTime(time: Time) : Duration {
-    assert(time > 0);
-    let time_nat = Int.abs(time);
-    let time_float = Float.fromInt(time);
-    if (Float.rem(time_float, 24 * 60 * 60 * 1_000_000_000) == 0.0){
-      return #DAYS(time_nat / (24 * 60 * 60 * 1_000_000_000));
-    };
-    if(Float.rem(time_float, 60 * 60 * 1_000_000_000) == 0.0){
-      return #HOURS(time_nat / (60 * 60 * 1_000_000_000));
-    };
-    if(Float.rem(time_float, 60 * 1_000_000_000) == 0.0){
-      return #MINUTES(time_nat / (60 * 1_000_000_000));
-    };
-    if(Float.rem(time_float, 1_000_000_000) == 0.0){
-      return #SECONDS(time_nat / 1_000_000_000);
-    };
-    return #NS(time_nat);
   };
 
   public func append<T>(left: [T], right: [T]) : [T] {

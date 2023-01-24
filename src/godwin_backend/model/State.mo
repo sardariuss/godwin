@@ -1,6 +1,6 @@
 import Types "Types";
-import QuestionQueries2 "QuestionQueries";
-import OrderedSet "OrderedSet";
+import QuestionQueries "QuestionQueries";
+import OrderedSet "../utils/OrderedSet";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
@@ -39,8 +39,8 @@ module {
   type Appeal = Types.Appeal;
   type QuestionStatus = Types.QuestionStatus;
 
-  type QuestionOrderBy = QuestionQueries2.OrderBy;
-  type QuestionKey = QuestionQueries2.Key;
+  type QuestionOrderBy = QuestionQueries.OrderBy;
+  type QuestionKey = QuestionQueries.Key;
 
   public type State = {
     admin             : Principal;

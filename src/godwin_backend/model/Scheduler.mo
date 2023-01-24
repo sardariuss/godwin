@@ -1,10 +1,11 @@
 import Types "Types";
-import Questions "questions/Questions";
-import QuestionQueries2 "QuestionQueries";
+import Questions "Questions";
+import QuestionQueries "QuestionQueries";
 import Polls "votes/Polls";
 import Users "Users";
-import Utils "Utils";
-import WMap "wrappers/WMap";
+import Duration "Duration";
+import Utils "../utils/Utils";
+import WMap "../utils/wrappers/WMap";
 
 import Map "mo:map/Map";
 
@@ -28,15 +29,15 @@ module {
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
-  type QuestionQueries = QuestionQueries2.QuestionQueries;
+  type QuestionQueries = QuestionQueries.QuestionQueries;
   type Polls = Polls.Polls;
   type WMap<K, V> = WMap.WMap<K, V>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type QuestionStatus = Types.QuestionStatus;
   type SchedulerParameters = Types.SchedulerParameters;
   type Poll = Types.Poll;
-  type OrderBy = QuestionQueries2.OrderBy;
-  type Direction = QuestionQueries2.Direction;
+  type OrderBy = QuestionQueries.OrderBy;
+  type Direction = QuestionQueries.Direction;
 
   type TriggerType = {
     #PICK;
@@ -88,11 +89,11 @@ module {
 
   public func initRegister(params: SchedulerParameters, time_now: Time) : Register {
     let register = Map.new<QuestionStatus, Map<TriggerType, Params>>();
-    putHelper(register, #VOTING(#INTEREST),      #NEXT(#REJECTED),                #STATUS(#VOTING(#INTEREST)),      #BWD, #TIMEOUT({ duration = Utils.toTime(params.interest_duration);                            }));
-    putHelper(register, #REJECTED,                #DELETE,                         #STATUS(#REJECTED),                #BWD, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);                             }));
-    putHelper(register, #VOTING(#INTEREST),      #NEXT(#VOTING(#OPINION)),        #INTEREST_SCORE,                   #FWD, #PICK   ({ rate     = Utils.toTime(params.interest_pick_rate);     last_pick = time_now; }));
-    putHelper(register, #VOTING(#OPINION),        #NEXT(#VOTING(#CATEGORIZATION)), #STATUS(#VOTING(#OPINION)),        #BWD, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);                              }));
-    putHelper(register, #VOTING(#CATEGORIZATION), #NEXT(#CLOSED),                  #STATUS(#VOTING(#CATEGORIZATION)), #BWD, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration);                       }));
+    putHelper(register, #VOTING(#INTEREST),      #NEXT(#REJECTED),                #STATUS(#VOTING(#INTEREST)),      #BWD, #TIMEOUT({ duration = Duration.toTime(params.interest_duration);                            }));
+    putHelper(register, #REJECTED,                #DELETE,                         #STATUS(#REJECTED),                #BWD, #TIMEOUT({ duration = Duration.toTime(params.rejected_duration);                             }));
+    putHelper(register, #VOTING(#INTEREST),      #NEXT(#VOTING(#OPINION)),        #INTEREST_SCORE,                   #FWD, #PICK   ({ rate     = Duration.toTime(params.interest_pick_rate);     last_pick = time_now; }));
+    putHelper(register, #VOTING(#OPINION),        #NEXT(#VOTING(#CATEGORIZATION)), #STATUS(#VOTING(#OPINION)),        #BWD, #TIMEOUT({ duration = Duration.toTime(params.opinion_duration);                              }));
+    putHelper(register, #VOTING(#CATEGORIZATION), #NEXT(#CLOSED),                  #STATUS(#VOTING(#CATEGORIZATION)), #BWD, #TIMEOUT({ duration = Duration.toTime(params.categorization_duration);                       }));
     register;
   };
 

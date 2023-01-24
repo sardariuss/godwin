@@ -1,4 +1,4 @@
-import Types "../../../src/godwin_backend/Types";
+import Types "../../../src/godwin_backend/model/Types";
 import Interests "../../../src/godwin_backend/votes/interests";
 import Votes "../../../src/godwin_backend/votes/Votes";
 import Interest "../../../src/godwin_backend/votes/Interests";

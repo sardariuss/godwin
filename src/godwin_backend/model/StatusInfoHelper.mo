@@ -1,5 +1,5 @@
 import Types "Types";
-import Utils "Utils";
+import Utils "../utils/Utils";
 
 import Map "mo:map/Map";
 

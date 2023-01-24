@@ -1,6 +1,6 @@
-import Types "../Types";
 import Cursor "Cursor";
-import Utils "../Utils";
+import Types "../../Types";
+import Utils "../../../utils/Utils";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";

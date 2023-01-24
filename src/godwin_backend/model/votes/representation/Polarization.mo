@@ -1,5 +1,5 @@
-import Types "../Types";
 import Cursor "Cursor";
+import Types "../../Types";
 
 import Float "mo:base/Float";
 import Text "mo:base/Text";

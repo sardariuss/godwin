@@ -1,13 +1,13 @@
 import Types "Types";
-import Questions "questions/Questions";
-import Utils "Utils";
+import Questions "Questions";
+import Utils "../utils/Utils";
 
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Text "mo:base/Text";
-import PolarizationMap "representation/PolarizationMap";
+import PolarizationMap "votes/representation/PolarizationMap";
 
 module {
 

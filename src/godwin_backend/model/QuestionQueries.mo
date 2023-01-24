@@ -1,12 +1,11 @@
-
 import Types "Types";
-import OrderedSet "OrderedSet";
-import Questions "questions/Questions";
+import Questions "Questions";
 import Interests "votes/Interests";
 import StatusInfoHelper "StatusInfoHelper";
+import Queries "../utils/Queries";
+import OrderedSet "../utils/OrderedSet";
 
 import Map "mo:map/Map";
-import Queries2 "Queries";
 
 import Order "mo:base/Order";
 import Int "mo:base/Int";
@@ -21,7 +20,7 @@ module {
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
   type InterestVote = Types.InterestVote;
-  type Queries2<O, K> = Queries2.Queries2<O, K>;
+  type Queries2<O, K> = Queries.Queries2<O, K>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
@@ -53,10 +52,10 @@ module {
   type StatusEntry = { question_id: Nat; status: QuestionStatus; date: Int; };
   type AppealScore = { question_id: Nat; score: Int; };
 
-  public type QuestionQueries = Queries2.Queries<OrderBy, Key, Question>;
+  public type QuestionQueries = Queries.Queries<OrderBy, Key, Question>;
 
-  public type QueryQuestionsResult = Queries2.QueryResult<Question>;
-  public type Direction = Queries2.Direction;
+  public type QueryQuestionsResult = Queries.QueryResult<Question>;
+  public type Direction = Queries.Direction;
 
   public func addOrderBy(register: Map<OrderBy, OrderedSet<Key>>, order_by: OrderBy) {
     if(Option.isNull(Map.get(register, orderByHash, order_by))){
@@ -84,7 +83,7 @@ module {
       };
     };
 
-    let queries = Queries2.buildQueries<OrderBy, Key, Question>(
+    let queries = Queries.buildQueries<OrderBy, Key, Question>(
       register,
       orderByHash,
       compareKeys,

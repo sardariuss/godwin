@@ -1,6 +1,6 @@
 import Types "Types";
 
-import WSet "wrappers/WSet";
+import WSet "../utils/wrappers/WSet";
 
 module {
 

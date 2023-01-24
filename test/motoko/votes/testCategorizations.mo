@@ -1,5 +1,5 @@
-import Types "../../../src/godwin_backend/Types";
-import Utils "../../../src/godwin_backend/Utils";
+import Types "../../../src/godwin_backend/model/Types";
+import Utils "../../../src/godwin_backend/utils/Utils";
 import Votes "../../../src/godwin_backend/votes/Votes";
 import Categorization "../../../src/godwin_backend/votes/Categorizations";
 import PolarizationMap "../../../src/godwin_backend/representation/PolarizationMap";

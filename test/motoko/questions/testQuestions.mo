@@ -1,8 +1,8 @@
-import Types "../../../src/godwin_backend/Types";
-import Questions "../../../src/godwin_backend/questions/Questions";
+import Types "../../../src/godwin_backend/model/Types";
+import Questions "../../../src/godwin_backend/Questions";
 import Queries "../../../src/godwin_backend/questions/queries";
 import Iteration "../../../src/godwin_backend/votes/iteration";
-import Observers "../../../src/godwin_backend/Observers";
+import Observers "../../../src/godwin_backend/utils/Observers";
 import TestableItems "../testableItems";
 
 import Map "mo:map/Map";

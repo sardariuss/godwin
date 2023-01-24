@@ -4,7 +4,7 @@ import CursorMap "../../src/godwin_backend/representation/CursorMap";
 import PolarizationMap "../../src/godwin_backend/representation/PolarizationMap";
 import Queries "../../src/godwin_backend/questions/queries";
 import Question "../../src/godwin_backend/questions/question";
-import Types "../../src/godwin_backend/Types";
+import Types "../../src/godwin_backend/model/Types";
 
 import Testable "mo:matchers/Testable";
 

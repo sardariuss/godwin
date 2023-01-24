@@ -1,7 +1,7 @@
-import Types "Types";
-import QuestionQueries2 "QuestionQueries"; // @todo
-import State "State";
-import Factory "Factory";
+import Types "model/Types";
+import QuestionQueries "model/QuestionQueries"; // @todo
+import State "model/State";
+import Factory "model/Factory";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -78,7 +78,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getQuestion(question_id);
   };
 
-  public query func getQuestions(order_by: QuestionQueries2.OrderBy, direction: QuestionQueries2.Direction, limit: Nat, previous_id: ?Nat) : async QuestionQueries2.QueryQuestionsResult {
+  public query func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : async QuestionQueries.QueryQuestionsResult {
     game_.getQuestions(order_by, direction, limit, previous_id);
   };
 

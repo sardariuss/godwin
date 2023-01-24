@@ -4,7 +4,7 @@ import TestHotRanking "questions/testHotRanking";
 import TestInterests "votes/testInterests";
 import TestOpinions "votes/testOpinions";
 import TestCategorizations "votes/testCategorizations";
-import TestScheduler "testScheduler";
+import TestScheduler "testmodel/QuestionQueries";
 import TestUsers "testUsers";
 
 import Suite "mo:matchers/Suite";

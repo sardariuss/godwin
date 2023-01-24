@@ -1,6 +1,6 @@
-import Types "../Types";
 import Polarization "Polarization";
-import Utils "../Utils";
+import Types "../../Types";
+import Utils "../../../utils/Utils";
 
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";

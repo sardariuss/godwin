@@ -2,26 +2,19 @@ import Types "Types";
 import Users "Users";
 import Scheduler "Scheduler";
 import Decay "Decay";
-import Questions "questions/Questions";
-import Queries2 "Queries";
-import OrderedSet "OrderedSet";
+import Questions "Questions";
 import Interests "votes/Interests";
-import Opinion "votes/Opinions";
-import Categorization "votes/Categorizations";
+import Opinions "votes/Opinions";
+import Categorizations "votes/Categorizations";
 import Polls "votes/Polls";
 import State "State";
 import Game "Game";
-import Observers "Observers";
-import WSet "wrappers/WSet";
-import QuestionQueries2 "QuestionQueries";
-import Utils "Utils";
+import QuestionQueries "QuestionQueries";
+import WSet "../utils/wrappers/WSet";
 
 import Set "mo:map/Set";
 
-import Map "mo:map/Map";
-
 import Iter "mo:base/Iter";
-import Option "mo:base/Option";
 
 module {
 
@@ -46,11 +39,11 @@ module {
 
     let interest_votes = Interests.build(state_.votes.interest);
     
-    let opinion_votes = Opinion.build(state_.votes.opinion);
+    let opinion_votes = Opinions.build(state_.votes.opinion);
     
-    let categorization_votes = Categorization.build(state_.votes.categorization, Iter.toArray(categories.keys()));
+    let categorization_votes = Categorizations.build(state_.votes.categorization, Iter.toArray(categories.keys()));
 
-    let queries = QuestionQueries2.build(state_.queries.register, questions, interest_votes);
+    let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
     let users = Users.build(
       state_.users.register,

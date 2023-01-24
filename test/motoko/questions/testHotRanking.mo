@@ -1,4 +1,4 @@
-import Types "../../../src/godwin_backend/Types";
+import Types "../../../src/godwin_backend/model/Types";
 import Queries "../../../src/godwin_backend/questions/queries";
 import TestableItems "../testableItems";
 

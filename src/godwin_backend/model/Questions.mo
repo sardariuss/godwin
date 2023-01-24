@@ -1,8 +1,8 @@
-import Types "../Types";
-import Observers "../Observers";
-import WMap "../wrappers/WMap";
-import WRef "../wrappers/WRef";
-import StatusInfoHelper "../StatusInfoHelper";
+import Types "Types";
+import Observers "../utils/Observers";
+import WMap "../utils/wrappers/WMap";
+import WRef "../utils/wrappers/WRef";
+import StatusInfoHelper "StatusInfoHelper";
 
 import Map "mo:map/Map";
 
