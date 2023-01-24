@@ -1,11 +1,11 @@
-import Types "types";
-import Users "users";
-import Utils "utils";
-import Scheduler "scheduler";
-import Questions "questions/questions";
-import QuestionQueries2 "QuestionQueries2";
-import Votes "votes/votes";
-import Manager "votes/manager";
+import Types "Types";
+import Users "Users";
+import Utils "Utils";
+import Scheduler "Scheduler";
+import Questions "questions/Questions";
+import QuestionQueries2 "QuestionQueries";
+import Votes "votes/Votes";
+import Polls "votes/Polls";
 import Categories "Categories";
 import StatusInfoHelper "StatusInfoHelper";
 
@@ -30,7 +30,7 @@ module {
   type Duration = Types.Duration;
   type QuestionStatus = Types.QuestionStatus;
   type IndexedStatus = Types.IndexedStatus;
-  type VoteType = Types.VoteType;
+  type Poll = Types.Poll;
   type TypedBallot = Types.TypedBallot;
   type TypedAnswer = Types.TypedAnswer;
   // Errors
@@ -55,7 +55,7 @@ module {
     questions_: Questions.Questions,
     queries_: QuestionQueries2.QuestionQueries,
     scheduler_: Scheduler.Scheduler,
-    manager_: Manager.Manager
+    manager_: Polls.Polls
   ) = {
 
     public func getDecay() : ?Decay {
@@ -117,7 +117,7 @@ module {
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
         let question = questions_.createQuestion(caller, date, title, text);
-        manager_.openVote(question, #CANDIDATE);
+        manager_.openVote(question, #INTEREST);
         question;
       });
     };
@@ -126,8 +126,8 @@ module {
       Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusInfoHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
-            let question = questions_.updateStatus(question_id, #VOTING(#CANDIDATE), date);
-            manager_.openVote(question, #CANDIDATE);
+            let question = questions_.updateStatus(question_id, #VOTING(#INTEREST), date);
+            manager_.openVote(question, #INTEREST);
           })
         })
       });
@@ -136,18 +136,18 @@ module {
     public func putBallot(caller: Principal, question_id: Nat, answer: TypedAnswer, date: Time) : Result<(), PutBallotError> {
       Result.chain<User, (), PutBallotError>(getUser(caller), func(_) {
         Result.chain<Question, (), PutBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<IndexedStatus, (), PutBallotError>(Result.fromOption(Manager.getVoteStatus(question, Manager.getVoteType(answer)), #InvalidStatus), func(_) {
+          Result.mapOk<IndexedStatus, (), PutBallotError>(Result.fromOption(Polls.getVoteStatus(question, Polls.getPoll(answer)), #InvalidStatus), func(_) {
             manager_.putBallot(caller, question, answer, date);
           })
         })
       });
     };
 
-    public func removeBallot(caller: Principal, question_id: Nat, vote: VoteType) : Result<(), RemoveBallotError> {
+    public func removeBallot(caller: Principal, question_id: Nat, vote: Poll) : Result<(), RemoveBallotError> {
       Result.chain<User, (), RemoveBallotError>(getUser(caller), func(_) {
         Result.chain<Question, (), RemoveBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.chain<(), (), RemoveBallotError>(Utils.toResult(vote == #CANDIDATE, #NotAuthorized), func() {
-            Result.mapOk<IndexedStatus, (), RemoveBallotError>(Result.fromOption(Manager.getVoteStatus(question, vote), #InvalidStatus), func(_) {
+          Result.chain<(), (), RemoveBallotError>(Utils.toResult(vote == #INTEREST, #NotAuthorized), func() {
+            Result.mapOk<IndexedStatus, (), RemoveBallotError>(Result.fromOption(Polls.getVoteStatus(question, vote), #InvalidStatus), func(_) {
               manager_.removeBallot(caller, question, vote);
             })
           })
@@ -155,7 +155,7 @@ module {
       });
     };
 
-    public func getBallot(caller: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : Result<?TypedBallot, GetBallotError> {
+    public func getBallot(caller: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
       Result.chain<User, ?TypedBallot, GetBallotError>(getUser(caller), func(_) {
         Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isValidIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
@@ -165,7 +165,7 @@ module {
       });
     };
 
-    public func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : Result<?TypedBallot, GetBallotError> {
+    public func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
       Result.chain<User, ?TypedBallot, GetBallotError>(getUser(principal), func(_) {
         Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isHistoryIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
@@ -200,7 +200,7 @@ module {
     };
 
     // @todo: remove
-    public func polarizationTrieToArray(trie: Types.CategoryPolarizationTrie) : Types.CategoryPolarizationArray {
+    public func polarizationTrieToArray(trie: Types.PolarizationMap) : Types.PolarizationArray {
       Utils.trieToArray(trie);
     };
 

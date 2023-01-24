@@ -1,6 +1,6 @@
-import Votes "votes"; 
-import Polarization "../representation/polarization";
-import Types "../types";
+import Votes "Votes"; 
+import Polarization "../representation/Polarization";
+import Types "../Types";
 import WMap "../wrappers/WMap";
 
 import Map "mo:map/Map";

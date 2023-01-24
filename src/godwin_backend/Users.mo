@@ -1,13 +1,13 @@
-import Types "types";
-import Utils "utils";
-import Polarization "representation/polarization";
-import Cursor "representation/cursor";
-import CategoryPolarizationTrie "representation/categoryPolarizationTrie";
+import Types "Types";
+import Utils "Utils";
+import Polarization "representation/Polarization";
+import Cursor "representation/Cursor";
+import PolarizationMap "representation/PolarizationMap";
 import WMap "wrappers/WMap";
-import Opinion "votes/opinion";
-import Categorization "votes/categorization";
+import Opinion "votes/Opinions";
+import Categorization "votes/Categorizations";
 import StatusInfoHelper "StatusInfoHelper";
-import Questions "questions/questions";
+import Questions "questions/Questions";
 
 import Map "mo:map/Map";
 
@@ -35,7 +35,7 @@ module {
   type Category = Types.Category;
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type PolarizationMap = Types.PolarizationMap;
   type Decay = Types.Decay;
   type WMap<K, V> = WMap.WMap<K, V>;
   type Questions = Questions.Questions;
@@ -55,7 +55,7 @@ module {
     questions.addObs(func(old: ?Question, new: ?Question) {
       let old_status = Option.map(old, func(question: Question): QuestionStatus { question.status_info.current.status; });
       let new_status = Option.map(new, func(question: Question): QuestionStatus { question.status_info.current.status; });
-      if (not Utils.equalOpt(old_status, new_status, Types.equalQuestionStatus)){
+      if (not Utils.equalOpt(old_status, new_status, Types.equalStatus)){
         Option.iterate(new, func(question: Question) {
           if (question.status_info.current.status == #CLOSED){
             users.updateConvictions(question, opinions, categorizations);
@@ -106,7 +106,7 @@ module {
           let new_user = {
             principal;
             name = null;
-            convictions = CategoryPolarizationTrie.nil(categories);
+            convictions = PolarizationMap.nil(categories);
           };
           putUser(new_user);
           new_user;
@@ -139,7 +139,7 @@ module {
     // Warning: assumes that the question is not closed yet but will be after convictions have been updated
     public func updateConvictions(question: Question, opinions: Opinions, categorizations: Categorizations) {
 
-      let status_info = StatusInfoHelper.build(question.status_info);
+      let status_info = StatusInfoHelper.StatusInfoHelper(question);
 
       let new_categorization = categorizations.getVote(question.id, status_info.getIteration(#VOTING(#CATEGORIZATION)));
       let new_opinion = opinions.getVote(question.id, status_info.getIteration(#VOTING(#OPINION)));
@@ -167,11 +167,11 @@ module {
     // \note To compute the users convictions, the user's opinion (cursor converted into a polarization) 
     // is multiplied by the categorization (polarization converted into a cursor)
     // This is done for every category using a trie of polarization initialized with the opinion.
-    // The CategoryPolarizationTrie.mul uses a leftJoin, so that the resulting convictions contains
+    // The PolarizationMap.mul uses a leftJoin, so that the resulting convictions contains
     // only the categories from the definitions.
-    func updateBallotContribution(user: User, opinion: Cursor, date: Int, new: CategoryPolarizationTrie, old: ?CategoryPolarizationTrie) : User {
+    func updateBallotContribution(user: User, opinion: Cursor, date: Int, new: PolarizationMap, old: ?PolarizationMap) : User {
       // Get the categories from the convictions
-      let categories = TrieSet.toArray(CategoryPolarizationTrie.keys(user.convictions));
+      let categories = TrieSet.toArray(PolarizationMap.keys(user.convictions));
       
       // Create a Polarization trie from the cursor, based on given categories.
       let opinion_trie = Utils.make(categories, Types.keyText, Text.equal, Cursor.toPolarization(opinion));
@@ -180,19 +180,19 @@ module {
       let decay_coef = Option.getMapped(decay_params_, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
 
       // Add the opinion times new categorization.
-      var contribution = CategoryPolarizationTrie.mul(
-        CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(new)),
+      var contribution = PolarizationMap.mul(
+        PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(new)),
         decay_coef);
 
       // Remove the opinion times old categorization if any.
-      Option.iterate(old, func(old_cat: CategoryPolarizationTrie) {
-        let old_contribution = CategoryPolarizationTrie.mul(
-          CategoryPolarizationTrie.mulCategoryCursorTrie(opinion_trie, CategoryPolarizationTrie.toCategoryCursorTrie(old_cat)),
+      Option.iterate(old, func(old_cat: PolarizationMap) {
+        let old_contribution = PolarizationMap.mul(
+          PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(old_cat)),
           decay_coef);
-        contribution := CategoryPolarizationTrie.sub(contribution, old_contribution);
+        contribution := PolarizationMap.sub(contribution, old_contribution);
       });
 
-      { user with convictions = CategoryPolarizationTrie.add(user.convictions, contribution); };
+      { user with convictions = PolarizationMap.add(user.convictions, contribution); };
     };
 
   };

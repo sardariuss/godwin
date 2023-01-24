@@ -1,7 +1,5 @@
 import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
 import Text "mo:base/Text";
-import Int "mo:base/Int";
 import Principal "mo:base/Principal";
 import Nat32 "mo:base/Nat32";
 
@@ -12,7 +10,6 @@ module {
   // For convenience: from base module
   type Key<K> = Trie.Key<K>;
   type Trie<K, V> = Trie.Trie<K, V>;
-  type Set<K> = TrieSet.Set<K>;
   type Principal = Principal.Principal;
   type Time = Int;
 
@@ -29,8 +26,8 @@ module {
   };
 
   public type SchedulerParameters = {
-    candidate_pick_rate: Duration;
-    candidate_duration: Duration;
+    interest_pick_rate: Duration;
+    interest_duration: Duration;
     opinion_duration: Duration;
     categorization_duration: Duration;
     rejected_duration: Duration;
@@ -63,24 +60,24 @@ module {
   };
 
   public type QuestionStatus = {
-    #VOTING: VoteType;
+    #VOTING: Poll;
     #CLOSED;
     #REJECTED;
   };
 
-  public type VoteType = {
-    #CANDIDATE;
+  public type Poll = {
+    #INTEREST;
     #OPINION;
     #CATEGORIZATION;
   };
 
-  public func questionStatusToNat(status: QuestionStatus) : Nat {
+  public func statusToText(status: QuestionStatus) : Text {
     switch(status){
-      case(#VOTING(#CANDIDATE))      { 0; };
-      case(#VOTING(#OPINION))        { 1; };
-      case(#VOTING(#CATEGORIZATION)) { 2; };
-      case(#CLOSED)                  { 3; };
-      case(#REJECTED)                { 4; };
+      case(#VOTING(#INTEREST))       { "VOTING(INTEREST)"; };
+      case(#VOTING(#OPINION))        { "VOTING(OPINION)"; };
+      case(#VOTING(#CATEGORIZATION)) { "VOTING(CATEGORIZATION)"; };
+      case(#CLOSED)                  { "CLOSED"; };
+      case(#REJECTED)                { "REJECTED"; };
     };
   };
 
@@ -93,22 +90,19 @@ module {
   public type Category = Text;
 
   public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t); } };
-  public func keyNat32(n: Nat32) : Key<Nat32> { { key = n; hash = n; } };
   public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Nat32.fromNat(n); } };
   public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
 
-  let { nhash } = Map;
-
-  func hashQuestionStatus(a: QuestionStatus) : Nat { nhash.0(questionStatusToNat(a)); };
-  public func equalQuestionStatus(a: QuestionStatus, b: QuestionStatus) : Bool { nhash.1(questionStatusToNat(a), questionStatusToNat(b)); };
-  public let questionStatushash : Map.HashUtils<QuestionStatus> = ( func(a) = hashQuestionStatus(a), func(a, b) = equalQuestionStatus(a, b));
+  func hashStatus(a: QuestionStatus) : Nat { Map.thash.0(statusToText(a)); };
+  public func equalStatus(a: QuestionStatus, b: QuestionStatus) : Bool { Map.thash.1(statusToText(a), statusToText(b)); };
+  public let status_hash : Map.HashUtils<QuestionStatus> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
   
   public type Interest = {
     #UP;
     #DOWN;
   };
 
-  public type InterestAggregate = {
+  public type Appeal = {
     ups: Nat;
     downs: Nat;
     score: Int;
@@ -119,7 +113,7 @@ module {
     // Optional because we want the user to be able to log based solely on the II,
     // without requiring a user name.
     name: ?Text;  
-    convictions: CategoryPolarizationTrie;
+    convictions: PolarizationMap;
   };
 
   // Cursor used for voting, shall be between -1 and 1, where usually:
@@ -150,35 +144,35 @@ module {
   };
 
   // Mapping of <key=Category, value=Cursor>, used to vote to determine a question political affinity
-  public type CategoryCursorTrie = Trie<Category, Cursor>;
-  public type CategoryCursorArray = [(Category, Cursor)];
+  public type CursorMap = Trie<Category, Cursor>;
+  public type CursorArray = [(Category, Cursor)];
   
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
-  public type CategoryPolarizationTrie = Trie<Category, Polarization>;
-  public type CategoryPolarizationArray = [(Category, Polarization)];
+  public type PolarizationMap = Trie<Category, Polarization>;
+  public type PolarizationArray = [(Category, Polarization)];
 
-  public type CandidateBallot = Ballot<Interest>;
+  public type InterestBallot = Ballot<Interest>;
   public type OpinionBallot = Ballot<Cursor>;
-  public type CategorizationBallot = Ballot<CategoryCursorTrie>;
+  public type CategorizationBallot = Ballot<CursorMap>;
 
   public type TypedBallot = {
-    #CANDIDATE: Ballot<Interest>;
+    #INTEREST: Ballot<Interest>;
     #OPINION: Ballot<Cursor>;
-    #CATEGORIZATION: Ballot<CategoryCursorTrie>;
+    #CATEGORIZATION: Ballot<CursorMap>;
   };
 
   public type TypedAnswer = {
-    #CANDIDATE: Interest;
+    #INTEREST: Interest;
     #OPINION: Cursor;
-    #CATEGORIZATION: CategoryCursorTrie;
+    #CATEGORIZATION: CursorMap;
   };
 
-  public type CandidateVote =  Vote<Interest, InterestAggregate>;
+  public type InterestVote =  Vote<Interest, Appeal>;
   public type OpinionVote =  Vote<Cursor, Polarization>;
-  public type CategorizationVote =  Vote<CategoryCursorTrie, CategoryPolarizationTrie>;
+  public type CategorizationVote =  Vote<CursorMap, PolarizationMap>;
 
   public type TypedVote = {
-    #CANDIDATE: CandidateVote;
+    #INTEREST: InterestVote;
     #OPINION: OpinionVote;
     #CATEGORIZATION: CategorizationVote;
   };
@@ -190,12 +184,12 @@ module {
 //    #InsufficientCredentials;
 //  };
 //  public type CreateQuestionStatus = {
-//    #CANDIDATE: { interest_score: Int; };
+//    #INTEREST: { interest_score: Int; };
 //    #OPEN: {
 //      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-//      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+//      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
 //    };
-//    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: CategoryPolarizationArray; };
+//    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
 //    #REJECTED : { interest_score: Int; };
 //  };
 

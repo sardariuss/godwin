@@ -1,10 +1,10 @@
-import Cursor "../../src/godwin_backend/representation/cursor";
-import Polarization "../../src/godwin_backend/representation/polarization";
-import CategoryCursorTrie "../../src/godwin_backend/representation/categoryCursorTrie";
-import CategoryPolarizationTrie "../../src/godwin_backend/representation/categoryPolarizationTrie";
+import Cursor "../../src/godwin_backend/representation/Cursor";
+import Polarization "../../src/godwin_backend/representation/Polarization";
+import CursorMap "../../src/godwin_backend/representation/CursorMap";
+import PolarizationMap "../../src/godwin_backend/representation/PolarizationMap";
 import Queries "../../src/godwin_backend/questions/queries";
 import Question "../../src/godwin_backend/questions/question";
-import Types "../../src/godwin_backend/types";
+import Types "../../src/godwin_backend/Types";
 
 import Testable "mo:matchers/Testable";
 
@@ -20,10 +20,10 @@ module {
   type Question = Types.Question;
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
   type Interest = Types.Interest;
-  type InterestAggregate = Types.InterestAggregate;
+  type Appeal = Types.Appeal;
   type Ballot<T> = Types.Ballot<T>;
   
   // For convenience: from queries module
@@ -61,8 +61,8 @@ module {
     testOptItem(question, Question.toText, Question.equal);
   };
 
-  public func optCategoryCursorTrie(cursor_trie: ?CategoryCursorTrie) : Testable.TestableItem<?CategoryCursorTrie> {
-    testOptItem(cursor_trie, CategoryCursorTrie.toText, CategoryCursorTrie.equal);
+  public func optCursorMap(cursor_trie: ?CursorMap) : Testable.TestableItem<?CursorMap> {
+    testOptItem(cursor_trie, CursorMap.toText, CursorMap.equal);
   };
 
   public func optInterestBallot(interest_ballot: ?Timestamp<Interest>) : Testable.TestableItem<?Timestamp<Interest>> {
@@ -77,14 +77,14 @@ module {
     );
   };
 
-  public func optInterestAggregate(interest_aggregate: ?Timestamp<InterestAggregate>) : Testable.TestableItem<?Timestamp<InterestAggregate>> {
+  public func optAppeal(interest_aggregate: ?Timestamp<Appeal>) : Testable.TestableItem<?Timestamp<Appeal>> {
     testOptItem(
       interest_aggregate,
-      func(interest_aggregate: Timestamp<InterestAggregate>) : Text {
-        toTextTimestamp(interest_aggregate, toTextInterestAggregate);
+      func(interest_aggregate: Timestamp<Appeal>) : Text {
+        toTextTimestamp(interest_aggregate, toTextAppeal);
       },
-      func(a: Timestamp<InterestAggregate>, b: Timestamp<InterestAggregate>) : Bool {
-        equalTimestamp(a, b, equalInterestAggregate);
+      func(a: Timestamp<Appeal>, b: Timestamp<Appeal>) : Bool {
+        equalTimestamp(a, b, equalAppeal);
       }
     );
   };
@@ -113,34 +113,34 @@ module {
     );
   };
 
-  public func optCategorizationBallot(categorization_ballot: ?Timestamp<CategoryCursorTrie>) : Testable.TestableItem<?Timestamp<CategoryCursorTrie>> {
+  public func optCategorizationBallot(categorization_ballot: ?Timestamp<CursorMap>) : Testable.TestableItem<?Timestamp<CursorMap>> {
     testOptItem(
       categorization_ballot,
-      func(categorization_ballot: Timestamp<CategoryCursorTrie>) : Text {
-        toTextTimestamp(categorization_ballot, CategoryCursorTrie.toText);
+      func(categorization_ballot: Timestamp<CursorMap>) : Text {
+        toTextTimestamp(categorization_ballot, CursorMap.toText);
       },
-      func(a: Timestamp<CategoryCursorTrie>, b: Timestamp<CategoryCursorTrie>) : Bool {
-        equalTimestamp(a, b, CategoryCursorTrie.equal);
+      func(a: Timestamp<CursorMap>, b: Timestamp<CursorMap>) : Bool {
+        equalTimestamp(a, b, CursorMap.equal);
       }
     );
   };
 
-  public func optCategorizationAggregate(categorization_aggregate: ?Timestamp<CategoryPolarizationTrie>) : Testable.TestableItem<?Timestamp<CategoryPolarizationTrie>> {
+  public func optCategorizationAggregate(categorization_aggregate: ?Timestamp<PolarizationMap>) : Testable.TestableItem<?Timestamp<PolarizationMap>> {
     testOptItem(
       categorization_aggregate,
-      func(categorization_aggregate: Timestamp<CategoryPolarizationTrie>) : Text {
-        toTextTimestamp(categorization_aggregate, CategoryPolarizationTrie.toText);
+      func(categorization_aggregate: Timestamp<PolarizationMap>) : Text {
+        toTextTimestamp(categorization_aggregate, PolarizationMap.toText);
       },
-      func(a: Timestamp<CategoryPolarizationTrie>, b: Timestamp<CategoryPolarizationTrie>) : Bool {
-        equalTimestamp(a, b, CategoryPolarizationTrie.equal);
+      func(a: Timestamp<PolarizationMap>, b: Timestamp<PolarizationMap>) : Bool {
+        equalTimestamp(a, b, PolarizationMap.equal);
       }
     );
   };
 
-  public func categoryPolarizationTrie(polarization_trie: CategoryPolarizationTrie) : Testable.TestableItem<CategoryPolarizationTrie> {
+  public func categoryPolarizationTrie(polarization_trie: PolarizationMap) : Testable.TestableItem<PolarizationMap> {
     {
-      display = CategoryPolarizationTrie.toText;
-      equals = CategoryPolarizationTrie.equal;
+      display = PolarizationMap.toText;
+      equals = PolarizationMap.equal;
       item = polarization_trie;
     };
   };
@@ -211,16 +211,16 @@ module {
     testOptItem(interest, toTextInterest, equalInterests);
   };
 
-  func toTextInterestAggregate(total: InterestAggregate) : Text {
+  func toTextAppeal(total: Appeal) : Text {
     "{ ups = " # Nat.toText(total.ups) # "; downs = " # Nat.toText(total.downs) # " }";
   };
 
-  func equalInterestAggregate(t1: InterestAggregate, t2: InterestAggregate) : Bool {
+  func equalAppeal(t1: Appeal, t2: Appeal) : Bool {
     t1.ups == t2.ups and t1.downs == t2.downs;
   };
 
-  public func testOptInterestAggregate(total: ?InterestAggregate) : Testable.TestableItem<?InterestAggregate> {
-    testOptItem(total, toTextInterestAggregate, equalInterestAggregate);
+  public func testOptAppeal(total: ?Appeal) : Testable.TestableItem<?Appeal> {
+    testOptItem(total, toTextAppeal, equalAppeal);
   };
 
   func toTextBallot<T>(timestamp : Ballot<T>, to_text_elem : (T) -> (Text)) : Text {

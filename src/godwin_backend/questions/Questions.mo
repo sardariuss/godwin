@@ -1,7 +1,5 @@
-import Types "../types";
-import Utils "../utils";
-import Queries "queries";
-import Observers "../observers";
+import Types "../Types";
+import Observers "../Observers";
 import WMap "../wrappers/WMap";
 import WRef "../wrappers/WRef";
 import StatusInfoHelper "../StatusInfoHelper";
@@ -12,9 +10,7 @@ import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Prelude "mo:base/Prelude";
-import Iter "mo:base/Iter";
 import Option "mo:base/Option";
-import Hash "mo:base/Hash";
 import Buffer "mo:base/Buffer";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
@@ -22,23 +18,19 @@ import Int "mo:base/Int";
 module {
 
   // For convenience: from base module
-  type Iter<T> = Iter.Iter<T>;
   type Principal = Principal.Principal;
-  type Hash = Hash.Hash;
   type Time = Int;
 
-  // For convenience: from map module
+  // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
+  type WRef<V> = WRef.WRef<V>;
+  type WMap<K, V> = WMap.WMap<K, V>;
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Interest = Types.Interest;
-  type InterestAggregate = Types.InterestAggregate;
   type QuestionStatus = Types.QuestionStatus;
   type Ref<V> = Types.Ref<V>;
-  type WRef<V> = WRef.WRef<V>;
-  type WMap<K, V> = WMap.WMap<K, V>;
-  type IndexedStatus = Types.IndexedStatus;
+  let { statusToText; equalStatus; } = Types;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -47,6 +39,7 @@ module {
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
+    buffer.add("status: " # statusToText(question.status_info.current.status)); // @todo: put the whole status_info
     Text.join("", buffer.vals());
   };
   
@@ -55,17 +48,15 @@ module {
        and Principal.equal(q1.author, q2.author)
        and Text.equal(q1.title, q2.title)
        and Text.equal(q1.text, q2.text)
-       and Int.equal(q1.date, q2.date);
+       and Int.equal(q1.date, q2.date)
+       and equalStatus(q1.status_info.current.status, q2.status_info.current.status); // @todo: put the whole status_info
   };
 
   public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
     Questions(WMap.WMap(register, Map.nhash), WRef.WRef(index));
   };
 
-  public class Questions(
-    register_: WMap<Nat, Question>,
-    index_: WRef<Nat>
-  ) {
+  public class Questions(register_: WMap<Nat, Question>, index_: WRef<Nat>) {
 
     let observers_ = Observers.Observers2<Question>();
 
@@ -89,12 +80,12 @@ module {
         date;
         status_info = {
           current = {
-            status = #VOTING(#CANDIDATE);
+            status = #VOTING(#INTEREST);
             date;
             index = 0;
           };
           history = [];
-          iterations = [(#VOTING(#CANDIDATE), 0)];
+          iterations = [(#VOTING(#INTEREST), 0)];
         };
       };
       register_.set(question.id, question);
@@ -104,13 +95,11 @@ module {
     };
 
     public func removeQuestion(question_id: Nat) {
-      if (Option.isNull(register_.get(question_id))){
-        Debug.trap("Cannot remove a question that does not exist");
-      };
-      switch(register_.remove(question_id)){
-        case(null) { Prelude.unreachable(); };
-        case(?old_question) {
-          observers_.callObs(?old_question, null);
+      switch(register_.get(question_id)){
+        case(null) { Debug.trap("The question does not exist"); };
+        case(?question) { 
+          ignore register_.remove(question.id);
+          observers_.callObs(?question, null);
         };
       };
     };
@@ -118,11 +107,11 @@ module {
     public func updateStatus(question_id: Nat, status: QuestionStatus, date: Time) : Question {
       // Get the question
       var question = getQuestion(question_id);
-      // Use the helper to update the status
-      let helper = StatusInfoHelper.build(question.status_info);
+      // Update the question status
+      let helper = StatusInfoHelper.StatusInfoHelper(question);
       helper.setCurrent(status, date);
       question := { question with status_info = helper.share() };
-      // @todo: use update method instead
+      // Replace the question
       switch(register_.put(question.id, question)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {

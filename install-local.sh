@@ -19,7 +19,7 @@ dfx deploy godwin_backend --argument '(record {
   scheduler = record {
     selection_rate = variant { SECONDS = 0 };
     status_durations = vec {
-      record { variant { CANDIDATE }; variant { SECONDS = 0 }; };
+      record { variant { INTEREST }; variant { SECONDS = 0 }; };
       record { variant { OPEN = variant { OPINION } }; variant { SECONDS = 0 }; };
       record { variant { OPEN = variant { CATEGORIZATION } }; variant { SECONDS = 0 }; };
       record { variant { CLOSED }; variant { SECONDS = 0 }; };

@@ -64,7 +64,7 @@ const QuestionBody = ({question_id, categories}: Props) => {
 		<div className="flex flex-col py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white">
 			<div className="flex flex-row justify-start gap-x-10 text-lg font-semibold">
 				{ 
-					question?.status['CANDIDATE'] !== undefined ?
+					question?.status['INTEREST'] !== undefined ?
 						<VoteInterest question_id={question_id}/> : 
 					question?.status['OPEN'] !== undefined ?
 					(question?.status['OPEN']['stage']['OPINION'] !== undefined ?

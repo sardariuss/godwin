@@ -1,9 +1,9 @@
-import Types "types";
-import Questions "questions/questions";
-import QuestionQueries2 "QuestionQueries2";
-import Manager "votes/manager";
-import Users "users";
-import Utils "utils";
+import Types "Types";
+import Questions "questions/Questions";
+import QuestionQueries2 "QuestionQueries";
+import Polls "votes/Polls";
+import Users "Users";
+import Utils "Utils";
 import WMap "wrappers/WMap";
 
 import Map "mo:map/Map";
@@ -29,12 +29,12 @@ module {
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type QuestionQueries = QuestionQueries2.QuestionQueries;
-  type Manager = Manager.Manager;
+  type Polls = Polls.Polls;
   type WMap<K, V> = WMap.WMap<K, V>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type QuestionStatus = Types.QuestionStatus;
   type SchedulerParameters = Types.SchedulerParameters;
-  type VoteType = Types.VoteType;
+  type Poll = Types.Poll;
   type OrderBy = QuestionQueries2.OrderBy;
   type Direction = QuestionQueries2.Direction;
 
@@ -83,22 +83,22 @@ module {
   public type Register = Map<QuestionStatus, Map<TriggerType, Params>>;
 
   func putHelper(register: Register, status: QuestionStatus, transition: Transition, order_by: OrderBy, direction: Direction, trigger: TriggerParams){
-    ignore Utils.put2D(register, Types.questionStatushash, status, triggerTypehash, getTriggerType(trigger), { transition; order_by; direction; trigger; });
+    ignore Utils.put2D(register, Types.status_hash, status, triggerTypehash, getTriggerType(trigger), { transition; order_by; direction; trigger; });
   };
 
   public func initRegister(params: SchedulerParameters, time_now: Time) : Register {
     let register = Map.new<QuestionStatus, Map<TriggerType, Params>>();
-    putHelper(register, #VOTING(#CANDIDATE),      #NEXT(#REJECTED),                #STATUS(#VOTING(#CANDIDATE)),      #BWD, #TIMEOUT({ duration = Utils.toTime(params.candidate_duration);                            }));
+    putHelper(register, #VOTING(#INTEREST),      #NEXT(#REJECTED),                #STATUS(#VOTING(#INTEREST)),      #BWD, #TIMEOUT({ duration = Utils.toTime(params.interest_duration);                            }));
     putHelper(register, #REJECTED,                #DELETE,                         #STATUS(#REJECTED),                #BWD, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);                             }));
-    putHelper(register, #VOTING(#CANDIDATE),      #NEXT(#VOTING(#OPINION)),        #INTEREST_SCORE,                   #FWD, #PICK   ({ rate     = Utils.toTime(params.candidate_pick_rate);     last_pick = time_now; }));
+    putHelper(register, #VOTING(#INTEREST),      #NEXT(#VOTING(#OPINION)),        #INTEREST_SCORE,                   #FWD, #PICK   ({ rate     = Utils.toTime(params.interest_pick_rate);     last_pick = time_now; }));
     putHelper(register, #VOTING(#OPINION),        #NEXT(#VOTING(#CATEGORIZATION)), #STATUS(#VOTING(#OPINION)),        #BWD, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);                              }));
     putHelper(register, #VOTING(#CATEGORIZATION), #NEXT(#CLOSED),                  #STATUS(#VOTING(#CATEGORIZATION)), #BWD, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration);                       }));
     register;
   };
 
-  public func build(register: Register, questions: Questions, users: Users, queries: QuestionQueries, manager: Manager) : Scheduler {
+  public func build(register: Register, questions: Questions, users: Users, queries: QuestionQueries, manager: Polls) : Scheduler {
     Scheduler(
-      WMap.WMap2D<QuestionStatus, TriggerType, Params>(register, Types.questionStatushash, triggerTypehash),
+      WMap.WMap2D<QuestionStatus, TriggerType, Params>(register, Types.status_hash, triggerTypehash),
       questions,
       users,
       queries,
@@ -111,7 +111,7 @@ module {
     questions_: Questions,
     users_: Users,
     queries_: QuestionQueries,
-    manager_: Manager
+    manager_: Polls
   ){
 
     public func getPickRate(status: QuestionStatus) : Time {
@@ -241,7 +241,7 @@ module {
     };
   };
 
-  func iterateVotingStatus(question: Question, f: (Question, VoteType) -> ()) {
+  func iterateVotingStatus(question: Question, f: (Question, Poll) -> ()) {
     switch(question.status_info.current.status){
       case(#VOTING(vote)) { f(question, vote); };
       case(_){};

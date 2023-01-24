@@ -1,21 +1,20 @@
-import Types "types";
-import Users "users";
-import Scheduler "scheduler";
-import Decay "decay";
-import Questions "questions/questions";
-import Queries "questions/queries";
-import Queries2 "Queries2";
+import Types "Types";
+import Users "Users";
+import Scheduler "Scheduler";
+import Decay "Decay";
+import Questions "questions/Questions";
+import Queries2 "Queries";
 import OrderedSet "OrderedSet";
-import Interest "votes/interest";
-import Opinion "votes/opinion";
-import Categorization "votes/categorization";
-import Manager "votes/manager";
-import State "state";
-import Game "game";
-import Observers "observers";
+import Interests "votes/Interests";
+import Opinion "votes/Opinions";
+import Categorization "votes/Categorizations";
+import Polls "votes/Polls";
+import State "State";
+import Game "Game";
+import Observers "Observers";
 import WSet "wrappers/WSet";
-import QuestionQueries2 "QuestionQueries2";
-import Utils "utils";
+import QuestionQueries2 "QuestionQueries";
+import Utils "Utils";
 
 import Set "mo:map/Set";
 
@@ -26,9 +25,9 @@ import Option "mo:base/Option";
 
 module {
 
-  type InterestAggregate = Types.InterestAggregate;
+  type Appeal = Types.Appeal;
   type Polarization = Types.Polarization;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type PolarizationMap = Types.PolarizationMap;
   type Question = Types.Question;
   type QuestionStatus = Types.QuestionStatus;
 
@@ -45,7 +44,7 @@ module {
       state_.questions.index
     );
 
-    let interest_votes = Interest.build(state_.votes.interest);
+    let interest_votes = Interests.build(state_.votes.interest);
     
     let opinion_votes = Opinion.build(state_.votes.opinion);
     
@@ -61,7 +60,7 @@ module {
       categorization_votes
     );
 
-    let manager = Manager.Manager(
+    let manager = Polls.Polls(
       interest_votes,
       opinion_votes,
       categorization_votes

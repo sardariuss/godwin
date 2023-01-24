@@ -1,4 +1,4 @@
-import Types "types";
+import Types "Types";
 
 import Map "mo:map/Map";
 

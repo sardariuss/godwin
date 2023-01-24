@@ -1,4 +1,3 @@
-import Types "types";
 import WMap "wrappers/WMap";
 import OrderedSet "OrderedSet";
 
@@ -9,7 +8,6 @@ import Debug "mo:base/Debug";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
-import Buffer "mo:base/Buffer";
 
 module {
 
@@ -17,7 +15,6 @@ module {
   type Order = Order.Order;
   type Iter<T> = Iter.Iter<T>;
   type OrderedSet<K> = OrderedSet.OrderedSet<K>;
-  type Buffer<T> = Buffer.Buffer<T>;
   type ScanLimitResult<K> = OrderedSet.ScanLimitResult<K>;
 
   type WMap<K, V> = WMap.WMap<K, V>;

@@ -1,7 +1,7 @@
-import Types "types";
-import QuestionQueries2 "QuestionQueries2"; // @todo
-import State "state";
-import Factory "factory";
+import Types "Types";
+import QuestionQueries2 "QuestionQueries"; // @todo
+import State "State";
+import Factory "Factory";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -35,7 +35,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetBallotError = Types.GetBallotError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
-  type VoteType = Types.VoteType;
+  type Poll = Types.Poll;
   type TypedAnswer = Types.TypedAnswer;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
@@ -94,15 +94,15 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.putBallot(caller, question_id, answer, Time.now());
   };
 
-  public shared({caller}) func removeBallot(question_id: Nat, vote: VoteType) : async Result<(), RemoveBallotError> {
+  public shared({caller}) func removeBallot(question_id: Nat, vote: Poll) : async Result<(), RemoveBallotError> {
     game_.removeBallot(caller, question_id, vote);
   };
 
-  public shared({caller}) func getBallot(question_id: Nat, iteration: Nat, vote: VoteType) : async Result<?TypedBallot, GetBallotError> {
+  public shared({caller}) func getBallot(question_id: Nat, iteration: Nat, vote: Poll) : async Result<?TypedBallot, GetBallotError> {
     game_.getBallot(caller, question_id, iteration, vote);
   };
 
-  public shared func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : async Result<?TypedBallot, GetBallotError> {
+  public shared func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: Poll) : async Result<?TypedBallot, GetBallotError> {
     game_.getUserBallot(principal, question_id, iteration, vote);
   };
 
@@ -118,7 +118,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.setUserName(caller, name);
   };
 
-  public query func polarizationTrieToArray(trie: Types.CategoryPolarizationTrie) : async Types.CategoryPolarizationArray {
+  public query func polarizationTrieToArray(trie: Types.PolarizationMap) : async Types.PolarizationArray {
     game_.polarizationTrieToArray(trie);
   };
 

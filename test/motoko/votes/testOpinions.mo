@@ -1,7 +1,7 @@
-import Types "../../../src/godwin_backend/types";
-import Votes "../../../src/godwin_backend/votes/votes";
-import Polarization "../../../src/godwin_backend/representation/polarization";
-import Opinion "../../../src/godwin_backend/votes/opinion";
+import Types "../../../src/godwin_backend/Types";
+import Votes "../../../src/godwin_backend/votes/Votes";
+import Polarization "../../../src/godwin_backend/representation/Polarization";
+import Opinion "../../../src/godwin_backend/votes/Opinions";
 import TestableItems "../testableItems";
 
 import Map "mo:map/Map";

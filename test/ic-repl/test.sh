@@ -33,7 +33,7 @@ call backend.openQuestion("All sciences, even chemistry and biology are not unco
 assert _ ~= variant { ok = record { 
   id = (0 : nat32);
   title = ("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society." : text);
-  status = variant { CANDIDATE = record { aggregate = record { ups = 0 : int; downs = 0 : int; score = 0 : int; }; } };
+  status = variant { INTEREST = record { aggregate = record { ups = 0 : int; downs = 0 : int; score = 0 : int; }; } };
   interests_history = vec {};
   vote_history = vec {};
 }};
@@ -41,7 +41,7 @@ call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat32);
   title = ("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society." : text);
-  status = variant { CANDIDATE = record { aggregate = record { ups = 0 : nat; downs = 0 : nat; score = 0 : int; }; } };
+  status = variant { INTEREST = record { aggregate = record { ups = 0 : nat; downs = 0 : nat; score = 0 : int; }; } };
   interests_history = vec {};
   vote_history = vec {};
 }};
@@ -59,7 +59,7 @@ assert _ == variant { err = variant { InvalidVotingStage } };
 call backend.getQuestion(0);
 assert _ ~= variant { ok = record { 
   id = (0 : nat32);
-  status = variant { CANDIDATE = record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
+  status = variant { INTEREST = record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
   interests_history = vec {};
   vote_history = vec {};
 }};

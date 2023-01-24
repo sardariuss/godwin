@@ -1,33 +1,33 @@
-import Types "../types";
+import Types "../Types";
 
 import Float "mo:base/Float";
 
 module {
 
   // For convenience: from types module
-  type B = Types.Interest;
-  type A = Types.InterestAggregate;
+  type Interest = Types.Interest;
+  type Appeal = Types.Appeal;
 
-  public func emptyAggregate() : A {
+  public func init() : Appeal {
     { ups = 0; downs = 0; score = 0; };
   };
 
-  public func addToAggregate(aggregate: A, ballot: B) : A {
-    var ups = aggregate.ups;
-    var downs = aggregate.downs;
-    switch(ballot){
-      case(#UP){ ups := aggregate.ups + 1; };
-      case(#DOWN){ downs := aggregate.downs + 1; };
+  public func add(appeal: Appeal, interest: Interest) : Appeal {
+    var ups = appeal.ups;
+    var downs = appeal.downs;
+    switch(interest){
+      case(#UP){ ups := appeal.ups + 1; };
+      case(#DOWN){ downs := appeal.downs + 1; };
     };
     { ups; downs; score = computeScore(ups, downs) };
   };
 
-  public func removeFromAggregate(aggregate: A, ballot: B) : A {
-    var ups = aggregate.ups;
-    var downs = aggregate.downs;
-    switch(ballot){
-      case(#UP){ ups := aggregate.ups - 1; };
-      case(#DOWN){ downs := aggregate.downs - 1; };
+  public func remove(appeal: Appeal, interest: Interest) : Appeal {
+    var ups = appeal.ups;
+    var downs = appeal.downs;
+    switch(interest){
+      case(#UP){ ups := appeal.ups - 1; };
+      case(#DOWN){ downs := appeal.downs - 1; };
     };
     { ups; downs; score = computeScore(ups, downs) };
   };

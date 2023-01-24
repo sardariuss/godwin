@@ -1,4 +1,4 @@
-import Utils "../utils";
+import Utils "../Utils";
 
 import Map "mo:map/Map";
 

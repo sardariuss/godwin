@@ -1,12 +1,12 @@
 
-import Types "types";
+import Types "Types";
 import OrderedSet "OrderedSet";
-import Questions "questions/questions";
-import Interest "votes/interest";
+import Questions "questions/Questions";
+import Interests "votes/Interests";
 import StatusInfoHelper "StatusInfoHelper";
 
 import Map "mo:map/Map";
-import Queries2 "Queries2";
+import Queries2 "Queries";
 
 import Order "mo:base/Order";
 import Int "mo:base/Int";
@@ -20,14 +20,14 @@ module {
 
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
-  type CandidateVote = Types.CandidateVote;
+  type InterestVote = Types.InterestVote;
   type Queries2<O, K> = Queries2.Queries2<O, K>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
   type Questions = Questions.Questions;
   type QuestionStatus = Types.QuestionStatus;
-  type Interests2 = Interest.Interests2;
+  type Interests = Interests.Interests;
 
   public type OrderBy = {
     #AUTHOR;
@@ -44,14 +44,14 @@ module {
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
-    #INTEREST_SCORE: InterestScore;
+    #INTEREST_SCORE: AppealScore;
   };
 
   type DateEntry = { question_id: Nat; date: Time; };
   type TextEntry = { question_id: Nat; text: Text; date: Time; };
   type AuthorEntry = { question_id: Nat; author: Principal; date: Time; };
   type StatusEntry = { question_id: Nat; status: QuestionStatus; date: Int; };
-  type InterestScore = { question_id: Nat; score: Int; };
+  type AppealScore = { question_id: Nat; score: Int; };
 
   public type QuestionQueries = Queries2.Queries<OrderBy, Key, Question>;
 
@@ -64,7 +64,7 @@ module {
     };
   };
 
-  public func build(register: Map<OrderBy, OrderedSet<Key>>, questions: Questions, interests: Interests2) : QuestionQueries {
+  public func build(register: Map<OrderBy, OrderedSet<Key>>, questions: Questions, interests: Interests) : QuestionQueries {
 
     let from_key = func(key: Key) : Question {
       questions.getQuestion(unwrapQuestionId(key));
@@ -78,8 +78,8 @@ module {
         case(#DATE)           { toDateEntry(question); };
         case(#STATUS(_))      { toStatusEntry(question); };
         case(#INTEREST_SCORE) {
-          // Assume the current iteration is #CANDIDATE and only the current iteration is used
-          toInterestScore(interests.getVote(question.id, StatusInfoHelper.build(question.status_info).getCurrentIteration()));
+          // Assume the current iteration is #INTEREST and only the current iteration is used
+          toAppealScore(interests.getVote(question.id, StatusInfoHelper.StatusInfoHelper(question).getCurrentIteration()));
         };
       };
     };
@@ -95,7 +95,7 @@ module {
 
     // @todo: only the status and interest score are plugged so far
 
-    addOrderBy(register, #STATUS(#VOTING(#CANDIDATE)));
+    addOrderBy(register, #STATUS(#VOTING(#INTEREST)));
     addOrderBy(register, #STATUS(#VOTING(#OPINION)));
     addOrderBy(register, #STATUS(#VOTING(#CATEGORIZATION)));
     addOrderBy(register, #STATUS(#CLOSED));
@@ -109,10 +109,10 @@ module {
       );
     });
 
-    interests.addObs(func(old: ?CandidateVote, new: ?CandidateVote){
+    interests.addObs(func(old: ?InterestVote, new: ?InterestVote){
       queries.replace(
-        Option.map(old, func(vote: CandidateVote) : Key { toInterestScore(vote); }),
-        Option.map(new, func(vote: CandidateVote) : Key { toInterestScore(vote); })
+        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
+        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
       );
     });
 
@@ -127,7 +127,7 @@ module {
       case(#DATE){ "DATE"; };
       case(#STATUS(status)) { 
         switch(status){
-          case(#VOTING(#CANDIDATE)) { "VOTING_CANDIDATE"; };
+          case(#VOTING(#INTEREST)) { "VOTING_INTEREST"; };
           case(#VOTING(#OPINION)) { "VOTING_OPINION"; };
           case(#VOTING(#CATEGORIZATION)) { "VOTING_CATEGORIZATION"; };
           case(#CLOSED) { "CLOSED"; };
@@ -160,7 +160,7 @@ module {
       case(#TEXT){ compareTextEntries(unwrapText(a), unwrapText(b)); };
       case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
       case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
-      case(#INTEREST_SCORE) { compareInterestScores(unwrapInterestScore(a), unwrapInterestScore(b)); };
+      case(#INTEREST_SCORE) { compareAppealScores(unwrapAppealScore(a), unwrapAppealScore(b)); };
     };
   };
 
@@ -194,7 +194,7 @@ module {
       case(_) { Debug.trap("@todo"); };
     };
   };
-  func unwrapInterestScore(key: Key) : InterestScore {
+  func unwrapAppealScore(key: Key) : AppealScore {
     switch(key){
       case(#INTEREST_SCORE(interest_score)) { interest_score; };
       case(_) { Debug.trap("@todo"); };
@@ -225,7 +225,7 @@ module {
     strictCompare<Int>(a.date, b.date, Int.compare, 
       Nat.compare(a.question_id, b.question_id));
   };
-  func compareInterestScores(a: InterestScore, b: InterestScore) : Order {
+  func compareAppealScores(a: AppealScore, b: AppealScore) : Order {
     strictCompare<Int>(a.score, b.score, Int.compare, 
       Nat.compare(a.question_id, b.question_id));
   };
@@ -265,7 +265,7 @@ module {
     });
   };
 
-  public func toInterestScore(vote: CandidateVote) : Key {
+  public func toAppealScore(vote: InterestVote) : Key {
     #INTEREST_SCORE({
       question_id = vote.question_id;
       score = vote.aggregate.score;

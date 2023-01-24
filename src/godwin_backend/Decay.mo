@@ -1,4 +1,4 @@
-import Types "types";
+import Types "Types";
 
 import Float "mo:base/Float";
 import Debug "mo:base/Debug";

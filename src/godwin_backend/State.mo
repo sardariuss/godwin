@@ -1,10 +1,10 @@
-import Types "types";
-import QuestionQueries2 "QuestionQueries2";
+import Types "Types";
+import QuestionQueries2 "QuestionQueries";
 import OrderedSet "OrderedSet";
-import Categorization "votes/categorization";
-import Interest "votes/interest";
-import Opinion "votes/opinion";
-import Scheduler "scheduler";
+import Categorization "votes/Categorizations";
+import Interests "votes/Interests";
+import Opinion "votes/Opinions";
+import Scheduler "Scheduler";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -26,18 +26,17 @@ module {
   // For convenience: from types module
   type Parameters = Types.Parameters;
   type Question = Types.Question;
-  type Interest = Types.Interest;
   type Cursor = Types.Cursor;
   type User = Types.User;
   type Category = Types.Category;
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
   type Duration = Types.Duration;
   type Polarization = Types.Polarization;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type Ref<T> = Types.Ref<T>;
-  type InterestAggregate = Types.InterestAggregate;
+  type Appeal = Types.Appeal;
   type QuestionStatus = Types.QuestionStatus;
 
   type QuestionOrderBy = QuestionQueries2.OrderBy;
@@ -62,7 +61,7 @@ module {
       register:            Scheduler.Register;
     };
     votes             : {
-      interest           : Interest.Register;
+      interest           : Interests.Register;
       opinion            : Opinion.Register;
       categorization     : Categorization.Register;
     };
@@ -88,7 +87,7 @@ module {
         register            = Scheduler.initRegister(parameters.scheduler, creation_date);
       };
       votes = {
-        interest            = Interest.initRegister();
+        interest            = Interests.initRegister();
         opinion             = Opinion.initRegister();
         categorization      = Categorization.initRegister();
       };

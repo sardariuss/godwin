@@ -8,7 +8,7 @@ export const statusToString = (status: QuestionStatus) => {
     if (stage['CATEGORIZATION'] !== undefined) { return 'CATEGORIZATION'; };
   };
   if (status['CLOSED'] !== undefined) { return 'CLOSED'; };  
-  if (status['CANDIDATE'] !== undefined) { return 'CANDIDATE'; };
+  if (status['INTEREST'] !== undefined) { return 'INTEREST'; };
   return '@todo';
 };
 

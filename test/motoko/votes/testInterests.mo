@@ -1,7 +1,7 @@
-import Types "../../../src/godwin_backend/types";
+import Types "../../../src/godwin_backend/Types";
 import Interests "../../../src/godwin_backend/votes/interests";
-import Votes "../../../src/godwin_backend/votes/votes";
-import Interest "../../../src/godwin_backend/votes/interest";
+import Votes "../../../src/godwin_backend/votes/Votes";
+import Interest "../../../src/godwin_backend/votes/Interests";
 import TestableItems "../testableItems";
 
 import Map "mo:map/Map";
@@ -25,7 +25,7 @@ module {
   // For convenience: from other modules
   type Interest = Types.Interest;
   type Ballot<T> = Types.Ballot<T>;
-  type InterestAggregate = Types.InterestAggregate;
+  type Appeal = Types.Appeal;
 
   public class TestInterests() = {
 
@@ -46,7 +46,7 @@ module {
 
       let votes = Interest.build(
         Map.new<Principal, Map<Nat, Map<Nat, Timestamp<Interest>>>>(),
-        Map.new<Nat, Map<Nat, Timestamp<InterestAggregate>>>()
+        Map.new<Nat, Map<Nat, Timestamp<Appeal>>>()
       );
 
       // Question 0 : arbitrary question_id, iteration and date
@@ -58,19 +58,19 @@ module {
       // Test put/remove
       votes.putBallot(principal_0, question_0, iteration_0, date_0, #UP);
       tests.add(test(
-        "Add interest",
+        "Add Interests",
         votes.getBallot(principal_0, question_0, iteration_0),
         Matchers.equals(TestableItems.optInterestBallot(?{ elem = #UP; date = date_0; }))
       ));
       votes.putBallot(principal_0, question_0, iteration_0, date_0, #DOWN);
       tests.add(test(
-        "Update interest",
+        "Update Interests",
         votes.getBallot(principal_0, question_0, iteration_0),
         Matchers.equals(TestableItems.optInterestBallot(?{ elem = #DOWN; date = date_0; }))
       ));
       votes.removeBallot(principal_0, question_0, iteration_0);
       tests.add(test(
-        "Remove interest",
+        "Remove Interests",
         votes.getBallot(principal_0, question_0, iteration_0),
         Matchers.equals(TestableItems.optInterestBallot(null))
       ));
@@ -95,7 +95,7 @@ module {
       tests.add(test(
         "Get aggregate (1)",
         votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optInterestAggregate(?{
+        Matchers.equals(TestableItems.optAppeal(?{
           date = date_1;
           elem = { ups = 10; downs = 0; score = 10; };
         })
@@ -115,7 +115,7 @@ module {
       tests.add(test(
         "Get aggregate (2)",
         votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optInterestAggregate(?{
+        Matchers.equals(TestableItems.optAppeal(?{
           date = date_1;
           elem = { ups = 0; downs = 10; score = -10; };
         })
@@ -135,7 +135,7 @@ module {
       tests.add(test(
         "Get aggregate (3)",
         votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optInterestAggregate(?{
+        Matchers.equals(TestableItems.optAppeal(?{
           date = date_1;
           elem = { ups = 5; downs = 5; score = 0; };
         })
@@ -155,7 +155,7 @@ module {
       tests.add(test(
         "Get aggregate (4)",
         votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optInterestAggregate(?{
+        Matchers.equals(TestableItems.optAppeal(?{
           date = date_1;
           elem = { ups = 9; downs = 1; score = 9; }; // down votes have no effect
         })
@@ -175,7 +175,7 @@ module {
       tests.add(test(
         "Get aggregate (1)",
         votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optInterestAggregate(?{
+        Matchers.equals(TestableItems.optAppeal(?{
           date = date_1;
           elem = { ups = 4; downs = 3; score = 3; }; // down votes have a slight effect
         })

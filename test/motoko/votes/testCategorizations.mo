@@ -1,8 +1,8 @@
-import Types "../../../src/godwin_backend/types";
-import Utils "../../../src/godwin_backend/utils";
-import Votes "../../../src/godwin_backend/votes/votes";
-import Categorization "../../../src/godwin_backend/votes/categorization";
-import CategoryPolarizationTrie "../../../src/godwin_backend/representation/categoryPolarizationTrie";
+import Types "../../../src/godwin_backend/Types";
+import Utils "../../../src/godwin_backend/Utils";
+import Votes "../../../src/godwin_backend/votes/Votes";
+import Categorization "../../../src/godwin_backend/votes/Categorizations";
+import PolarizationMap "../../../src/godwin_backend/representation/PolarizationMap";
 import TestableItems "../testableItems";
 
 import Map "mo:map/Map";
@@ -24,19 +24,19 @@ module {
   // For convenience: from matchers module
   let { run;test;suite; } = Suite;
   // For convenience: from other modules
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
-  type CategoryPolarizationTrie = Types.CategoryPolarizationTrie;
-  type CategoryCursorArray = Types.CategoryCursorArray;
-  type CategoryPolarizationArray = Types.CategoryPolarizationArray;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
+  type CursorArray = Types.CursorArray;
+  type PolarizationArray = Types.PolarizationArray;
   type Ballot<T> = Types.Ballot<T>;
 
   type Map<K, V> = Map.Map<K, V>;
 
-  func toCursorTrie(categorization: CategoryCursorArray): CategoryCursorTrie {
+  func toCursorTrie(categorization: CursorArray): CursorMap {
     Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
   };
 
-  func toPolarizationTrie(categorization: CategoryPolarizationArray): CategoryPolarizationTrie {
+  func toPolarizationTrie(categorization: PolarizationArray): PolarizationMap {
     Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
   };
 
@@ -58,8 +58,8 @@ module {
       let tests = Buffer.Buffer<Suite.Suite>(0);
 
       let votes = Categorization.build(
-        Map.new<Principal, Map<Nat, Map<Nat, Timestamp<CategoryCursorTrie>>>>(),
-        Map.new<Nat, Map<Nat, Timestamp<CategoryPolarizationTrie>>>(),
+        Map.new<Principal, Map<Nat, Map<Nat, Timestamp<CursorMap>>>>(),
+        Map.new<Nat, Map<Nat, Timestamp<PolarizationMap>>>(),
         ["IDENTITY", "ECONOMY", "CULTURE"]
       );
 

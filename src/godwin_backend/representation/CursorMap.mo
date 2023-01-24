@@ -1,6 +1,6 @@
-import Types "../types";
-import Cursor "cursor";
-import Utils "../utils";
+import Types "../Types";
+import Cursor "Cursor";
+import Utils "../Utils";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
@@ -17,9 +17,9 @@ module {
   // For convenience: from types module
   type Cursor = Types.Cursor;
   type Category = Types.Category; 
-  type CategoryCursorTrie = Types.CategoryCursorTrie;
+  type CursorMap = Types.CursorMap;
 
-  public func init(categories: Set<Category>) : CategoryCursorTrie {
+  public func init(categories: Set<Category>) : CursorMap {
     var trie = Trie.empty<Category, Cursor>();
     for (category in Utils.setIter(categories)){
       trie := Trie.put(trie, Types.keyText(category), Text.equal, Cursor.init()).0;
@@ -27,7 +27,7 @@ module {
     trie;
   };
 
-  public func isValid(cursor_trie: CategoryCursorTrie, categories: Set<Category>) : Bool {
+  public func isValid(cursor_trie: CursorMap, categories: Set<Category>) : Bool {
     if (Trie.size(cursor_trie) != TrieSet.size(categories)){
       return false;
     };
@@ -42,15 +42,15 @@ module {
     true;
   };
 
-  public func keys(cursor_trie: CategoryCursorTrie) : Set<Category> {
+  public func keys(cursor_trie: CursorMap) : Set<Category> {
     Utils.keys(cursor_trie, Types.keyText, Text.equal);
   };
 
-  public func equal(a: CategoryCursorTrie, b: CategoryCursorTrie) : Bool {
+  public func equal(a: CursorMap, b: CursorMap) : Bool {
     Trie.equalStructure(a, b, Text.equal, Cursor.equal);
   };
 
-  public func toText(cursor_trie: CategoryCursorTrie) : Text {
+  public func toText(cursor_trie: CursorMap) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(Trie.size(cursor_trie));
     for ((category, cursor) in Trie.iter(cursor_trie)){
       buffer.add("(category: " # category # ", cursor: " # Cursor.toText(cursor) # ")");

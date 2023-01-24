@@ -1,8 +1,8 @@
-import Types "../types";
+import Types "../Types";
 import WMap "../wrappers/WMap";
 
 import Map "mo:map/Map";
-import Observers "../observers";
+import Observers "../Observers";
 
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
