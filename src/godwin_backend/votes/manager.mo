@@ -2,9 +2,11 @@ import Types "../types";
 import Interest "interest";
 import Opinion "opinion";
 import Categorization "categorization";
+import StatusInfoHelper "../StatusInfoHelper";
 
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -27,20 +29,6 @@ module {
   type TypedVote = Types.TypedVote;
   type TypedAnswer = Types.TypedAnswer;
 
-  public func build(
-    interests_register: Interest.Register,
-    opinions_register: Opinion.Register,
-    categorization_register: Categorization.Register,
-    categories: [Category]
-  ) : Manager
-  {
-    Manager(
-      Interest.build(interests_register),
-      Opinion.build(opinions_register),
-      Categorization.build(categorization_register, categories)
-    );
-  };
-
   public class Manager(interests_: Interests2, opinions_: Opinions, categorizations_: Categorizations){
 
     public func openVote(question: Question, vote: VoteType){
@@ -62,9 +50,21 @@ module {
     };
 
     public func deleteVotes(question: Question){
-      // @todo: implement once StatusInfo class done
+      // Delete interest votes
+      let helper = StatusInfoHelper.build(question.status_info);
+      // Delete interest votes
+      for (iteration in Iter.range(0, helper.getIteration(#VOTING(#CANDIDATE)))){
+        interests_.removeVote(question.id, iteration);
+      };
+      // Delete opinion votes
+      for (iteration in Iter.range(0, helper.getIteration(#VOTING(#OPINION)))){
+        opinions_.removeVote(question.id, iteration);
+      };
+      // Delete interest votes
+      for (iteration in Iter.range(0, helper.getIteration(#VOTING(#CATEGORIZATION)))){
+        categorizations_.removeVote(question.id, iteration);
+      };
     };
-
    
     public func findVote(question_id: Nat, iteration: Nat, vote: VoteType) : ?TypedVote {
       switch(vote){
@@ -72,7 +72,7 @@ module {
         case(#OPINION)        { Option.chain(opinions_.findVote       (question_id, iteration), func(v: OpinionVote)        : ?TypedVote { ?#OPINION(v);       }); };
         case(#CATEGORIZATION) { Option.chain(categorizations_.findVote(question_id, iteration), func(v: CategorizationVote) : ?TypedVote { ?#CATEGORIZATION(v);}); };
       };
-    };    
+    };
       
     public func getBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: VoteType) : ?TypedBallot {
       switch(vote){

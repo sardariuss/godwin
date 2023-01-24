@@ -62,6 +62,7 @@ module {
     );
   };
 
+  // @todo: use question as parameter
   public class StatusInfoHelper(current: IndexedStatus, history_: Buffer<IndexedStatus>, iterations_: Map<QuestionStatus, Nat>) {
 
     var current_ = current;

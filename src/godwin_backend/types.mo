@@ -100,7 +100,7 @@ module {
   let { nhash } = Map;
 
   func hashQuestionStatus(a: QuestionStatus) : Nat { nhash.0(questionStatusToNat(a)); };
-  func equalQuestionStatus(a: QuestionStatus, b: QuestionStatus) : Bool { nhash.1(questionStatusToNat(a), questionStatusToNat(b)); };
+  public func equalQuestionStatus(a: QuestionStatus, b: QuestionStatus) : Bool { nhash.1(questionStatusToNat(a), questionStatusToNat(b)); };
   public let questionStatushash : Map.HashUtils<QuestionStatus> = ( func(a) = hashQuestionStatus(a), func(a, b) = equalQuestionStatus(a, b));
   
   public type Interest = {

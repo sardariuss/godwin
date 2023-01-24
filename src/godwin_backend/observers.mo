@@ -29,4 +29,20 @@ module {
 
   };
 
+  public class Observers2<A>() {
+
+    let observers_ = Buffer.Buffer<Callback<A>>(0);
+
+    public func addObs(obs_func: Callback<A>) {
+      observers_.add(obs_func);
+    };
+
+    public func callObs(old: ?A, new: ?A) {
+      for (obs_func in observers_.vals()){
+        obs_func(old, new);
+      };
+    };
+
+  };
+
 };

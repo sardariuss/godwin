@@ -1,6 +1,6 @@
 import Types "types";
 import Questions "questions/questions";
-import Queries "questions/queries";
+import QuestionQueries2 "QuestionQueries2";
 import Manager "votes/manager";
 import Users "users";
 import Utils "utils";
@@ -11,6 +11,7 @@ import Map "mo:map/Map";
 import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
+import Iter "mo:base/Iter";
 
 module {
   // For convenience: from base module
@@ -22,17 +23,20 @@ module {
 
   // For convenience: from map module
   type Map<K, V> = Map.Map<K, V>;
+  type Iter<T> = Iter.Iter<T>;
 
   // For convenience: from other modules
   type Questions = Questions.Questions;
   type Users = Users.Users;
-  type Queries = Queries.Queries;
+  type QuestionQueries = QuestionQueries2.QuestionQueries;
   type Manager = Manager.Manager;
   type WMap<K, V> = WMap.WMap<K, V>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type QuestionStatus = Types.QuestionStatus;
   type SchedulerParameters = Types.SchedulerParameters;
   type VoteType = Types.VoteType;
+  type OrderBy = QuestionQueries2.OrderBy;
+  type Direction = QuestionQueries2.Direction;
 
   type TriggerType = {
     #PICK;
@@ -50,6 +54,13 @@ module {
   func equalTriggerType(a: TriggerType, b: TriggerType) : Bool { Map.nhash.1(triggerTypeToNat(a), triggerTypeToNat(b)); };
   let triggerTypehash : Map.HashUtils<TriggerType> = ( func(a) = hashTriggerType(a), func(a, b) = equalTriggerType(a, b));
 
+  type Params = {
+    transition: Transition;
+    trigger: TriggerParams;
+    order_by: OrderBy;
+    direction: Direction;
+  };
+
   type TriggerParams = {
     #PICK: PickParams;
     #TIMEOUT: TimeoutParams;
@@ -58,12 +69,10 @@ module {
   type PickParams = {
     rate: Time;
     last_pick: Time;
-    transition: Transition;
   };
 
   type TimeoutParams = {
     duration: Time;
-    transition: Transition;
   };
 
   type Transition = {
@@ -71,25 +80,25 @@ module {
     #DELETE;
   };
 
-  public type Register = Map<QuestionStatus, Map<TriggerType, TriggerParams>>;
+  public type Register = Map<QuestionStatus, Map<TriggerType, Params>>;
 
-  func putHelper(register: Register, status: QuestionStatus, trigger: TriggerType, params: TriggerParams){
-    ignore Utils.put2D(register, Types.questionStatushash, status, triggerTypehash, trigger, params);
+  func putHelper(register: Register, status: QuestionStatus, transition: Transition, order_by: OrderBy, direction: Direction, trigger: TriggerParams){
+    ignore Utils.put2D(register, Types.questionStatushash, status, triggerTypehash, getTriggerType(trigger), { transition; order_by; direction; trigger; });
   };
 
   public func initRegister(params: SchedulerParameters, time_now: Time) : Register {
-    let register = Map.new<QuestionStatus, Map<TriggerType, TriggerParams>>();
-    putHelper(register, #VOTING(#CANDIDATE),      #PICK,    #PICK   ({ rate     = Utils.toTime(params.candidate_pick_rate);     transition = #NEXT(#VOTING(#OPINION));        last_pick = time_now; }));
-    putHelper(register, #VOTING(#CANDIDATE),      #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.candidate_duration);      transition = #NEXT(#REJECTED);                                      }));
-    putHelper(register, #VOTING(#OPINION),        #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);        transition = #NEXT(#VOTING(#CATEGORIZATION));                       }));
-    putHelper(register, #VOTING(#CATEGORIZATION), #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration); transition = #NEXT(#CLOSED);                                        }));
-    putHelper(register, #REJECTED,                #TIMEOUT, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);       transition = #DELETE;                                               }));
+    let register = Map.new<QuestionStatus, Map<TriggerType, Params>>();
+    putHelper(register, #VOTING(#CANDIDATE),      #NEXT(#REJECTED),                #STATUS(#VOTING(#CANDIDATE)),      #BWD, #TIMEOUT({ duration = Utils.toTime(params.candidate_duration);                            }));
+    putHelper(register, #REJECTED,                #DELETE,                         #STATUS(#REJECTED),                #BWD, #TIMEOUT({ duration = Utils.toTime(params.rejected_duration);                             }));
+    putHelper(register, #VOTING(#CANDIDATE),      #NEXT(#VOTING(#OPINION)),        #INTEREST_SCORE,                   #FWD, #PICK   ({ rate     = Utils.toTime(params.candidate_pick_rate);     last_pick = time_now; }));
+    putHelper(register, #VOTING(#OPINION),        #NEXT(#VOTING(#CATEGORIZATION)), #STATUS(#VOTING(#OPINION)),        #BWD, #TIMEOUT({ duration = Utils.toTime(params.opinion_duration);                              }));
+    putHelper(register, #VOTING(#CATEGORIZATION), #NEXT(#CLOSED),                  #STATUS(#VOTING(#CATEGORIZATION)), #BWD, #TIMEOUT({ duration = Utils.toTime(params.categorization_duration);                       }));
     register;
   };
 
-  public func build(register: Register, questions: Questions, users: Users, queries: Queries, manager: Manager) : Scheduler {
+  public func build(register: Register, questions: Questions, users: Users, queries: QuestionQueries, manager: Manager) : Scheduler {
     Scheduler(
-      WMap.WMap2D<QuestionStatus, TriggerType, TriggerParams>(register, Types.questionStatushash, triggerTypehash),
+      WMap.WMap2D<QuestionStatus, TriggerType, Params>(register, Types.questionStatushash, triggerTypehash),
       questions,
       users,
       queries,
@@ -98,10 +107,10 @@ module {
   };
 
   public class Scheduler(
-    register_: WMap2D<QuestionStatus, TriggerType, TriggerParams>,
+    register_: WMap2D<QuestionStatus, TriggerType, Params>,
     questions_: Questions,
     users_: Users,
-    queries_: Queries,
+    queries_: QuestionQueries,
     manager_: Manager
   ){
 
@@ -110,7 +119,7 @@ module {
     };
 
     public func setPickRate(status: QuestionStatus, rate: Time) {
-      ignore register_.put(status, #PICK, #PICK({ getPickParams(status) with rate; }));
+      updateTrigger(status, #PICK({ getPickParams(status) with rate; }));
     };
 
     public func getDuration(status: QuestionStatus) : Time {
@@ -118,45 +127,44 @@ module {
     };
 
     public func setDuration(status: QuestionStatus, duration: Time) {
-      ignore register_.put(status, #TIMEOUT, #TIMEOUT({ getTimeoutParams(status) with duration; }));
+      updateTrigger(status, #TIMEOUT({ getTimeoutParams(status) with duration; }));
     };
 
     public func run(time_now: Time) {
-      for ((status, trigger) in register_.entries()){
-        for ((_, trigger_params) in trigger) {
-          switch(trigger_params){
-            case(#PICK   (params)){ ignore pickQuestion    (status, params, time_now); };
-            case(#TIMEOUT(params)){ ignore timeoutQuestions(status, params, time_now); };
+      for ((status, trigger_type) in register_.entries()){
+        for ((_, {transition; trigger; order_by; direction;}) in trigger_type) {
+          let iter = queries_.entries(order_by, direction);
+          switch(trigger){
+            case(#PICK   (params)){ ignore pickQuestion    (iter, transition, params, status, time_now); };
+            case(#TIMEOUT(params)){ ignore timeoutQuestions(iter, transition, params, time_now); };
           };
         };
       };
     };
 
-    public func pickQuestion(status: QuestionStatus, params: PickParams, time_now: Time) : ?Question {
+    public func pickQuestion(iter: Iter<Question>, transition: Transition, params: PickParams, status: QuestionStatus, time_now: Time) : ?Question {
       var question : ?Question = null;
       if (time_now > params.last_pick + params.rate){
-        // @todo: pass the right OrderBy ?
-        Option.iterate(questions_.next(queries_.entries(#AUTHOR, #FWD)), func(most_upvoted: Question) {
+        Option.iterate(iter.next(), func(most_upvoted: Question) {
           // Update the last pick
-          ignore register_.put(status, #PICK, #PICK({ params with last_pick = time_now; }));
+          updateTrigger(status, #PICK({ params with last_pick = time_now; }));
           // Perform the transition
-          question := ?transitQuestion(most_upvoted, params.transition, time_now);
+          question := ?transitQuestion(most_upvoted, transition, time_now);
         }); 
       };
       return question;
     };
 
-    public func timeoutQuestions(status: QuestionStatus, params: TimeoutParams, time_now: Time) : [Question] {
+    public func timeoutQuestions(iter: Iter<Question>, transition: Transition, params: TimeoutParams, time_now: Time) : [Question] {
       let buffer = Buffer.Buffer<Question>(0);
-      let iter = queries_.entries(#AUTHOR, #FWD); // @todo
       label iter_oldest while(true){ // @todo: have a better way to loop with a function condition
-        switch(questions_.next(iter)){
+        switch(iter.next()){
           case(null){ break iter_oldest; };
           case(?question){
             // Stop iterating here if the question is not old enough
             if (time_now < question.status_info.current.date + params.duration){ break iter_oldest; };
             // If old enough, handle the question
-            buffer.add(transitQuestion(question, params.transition, time_now));
+            buffer.add(transitQuestion(question, transition, time_now));
           };
         };
       };
@@ -190,31 +198,54 @@ module {
     func getParams(status: QuestionStatus, trigger_type: TriggerType) : TriggerParams {
       switch(register_.get(status, trigger_type)){
         case(null) { Debug.trap("@todo"); };
-        case(?trigger_params) { trigger_params; };
+        case(?params) { params.trigger; };
       };
     };
 
-    func getPickParams(status: QuestionStatus) : PickParams {
-      switch(getParams(status, #PICK)){
+    func unwrapPickParams(trigger: TriggerParams) : PickParams {
+      switch(trigger){
         case(#PICK(params)) { params; };
         case(#TIMEOUT(_)) { Debug.trap("@todo"); };
       };
     };
 
-    func getTimeoutParams(status: QuestionStatus) : TimeoutParams {
-      switch(getParams(status, #TIMEOUT)){
+    func unwrapTimeoutParams(trigger: TriggerParams) : TimeoutParams {
+      switch(trigger){
         case(#PICK(_)) { Debug.trap("@todo"); };
         case(#TIMEOUT(params)) { params; };
       };
     };
 
-    func iterateVotingStatus(question: Question, f: (Question, VoteType) -> ()) {
-      switch(question.status_info.current.status){
-        case(#VOTING(vote)) { f(question, vote); };
-        case(_){};
+    func getPickParams(status: QuestionStatus) : PickParams {
+      unwrapPickParams(getParams(status, #PICK));
+    };
+
+    func getTimeoutParams(status: QuestionStatus) : TimeoutParams {
+      unwrapTimeoutParams(getParams(status, #TIMEOUT));
+    };
+
+    func updateTrigger(status: QuestionStatus, trigger: TriggerParams) {
+      let trigger_type =  getTriggerType(trigger);
+      switch(register_.get(status, trigger_type)){
+        case(null) { Debug.trap("@todo"); };
+        case(?params) { ignore register_.put(status, trigger_type, {params with trigger}); };
       };
     };
 
+  };
+
+  func getTriggerType(trigger: TriggerParams) : TriggerType {
+    switch(trigger){
+      case(#PICK(_)) { #PICK; };
+      case(#TIMEOUT(_)) { #TIMEOUT; };
+    };
+  };
+
+  func iterateVotingStatus(question: Question, f: (Question, VoteType) -> ()) {
+    switch(question.status_info.current.status){
+      case(#VOTING(vote)) { f(question, vote); };
+      case(_){};
+    };
   };
 
 };

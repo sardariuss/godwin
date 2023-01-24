@@ -3,7 +3,7 @@ import Users "users";
 import Utils "utils";
 import Scheduler "scheduler";
 import Questions "questions/questions";
-import Queries "questions/queries";
+import QuestionQueries2 "QuestionQueries2";
 import Votes "votes/votes";
 import Manager "votes/manager";
 import Categories "Categories";
@@ -53,7 +53,7 @@ module {
     categories_: Categories.Categories,
     users_: Users.Users,
     questions_: Questions.Questions,
-    queries_: Queries.Queries,
+    queries_: QuestionQueries2.QuestionQueries,
     scheduler_: Scheduler.Scheduler,
     manager_: Manager.Manager
   ) = {
@@ -110,8 +110,8 @@ module {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func getQuestions(order_by: Queries.OrderBy, direction: Queries.Direction, limit: Nat, previous_id: ?Nat) : Queries.QueryQuestionsResult {
-      questions_.queryQuestions(queries_, order_by, direction, limit, previous_id);
+    public func getQuestions(order_by: QuestionQueries2.OrderBy, direction: QuestionQueries2.Direction, limit: Nat, previous_id: ?Nat) : QuestionQueries2.QueryQuestionsResult {
+      queries_.queryItems(order_by, direction, limit, Option.map(previous_id, func(id: Nat) : Question { questions_.getQuestion(id); }));
     };
 
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {

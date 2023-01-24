@@ -58,39 +58,16 @@ module {
        and Int.equal(q1.date, q2.date);
   };
 
-  type UpdateType = {
-    #RECORD;
-    #FIELD: {
-      #CURRENT_STATUS;
-    };
-  };
-
-  type UpdateCallback = (?Question, ?Question) -> ();
-
-  func equalUpdateType(obs_a: UpdateType, obs_b: UpdateType) : Bool {
-    obs_a == obs_b;
-  };
-
-  func hashUpdateType(obs: UpdateType) : Hash {
-    switch(obs){
-      case(#RECORD)                 { 0; };
-      case(#FIELD(#CURRENT_STATUS)) { 1; };
-    };
-  };
-
   public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
-    Questions(
-      WMap.WMap(register, Map.nhash),
-      WRef.WRef(index),
-      Observers.Observers<UpdateType, Question>(equalUpdateType, hashUpdateType)
-    );
+    Questions(WMap.WMap(register, Map.nhash), WRef.WRef(index));
   };
 
   public class Questions(
     register_: WMap<Nat, Question>,
-    index_: WRef<Nat>,
-    observers_: Observers.Observers<UpdateType, Question>
+    index_: WRef<Nat>
   ) {
+
+    let observers_ = Observers.Observers2<Question>();
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
@@ -122,20 +99,8 @@ module {
       };
       register_.set(question.id, question);
       index_.set(index_.get() + 1);
-      observers_.callObs(#RECORD, null, ?question);
+      observers_.callObs(null, ?question);
       question;
-    };
-
-    public func replaceQuestion(question: Question) {
-      if (Option.isNull(register_.get(question.id))){
-        Debug.trap("Cannot replace a question that does not exist");
-      };
-      switch(register_.put(question.id, question)){
-        case(null) { Prelude.unreachable(); };
-        case(?old_question) {
-          observers_.callObs(#RECORD, ?old_question, ?question);
-        };
-      };
     };
 
     public func removeQuestion(question_id: Nat) {
@@ -145,7 +110,7 @@ module {
       switch(register_.remove(question_id)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
-          observers_.callObs(#RECORD, ?old_question, null);
+          observers_.callObs(?old_question, null);
         };
       };
     };
@@ -161,46 +126,14 @@ module {
       switch(register_.put(question.id, question)){
         case(null) { Prelude.unreachable(); };
         case(?old_question) {
-          observers_.callObs(#FIELD(#CURRENT_STATUS), ?old_question, ?question);
+          observers_.callObs(?old_question, ?question);
         };
       };
-
       question;
     };
 
-    public func next(iter: Iter<Queries.QuestionKey>) : ?Question {
-      switch(iter.next()){
-        case(null) { null; };
-        case(?key){ ?getQuestion(key.id); };
-      };
-    };
-
-    public func first(queries: Queries.Queries, order_by: Queries.OrderBy, direction: Queries.Direction) : ?Question {
-      next(queries.entries(order_by, direction));
-    };
-
-    public func queryQuestions(
-      queries: Queries.Queries,
-      order_by: Queries.OrderBy,
-      direction: Queries.Direction,
-      limit: Nat,
-      previous_id: ?Nat
-    ) : Queries.QueryQuestionsResult {
-      let bound = Option.chain(previous_id, func(id: Nat) : ?Queries.QuestionKey {
-        Queries.initQuestionKey(getQuestion(id), order_by);
-      });
-      switch(direction){
-        case(#FWD){
-          queries.queryQuestions(order_by, bound, null, direction, limit);
-        };
-        case(#BWD){
-          queries.queryQuestions(order_by, null, bound, direction, limit);
-        };
-      };
-    };
-
-    public func addObs(update_type: UpdateType, update_callback: UpdateCallback) {
-      observers_.addObs(update_type, update_callback);
+    public func addObs(callback: (?Question, ?Question) -> ()) {
+      observers_.addObs(callback);
     };
 
   };

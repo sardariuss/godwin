@@ -1,5 +1,5 @@
 import Types "types";
-import Queries "questions/queries";
+import QuestionQueries2 "QuestionQueries2";
 import OrderedSet "OrderedSet";
 import Categorization "votes/categorization";
 import Interest "votes/interest";
@@ -40,8 +40,8 @@ module {
   type InterestAggregate = Types.InterestAggregate;
   type QuestionStatus = Types.QuestionStatus;
 
-  type OrderBy = Queries.OrderBy;
-  type QuestionKey = Queries.QuestionKey;
+  type QuestionOrderBy = QuestionQueries2.OrderBy;
+  type QuestionKey = QuestionQueries2.Key;
 
   public type State = {
     admin             : Principal;
@@ -56,7 +56,7 @@ module {
       index              : Ref<Nat>;
     };
     queries           : {
-      register           : Map<OrderBy, OrderedSet<QuestionKey>>;
+      register           : Map<QuestionOrderBy, OrderedSet<QuestionKey>>;
     };
     scheduler         : {
       register:            Scheduler.Register;
@@ -82,7 +82,7 @@ module {
         index              = Types.initRef(0 : Nat);
       };
       queries           = {
-        register           = Queries.initRegister();
+        register           = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
       };
       scheduler         = {
         register            = Scheduler.initRegister(parameters.scheduler, creation_date);
