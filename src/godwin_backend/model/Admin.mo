@@ -1,6 +1,7 @@
 import Types "Types";
 import Questions "Questions";
 import Utils "../utils/Utils";
+import Categories "Categories";
 
 import Result "mo:base/Result";
 import Time "mo:base/Time";
@@ -22,7 +23,7 @@ module {
 //  type PolarizationArray = Types.PolarizationArray;
 //  type Interest = Types.Interest;
 //  type Cursor = Types.Cursor;
-//  type CreateQuestionStatus = Types.CreateQuestionStatus;
+//  type CreateStatus = Types.CreateStatus;
 //  type Questions = Questions.Questions;
 //  
 //  public type CreateQuestionError = {
@@ -30,7 +31,7 @@ module {
 //    #InsufficientCredentials;
 //  };
 //
-//  public func createQuestions(questions: Questions, principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : [Question] {
+//  public func createQuestions(questions: Questions, principal: Principal, inputs: [(Text, CreateStatus)]) : [Question] {
 //    let buffer = Buffer.Buffer<Question>(inputs.size());
 //    for (input in Array.vals(inputs)){
 //      let date = Time.now();
@@ -59,7 +60,7 @@ module {
 //            interests_history = [Vote.new<Interest, Appeal>(date, { ups = 0; downs = 0; score = 0; })]; 
 //            status = #OPEN({ stage = #CATEGORIZATION; iteration = { 
 //              opinion = Vote.new<Cursor, Polarization>(date, opinion_aggregate); 
-//              categorization = Vote.new<CursorMap, PolarizationMap>(0, Utils.arrayToTrie(categorization_aggregate, Types.keyText, Text.equal));
+//              categorization = Vote.new<CursorMap, PolarizationMap>(0, Utils.arrayToTrie(categorization_aggregate, Categories.key, Categories.equal));
 //            };});
 //          } 
 //        };
@@ -70,7 +71,7 @@ module {
 //            interests_history = [Vote.new<Interest, Appeal>(date, { ups = 0; downs = 0; score = interest_score; })];
 //            vote_history = [{ 
 //              opinion = Vote.new<Cursor, Polarization>(date, opinion_aggregate);
-//              categorization = Vote.new<CursorMap, PolarizationMap>(0, Utils.arrayToTrie(categorization_aggregate, Types.keyText, Text.equal)); 
+//              categorization = Vote.new<CursorMap, PolarizationMap>(0, Utils.arrayToTrie(categorization_aggregate, Categories.key, Categories.equal)); 
 //            }]
 //          }
 //        };

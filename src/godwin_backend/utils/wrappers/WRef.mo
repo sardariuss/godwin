@@ -1,8 +1,8 @@
+import Ref "../Ref";
+
 module {
 
-  public type Ref<V> = {
-    var v: V;
-  };
+  type Ref<V> = Ref.Ref<V>;
 
   public class WRef<V>(ref_: Ref<V>){
 

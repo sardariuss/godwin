@@ -19,7 +19,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Category = Types.Category;
   type Decay = Types.Decay;
   type Duration = Types.Duration;
-  type QuestionStatus = Types.QuestionStatus;
+  type Status = Types.Status;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
   type GetQuestionError = Types.GetQuestionError;
@@ -28,7 +28,6 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
-  type Ballot<T> = Types.Ballot<T>;
   type TypedBallot = Types.TypedBallot;
   type PutBallotError = Types.PutBallotError;
   type RemoveBallotError = Types.RemoveBallotError;
@@ -58,19 +57,19 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeCategory(caller, category);
   };
 
-  public query func getPickRate(status: QuestionStatus) : async Duration {
+  public query func getPickRate(status: Status) : async Duration {
     game_.getPickRate(status);
   };
 
-  public shared({caller}) func setPickRate(status: QuestionStatus, rate: Duration) : async Result<(), SetPickRateError> {
+  public shared({caller}) func setPickRate(status: Status, rate: Duration) : async Result<(), SetPickRateError> {
     game_.setPickRate(caller, status, rate);
   };
 
-  public query func getDuration(status: QuestionStatus) : async Duration {
+  public query func getDuration(status: Status) : async Duration {
     game_.getDuration(status);
   };
 
-  public shared({caller}) func setDuration(status: QuestionStatus, duration: Duration) : async Result<(), SetDurationError> {
+  public shared({caller}) func setDuration(status: Status, duration: Duration) : async Result<(), SetDurationError> {
     game_.setDuration(caller, status, duration);
   };
 
@@ -94,16 +93,16 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.putBallot(caller, question_id, answer, Time.now());
   };
 
-  public shared({caller}) func removeBallot(question_id: Nat, vote: Poll) : async Result<(), RemoveBallotError> {
-    game_.removeBallot(caller, question_id, vote);
+  public shared({caller}) func removeBallot(question_id: Nat, poll: Poll) : async Result<(), RemoveBallotError> {
+    game_.removeBallot(caller, question_id, poll);
   };
 
-  public shared({caller}) func getBallot(question_id: Nat, iteration: Nat, vote: Poll) : async Result<?TypedBallot, GetBallotError> {
-    game_.getBallot(caller, question_id, iteration, vote);
+  public shared({caller}) func getBallot(question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
+    game_.getBallot(caller, question_id, iteration, poll);
   };
 
-  public shared func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: Poll) : async Result<?TypedBallot, GetBallotError> {
-    game_.getUserBallot(principal, question_id, iteration, vote);
+  public shared func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
+    game_.getUserBallot(principal, question_id, iteration, poll);
   };
 
   public shared func run() {
@@ -123,7 +122,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   // @todo
-//  public shared({caller}) func createQuestions(inputs: [(Text, CreateQuestionStatus)]) : async Result<[Question], CreateQuestionError> {
+//  public shared({caller}) func createQuestions(inputs: [(Text, CreateStatus)]) : async Result<[Question], CreateQuestionError> {
 //    game_.createQuestions(caller, inputs);
 //  };
 

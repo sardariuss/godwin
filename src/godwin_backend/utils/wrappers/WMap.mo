@@ -87,6 +87,10 @@ module {
     public func get(key1: K1, key2: K2): ?V {
       Utils.get2D(map_, hash1_, key1, hash2_, key2);
     };
+
+    public func getAll(key1: K1): ?Map<K2, V> {
+      Map.get(map_, hash1_, key1);
+    };
       
     public func put(key1: K1, key2: K2, value: V): ?V {
       Utils.put2D(map_, hash1_, key1, hash2_, key2, value);
@@ -94,6 +98,10 @@ module {
       
     public func remove(key1: K1, key2: K2): ?V {
       Utils.remove2D(map_, hash1_, key1, hash2_, key2);
+    };
+
+    public func removeAll(key1: K1): ?Map<K2, V> {
+      Map.remove(map_, hash1_, key1);
     };
 
     public func entries(): Iter.Iter<(K1, Iter.Iter<(K2, V)>)> {

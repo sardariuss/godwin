@@ -33,11 +33,11 @@ module {
   type Map<K, V> = Map.Map<K, V>;
 
   func toCursorTrie(categorization: CursorArray): CursorMap {
-    Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
+    Utils.arrayToTrie(categorization, Categories.key, Categories.equal);
   };
 
   func toPolarizationTrie(categorization: PolarizationArray): PolarizationMap {
-    Utils.arrayToTrie(categorization, Types.keyText, Text.equal);
+    Utils.arrayToTrie(categorization, Categories.key, Categories.equal);
   };
 
   public class TestCategorizations() = {

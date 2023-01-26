@@ -1,7 +1,7 @@
 import Types "Types";
 import Questions "Questions";
 import Interests "votes/Interests";
-import StatusInfoHelper "StatusInfoHelper";
+import StatusHelper "StatusHelper";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
 
@@ -25,7 +25,7 @@ module {
   type Time = Int;
   type Question = Types.Question;
   type Questions = Questions.Questions;
-  type QuestionStatus = Types.QuestionStatus;
+  type Status = Types.Status;
   type Interests = Interests.Interests;
 
   public type OrderBy = {
@@ -33,7 +33,7 @@ module {
     #TITLE;
     #TEXT;
     #DATE;
-    #STATUS: QuestionStatus;
+    #STATUS: Status;
     #INTEREST_SCORE;
   };
 
@@ -49,7 +49,7 @@ module {
   type DateEntry = { question_id: Nat; date: Time; };
   type TextEntry = { question_id: Nat; text: Text; date: Time; };
   type AuthorEntry = { question_id: Nat; author: Principal; date: Time; };
-  type StatusEntry = { question_id: Nat; status: QuestionStatus; date: Int; };
+  type StatusEntry = { question_id: Nat; status: Status; date: Int; };
   type AppealScore = { question_id: Nat; score: Int; };
 
   public type QuestionQueries = Queries.Queries<OrderBy, Key, Question>;
@@ -78,7 +78,7 @@ module {
         case(#STATUS(_))      { toStatusEntry(question); };
         case(#INTEREST_SCORE) {
           // Assume the current iteration is #INTEREST and only the current iteration is used
-          toAppealScore(interests.getVote(question.id, StatusInfoHelper.StatusInfoHelper(question).getCurrentIteration()));
+          toAppealScore(interests.getVote(question.id, StatusHelper.StatusInfo(question).getCurrentIteration()));
         };
       };
     };

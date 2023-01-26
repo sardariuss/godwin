@@ -22,7 +22,7 @@ module {
   public func init(categories: Set<Category>) : CursorMap {
     var trie = Trie.empty<Category, Cursor>();
     for (category in Utils.setIter(categories)){
-      trie := Trie.put(trie, Types.keyText(category), Text.equal, Cursor.init()).0;
+      trie := Trie.put(trie, Categories.key(category), Categories.equal, Cursor.init()).0;
     };
     trie;
   };
@@ -35,7 +35,7 @@ module {
       if (not Cursor.isValid(cursor)){
         return false;
       };
-      if (Option.isNull(Trie.get(categories, Types.keyText(category), Text.equal))){
+      if (Option.isNull(Trie.get(categories, Categories.key(category), Categories.equal))){
         return false;
       };
     };
@@ -43,11 +43,11 @@ module {
   };
 
   public func keys(cursor_trie: CursorMap) : Set<Category> {
-    Utils.keys(cursor_trie, Types.keyText, Text.equal);
+    Utils.keys(cursor_trie, Categories.key, Categories.equal);
   };
 
   public func equal(a: CursorMap, b: CursorMap) : Bool {
-    Trie.equalStructure(a, b, Text.equal, Cursor.equal);
+    Trie.equalStructure(a, b, Categories.equal, Cursor.equal);
   };
 
   public func toText(cursor_trie: CursorMap) : Text {

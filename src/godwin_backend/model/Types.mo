@@ -1,17 +1,16 @@
 import Trie "mo:base/Trie";
-import Text "mo:base/Text";
 import Principal "mo:base/Principal";
-import Nat32 "mo:base/Nat32";
 
 import Map "mo:map/Map";
 
 module {
 
   // For convenience: from base module
-  type Key<K> = Trie.Key<K>;
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
   type Time = Int;
+
+  type Map<K, V> = Map.Map<K, V>;
 
   public type Duration = {
     #DAYS: Nat;
@@ -56,10 +55,10 @@ module {
   public type StatusInfo = {
     current: IndexedStatus;
     history: [IndexedStatus];
-    iterations: [(QuestionStatus, Nat)];
+    iterations: [(Status, Nat)];
   };
 
-  public type QuestionStatus = {
+  public type Status = {
     #VOTING: Poll;
     #CLOSED;
     #REJECTED;
@@ -71,31 +70,26 @@ module {
     #CATEGORIZATION;
   };
 
-  public func statusToText(status: QuestionStatus) : Text {
-    switch(status){
-      case(#VOTING(#INTEREST))       { "VOTING(INTEREST)"; };
-      case(#VOTING(#OPINION))        { "VOTING(OPINION)"; };
-      case(#VOTING(#CATEGORIZATION)) { "VOTING(CATEGORIZATION)"; };
-      case(#CLOSED)                  { "CLOSED"; };
-      case(#REJECTED)                { "REJECTED"; };
-    };
-  };
-
   public type IndexedStatus = {
-    status: QuestionStatus;
+    status: Status;
     date: Time;
     index: Nat;
   };
 
+  public type Vote<T, A> = {
+    question_id: Nat;
+    iteration: Nat;
+    date: Time;
+    ballots: Map<Principal, Ballot<T>>;
+    aggregate: A;
+  };
+
+  public type Ballot<T> = {
+    date: Int;
+    answer: T;
+  };
+
   public type Category = Text;
-
-  public func keyText(t: Text) : Key<Text> { { key = t; hash = Text.hash(t); } };
-  public func keyNat(n: Nat) : Key<Nat> { { key = n; hash = Nat32.fromNat(n); } };
-  public func keyPrincipal(p: Principal) : Key<Principal> {{ key = p; hash = Principal.hash(p); };};
-
-  func hashStatus(a: QuestionStatus) : Nat { Map.thash.0(statusToText(a)); };
-  public func equalStatus(a: QuestionStatus, b: QuestionStatus) : Bool { Map.thash.1(statusToText(a), statusToText(b)); };
-  public let status_hash : Map.HashUtils<QuestionStatus> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
   
   public type Interest = {
     #UP;
@@ -106,14 +100,6 @@ module {
     ups: Nat;
     downs: Nat;
     score: Int;
-  };
-
-  public type User = {
-    principal: Principal;
-    // Optional because we want the user to be able to log based solely on the II,
-    // without requiring a user name.
-    name: ?Text;  
-    convictions: PolarizationMap;
   };
 
   // Cursor used for voting, shall be between -1 and 1, where usually:
@@ -177,13 +163,21 @@ module {
     #CATEGORIZATION: CategorizationVote;
   };
 
+  public type User = {
+    principal: Principal;
+    // Optional because we want the user to be able to log based solely on the II,
+    // without requiring a user name.
+    name: ?Text;  
+    convictions: PolarizationMap;
+  };
+
   // @todo: temporary
 
 //  public type CreateQuestionError = {
 //    #PrincipalIsAnonymous;
 //    #InsufficientCredentials;
 //  };
-//  public type CreateQuestionStatus = {
+//  public type CreateStatus = {
 //    #INTEREST: { interest_score: Int; };
 //    #OPEN: {
 //      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
@@ -192,33 +186,6 @@ module {
 //    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
 //    #REJECTED : { interest_score: Int; };
 //  };
-
-  public type VoteStatus = {
-    #OPEN;
-    #CLOSED;
-  };
-
-  public type Ballot<T> = {
-    date: Int;
-    answer: T;
-  };
-
-  public type Vote<T, A> = {
-    question_id: Nat;
-    iteration: Nat;
-    date: Time;
-    status: VoteStatus;
-    ballots: Map.Map<Principal, Ballot<T>>;
-    aggregate: A;
-  };
-
-  public type Ref<V> = {
-    var v: V;
-  };
-
-  public func initRef<V>(value: V) : Ref<V> {
-    { var v = value; };
-  };
 
   public type AddCategoryError = {
     #InsufficientCredentials;
@@ -275,7 +242,12 @@ module {
     #InvalidIteration;
   };
 
-  public type SetPickRateError = VerifyCredentialsError;
-  public type SetDurationError = VerifyCredentialsError;
+  public type SetPickRateError = {
+    #InsufficientCredentials;
+  };
+
+  public type SetDurationError = {
+    #InsufficientCredentials;
+  };
 
 };

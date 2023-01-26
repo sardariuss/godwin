@@ -22,7 +22,7 @@ module {
   type Polarization = Types.Polarization;
   type PolarizationMap = Types.PolarizationMap;
   type Question = Types.Question;
-  type QuestionStatus = Types.QuestionStatus;
+  type Status = Types.Status;
 
   type State = State.State;
 
@@ -53,7 +53,7 @@ module {
       categorization_votes
     );
 
-    let manager = Polls.Polls(
+    let polls = Polls.Polls(
       interest_votes,
       opinion_votes,
       categorization_votes
@@ -62,12 +62,11 @@ module {
     let scheduler = Scheduler.build(
       state_.scheduler.register,
       questions,
-      users,
       queries,
-      manager
+      polls
     );
 
-    Game.Game(admin, categories, users, questions, queries, scheduler, manager);
+    Game.Game(admin, categories, users, questions, queries, scheduler, polls);
   };
 
 };

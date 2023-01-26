@@ -1,6 +1,7 @@
 import Types "Types";
 import QuestionQueries "QuestionQueries";
 import OrderedSet "../utils/OrderedSet";
+import Ref "../utils/Ref";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
@@ -22,6 +23,7 @@ module {
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
   type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
   type OrderedSet<K> = OrderedSet.OrderedSet<K>;
+  type Ref<V> = Ref.Ref<V>;
 
   // For convenience: from types module
   type Parameters = Types.Parameters;
@@ -35,9 +37,8 @@ module {
   type Polarization = Types.Polarization;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
-  type Ref<T> = Types.Ref<T>;
   type Appeal = Types.Appeal;
-  type QuestionStatus = Types.QuestionStatus;
+  type Status = Types.Status;
 
   type QuestionOrderBy = QuestionQueries.OrderBy;
   type QuestionKey = QuestionQueries.Key;
@@ -69,27 +70,27 @@ module {
 
   public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
     {
-      admin             = admin;
-      creation_date     = creation_date;
-      categories        = Set.fromIter(Array.vals(parameters.categories), Set.thash);
-      users             = {
-        register        = Map.new<Principal, User>();
+      admin          = admin;
+      creation_date  = creation_date;
+      categories     = Set.fromIter(Array.vals(parameters.categories), Set.thash);
+      users          = {
+        register              = Map.new<Principal, User>();
         convictions_half_life = parameters.users.convictions_half_life;
       };
-      questions         = {
-        register           = Map.new<Nat, Question>();
-        index              = Types.initRef(0 : Nat);
+      questions      = {
+        register              = Map.new<Nat, Question>();
+        index                 = Ref.initRef(0 : Nat);
       };
-      queries           = {
-        register           = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
+      queries        = {
+        register              = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
       };
-      scheduler         = {
-        register            = Scheduler.initRegister(parameters.scheduler, creation_date);
+      scheduler      = {
+        register              = Scheduler.initRegister(parameters.scheduler, creation_date);
       };
-      votes = {
-        interest            = Interests.initRegister();
-        opinion             = Opinion.initRegister();
-        categorization      = Categorization.initRegister();
+      votes          = {
+        interest              = Interests.initRegister();
+        opinion               = Opinion.initRegister();
+        categorization        = Categorization.initRegister();
       };
     };
   };

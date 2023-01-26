@@ -6,7 +6,7 @@ import Questions "Questions";
 import Votes "votes/Votes";
 import Polls "votes/Polls";
 import Categories "Categories";
-import StatusInfoHelper "StatusInfoHelper";
+import StatusHelper "StatusHelper";
 import Duration "Duration";
 import Utils "../utils/Utils";
 
@@ -29,7 +29,7 @@ module {
   type Category = Types.Category;
   type Decay = Types.Decay;
   type Duration = Types.Duration;
-  type QuestionStatus = Types.QuestionStatus;
+  type Status = Types.Status;
   type IndexedStatus = Types.IndexedStatus;
   type Poll = Types.Poll;
   type TypedBallot = Types.TypedBallot;
@@ -56,7 +56,7 @@ module {
     questions_: Questions.Questions,
     queries_: QuestionQueries.QuestionQueries,
     scheduler_: Scheduler.Scheduler,
-    manager_: Polls.Polls
+    polls_: Polls.Polls
   ) = {
 
     public func getDecay() : ?Decay {
@@ -87,21 +87,21 @@ module {
       });
     };
 
-    public func getPickRate(status: QuestionStatus) : Duration {
+    public func getPickRate(status: Status) : Duration {
       Duration.fromTime(scheduler_.getPickRate(status));
     };
 
-    public func setPickRate(caller: Principal, status: QuestionStatus, rate: Duration) : Result<(), SetPickRateError> {
+    public func setPickRate(caller: Principal, status: Status, rate: Duration) : Result<(), SetPickRateError> {
       Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
         scheduler_.setPickRate(status, Duration.toTime(rate));
       });
     };
 
-    public func getDuration(status: QuestionStatus) : Duration {
+    public func getDuration(status: Status) : Duration {
       Duration.fromTime(scheduler_.getDuration(status));
     };
 
-    public func setDuration(caller: Principal, status: QuestionStatus, duration: Duration) : Result<(), SetDurationError> {
+    public func setDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
       Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
         scheduler_.setDuration(status, Duration.toTime(duration));
       });
@@ -118,7 +118,7 @@ module {
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
         let question = questions_.createQuestion(caller, date, title, text);
-        manager_.openVote(question, #INTEREST);
+        polls_.openVote(question, #INTEREST);
         question;
       });
     };
@@ -126,9 +126,9 @@ module {
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
       Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusInfoHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
+          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
             let question = questions_.updateStatus(question_id, #VOTING(#INTEREST), date);
-            manager_.openVote(question, #INTEREST);
+            polls_.openVote(question, #INTEREST);
           })
         })
       });
@@ -137,19 +137,19 @@ module {
     public func putBallot(caller: Principal, question_id: Nat, answer: TypedAnswer, date: Time) : Result<(), PutBallotError> {
       Result.chain<User, (), PutBallotError>(getUser(caller), func(_) {
         Result.chain<Question, (), PutBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<IndexedStatus, (), PutBallotError>(Result.fromOption(Polls.getVoteStatus(question, Polls.getPoll(answer)), #InvalidStatus), func(_) {
-            manager_.putBallot(caller, question, answer, date);
+          Result.mapOk<(), (), PutBallotError>(Utils.toResult(Polls.matchCurrentPoll(question, answer), #InvalidStatus), func(_) {
+            polls_.putBallot(caller, question, answer, date);
           })
         })
       });
     };
 
-    public func removeBallot(caller: Principal, question_id: Nat, vote: Poll) : Result<(), RemoveBallotError> {
+    public func removeBallot(caller: Principal, question_id: Nat, poll: Poll) : Result<(), RemoveBallotError> {
       Result.chain<User, (), RemoveBallotError>(getUser(caller), func(_) {
         Result.chain<Question, (), RemoveBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.chain<(), (), RemoveBallotError>(Utils.toResult(vote == #INTEREST, #NotAuthorized), func() {
-            Result.mapOk<IndexedStatus, (), RemoveBallotError>(Result.fromOption(Polls.getVoteStatus(question, vote), #InvalidStatus), func(_) {
-              manager_.removeBallot(caller, question, vote);
+          Result.chain<(), (), RemoveBallotError>(Utils.toResult(poll == #INTEREST, #NotAuthorized), func() {
+            Result.mapOk<(), (), RemoveBallotError>(Utils.toResult(Polls.isCurrentPoll(question, poll), #InvalidStatus), func(_) {
+              polls_.removeBallot(caller, question, poll);
             })
           })
         })
@@ -159,8 +159,8 @@ module {
     public func getBallot(caller: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
       Result.chain<User, ?TypedBallot, GetBallotError>(getUser(caller), func(_) {
         Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isValidIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
-            manager_.getBallot(caller, question.id, iteration, vote);
+          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isValidIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
+            polls_.getBallot(caller, question.id, iteration, vote);
           })
         })
       });
@@ -169,8 +169,8 @@ module {
     public func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
       Result.chain<User, ?TypedBallot, GetBallotError>(getUser(principal), func(_) {
         Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusInfoHelper.isHistoryIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
-            manager_.getBallot(principal, question.id, iteration, vote);
+          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
+            polls_.getBallot(principal, question.id, iteration, vote);
           })
         })
       });
@@ -206,7 +206,7 @@ module {
     };
 
     // @todo
-//    public func createQuestions(principal: Principal, inputs: [(Text, CreateQuestionStatus)]) : Result<[Question], CreateQuestionError> {
+//    public func createQuestions(principal: Principal, inputs: [(Text, CreateStatus)]) : Result<[Question], CreateQuestionError> {
 //      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
 //        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
 //          Admin.createQuestions(questions_, principal, inputs);

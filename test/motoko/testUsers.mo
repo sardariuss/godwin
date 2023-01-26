@@ -95,7 +95,7 @@ module {
 //            ("IDENTITY", {left = 0.0; center = 0.0; right = 1.0;}),
 //            ("ECONOMY",  {left = 0.0; center = 0.5; right = 0.5;}),
 //            ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
-//          ], Types.keyText, Text.equal); };
+//          ], Categories.key, Categories.equal); };
 //      iteration := { iteration with categorization; };
 //      questions.replaceQuestion({ questions.getQuestion(0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
 //
@@ -110,7 +110,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
 //          ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 1
 //      tests.add(test(
 //        "User 1 convictions",
@@ -119,7 +119,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
 //          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 2
 //      tests.add(test(
 //        "User 1 convictions",
@@ -128,7 +128,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //
 //      // Test adding a new category
 //      users.addCategory("JUSTICE");
@@ -141,7 +141,7 @@ module {
 //          ("ECONOMY",  { left = 0.0; center = 0.5; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 1
 //      tests.add(test(
 //        "User 1 convictions",
@@ -151,7 +151,7 @@ module {
 //          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.5; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 2
 //      tests.add(test(
 //        "User 2 convictions",
@@ -161,7 +161,7 @@ module {
 //          ("ECONOMY",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //
 //      // Test removing an old category
 //      users.removeCategory("ECONOMY");
@@ -173,7 +173,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 1.0; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 1
 //      tests.add(test(
 //        "User 1 convictions",
@@ -182,7 +182,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 0.0; right = 1.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      // User 2
 //      tests.add(test(
 //        "User 2 convictions",
@@ -191,7 +191,7 @@ module {
 //          ("IDENTITY", { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("CULTURE",  { left = 0.0; center = 0.0; right = 0.0; }),
 //          ("JUSTICE",  { left = 0.0; center = 0.0; right = 0.0; })
-//        ], Types.keyText, Text.equal)))));
+//        ], Categories.key, Categories.equal)))));
 //      
 
       // @todo: need to have a more complete test on categorization computation

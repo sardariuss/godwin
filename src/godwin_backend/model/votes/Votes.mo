@@ -7,12 +7,15 @@ import Observers "../../utils/Observers";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
+import Prelude "mo:base/Prelude";
+import Iter "mo:base/Iter";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Time = Int;
+  type Iter<T> = Iter.Iter<T>;
 
   type Map<K, V> = Map.Map<K, V>;
 
@@ -21,18 +24,9 @@ module {
 
   // For convenience
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
-  type QuestionId = Nat;
-  type Iteration = Nat;
-  type VoteStatus = Types.VoteStatus;
-
-  func verifyStatus<T, A>(vote: Vote<T, A>, status: VoteStatus) {
-    if (vote.status != status) {
-      Debug.trap("Unexpected vote status");
-    };
-  };
 
   public class Votes<T, A>(
-    register_: WMap2D<QuestionId, Iteration, Vote<T, A>>,
+    register_: WMap2D<Nat, Nat, Vote<T, A>>,
     empty_aggregate_: A,
     add_to_aggregate_: (A, T) -> A,
     remove_from_aggregate_: (A, T) -> A
@@ -40,60 +34,65 @@ module {
 
     let observers_ = Observers.Observers2<Vote<T, A>>();
 
-    public func newVote(question_id: QuestionId, iteration: Iteration, date: Time){
+    public func newVote(question_id: Nat, iteration: Nat, date: Time){
       if (Option.isSome(register_.get(question_id, iteration))){
-        Debug.trap("An aggregate already exists for this question and iteration");
+        Debug.trap("A vote already exists for this question and iteration");
       };
       let vote = { 
         question_id;
         iteration;
         date;
-        status = #OPEN;
         ballots = Map.new<Principal, Ballot<T>>();
         aggregate = empty_aggregate_; 
       };
       updateVote(question_id, iteration, vote);
     };
 
-    public func closeVote(question_id: QuestionId, iteration: Iteration){
-      let vote = getVote(question_id, iteration);
-      verifyStatus(vote, #OPEN);
-      updateVote(question_id, iteration, { vote with status = #CLOSED; });
-    };
-
-    public func findVote(question_id: QuestionId, iteration: Iteration) : ?Vote<T, A> {
+    public func findVote(question_id: Nat, iteration: Nat) : ?Vote<T, A> {
       register_.get(question_id, iteration);
     };
 
-    public func getVote(question_id: QuestionId, iteration: Iteration) : Vote<T, A> {
+    public func getVote(question_id: Nat, iteration: Nat) : Vote<T, A> {
       switch(findVote(question_id, iteration)){
         case(null) { Debug.trap("The vote does not exist"); };
         case(?vote) { vote; };
       };
     };
 
-    public func removeVote(question_id: QuestionId, iteration: Iteration) {
-      switch(register_.remove(question_id, iteration)){
-        case(null) { Debug.trap("The vote does not exist"); };
-        case(?vote) { observers_.callObs(?vote, null); };
+    public func getVotes(question_id: Nat) : Iter<Vote<T, A>>{
+      switch(register_.getAll(question_id)){
+        case(null) { { next = func () : ?Vote<T, A> { null; }; }; };
+        case(?votes){
+          // @todo: test, because it assumes the votes have been added chronologically and the map keeps insertion order
+          Map.vals(votes);
+        };
       };
     };
 
-    public func getBallot(principal: Principal, question_id: QuestionId, iteration: Iteration) : ?Ballot<T> {
+    public func deleteVotes(question_id: Nat) {
+      Option.iterate(register_.getAll(question_id), func(votes: Map<Nat, Vote<T, A>>){
+        for (iteration in Map.keys(votes)){
+          switch(register_.remove(question_id, iteration)){
+            case(null)  { Prelude.unreachable(); };
+            case(?vote) { observers_.callObs(?vote, null); };
+          };
+        };
+      });
+    };
+
+    public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : ?Ballot<T> {
       Map.get(getVote(question_id, iteration).ballots, Map.phash, principal);
     };
 
-    public func putBallot(principal: Principal, question_id: QuestionId, iteration: Iteration, ballot: Ballot<T>) {
+    public func putBallot(principal: Principal, question_id: Nat, iteration: Nat, ballot: Ballot<T>) {
       let vote = getVote(question_id, iteration);
-      verifyStatus(vote, #OPEN);
       let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot); // @todo: verify this works
       let aggregate = updateAggregate(vote.aggregate, ?ballot, old_ballot);
       updateVote(question_id, iteration, { vote with aggregate; });
     };
 
-    public func removeBallot(principal: Principal, question_id: QuestionId, iteration: Iteration) {
+    public func removeBallot(principal: Principal, question_id: Nat, iteration: Nat) {
       let vote = getVote(question_id, iteration);
-      verifyStatus(vote, #OPEN);
       let old_ballot = Map.remove(vote.ballots, Map.phash, principal); // @todo: verify this works
       let aggregate = updateAggregate(vote.aggregate, null, old_ballot);
       updateVote(question_id, iteration, { vote with aggregate; });
@@ -116,7 +115,7 @@ module {
       aggregate;
     };
 
-    func updateVote(question_id: QuestionId, iteration: Iteration, new: Vote<T, A>) {
+    func updateVote(question_id: Nat, iteration: Nat, new: Vote<T, A>) {
       let old = register_.put(question_id, iteration, new);
       observers_.callObs(old, ?new);
     };
