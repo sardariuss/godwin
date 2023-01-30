@@ -15,6 +15,7 @@ import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -27,6 +28,7 @@ module {
   type WRef<V> = WRef.WRef<V>;
   type WMap<K, V> = WMap.WMap<K, V>;
   type Ref<V> = Ref.Ref<V>;
+  type Iter<T> = Iter.Iter<T>;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -119,6 +121,10 @@ module {
         };
       };
       question;
+    };
+
+    public func iter() : Iter<Question> {
+      register_.vals();
     };
 
     public func addObs(callback: (?Question, ?Question) -> ()) {

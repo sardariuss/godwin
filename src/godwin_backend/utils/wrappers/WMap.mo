@@ -10,6 +10,18 @@ module {
   type Map<K, V> = Map.Map<K, V>;
   type HashUtils<K> = Map.HashUtils<K>;
 
+  public func new<K, V>(hash: HashUtils<K>) : WMap<K, V> {
+    WMap(Map.new<K, V>(), hash);
+  };
+
+  public func new2D<K1, K2, V>(hash1: HashUtils<K1>, hash2: HashUtils<K2>) : WMap2D<K1, K2, V> {
+    WMap2D(Map.new<K1, Map<K2, V>>(), hash1, hash2);
+  };
+
+  public func new3D<K1, K2, K3, V>(hash1: HashUtils<K1>, hash2: HashUtils<K2>, hash3: HashUtils<K3>) : WMap3D<K1, K2, K3, V> {
+    WMap3D(Map.new<K1, Map<K2, Map<K3, V>>>(), hash1, hash2, hash3);
+  };
+
   public class WMap<K, V>(map_: Map<K, V>, hash_: HashUtils<K>) {
 
     public func get(key: K): ?V {

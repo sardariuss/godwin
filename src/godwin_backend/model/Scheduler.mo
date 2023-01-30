@@ -178,7 +178,7 @@ module {
           // Update the question's status
           let question_updated = questions_.updateStatus(question.id, status, time_now);
           // Open a new vote if applicable
-          iterateVotingStatus(question_updated, polls_.openVote);
+          StatusHelper.iterateVotingStatus(question_updated, polls_.openVote);
           // Return the updated question
           question_updated;
         };
@@ -236,13 +236,6 @@ module {
     switch(trigger){
       case(#PICK(_)) { #PICK; };
       case(#TIMEOUT(_)) { #TIMEOUT; };
-    };
-  };
-
-  func iterateVotingStatus(question: Question, f: (Question, Poll) -> ()) {
-    switch(question.status_info.current.status){
-      case(#VOTING(vote)) { f(question, vote); };
-      case(_){};
     };
   };
 

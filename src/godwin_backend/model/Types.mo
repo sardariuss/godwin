@@ -62,6 +62,7 @@ module {
     #VOTING: Poll;
     #CLOSED;
     #REJECTED;
+    #TRASH;
   };
 
   public type Poll = {

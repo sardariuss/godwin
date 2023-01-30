@@ -131,6 +131,7 @@ module {
           case(#VOTING(#CATEGORIZATION)) { "VOTING_CATEGORIZATION"; };
           case(#CLOSED) { "CLOSED"; };
           case(#REJECTED) { "REJECTED"; };
+          case(#TRASH) { "TRASH"; };
         };
       };
       case(#INTEREST_SCORE) { "INTEREST_SCORE"; };

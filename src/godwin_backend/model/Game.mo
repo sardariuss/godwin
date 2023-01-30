@@ -2,6 +2,7 @@ import Types "Types";
 import Users "Users";
 import QuestionQueries "QuestionQueries";
 import Scheduler "Scheduler";
+import Controller "Controller";
 import Questions "Questions";
 import Votes "votes/Votes";
 import Polls "votes/Polls";
@@ -55,6 +56,7 @@ module {
     users_: Users.Users,
     questions_: Questions.Questions,
     queries_: QuestionQueries.QuestionQueries,
+    controller_: Controller.Controller,
     scheduler_: Scheduler.Scheduler,
     polls_: Polls.Polls
   ) = {
@@ -87,23 +89,27 @@ module {
       });
     };
 
-    public func getPickRate(status: Status) : Duration {
-      Duration.fromTime(scheduler_.getPickRate(status));
+    public func getPickRate(/*status: Status*/) : Duration {
+      //Duration.fromTime(scheduler_.getPickRate(status));
+      controller_.getPickRate();
     };
 
-    public func setPickRate(caller: Principal, status: Status, rate: Duration) : Result<(), SetPickRateError> {
+    public func setPickRate(caller: Principal, /*status: Status,*/ rate: Duration) : Result<(), SetPickRateError> {
       Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
-        scheduler_.setPickRate(status, Duration.toTime(rate));
+        //scheduler_.setPickRate(status, Duration.toTime(rate));
+        controller_.setPickRate(rate);
       });
     };
 
     public func getDuration(status: Status) : Duration {
-      Duration.fromTime(scheduler_.getDuration(status));
+      //Duration.fromTime(scheduler_.getDuration(status));
+      controller_.getDuration(status);
     };
 
     public func setDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
       Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
-        scheduler_.setDuration(status, Duration.toTime(duration));
+        //scheduler_.setDuration(status, Duration.toTime(duration));
+        controller_.setDuration(status, duration);
       });
     };
 
@@ -127,8 +133,7 @@ module {
       Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
-            let question = questions_.updateStatus(question_id, #VOTING(#INTEREST), date);
-            polls_.openVote(question, #INTEREST);
+            controller_.reopenQuestion(question, date);
           })
         })
       });
@@ -177,7 +182,7 @@ module {
     };
 
     public func run(date: Time) {
-      scheduler_.run(date);
+      controller_.run(date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
     };
 
     public func findUser(principal: Principal) : ?User {

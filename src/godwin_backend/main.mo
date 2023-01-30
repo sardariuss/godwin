@@ -57,12 +57,12 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeCategory(caller, category);
   };
 
-  public query func getPickRate(status: Status) : async Duration {
-    game_.getPickRate(status);
+  public query func getPickRate() : async Duration {
+    game_.getPickRate();
   };
 
-  public shared({caller}) func setPickRate(status: Status, rate: Duration) : async Result<(), SetPickRateError> {
-    game_.setPickRate(caller, status, rate);
+  public shared({caller}) func setPickRate(rate: Duration) : async Result<(), SetPickRateError> {
+    game_.setPickRate(caller, rate);
   };
 
   public query func getDuration(status: Status) : async Duration {

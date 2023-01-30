@@ -1,5 +1,6 @@
 import Types "Types";
 import Users "Users";
+import Controller "Controller";
 import Scheduler "Scheduler";
 import Decay "Decay";
 import Questions "Questions";
@@ -59,6 +60,12 @@ module {
       categorization_votes
     );
 
+    let controller = Controller.build(
+      state_.controller.model,
+      questions,
+      polls
+    );
+
     let scheduler = Scheduler.build(
       state_.scheduler.register,
       questions,
@@ -66,7 +73,7 @@ module {
       polls
     );
 
-    Game.Game(admin, categories, users, questions, queries, scheduler, polls);
+    Game.Game(admin, categories, users, questions, queries, controller, scheduler, polls);
   };
 
 };

@@ -180,4 +180,8 @@ module {
     };
   };
 
+  public func nullIter<T>() : Iter<T> {
+    { next = func () : ?T { null; }; };
+  };
+
 };

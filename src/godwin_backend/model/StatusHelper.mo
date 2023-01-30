@@ -30,6 +30,7 @@ module {
       case(#VOTING(#CATEGORIZATION)) { "VOTING(CATEGORIZATION)"; };
       case(#CLOSED)                  { "CLOSED"; };
       case(#REJECTED)                { "REJECTED"; };
+      case(#TRASH)                   { "TRASH"; };
     };
   };
 
@@ -59,8 +60,23 @@ module {
     };
   };
 
+  public func iterateVotingStatus(question: Question, f: (Question, Poll) -> ()) {
+    switch(question.status_info.current.status){
+      case(#VOTING(vote)) { f(question, vote); };
+      case(_){};
+    };
+  };
+
   public func getCurrentStatus(question: Question) : Status {
     question.status_info.current.status;
+  };
+
+  public func getIteration(question: Question, status: Status) : Nat {
+    StatusInfo(question).getIteration(status);
+  };
+
+  public func getIterations(question: Question, status: Status) : Iter<Nat> {
+    StatusInfo(question).getIterations(status);
   };
 
   public class StatusInfo(question: Question) {

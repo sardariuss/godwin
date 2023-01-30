@@ -6,6 +6,7 @@ import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
 import Scheduler "Scheduler";
+import Controller "Controller";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -58,6 +59,9 @@ module {
     queries           : {
       register           : Map<QuestionOrderBy, OrderedSet<QuestionKey>>;
     };
+    controller        : {
+      model              : Ref<Controller.DataModel>;
+    };
     scheduler         : {
       register:            Scheduler.Register;
     };
@@ -83,6 +87,9 @@ module {
       };
       queries        = {
         register              = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
+      };
+      controller     = {
+        model                 = Ref.initRef(Controller.initDataModel(creation_date, parameters.scheduler));
       };
       scheduler      = {
         register              = Scheduler.initRegister(parameters.scheduler, creation_date);
