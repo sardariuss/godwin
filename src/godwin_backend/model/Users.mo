@@ -2,8 +2,8 @@ import Types "Types";
 import Polarization "votes/representation/Polarization";
 import Cursor "votes/representation/Cursor";
 import PolarizationMap "votes/representation/PolarizationMap";
-import Opinion "votes/Opinions";
-import Categorization "votes/Categorizations";
+import Opinions "votes/Opinions";
+import Categorizations "votes/Categorizations";
 import StatusHelper "StatusHelper";
 import Questions "Questions";
 import Categories "Categories";
@@ -35,17 +35,18 @@ module {
   type User = Types.User;
   type Question = Types.Question;
   type Category = Types.Category;
+  type Categories = Categories.Categories;
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type PolarizationMap = Types.PolarizationMap;
   type Decay = Types.Decay;
   type WMap<K, V> = WMap.WMap<K, V>;
   type Questions = Questions.Questions;
-  type Categorizations = Categorization.Categorizations;
-  type Opinions = Opinion.Opinions;
+  type Categorizations = Categorizations.Categorizations;
+  type Opinions = Opinions.Opinions;
   type Status = Types.Status;
-  type CategorizationVote = Types.CategorizationVote;
-  type OpinionVote = Types.OpinionVote;
+  type CategorizationVote = Categorizations.Vote;
+  type OpinionVote = Opinions.Vote;
 
   public func build(
     register: Map<Principal, User>,
@@ -100,7 +101,7 @@ module {
       register_.set(principal, {getUser(principal) with name = ?name; });
     };
 
-    public func getOrCreateUser(principal: Principal, categories: [Category]) : User {
+    public func getOrCreateUser(principal: Principal, categories: Categories) : User {
       if (Principal.isAnonymous(principal)){
         Debug.trap("User's principal cannot be anonymous.");
       };
@@ -190,32 +191,34 @@ module {
     // The PolarizationMap.mul uses a leftJoin, so that the resulting convictions contains
     // only the categories from the definitions.
     func updateBallotContribution(principal: Principal, user_opinion: Cursor, date: Int, new_categorization: PolarizationMap, old_categorization: ?PolarizationMap) {
-      
-      let user = getUser(principal);
 
-      // Get the categories from the convictions
-      let categories = TrieSet.toArray(PolarizationMap.keys(user.convictions));
-      
-      // Create a Polarization trie from the cursor, based on given categories.
-      let opinion_trie = Utils.make(categories, Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
+      // @todo
 
-      // Compute the decay coefficient
-      let decay_coef = Option.getMapped(decay_params_, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
-
-      // Add the opinion times new categorization.
-      var contribution = PolarizationMap.mul(
-        PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(new_categorization)),
-        decay_coef);
-
-      // Remove the opinion times old categorization if any.
-      Option.iterate(old_categorization, func(old_cat: PolarizationMap) {
-        let old_contribution = PolarizationMap.mul(
-          PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(old_cat)),
-          decay_coef);
-        contribution := PolarizationMap.sub(contribution, old_contribution);
-      });
-
-      putUser({ user with convictions = PolarizationMap.add(user.convictions, contribution); });
+//      let user = getUser(principal);
+//
+//      // Get the categories from the convictions
+//      let categories = TrieSet.toArray(PolarizationMap.keys(user.convictions));
+//      
+//      // Create a Polarization trie from the cursor, based on given categories.
+//      let opinion_trie = Utils.make(categories, Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
+//
+//      // Compute the decay coefficient
+//      let decay_coef = Option.getMapped(decay_params_, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
+//
+//      // Add the opinion times new categorization.
+//      var contribution = PolarizationMap.mul(
+//        PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(new_categorization)),
+//        decay_coef);
+//
+//      // Remove the opinion times old categorization if any.
+//      Option.iterate(old_categorization, func(old_cat: PolarizationMap) {
+//        let old_contribution = PolarizationMap.mul(
+//          PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(old_cat)),
+//          decay_coef);
+//        contribution := PolarizationMap.sub(contribution, old_contribution);
+//      });
+//
+//      putUser({ user with convictions = PolarizationMap.add(user.convictions, contribution); });
     };
 
   };

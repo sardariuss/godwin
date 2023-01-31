@@ -8,7 +8,7 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
 
-  public func init() : Cursor {
+  public func identity() : Cursor {
     0.0;
   };
 
@@ -25,7 +25,7 @@ module {
     Float.equal(cursor_1, cursor_2);
   };
 
-  // One cursor leads to only one *normalized* polarization by assuming
+  // A cursor can be transformed into a polarization by assuming
   // that the opposit side of the cursor is 0 and the rest is center
   public func toPolarization(cursor: Cursor) : Polarization {
     if (cursor >= 0.0) {

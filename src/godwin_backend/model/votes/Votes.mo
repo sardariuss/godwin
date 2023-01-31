@@ -27,10 +27,15 @@ module {
 
   public class Votes<T, A>(
     register_: WMap2D<Nat, Nat, Vote<T, A>>,
+    neutral_answer_: T,
+    is_valid_answer: (T) -> Bool,
     empty_aggregate_: A,
     add_to_aggregate_: (A, T) -> A,
     remove_from_aggregate_: (A, T) -> A
   ) {
+
+    // Make sure at construction that the neutral answer is valid
+    assert(is_valid_answer(neutral_answer_));
 
     let observers_ = Observers.Observers2<Vote<T, A>>();
 
@@ -80,11 +85,22 @@ module {
       });
     };
 
+    public func revealBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Ballot<T> {
+      Option.get(getBallot(principal, question_id, iteration), do {
+        let ballot = { date; answer = neutral_answer_; };
+        putBallot(principal, question_id, iteration, ballot); 
+        ballot;
+      });
+    };
+
     public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : ?Ballot<T> {
       Map.get(getVote(question_id, iteration).ballots, Map.phash, principal);
     };
 
     public func putBallot(principal: Principal, question_id: Nat, iteration: Nat, ballot: Ballot<T>) {
+      if (not isBallotValid(ballot)){
+        Debug.trap("The ballot is not valid");
+      };
       let vote = getVote(question_id, iteration);
       let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot); // @todo: verify this works
       let aggregate = updateAggregate(vote.aggregate, ?ballot, old_ballot);
@@ -96,6 +112,10 @@ module {
       let old_ballot = Map.remove(vote.ballots, Map.phash, principal); // @todo: verify this works
       let aggregate = updateAggregate(vote.aggregate, null, old_ballot);
       updateVote(question_id, iteration, { vote with aggregate; });
+    };
+
+    public func isBallotValid(ballot: Ballot<T>) : Bool {
+      is_valid_answer(ballot.answer);
     };
 
     public func addObs(callback: (?Vote<T, A>, ?Vote<T, A>) -> ()) {

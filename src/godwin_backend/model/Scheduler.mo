@@ -178,7 +178,9 @@ module {
           // Update the question's status
           let question_updated = questions_.updateStatus(question.id, status, time_now);
           // Open a new vote if applicable
-          StatusHelper.iterateVotingStatus(question_updated, polls_.openVote);
+          StatusHelper.iterateVotingStatus(question_updated, func(poll: Poll) {
+            polls_.openVote(question_updated, poll);
+          });
           // Return the updated question
           question_updated;
         };

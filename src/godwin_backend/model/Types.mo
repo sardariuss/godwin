@@ -80,7 +80,7 @@ module {
   public type Vote<T, A> = {
     question_id: Nat;
     iteration: Nat;
-    date: Time;
+    date: Time; // @todo: redondant with IndexedStatus.date
     ballots: Map<Principal, Ballot<T>>;
     aggregate: A;
   };
@@ -94,11 +94,13 @@ module {
   
   public type Interest = {
     #UP;
+    #EVEN;
     #DOWN;
   };
 
   public type Appeal = {
     ups: Nat;
+    evens: Nat;
     downs: Nat;
     score: Int;
   };
@@ -145,23 +147,19 @@ module {
   public type TypedBallot = {
     #INTEREST: Ballot<Interest>;
     #OPINION: Ballot<Cursor>;
-    #CATEGORIZATION: Ballot<CursorMap>;
+    #CATEGORIZATION: Ballot<CursorArray>;
   };
 
   public type TypedAnswer = {
     #INTEREST: Interest;
     #OPINION: Cursor;
-    #CATEGORIZATION: CursorMap;
+    #CATEGORIZATION: CursorArray;
   };
 
-  public type InterestVote =  Vote<Interest, Appeal>;
-  public type OpinionVote =  Vote<Cursor, Polarization>;
-  public type CategorizationVote =  Vote<CursorMap, PolarizationMap>;
-
-  public type TypedVote = {
-    #INTEREST: InterestVote;
-    #OPINION: OpinionVote;
-    #CATEGORIZATION: CategorizationVote;
+  public type TypedAggregate = {
+    #INTEREST: Appeal;
+    #OPINION: Polarization;
+    #CATEGORIZATION: PolarizationArray;
   };
 
   public type User = {
@@ -227,13 +225,7 @@ module {
   public type PutBallotError = {
     #PrincipalIsAnonymous;
     #QuestionNotFound;
-    #InvalidStatus;
-  };
-
-  public type RemoveBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #NotAuthorized;
+    #InvalidAnswer;
     #InvalidStatus;
   };
 
@@ -249,6 +241,10 @@ module {
 
   public type SetDurationError = {
     #InsufficientCredentials;
+  };
+
+  public type GetUserConvictionsError = {
+    #PrincipalIsAnonymous;
   };
 
 };

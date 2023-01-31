@@ -17,13 +17,10 @@ dfx deploy godwin_backend --argument '(record {
     convictions_half_life = null;
   };
   scheduler = record {
-    selection_rate = variant { SECONDS = 0 };
-    status_durations = vec {
-      record { variant { INTEREST }; variant { SECONDS = 0 }; };
-      record { variant { OPEN = variant { OPINION } }; variant { SECONDS = 0 }; };
-      record { variant { OPEN = variant { CATEGORIZATION } }; variant { SECONDS = 0 }; };
-      record { variant { CLOSED }; variant { SECONDS = 0 }; };
-      record { variant { REJECTED }; variant { DAYS = 1 }; };
-    };
+    interest_pick_rate = variant { SECONDS = 0 };
+    interest_duration = variant { DAYS = 1 };
+    opinion_duration = variant { SECONDS = 0 };
+    categorization_duration = variant { SECONDS = 0 };
+    rejected_duration = variant { DAYS = 1 };
   };
 })'

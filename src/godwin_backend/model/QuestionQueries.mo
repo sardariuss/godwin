@@ -19,7 +19,7 @@ module {
 
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
-  type InterestVote = Types.InterestVote;
+  type InterestVote = Interests.Vote;
   type Queries2<O, K> = Queries.Queries2<O, K>;
   type Order = Order.Order;
   type Time = Int;

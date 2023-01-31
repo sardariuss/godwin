@@ -7,23 +7,22 @@ import Text "mo:base/Text";
 import Trie "mo:base/Trie";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
-import TrieSet "mo:base/TrieSet";
+import Iter "mo:base/Iter";
 
 module {
 
-  // For convenience: from base module
-  type Set<K> = TrieSet.Set<K>;
   // For convenience: from types module
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type Category = Types.Category;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
+  type Categories = Categories.Categories;
 
   // For convenience: from other modules
 
-  public func nil(categories: [Category]) : PolarizationMap {
-    Utils.make(categories, Categories.key, Categories.equal, Polarization.nil());
+  public func nil(categories: Categories) : PolarizationMap {
+    Utils.make(Iter.toArray(categories.keys()), Categories.key, Categories.equal, Polarization.nil());
   };
 
   public func addCursorMap(polarization_trie: PolarizationMap, cursor_trie: CursorMap) : PolarizationMap {
@@ -66,9 +65,9 @@ module {
     Trie.mapFilter(polarization_trie, func(_: Text, polarization: Polarization) : ?Cursor { ?Polarization.toCursor(polarization); });
   };
 
-  public func keys(polarization_trie: PolarizationMap) : Set<Category> {
-    Utils.keys(polarization_trie, Categories.key, Categories.equal);
-  };
+//  public func keys(polarization_trie: PolarizationMap) : Set<Category> {
+//    Utils.keys(polarization_trie, Categories.key, Categories.equal);
+//  };
 
   public func equal(a: PolarizationMap, b: PolarizationMap) : Bool {
     Trie.equalStructure(a, b, Categories.equal, Polarization.equal);

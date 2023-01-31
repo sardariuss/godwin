@@ -42,7 +42,7 @@ module {
     
     let opinion_votes = Opinions.build(state_.votes.opinion);
     
-    let categorization_votes = Categorizations.build(state_.votes.categorization, Iter.toArray(categories.keys()));
+    let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
 
     let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
@@ -57,7 +57,8 @@ module {
     let polls = Polls.Polls(
       interest_votes,
       opinion_votes,
-      categorization_votes
+      categorization_votes,
+      categories
     );
 
     let controller = Controller.build(

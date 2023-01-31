@@ -1,8 +1,12 @@
 import Types "../Types";
 import Interests "Interests";
-import Opinion "Opinions";
-import Categorization "Categorizations";
+import Opinions "Opinions";
+import Categorizations "Categorizations";
 import StatusHelper "../StatusHelper";
+import Cursor "representation/Cursor";
+import Categories "../Categories";
+import CursorMap "representation/CursorMap";
+import Utils "../../utils/Utils";
 
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
@@ -11,31 +15,32 @@ import Iter "mo:base/Iter";
 module {
 
   type Interests = Interests.Interests;
-  type Opinions = Opinion.Opinions;
-  type Categorizations = Categorization.Categorizations;
+  type Opinions = Opinions.Opinions;
+  type Categorizations = Categorizations.Categorizations;
   type Time = Int;
 
   type Question = Types.Question;
   type IndexedStatus = Types.IndexedStatus;
   type Poll = Types.Poll;
   type TypedBallot = Types.TypedBallot;
-  type TypedVote = Types.TypedVote;
   type TypedAnswer = Types.TypedAnswer;
   type InterestBallot = Types.InterestBallot;
   type OpinionBallot = Types.OpinionBallot;
   type CategorizationBallot = Types.CategorizationBallot;
-  type InterestVote = Types.InterestVote;
-  type OpinionVote = Types.OpinionVote;
-  type CategorizationVote = Types.CategorizationVote;
+  type TypedAggregate = Types.TypedAggregate;
+  type Categories = Categories.Categories;
+  type Category = Types.Category;
+  type Polarization = Types.Polarization;
+  type CategorizationsBallot = Categorizations.Ballot;
 
-  public class Polls(interests_: Interests, opinions_: Opinions, categorizations_: Categorizations){
+  public class Polls(interests_: Interests, opinions_: Opinions, categorizations_: Categorizations, categories_: Categories){
 
     public func openVote(question: Question, poll: Poll){
-      let { index; date; } = unwrapPollStatus(question, poll);
+      let status = unwrapPollStatus(question, poll);
       switch(poll){
-        case(#INTEREST)       { interests_.newVote(      question.id, index, date); };
-        case(#OPINION)        { opinions_.newVote(       question.id, index, date); };
-        case(#CATEGORIZATION) { categorizations_.newVote(question.id, index, date); };
+        case(#INTEREST)       { interests_.newVote(question.id, status.index, status.date); };
+        case(#OPINION)        { opinions_.newVote(question.id, status.index, status.date); };
+        case(#CATEGORIZATION) { categorizations_.newVote(question.id, status.index, status.date); };
       };
     };
 
@@ -44,29 +49,39 @@ module {
       opinions_.deleteVotes(question.id);
       categorizations_.deleteVotes(question.id);
     };
-   
-    public func findVote(question_id: Nat, iteration: Nat, poll: Poll) : ?TypedVote {
+
+    public func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : TypedAggregate {
       switch(poll){
-        case(#INTEREST)       { Option.chain(interests_.findVote      (question_id, iteration), func(v: InterestVote)       : ?TypedVote { ?#INTEREST(v);     }); };
-        case(#OPINION)        { Option.chain(opinions_.findVote       (question_id, iteration), func(v: OpinionVote)        : ?TypedVote { ?#OPINION(v);       }); };
-        case(#CATEGORIZATION) { Option.chain(categorizations_.findVote(question_id, iteration), func(v: CategorizationVote) : ?TypedVote { ?#CATEGORIZATION(v);}); };
+        case(#INTEREST)       { #INTEREST(interests_.getVote(question_id, iteration).aggregate); };
+        case(#OPINION)        { #OPINION(opinions_.getVote(question_id, iteration).aggregate); };
+        case(#CATEGORIZATION) { #CATEGORIZATION(Utils.trieToArray(categorizations_.getVote(question_id, iteration).aggregate)); };
       };
     };
       
     public func getBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : ?TypedBallot {
       switch(poll){
-        case(#INTEREST)       { Option.chain(interests_.getBallot      (principal, question_id, iteration), func(b: InterestBallot)       : ?TypedBallot { ?#INTEREST(b);     }); };
-        case(#OPINION)        { Option.chain(opinions_.getBallot       (principal, question_id, iteration), func(b: OpinionBallot)        : ?TypedBallot { ?#OPINION(b);       }); };
-        case(#CATEGORIZATION) { Option.chain(categorizations_.getBallot(principal, question_id, iteration), func(b: CategorizationBallot) : ?TypedBallot { ?#CATEGORIZATION(b);}); };
+        case(#INTEREST)       { Option.chain(interests_.getBallot      (principal, question_id, iteration), func(b: InterestBallot)       : ?TypedBallot { ?Interests.toTypedBallot(b);}); };
+        case(#OPINION)        { Option.chain(opinions_.getBallot       (principal, question_id, iteration), func(b: OpinionBallot)        : ?TypedBallot { ?Opinions.toTypedBallot(b);}); };
+        case(#CATEGORIZATION) { Option.chain(categorizations_.getBallot(principal, question_id, iteration), func(b: CategorizationBallot) : ?TypedBallot { ?Categorizations.toTypedBallot(b); }); };
       };
     };
 
+    public func revealBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll, date: Time) : TypedBallot {
+      switch(poll){
+        case(#INTEREST)       { Interests.toTypedBallot(interests_.revealBallot(principal, question_id, iteration, date)); };
+        case(#OPINION)        { Opinions.toTypedBallot(opinions_.revealBallot(principal, question_id, iteration, date)); };
+        case(#CATEGORIZATION) { Categorizations.toTypedBallot(categorizations_.revealBallot(principal, question_id, iteration, date)); };
+      };
+    };
+
+    // @todo: watchout: could use the questions module to get the question, otherwise it's caller responsibility to make sure the question exists
     public func putBallot(principal: Principal, question: Question, ans: TypedAnswer, date: Time) {
+      let ballot = createBallot(ans, date);
       let status = unwrapPollStatus(question, getPoll(ans));
-      switch(ans){
-        case(#INTEREST(answer))       { interests_.putBallot      (principal, question.id, status.index, { answer; date; }); };
-        case(#OPINION(answer))        { opinions_.putBallot       (principal, question.id, status.index, { answer; date; }); };
-        case(#CATEGORIZATION(answer)) { categorizations_.putBallot(principal, question.id, status.index, { answer; date; }); };
+      switch(ballot){
+        case(#INTEREST(_))       { interests_.putBallot      (principal, question.id, status.index, Interests.fromTypedBallot(ballot)); };
+        case(#OPINION(_))        { opinions_.putBallot       (principal, question.id, status.index, Opinions.fromTypedBallot(ballot)); };
+        case(#CATEGORIZATION(_)) { categorizations_.putBallot(principal, question.id, status.index, Categorizations.fromTypedBallot(ballot)); };
       };
     };
     
@@ -102,6 +117,14 @@ module {
       Debug.trap("This poll is currently closed");
     };
     question.status_info.current;
+  };
+
+  public func createBallot(typed_answer: TypedAnswer, date: Time) : TypedBallot {
+    switch(typed_answer){
+      case(#INTEREST(answer))       { #INTEREST({ answer; date; }); };
+      case(#OPINION(answer))        { #OPINION({ answer; date; }); };
+      case(#CATEGORIZATION(answer)) { #CATEGORIZATION({ answer; date; }); };
+    };
   };
 
 };

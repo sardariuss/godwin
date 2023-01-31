@@ -87,10 +87,10 @@ module {
   };
 
   // Many different polarizations can result in the same cursor.
-  // Assumes a nil polarization gives a cursor of value 0.
+  // Assumes a nil polarization yeilds to a neutral cursor.
   public func toCursor(polarization: Polarization) : Cursor {
     if (isNil(polarization)) {
-      return Cursor.init();
+      return Cursor.identity();
     };
     (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
   };

@@ -35,6 +35,7 @@ module {
   type Poll = Types.Poll;
   type TypedBallot = Types.TypedBallot;
   type TypedAnswer = Types.TypedAnswer;
+  type PolarizationArray = Types.PolarizationArray;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -45,10 +46,11 @@ module {
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
   type PutBallotError = Types.PutBallotError;
-  type RemoveBallotError = Types.RemoveBallotError;
   type GetBallotError = Types.GetBallotError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
+  type TypedAggregate = Types.TypedAggregate;
+  type GetUserConvictionsError = Types.GetUserConvictionsError;
 
   public class Game(
     admin_: Principal,
@@ -149,34 +151,34 @@ module {
       });
     };
 
-    public func removeBallot(caller: Principal, question_id: Nat, poll: Poll) : Result<(), RemoveBallotError> {
-      Result.chain<User, (), RemoveBallotError>(getUser(caller), func(_) {
-        Result.chain<Question, (), RemoveBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.chain<(), (), RemoveBallotError>(Utils.toResult(poll == #INTEREST, #NotAuthorized), func() {
-            Result.mapOk<(), (), RemoveBallotError>(Utils.toResult(Polls.isCurrentPoll(question, poll), #InvalidStatus), func(_) {
-              polls_.removeBallot(caller, question, poll);
-            })
+    // Reveal the ballot for the current vote, put a default neutral ballot if no ballot has been given yet
+    // @todo: if the questions is revealed itself, this method has no benefit. The getQuestion and getQuestions 
+    // methods shall reveal the ballot of the questions. But this might bring performance issues (update method isntead of query).
+    public func revealBallot(caller: Principal, question_id: Nat, date: Time) : Result<TypedBallot, GetBallotError> {
+      Result.chain<User, TypedBallot, GetBallotError>(getUser(caller), func(_) {
+        Result.chain<Question, TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<Poll, TypedBallot, GetBallotError>(Result.fromOption(StatusHelper.getCurrentPoll(question), #QuestionNotFound), func(poll) {
+            polls_.revealBallot(caller, question.id, StatusHelper.getIteration(question, #VOTING(poll)), poll, date);
           })
         })
       });
     };
 
-    public func getBallot(caller: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
-      Result.chain<User, ?TypedBallot, GetBallotError>(getUser(caller), func(_) {
-        Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isValidIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
-            polls_.getBallot(caller, question.id, iteration, vote);
-          })
-        })
-      });
-    };
-
-    public func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, vote: Poll) : Result<?TypedBallot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : Result<?TypedBallot, GetBallotError> {
       Result.chain<User, ?TypedBallot, GetBallotError>(getUser(principal), func(_) {
         Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(vote), iteration), #InvalidIteration), func() {
-            polls_.getBallot(principal, question.id, iteration, vote);
+          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(poll), iteration), #InvalidIteration), func() {
+            polls_.getBallot(principal, question.id, iteration, poll);
           })
+        })
+      });
+    };
+
+    // Get the aggregate of any vote, for any vote except the current one
+    public func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : Result<TypedAggregate, GetBallotError> {
+      Result.chain<Question, TypedAggregate, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+        Result.mapOk<(), TypedAggregate, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(poll), iteration), #InvalidIteration), func() {
+          polls_.getAggregate(question.id, iteration, poll);
         })
       });
     };
@@ -185,13 +187,15 @@ module {
       controller_.run(date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
     };
 
-    public func findUser(principal: Principal) : ?User {
-      users_.findUser(principal);
-    };
-
     public func setUserName(principal: Principal, name: Text) : Result<(), SetUserNameError> {
       Result.mapOk<User, (), SetUserNameError>(getUser(principal), func(_) {
         users_.setUserName(principal, name);
+      });
+    };
+
+    public func getUserConvictions(principal: Principal) : Result<PolarizationArray, GetUserConvictionsError> {
+      Result.mapOk<User, Types.PolarizationArray, GetUserConvictionsError>(getUser(principal), func(user) {
+        Utils.trieToArray(user.convictions);
       });
     };
 
@@ -201,13 +205,8 @@ module {
 
     func getUser(principal: Principal) : Result<User, GetUserError> {
       Result.mapOk<(), User, GetUserError>(Utils.toResult(not Principal.isAnonymous(principal), #PrincipalIsAnonymous), func(){
-        users_.getOrCreateUser(principal, Iter.toArray(categories_.keys()));
+        users_.getOrCreateUser(principal, categories_);
       });
-    };
-
-    // @todo: remove
-    public func polarizationTrieToArray(trie: Types.PolarizationMap) : Types.PolarizationArray {
-      Utils.trieToArray(trie);
     };
 
     // @todo

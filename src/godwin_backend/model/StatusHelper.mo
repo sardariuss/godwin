@@ -60,9 +60,9 @@ module {
     };
   };
 
-  public func iterateVotingStatus(question: Question, f: (Question, Poll) -> ()) {
+  public func iterateVotingStatus(question: Question, f: Poll -> ()) {
     switch(question.status_info.current.status){
-      case(#VOTING(vote)) { f(question, vote); };
+      case(#VOTING(poll)) { f(poll); };
       case(_){};
     };
   };

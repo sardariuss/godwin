@@ -9,29 +9,34 @@ module {
   type Appeal = Types.Appeal;
 
   public func init() : Appeal {
-    { ups = 0; downs = 0; score = 0; };
+    { ups = 0; evens = 0;  downs = 0; score = 0; };
   };
 
   public func add(appeal: Appeal, interest: Interest) : Appeal {
     var ups = appeal.ups;
+    var evens = appeal.evens;
     var downs = appeal.downs;
     switch(interest){
       case(#UP){ ups := appeal.ups + 1; };
+      case(#EVEN){ evens := appeal.evens + 1; };
       case(#DOWN){ downs := appeal.downs + 1; };
     };
-    { ups; downs; score = computeScore(ups, downs) };
+    { ups; downs; evens; score = computeScore(ups, downs); };
   };
 
   public func remove(appeal: Appeal, interest: Interest) : Appeal {
     var ups = appeal.ups;
+    var evens = appeal.evens;
     var downs = appeal.downs;
     switch(interest){
       case(#UP){ ups := appeal.ups - 1; };
+      case(#EVEN){ evens := appeal.evens - 1; };
       case(#DOWN){ downs := appeal.downs - 1; };
     };
-    { ups; downs; score = computeScore(ups, downs) };
+    { ups; downs; evens; score = computeScore(ups, downs); };
   };
 
+  // @todo: weight score with evens ?
   func computeScore(ups: Nat, downs: Nat) : Int {
     if (ups + downs == 0) { return 0; };
     let f_ups = Float.fromInt(ups);

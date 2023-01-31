@@ -20,6 +20,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Decay = Types.Decay;
   type Duration = Types.Duration;
   type Status = Types.Status;
+  type PolarizationArray = Types.PolarizationArray;
+  type Poll = Types.Poll;
+  type TypedAnswer = Types.TypedAnswer;
+  type TypedAggregate = Types.TypedAggregate;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
   type GetQuestionError = Types.GetQuestionError;
@@ -30,12 +34,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetUserError = Types.GetUserError;
   type TypedBallot = Types.TypedBallot;
   type PutBallotError = Types.PutBallotError;
-  type RemoveBallotError = Types.RemoveBallotError;
   type GetBallotError = Types.GetBallotError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
-  type Poll = Types.Poll;
-  type TypedAnswer = Types.TypedAnswer;
+  type GetUserConvictionsError = Types.GetUserConvictionsError;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -93,32 +95,28 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.putBallot(caller, question_id, answer, Time.now());
   };
 
-  public shared({caller}) func removeBallot(question_id: Nat, poll: Poll) : async Result<(), RemoveBallotError> {
-    game_.removeBallot(caller, question_id, poll);
+  public shared({caller}) func revealBallot(question_id: Nat) : async Result<TypedBallot, GetBallotError> {
+    game_.revealBallot(caller, question_id, Time.now());
   };
 
-  public shared({caller}) func getBallot(question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
-    game_.getBallot(caller, question_id, iteration, poll);
+  public query func getBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
+    game_.getBallot(principal, question_id, iteration, poll);
   };
 
-  public shared func getUserBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
-    game_.getUserBallot(principal, question_id, iteration, poll);
+  public query func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : async Result<TypedAggregate, GetBallotError> {
+    game_.getAggregate(question_id, iteration, poll);
   };
 
   public shared func run() {
     game_.run(Time.now());
   };
 
-  public query func findUser(principal: Principal) : async ?User {
-    game_.findUser(principal);
-  };
-
   public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
     game_.setUserName(caller, name);
   };
 
-  public query func polarizationTrieToArray(trie: Types.PolarizationMap) : async Types.PolarizationArray {
-    game_.polarizationTrieToArray(trie);
+  public shared({caller}) func getUserConvictions() : async Result<Types.PolarizationArray, GetUserConvictionsError> {
+    game_.getUserConvictions(caller);
   };
 
   // @todo

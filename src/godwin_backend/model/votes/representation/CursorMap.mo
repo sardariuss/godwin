@@ -1,49 +1,45 @@
 import Cursor "Cursor";
 import Types "../../Types";
 import Utils "../../../utils/Utils";
+import Categories "../../Categories";
 
 import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
 import Option "mo:base/Option";
 
 module {
 
   // For convenience: from base module
-  type Set<K> = TrieSet.Set<K>;
   type Trie<K, V> = Trie.Trie<K, V>;
 
   // For convenience: from types module
   type Cursor = Types.Cursor;
   type Category = Types.Category; 
   type CursorMap = Types.CursorMap;
+  type Categories = Categories.Categories;
 
-  public func init(categories: Set<Category>) : CursorMap {
+  public func identity(categories: Categories) : CursorMap {
     var trie = Trie.empty<Category, Cursor>();
-    for (category in Utils.setIter(categories)){
-      trie := Trie.put(trie, Categories.key(category), Categories.equal, Cursor.init()).0;
+    for (category in categories.keys()){
+      trie := Trie.put(trie, Categories.key(category), Categories.equal, Cursor.identity()).0;
     };
     trie;
   };
 
-  public func isValid(cursor_trie: CursorMap, categories: Set<Category>) : Bool {
-    if (Trie.size(cursor_trie) != TrieSet.size(categories)){
+  public func isValid(cursor_trie: CursorMap, categories: Categories) : Bool {
+    if (Trie.size(cursor_trie) != categories.size()){
       return false;
     };
     for ((category, cursor) in Trie.iter(cursor_trie)){
       if (not Cursor.isValid(cursor)){
         return false;
       };
-      if (Option.isNull(Trie.get(categories, Categories.key(category), Categories.equal))){
+      if (not categories.has(category)){
         return false;
       };
     };
     true;
-  };
-
-  public func keys(cursor_trie: CursorMap) : Set<Category> {
-    Utils.keys(cursor_trie, Categories.key, Categories.equal);
   };
 
   public func equal(a: CursorMap, b: CursorMap) : Bool {
