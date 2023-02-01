@@ -235,6 +235,12 @@ module {
     #InvalidIteration;
   };
 
+  public type RevealBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #VotingClosed;
+  };
+
   public type SetPickRateError = {
     #InsufficientCredentials;
   };

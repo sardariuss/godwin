@@ -99,7 +99,7 @@ module {
       // Add current to history
       history_.add(current_);
       let index = switch(Map.get(iterations_, status_hash, status)){
-        case(null) { Debug.trap("The status index is missing"); };
+        case(null) { 0; };
         case(?idx) { idx + 1; };
       };
       // Set current

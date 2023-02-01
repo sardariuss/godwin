@@ -1,12 +1,21 @@
 import Types "../../Types";
 
 import Float "mo:base/Float";
+import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 
 module {
 
   // For convenience: from types module
   type Interest = Types.Interest;
   type Appeal = Types.Appeal;
+
+  public func toText(appeal: Appeal) : Text {
+    "ups: " # Nat.toText(appeal.ups) 
+      #", evens: " # Nat.toText(appeal.evens) 
+      # ", downs: " # Nat.toText(appeal.downs) 
+      # ", score: " # Int.toText(appeal.score);
+  };
 
   public func init() : Appeal {
     { ups = 0; evens = 0;  downs = 0; score = 0; };

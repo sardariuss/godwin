@@ -86,11 +86,14 @@ module {
     };
 
     public func revealBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Ballot<T> {
-      Option.get(getBallot(principal, question_id, iteration), do {
-        let ballot = { date; answer = neutral_answer_; };
-        putBallot(principal, question_id, iteration, ballot); 
-        ballot;
-      });
+      switch(getBallot(principal, question_id, iteration)){
+        case(?ballot) { ballot; };
+        case(null) {
+          let ballot = { date; answer = neutral_answer_; };
+          putBallot(principal, question_id, iteration, ballot);
+          ballot;
+        };
+      };
     };
 
     public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : ?Ballot<T> {
@@ -102,14 +105,14 @@ module {
         Debug.trap("The ballot is not valid");
       };
       let vote = getVote(question_id, iteration);
-      let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot); // @todo: verify this works
+      let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
       let aggregate = updateAggregate(vote.aggregate, ?ballot, old_ballot);
       updateVote(question_id, iteration, { vote with aggregate; });
     };
 
     public func removeBallot(principal: Principal, question_id: Nat, iteration: Nat) {
       let vote = getVote(question_id, iteration);
-      let old_ballot = Map.remove(vote.ballots, Map.phash, principal); // @todo: verify this works
+      let old_ballot = Map.remove(vote.ballots, Map.phash, principal);
       let aggregate = updateAggregate(vote.aggregate, null, old_ballot);
       updateVote(question_id, iteration, { vote with aggregate; });
     };
@@ -132,7 +135,7 @@ module {
       Option.iterate(old_ballot, func(ballot: Ballot<T>) {
         new_aggregate := remove_from_aggregate_(new_aggregate, ballot.answer);
       });
-      aggregate;
+      new_aggregate;
     };
 
     func updateVote(question_id: Nat, iteration: Nat, new: Vote<T, A>) {

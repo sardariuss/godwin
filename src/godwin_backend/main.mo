@@ -38,6 +38,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
+  type RevealBallotError = Types.RevealBallotError;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -95,7 +96,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.putBallot(caller, question_id, answer, Time.now());
   };
 
-  public shared({caller}) func revealBallot(question_id: Nat) : async Result<TypedBallot, GetBallotError> {
+  public shared({caller}) func revealBallot(question_id: Nat) : async Result<TypedBallot, RevealBallotError> {
     game_.revealBallot(caller, question_id, Time.now());
   };
 

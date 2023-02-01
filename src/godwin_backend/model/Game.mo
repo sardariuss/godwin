@@ -51,6 +51,7 @@ module {
   type SetDurationError = Types.SetDurationError;
   type TypedAggregate = Types.TypedAggregate;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
+  type RevealBallotError = Types.RevealBallotError;
 
   public class Game(
     admin_: Principal,
@@ -154,10 +155,10 @@ module {
     // Reveal the ballot for the current vote, put a default neutral ballot if no ballot has been given yet
     // @todo: if the questions is revealed itself, this method has no benefit. The getQuestion and getQuestions 
     // methods shall reveal the ballot of the questions. But this might bring performance issues (update method isntead of query).
-    public func revealBallot(caller: Principal, question_id: Nat, date: Time) : Result<TypedBallot, GetBallotError> {
-      Result.chain<User, TypedBallot, GetBallotError>(getUser(caller), func(_) {
-        Result.chain<Question, TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<Poll, TypedBallot, GetBallotError>(Result.fromOption(StatusHelper.getCurrentPoll(question), #QuestionNotFound), func(poll) {
+    public func revealBallot(caller: Principal, question_id: Nat, date: Time) : Result<TypedBallot, RevealBallotError> {
+      Result.chain<User, TypedBallot, RevealBallotError>(getUser(caller), func(_) {
+        Result.chain<Question, TypedBallot, RevealBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
+          Result.mapOk<Poll, TypedBallot, RevealBallotError>(Result.fromOption(StatusHelper.getCurrentPoll(question), #VotingClosed), func(poll) {
             polls_.revealBallot(caller, question.id, StatusHelper.getIteration(question, #VOTING(poll)), poll, date);
           })
         })

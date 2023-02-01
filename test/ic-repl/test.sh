@@ -8,7 +8,7 @@ identity default;
 let arguments = record {
   scheduler = record {
     interest_pick_rate = variant { SECONDS = 0 };
-    interest_duration = variant { DAYS = 1 };
+    interest_duration = variant { DAYS = 1 }; // To prevent the questions to be rejected
     opinion_duration = variant { SECONDS = 0 };
     categorization_duration = variant { SECONDS = 0 };
     rejected_duration = variant { SECONDS = 0 };
@@ -53,98 +53,93 @@ assert _ ~= variant { ok = record {
   };
 }};
 
+"Reveal up vote ballot";
+call backend.revealBallot(0);
+assert _ ~= variant { ok = variant { INTEREST = record { answer = variant { EVEN } } } };
 "Up vote the question";
 call backend.putBallot(0, variant { INTEREST = variant { UP } } );
 assert _ == variant { ok };
 "Set opinion: should fail";
 call backend.putBallot(0, variant { OPINION = 0.5 } );
 assert _ == variant { err = variant { InvalidStatus } };
-//"Set categorization: should fail";
-//call backend.setCategorization(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
-//assert _ == variant { err = variant { InvalidStatus } };
-//
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  status = variant { INTEREST = record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  interests_history = vec {};
-//  vote_history = vec {};
-//}};
-//
-//"Open up opinion vote";
-//call backend.run();
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  status = variant { OPEN = record { stage = variant { OPINION }; } };
-//  interests_history = vec { record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  vote_history = vec {};
-//}};
-//
-//"Up vote the question: should fail";
-//call backend.setInterest(0, variant { UP } );
-//assert _ == variant { err = variant { InvalidStatus } };
-//"Set opinion: should succeed";
-//call backend.setOpinion(0, 1.0);
-//assert _ == variant { ok };
-//"Set categorization: should fail";
-//call backend.setCategorization(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
-//assert _ == variant { err = variant { InvalidStatus } };
-//
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  status = variant { OPEN = record { stage = variant { OPINION }; iteration = record {
-//    opinion = record { aggregate = record { left = 0.0; center = 0.0; right = 1.0; } } 
-//  } } };
-//  interests_history = vec { record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  vote_history = vec {};
-//}};
-//
-//"Open up categorization vote";
-//call backend.run();
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  status = variant { OPEN = record { stage = variant { CATEGORIZATION }; } };
-//  interests_history = vec { record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  vote_history = vec {};
-//}};
-//
-//"Up vote the question: should fail";
-//call backend.setInterest(0, variant { UP } );
-//assert _ == variant { err = variant { InvalidStatus } };
-//"Set opinion: should fail";
-//call backend.setOpinion(0, 1.0);
-//assert _ == variant { err = variant { InvalidStatus } };
-//"Set categorization: should succeed";
-//call backend.setCategorization(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
-//assert _ == variant { ok };
-//
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  status = variant { OPEN = record { stage = variant { CATEGORIZATION }; } };
-//  interests_history = vec { record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  vote_history = vec {};
-//}};
-//
-//"Close the question";
-//call backend.run();
-//call backend.getQuestion(0);
-//assert _ ~= variant { ok = record { 
-//  id = (0 : nat);
-//  //status = variant { CLOSED };
-//  interests_history = vec { record { aggregate = record { ups = 1 : nat; downs = 0 : nat; score = 1 : int; }; } };
-//  vote_history = vec { record { opinion = record { aggregate = record { left = 0.0; center = 0.0; right = 1.0; } } } };
-//}};
+"Set categorization: should fail";
+call backend.putBallot(0, variant { CATEGORIZATION = vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; } });
+assert _ == variant { err = variant { InvalidStatus } };
 
-//"Get default user, convictions to update";
-//call backend.findUser(default);
-//assert _ == variant { ok = record { 
-//  "principal" = default;
-//  name = null : opt record{};
-//  convictions = record { to_update = true; array = vec { 
-//    record { "IDENTITY"; record { left = 0.0; center = 0.0; right = 0.0; }; };
-//    record { "COOPERATION"; record { left = 0.0; center = 0.0; right = 0.0; }; }; }; };
-//} };
+"Open up opinion vote";
+call backend.run();
+
+call backend.getQuestion(0);
+assert _ ~= variant { ok = record { 
+  id = (0 : nat);
+  title = ("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society." : text);
+  status_info = record {
+    current = record {
+      status = variant { VOTING = variant { OPINION } };
+    };
+  };
+}};
+
+"Now the interest ballot is visible";
+call backend.getBallot(default, 0, 0, variant { INTEREST });
+assert _ ~= variant { ok = opt variant { INTEREST = record { answer = variant { UP } } } };
+"Reveal opinion ballot";
+call backend.revealBallot(0);
+assert _ ~= variant { ok = variant { OPINION = record { answer = 0.0; } } };
+"Set opinion: should succeed";
+call backend.putBallot(0, variant { OPINION = 0.5 } );
+assert _ == variant { ok };
+"Up vote the question should fail";
+call backend.putBallot(0, variant { INTEREST = variant { UP } } );
+assert _ == variant { err = variant { InvalidStatus } };
+"Set categorization: should fail";
+call backend.putBallot(0, variant { CATEGORIZATION = vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; } });
+assert _ == variant { err = variant { InvalidStatus } };
+
+call backend.run();
+call backend.getQuestion(0);
+assert _ ~= variant { ok = record { 
+  id = (0 : nat);
+  title = ("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society." : text);
+  status_info = record {
+    current = record {
+      status = variant { VOTING = variant { CATEGORIZATION } };
+    };
+  };
+}};
+
+"Now the opinion ballot is visible";
+call backend.getBallot(default, 0, 0, variant { OPINION });
+assert _ ~= variant { ok = opt variant { OPINION = record { answer = 0.5 } } };
+"Reveal categorization ballot";
+call backend.revealBallot(0);
+assert _ ~= variant { ok = variant { CATEGORIZATION = record { answer = vec { record { "IDENTITY"; 0.0; }; record { "COOPERATION"; 0.0; }; } } } };
+"Set categorization: should succeed";
+call backend.putBallot(0, variant { CATEGORIZATION = vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; } } );
+assert _ == variant { ok };
+"Up vote the question should fail";
+call backend.putBallot(0, variant { INTEREST = variant { UP } } );
+assert _ == variant { err = variant { InvalidStatus } };
+"Set opinion: should fail";
+call backend.putBallot(0, variant { OPINION = -1.0 } );
+assert _ == variant { err = variant { InvalidStatus } };
+
+"Close the question";
+call backend.run();
+call backend.getQuestion(0);
+assert _ ~= variant { ok = record { 
+  id = (0 : nat);
+  title = ("All sciences, even chemistry and biology are not uncompromising and are conditioned by our society." : text);
+  status_info = record {
+    current = record {
+      status = variant { CLOSED };
+    };
+  };
+}};
+
+"Get default user, convictions to update";
+call backend.getUserConvictions(default);
+assert _ == variant { ok = vec { 
+    record { "IDENTITY"; record { left = 0.0; center = 0.5; right = 0.5; }; };
+    record { "COOPERATION"; record { left = 0.0; center = 0.0; right = 0.0; }; };
+} };

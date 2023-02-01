@@ -87,14 +87,14 @@ module {
     Option.getMapped(
       model.most_interesting,
       func(question_id: Nat) : Bool {
-        question_id == state_info.info.question_id and model.last_pick_date + getInterestPickRate(model) > model.time;
+        question_id == state_info.info.question_id and model.time > model.last_pick_date + getInterestPickRate(model);
       },
       false
     );
   };
 
   func timedOut(state_info: StateInfo, model: DataModel) : Bool {
-    state_info.info.date + getStatusDuration(model, state_info.state) > model.time;
+    model.time > state_info.info.date + getStatusDuration(model, state_info.state);
   };
 
   func passThrough(state_info: StateInfo, model: DataModel) : Bool {
@@ -122,7 +122,6 @@ module {
       for (question in questions_.iter()){
         submitEvent(question, #TIME_UPDATE, time);
       };
-      // @todo: shall update last_pick_date
     };
 
     public func reopenQuestion(question: Question, time: Time) {
