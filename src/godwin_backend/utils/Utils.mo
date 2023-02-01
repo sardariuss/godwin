@@ -77,9 +77,9 @@ module {
     join;
   };
 
-  public func make<K, V>(keys: [K], k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, init_val: V) : Trie<K, V> {
+  public func make<K, V>(keys: Iter<K>, k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, init_val: V) : Trie<K, V> {
     var trie = Trie.empty<K, V>();
-    for (k in Array.vals(keys)) {
+    for (k in keys) {
       trie := Trie.put(trie, k_compute(k), k_eq, init_val).0;
     };
     trie;

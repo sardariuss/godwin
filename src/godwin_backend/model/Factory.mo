@@ -51,7 +51,8 @@ module {
       Decay.computeOptDecay(state_.creation_date, state_.users.convictions_half_life),
       questions,
       opinion_votes,
-      categorization_votes
+      categorization_votes,
+      categories
     );
 
     let polls = Polls.Polls(
