@@ -7,6 +7,13 @@
         "output": "src/godwin_frontend/declarations/godwin_backend"
       }
     },
+    "godwin_master":{
+      "main": "src/godwin_master/main.mo",
+      "type": "motoko",
+      "dependencies": [
+        "godwin_backend"
+      ]
+    },
     "godwin_frontend": {
       "dependencies": [
         "godwin_backend"

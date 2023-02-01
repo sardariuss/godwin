@@ -146,43 +146,43 @@ module {
     // Watchout: this function makes a strong assumption that it is called only once every time the question status will be closed
     public func updateConvictions(question: Question, opinions: Opinions, categorizations: Categorizations) {
 
-      let (new_categorization, previous_categorization) = do {
-        let categorization_votes = Buffer.fromIter<CategorizationVote>(categorizations.getVotes(question.id));
-        let size = categorization_votes.size();
-        if (size == 0) {
-          Debug.trap("Cannot compute users' convictions without a categorization vote");
-        } else {
-          (
-            categorization_votes.get(size - 1).aggregate,
-            Option.map(categorization_votes.getOpt(size - 2), func(vote: CategorizationVote) : PolarizationMap { vote.aggregate; })
-          );
-        };
-      };
-
-      let (new_opinion_vote, old_opinon_votes) = do {
-        let opinion_votes = Buffer.fromIter<OpinionVote>(opinions.getVotes(question.id));
-        switch(opinion_votes.removeLast()){
-          case(null) {
-            Debug.trap("Cannot compute users' convictions without an opinion vote");
-          };
-          case(?last) {
-            (last, opinion_votes.vals());
-          };
-        };
-      };
-
-      // Process old votes by removing removing the contribution of the previous categorization 
-      // and adding the contribution of the new categorization
-      for (old_vote in old_opinon_votes){
-        for ((principal, {answer; date;}) in Map.entries(old_vote.ballots)){
-          updateBallotContribution(principal, answer, date, new_categorization, previous_categorization);
-        };
-      };
-
-      // Process new votes by just adding the contribution of the new categorization
-      for ((principal, {answer; date;}) in Map.entries(new_opinion_vote.ballots)){
-        updateBallotContribution(principal, answer, date, new_categorization, null);
-      };
+//      let (new_categorization, previous_categorization) = do {
+//        let categorization_votes = Buffer.fromIter<CategorizationVote>(categorizations.getVotes(question.id));
+//        let size = categorization_votes.size();
+//        if (size == 0) {
+//          Debug.trap("Cannot compute users' convictions without a categorization vote");
+//        } else {
+//          (
+//            categorization_votes.get(size - 1).aggregate,
+//            Option.map(categorization_votes.getOpt(size - 2), func(vote: CategorizationVote) : PolarizationMap { vote.aggregate; })
+//          );
+//        };
+//      };
+//
+//      let (new_opinion_vote, old_opinon_votes) = do {
+//        let opinion_votes = Buffer.fromIter<OpinionVote>(opinions.getVotes(question.id));
+//        switch(opinion_votes.removeLast()){
+//          case(null) {
+//            Debug.trap("Cannot compute users' convictions without an opinion vote");
+//          };
+//          case(?last) {
+//            (last, opinion_votes.vals());
+//          };
+//        };
+//      };
+//
+//      // Process old votes by removing removing the contribution of the previous categorization 
+//      // and adding the contribution of the new categorization
+//      for (old_vote in old_opinon_votes){
+//        for ((principal, {answer; date;}) in Map.entries(old_vote.ballots)){
+//          updateBallotContribution(principal, answer, date, new_categorization, previous_categorization);
+//        };
+//      };
+//
+//      // Process new votes by just adding the contribution of the new categorization
+//      for ((principal, {answer; date;}) in Map.entries(new_opinion_vote.ballots)){
+//        updateBallotContribution(principal, answer, date, new_categorization, null);
+//      };
     };
 
     // \note To compute the users convictions, the user's opinion (cursor converted into a polarization) 
