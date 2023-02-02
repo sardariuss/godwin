@@ -8,6 +8,11 @@ import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
+import Char "mo:base/Char";
+import Nat32 "mo:base/Nat32";
+import Text "mo:base/Text";
+
+import Unicode "Unicode";
 
 module {
 
@@ -182,6 +187,23 @@ module {
 
   public func nullIter<T>() : Iter<T> {
     { next = func () : ?T { null; }; };
+  };
+
+  public func textIntersect(text_1: Text, text_2: Text) : Bool {
+    let to_lower = Unicode.initToLowerCaseArray();
+    let lower_text_1 = Text.map(text_1, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
+    let lower_text_2 = Text.map(text_2, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
+
+    var intersect = false;
+    label whatever for (word in Text.split(lower_text_2, #predicate(Char.isWhitespace))){
+      if (word.size() < 3) continue whatever;
+      if (Text.contains(lower_text_1, #text(word))){
+        intersect := true;
+        break whatever;
+      };
+    };
+
+    intersect;
   };
 
 };
