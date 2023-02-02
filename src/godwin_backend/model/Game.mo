@@ -175,7 +175,7 @@ module {
       });
     };
 
-    // Get the aggregate of any vote, for any vote except the current one
+    // Get the aggregate of any vote, except the current one
     public func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : Result<TypedAggregate, GetBallotError> {
       Result.chain<Question, TypedAggregate, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
         Result.mapOk<(), TypedAggregate, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(poll), iteration), #InvalidIteration), func() {

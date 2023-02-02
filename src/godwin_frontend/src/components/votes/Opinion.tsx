@@ -5,7 +5,7 @@ import React, { useContext, useState } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
-  question_id: number;
+  question_id: bigint;
 };
 
 type ActorContextValues = {
@@ -21,7 +21,7 @@ const VoteOpinion = ({question_id}: Props) => {
 
   const updateOpinion = async () => {
 		console.log("updateOpinion");
-		let opinionResult = await actor.setOpinion(question_id, opinion);
+    let opinionResult = await actor.putBallot(question_id, { OPINION : opinion });
 		console.log(opinionResult);
 	};
 

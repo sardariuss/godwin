@@ -1,4 +1,4 @@
-import { Question, Iteration, Vote, _SERVICE} from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Appeal, Polarization, PolarizationArray, Question, _SERVICE} from "./../../declarations/godwin_backend/godwin_backend.did";
 import ActorContext from "../ActorContext"
 import VoteInterest from "./votes/Interest";
 import VoteOpinion from "./votes/Opinion";
@@ -11,7 +11,7 @@ import { useEffect, useState, useContext } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
-  question_id: number,
+  question: Question,
 	categories: string[]
 };
 
@@ -21,62 +21,52 @@ type ActorContextValues = {
 };
 
 // @todo: change the state of the buttons based on the interest for the logged user for this question
-const QuestionBody = ({question_id, categories}: Props) => {
+const QuestionBody = ({question, categories}: Props) => {
 
-	const [question, setQuestion] = useState<Question | undefined>();
 	const {actor} = useContext(ActorContext) as ActorContextValues;
-
-	const refreshQuestion = async () => {
-		let query_question = await actor.getQuestion(question_id);
-		if (query_question.err !== undefined){
-			console.log("Could not find question!");
-		} else {
-			setQuestion(query_question.ok);
-		}
-	}
+	const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>();
+	const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>();
+	const [categorizationAggregate, setCategorizationAggregate] = useState<PolarizationArray | undefined>();
 
 	// @todo: need to check status and handle case where history is empty
-	const getInterestAggregate = () => {
-		const interests : Vote[] = question?.interests_history === undefined ? [] : question?.interests_history;
-		if (interests.length == 0) { return undefined; }
-		return interests[interests.length - 1].aggregate;
+	const getInterestAggregate = async () => {
+		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'INTEREST' : null } ); // @todo: hardcoded iteration
+		setInterestAggregate(aggregate['ok']?.['INTEREST']);
 	};
 
 	// @todo: need to check status and handle case where history is empty
-	const getOpinionAggregate = () => {
-		const iterations : Iteration[] = question?.vote_history === undefined ? [] : question?.vote_history;
-		if (iterations.length == 0) { return undefined; }
-		return iterations[iterations.length - 1].opinion.aggregate;
+	const getOpinionAggregate = async () => {
+		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'OPINION' : null } ); // @todo: hardcoded iteration
+		setOpinionAggregate(aggregate['ok']?.['OPINION']);
 	};
 
 	// @todo: need to check status and handle case where history is empty
-	const getCategorizationAggregate = () => {
-		const iterations : Iteration[] = question?.vote_history === undefined ? [] : question?.vote_history;
-		if (iterations.length == 0) { return undefined; }
-		return iterations[iterations.length - 1].categorization.aggregate;
+	const getCategorizationAggregate = async () => {
+		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'CATEGORIZATION' : null } ); // @todo: hardcoded iteration
+		setCategorizationAggregate(aggregate['ok']?.['CATEGORIZATION']);
 	};
 
 	useEffect(() => {
-		refreshQuestion();
+		getInterestAggregate();
+		getOpinionAggregate();
+		getCategorizationAggregate();
   }, []);
 
 	return (
 		<div className="flex flex-col py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white">
 			<div className="flex flex-row justify-start gap-x-10 text-lg font-semibold">
 				{ 
-					question?.status['INTEREST'] !== undefined ?
-						<VoteInterest question_id={question_id}/> : 
-					question?.status['OPEN'] !== undefined ?
-					(question?.status['OPEN']['stage']['OPINION'] !== undefined ?
-						<VoteOpinion question_id={question_id}/> :
-						question?.status['OPEN']['stage']['CATEGORIZATION'] !== undefined ?
-						<VoteCategorization question_id={question_id} categories={categories}/> :
-						<div>@todo impossible</div>
-					) : question?.status['CLOSED'] !== undefined || question?.status['REJECTED'] !== undefined ?
+					question?.status_info.current.status['VOTING']['INTEREST'] !== undefined ?
+						<VoteInterest question_id={question.id}/> : 
+					question?.status_info.current.status['VOTING']['OPINION'] !== undefined ?
+						<VoteOpinion question_id={question.id}/> :
+					question?.status_info.current.status['VOTING']['CATEGORIZATION'] !== undefined ?
+						<VoteCategorization question_id={question.id} categories={categories}/> :
+					question?.status_info.current.status['CLOSED'] !== undefined || question?.status_info.current.status['REJECTED'] !== undefined ?
 						<Aggregates 
-							interest_aggregate={getInterestAggregate()}
-							opinion_aggregate={getOpinionAggregate()}
-							categorization_aggregate={getCategorizationAggregate()}
+							interest_aggregate={interestAggregate}
+							opinion_aggregate={opinionAggregate}
+							categorization_aggregate={categorizationAggregate}
 						/> : <div>@todo impossible</div>
 				}
 				<div className="flex flex-col justify-start gap-x-10 text-lg font-semibold">
@@ -85,8 +75,8 @@ const QuestionBody = ({question_id, categories}: Props) => {
 						<div> { question === undefined ? "title" : question.title} </div>
 					</div>
 					<div className="flex flex-row justify-start gap-x-10">
-						<div>Iteration: {question === undefined ? "iteration" : question.vote_history.length}</div>
-						<div>Status: { question === undefined ? "status" : statusToString(question.status)} </div>
+						<div>History size: {question === undefined ? "iteration" : question.status_info.history.length}</div>
+						<div>Status: { question === undefined ? "status" : statusToString(question.status_info.current.status)} </div>
 						<div>Created: { question === undefined ? "date" : nsToStrDate(question.date)}</div>
 					</div>
 				</div>

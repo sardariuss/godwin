@@ -1,11 +1,11 @@
-import { _SERVICE} from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, Cursor, _SERVICE} from "./../../../declarations/godwin_backend/godwin_backend.did";
 import ActorContext from "../../ActorContext"
 
 import React, { useContext, useState } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
-  question_id: number,
+  question_id: bigint,
   categories: string[]
 };
 
@@ -18,10 +18,11 @@ type ActorContextValues = {
 const VoteCategorization = ({question_id, categories}: Props) => {
 
 	const {actor, logged_in} = useContext(ActorContext) as ActorContextValues;
-  const [categorization, setCategorization] = useState<Map<string, number>>(new Map(categories.map(category => [category, 0.0])));
+  const [categorization, setCategorization] = useState<Map<Category, Cursor>>(new Map(categories.map(category => [category, 0.0])));
 
   const updateCategorization = async () => {
-		await actor.setCategorization(question_id, Array.from(categorization));
+    let categorizationResult = await actor.putBallot(question_id, { CATEGORIZATION :  Array.from(categorization, ([category, cursor]) => ([category, cursor])) });
+    console.log(categorizationResult);
 	}
 
   const updateCategory = (category: string, cursor: number) => {

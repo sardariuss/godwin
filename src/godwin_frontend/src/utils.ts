@@ -1,12 +1,9 @@
-import { QuestionStatus } from "./../declarations/godwin_backend/godwin_backend.did";
+import { Status } from "./../declarations/godwin_backend/godwin_backend.did";
 
-export const statusToString = (status: QuestionStatus) => {
-  if (status['REJECTED'] !== undefined) { return 'REJECTED'; };
-  if (status['OPEN'] !== undefined) { 
-    let stage = status['OPEN']['stage'];
-    if (stage['OPINION'] !== undefined) { return 'OPINION'; };
-    if (stage['CATEGORIZATION'] !== undefined) { return 'CATEGORIZATION'; };
-  };
+export const statusToString = (status: Status) => {
+  if (status['VOTING']?.['INTEREST'] !== undefined) { return 'INTEREST'; };
+  if (status['VOTING']?.['OPINION'] !== undefined) { return 'OPINION'; };
+  if (status['VOTING']?.['CATEGORIZATION'] !== undefined) { return 'CATEGORIZATION'; };
   if (status['CLOSED'] !== undefined) { return 'CLOSED'; };  
   if (status['INTEREST'] !== undefined) { return 'INTEREST'; };
   return '@todo';

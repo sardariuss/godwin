@@ -1,20 +1,20 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, Direction, QueryQuestionsResult, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { OrderBy, Direction, QueryQuestionsResult, Question, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 import ActorContext from "../ActorContext"
 
 import { useEffect, useState, useContext } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Results = {
-  ids: number[],
-  next : number | undefined,
+  questions: Question[],
+  next : Question | undefined,
 }
 
 const fromQuery = (query_result: QueryQuestionsResult) => {
-  let ids = Array.from(query_result.ids);
-  let [next] = query_result.next_id;
-  return { ids, next };
+  let questions = Array.from(query_result.items);
+  let [next] = query_result.next;
+  return { questions, next };
 }
 
 type ActorContextValues = {
@@ -30,7 +30,7 @@ type ListQuestionsInput = {
 const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
   const {actor} = useContext(ActorContext) as ActorContextValues;
-  const [results, setResults] = useState<Results>({ ids : [], next: undefined});
+  const [results, setResults] = useState<Results>({ questions : [], next: undefined});
   const [categories, setCategories] = useState<string[]>([]);
   const [trigger_next, setTriggerNext] = useState<boolean>(false);
 	
@@ -46,10 +46,10 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
   const getNextQuestions = async () => {
     if (results.next !== undefined){
-      let query_result : QueryQuestionsResult = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next]);
-      let ids : number[] = [...new Set([...results.ids, ...Array.from(query_result.ids)])];
-      let [next] = query_result.next_id;
-      setResults({ ids, next });
+      let query_result : QueryQuestionsResult = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next.id]);
+      let questions : Question[] = [...new Set([...results.questions, ...Array.from(query_result.items)])];
+      let [next] = query_result.next;
+      setResults({ questions, next });
     }
   };
 
@@ -59,9 +59,9 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
   }
 
   const scrolling = () => {
-      if (atEnd()) {
-        setTriggerNext(true);
-      }
+    if (atEnd()) {
+      setTriggerNext(true);
+    }
   }
 
   useEffect(() => {
@@ -82,9 +82,9 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
 	return (
 		<div className="border border-none mx-96 my-16 justify-center">
-      {[...results.ids].map(question_id => (
-        <li className="list-none" key={question_id}> 
-          <QuestionComponent question_id={question_id} categories={categories}> </QuestionComponent>
+      {[...results.questions].map(question => (
+        <li className="list-none" key={Number(question.id)}> 
+          <QuestionComponent question={question} categories={categories}> </QuestionComponent>
         </li>
       ))}
     </div>

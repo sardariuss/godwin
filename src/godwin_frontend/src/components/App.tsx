@@ -95,31 +95,31 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <ListQuestions key={"list_interest"} order_by={{ 'INTEREST' : null }} query_direction={{ 'bwd' : null }}/>
+                  <ListQuestions key={"list_interest"} order_by={{ 'INTEREST_SCORE' : null }} query_direction={{ 'BWD' : null }}/>
                 }
               />
               <Route
                 path="/opinion"
                 element={
-                  <ListQuestions key={"list_opinion"} order_by={{ 'STATUS_DATE' : { 'OPEN' : { 'OPINION' : null } }}} query_direction={{ 'fwd' : null }}/>
+                  <ListQuestions key={"list_opinion"} order_by={{ 'STATUS' : { 'VOTING' : { 'OPINION' : null } }}} query_direction={{ 'FWD' : null }}/>
                 }
               />
                 <Route
                 path="/categorization"
                 element={
-                  <ListQuestions key={"list_categorization"} order_by={{ 'STATUS_DATE' : { 'OPEN' : { 'CATEGORIZATION' : null } }}} query_direction={{ 'fwd' : null }}/>
+                  <ListQuestions key={"list_categorization"} order_by={{ 'STATUS' : { 'VOTING' : { 'CATEGORIZATION' : null } }}} query_direction={{ 'FWD' : null }}/>
                 }
               />
                 <Route
                 path="/archives"
                 element={
-                  <ListQuestions key={"list_archive"} order_by={{ 'STATUS_DATE' : { 'CLOSED' : null } }} query_direction={{ 'fwd' : null }}/>
+                  <ListQuestions key={"list_archive"} order_by={{ 'STATUS' : { 'CLOSED' : null } }} query_direction={{ 'FWD' : null }}/>
                 }
               />
               <Route
                 path="/rejected"
                 element={
-                  <ListQuestions key={"list_rejected"} order_by={{ 'STATUS_DATE' : { 'REJECTED' : null } }} query_direction={{ 'fwd' : null }}/>
+                  <ListQuestions key={"list_rejected"} order_by={{ 'STATUS' : { 'REJECTED' : null } }} query_direction={{ 'FWD' : null }}/>
                 }
               />
               <Route

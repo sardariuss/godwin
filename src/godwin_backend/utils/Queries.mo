@@ -15,13 +15,13 @@ module {
   type Order = Order.Order;
   type Iter<T> = Iter.Iter<T>;
   type OrderedSet<K> = OrderedSet.OrderedSet<K>;
-  type ScanLimitResult<K> = OrderedSet.ScanLimitResult<K>;
-
+  
   type WMap<K, V> = WMap.WMap<K, V>;
   type Map<K, V> = Map.Map<K, V>;
-  public type Direction = OrderedSet.Direction;
   
+  public type Direction = OrderedSet.Direction;
   public type QueryResult<Item> = { items: [Item]; next: ?Item };
+  public type ScanLimitResult<K> = OrderedSet.ScanLimitResult<K>;
 
   public func buildQueries<OrderBy, Key, Item>(
     register: Map<OrderBy, OrderedSet<Key>>,
@@ -87,7 +87,7 @@ module {
     };
 
     public func entries(order_by: OrderBy, direction: Direction) : Iter<Item> {
-      Iter.map(queries_.entries(order_by, direction), func(key: Key) : Item { from_key_(key); });
+      Iter.map(queries_.keys(order_by, direction), func(key: Key) : Item { from_key_(key); });
     };
 
   };
@@ -153,7 +153,7 @@ module {
       };
     };
 
-    public func queryItems(
+    public func queryKeys(
       order_by: OrderBy,
       direction: Direction,
       limit: Nat,
@@ -169,7 +169,7 @@ module {
       };
     };
 
-    public func entries(order_by: OrderBy, direction: Direction) : Iter<Key> {
+    public func keys(order_by: OrderBy, direction: Direction) : Iter<Key> {
       switch(register_.get(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?ordered_set){ 
@@ -221,7 +221,7 @@ module {
       };
     };
 
-    public func queryItems(
+    public func queryKeys(
       direction: Direction,
       limit: Nat,
       previous: ?Key
@@ -236,7 +236,7 @@ module {
       };
     };
 
-    public func entries(direction: Direction) : Iter<Key> {
+    public func keys(direction: Direction) : Iter<Key> {
       OrderedSet.iter(register_, direction);
     };
 

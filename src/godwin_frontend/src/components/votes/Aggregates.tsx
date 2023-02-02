@@ -1,4 +1,4 @@
-import { _SERVICE, InterestAggregate, Polarization, CategoryPolarizationTrie, CategoryPolarizationArray} from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Appeal, Polarization, PolarizationArray} from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 import PolarizationComponent from "./Polarization";
 
@@ -13,27 +13,14 @@ type ActorContextValues = {
 };
 
 type Props = {
-  interest_aggregate: InterestAggregate | undefined,
+  interest_aggregate: Appeal | undefined,
   opinion_aggregate: Polarization | undefined,
-  categorization_aggregate: CategoryPolarizationTrie | undefined
+  categorization_aggregate: PolarizationArray | undefined
 };
 
 const Aggregates = ({interest_aggregate, opinion_aggregate, categorization_aggregate}: Props) => {
 
   const {actor} = useContext(ActorContext) as ActorContextValues;
-
-  const [categorization_array, setCategorizationArray] = useState<CategoryPolarizationArray>([]);
-
-  const toArray = async () => {
-    if (categorization_aggregate !== undefined) {
-      const array = await actor.polarizationTrieToArray(categorization_aggregate);
-      setCategorizationArray(array);
-    }
-  };
-
-  useEffect(() => {
-		toArray();
-  }, []);
 
 	return (
     <>
@@ -49,19 +36,21 @@ const Aggregates = ({interest_aggregate, opinion_aggregate, categorization_aggre
           </div> : <></>
       }
       {
-        categorization_array.length != 0 ?
-        <div>categorization:
-          <ul className="list-none">
-          {
-            categorization_array.map(([category, polarization]) => (
-              <li className="list-none" key={category}>
-                <div>{category}</div>
-                <PolarizationComponent polarization={polarization}/>
-              </li>
-            ))
-          }
-          </ul>
-        </div> : <></>
+        categorization_aggregate !== undefined ?
+          categorization_aggregate.length != 0 ?
+          <div>categorization:
+            <ul className="list-none">
+            {
+              categorization_aggregate.map(([category, polarization]) => (
+                <li className="list-none" key={category}>
+                  <div>{category}</div>
+                  <PolarizationComponent polarization={polarization}/>
+                </li>
+              ))
+            }
+            </ul>
+          </div> : <></> :
+        <></>
       }
     </div>
     </>

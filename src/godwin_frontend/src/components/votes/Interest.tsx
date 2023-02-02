@@ -5,7 +5,7 @@ import { useContext } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
-  question_id: number;
+  question_id: bigint;
 };
 
 type ActorContextValues = {
@@ -20,13 +20,13 @@ const VoteInterest = ({question_id}: Props) => {
 
 	const upVote = async () => {
 		console.log("upVote");
-		let up_vote = await actor.setInterest(question_id, { 'UP' : null });
+		let up_vote = await actor.putBallot(question_id, { INTEREST : { 'UP' : null } });
 		console.log(up_vote);
 	};
 
 	const downVote = async () => {
 		console.log("downVote");
-		let down_vote = await actor.setInterest(question_id, { 'DOWN' : null });
+    let down_vote = await actor.putBallot(question_id, { INTEREST : { 'DOWN' : null } });
 		console.log(down_vote);
 	};
 

@@ -172,19 +172,19 @@ module {
 
   // @todo: temporary
 
-//  public type CreateQuestionError = {
-//    #PrincipalIsAnonymous;
-//    #InsufficientCredentials;
-//  };
-//  public type CreateStatus = {
-//    #INTEREST: { interest_score: Int; };
-//    #OPEN: {
-//      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-//      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-//    };
-//    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-//    #REJECTED : { interest_score: Int; };
-//  };
+  public type CreateQuestionError = {
+    #PrincipalIsAnonymous;
+    #InsufficientCredentials;
+  };
+  public type CreateStatus = {
+    #VOTING: {
+      #INTEREST: { interest_score: Int; };
+      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
+      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
+    };
+    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
+    #REJECTED : { interest_score: Int; };
+  };
 
   public type AddCategoryError = {
     #InsufficientCredentials;

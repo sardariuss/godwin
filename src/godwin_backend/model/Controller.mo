@@ -1,17 +1,15 @@
-import Types "Types";
-import StatusHelper "StatusHelper";
-import Duration "Duration";
-import Questions "Questions";
-import Polls "votes/Polls";
-
-import StateMachine "../utils/StateMachine";
-import Ref "../utils/Ref";
-import WRef "../utils/wrappers/WRef";
-
+import Debug "mo:base/Debug";
+import Option "mo:base/Option";
 import Map "mo:map/Map";
 
-import Option "mo:base/Option";
-import Debug "mo:base/Debug";
+import Ref "../utils/Ref";
+import StateMachine "../utils/StateMachine";
+import WRef "../utils/wrappers/WRef";
+import Duration "Duration";
+import Questions "Questions";
+import StatusHelper "StatusHelper";
+import Types "Types";
+import Polls "votes/Polls";
 
 module {
 

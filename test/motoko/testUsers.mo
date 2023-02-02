@@ -97,7 +97,7 @@ module {
 //            ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
 //          ], Categories.key, Categories.equal); };
 //      iteration := { iteration with categorization; };
-//      questions.replaceQuestion({ questions.getQuestion(0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
+//      questions.replaceQuestion({ questions.getQuestion(0) with status = #VOTING({ stage = #CATEGORIZATION; iteration;}) });
 //
 //      users.updateConvictions(iteration, [], null);
 //

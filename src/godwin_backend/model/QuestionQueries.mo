@@ -103,9 +103,16 @@ module {
 
     questions.addObs(func(old: ?Question, new: ?Question){
       queries.replace(
-        Option.map(old, func(vote: Question) : Key { toStatusEntry(vote); }),
-        Option.map(new, func(vote: Question) : Key { toStatusEntry(vote); })
+        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
+        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
       );
+      // @todo: the obs could be on the status instead of the question
+      Option.iterate(new, func(question: Question) {
+        let status_info = StatusHelper.StatusInfo(question);
+        if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
+          queries.remove(toAppealScore(interests.getVote(question.id, status_info.getIteration(#VOTING(#INTEREST)))));
+        };
+      });
     });
 
     interests.addObs(func(old: ?InterestVote, new: ?InterestVote){
@@ -205,8 +212,8 @@ module {
       case(#AUTHOR(entry))         { entry.question_id; };
       case(#TITLE(entry))          { entry.question_id; };
       case(#TEXT(entry))           { entry.question_id; };
-      case(#DATE(entry))  { entry.question_id; };
-      case(#STATUS(entry))    { entry.question_id; };
+      case(#DATE(entry))           { entry.question_id; };
+      case(#STATUS(entry))         { entry.question_id; };
       case(#INTEREST_SCORE(entry)) { entry.question_id; };
     };
   };
