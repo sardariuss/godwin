@@ -9,6 +9,7 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Prelude "mo:base/Prelude";
 import Iter "mo:base/Iter";
+import Int "mo:base/Int";
 
 module {
 
@@ -24,6 +25,14 @@ module {
 
   // For convenience
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
+
+  public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
+    "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
+  };
+
+  public func ballotsEqual<T>(ballot1: Ballot<T>, ballot2: Ballot<T>, equal: (T, T) -> Bool) : Bool {
+    Int.equal(ballot1.date, ballot2.date) and equal(ballot1.answer, ballot2.answer);
+  };
 
   public class Votes<T, A>(
     register_: WMap2D<Nat, Nat, Vote<T, A>>,

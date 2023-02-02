@@ -17,6 +17,13 @@ module {
       # ", score: " # Int.toText(appeal.score);
   };
 
+  public func equal(appeal1: Appeal, appeal2: Appeal) : Bool {
+    Nat.equal(appeal1.ups, appeal2.ups)
+      and Nat.equal(appeal1.evens, appeal2.evens)
+      and Nat.equal(appeal1.downs, appeal2.downs)
+      and Int.equal(appeal1.score, appeal2.score);
+  };
+
   public func init() : Appeal {
     { ups = 0; evens = 0;  downs = 0; score = 0; };
   };

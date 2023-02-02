@@ -1,9 +1,14 @@
-import Cursor "../../src/godwin_backend/representation/Cursor";
-import Polarization "../../src/godwin_backend/representation/Polarization";
-import CursorMap "../../src/godwin_backend/representation/CursorMap";
-import PolarizationMap "../../src/godwin_backend/representation/PolarizationMap";
-import Queries "../../src/godwin_backend/questions/queries";
-import Question "../../src/godwin_backend/questions/question";
+import Votes "../../src/godwin_backend/model/votes/Votes";
+import Interest "../../src/godwin_backend/model/votes/representation/Interest";
+import Appeal "../../src/godwin_backend/model/votes/representation/Appeal";
+import Opinion "../../src/godwin_backend/model/votes/representation/Opinion";
+import Categorization "../../src/godwin_backend/model/votes/representation/Categorization";
+import Cursor "../../src/godwin_backend/model/votes/representation/Cursor";
+import Polarization "../../src/godwin_backend/model/votes/representation/Polarization";
+import CursorMap "../../src/godwin_backend/model/votes/representation/CursorMap";
+import PolarizationMap "../../src/godwin_backend/model/votes/representation/PolarizationMap";
+import Queries "../../src/godwin_backend/model/QuestionQueries";
+import Questions "../../src/godwin_backend/model/Questions";
 import Types "../../src/godwin_backend/model/Types";
 
 import Testable "mo:matchers/Testable";
@@ -58,177 +63,100 @@ module {
   };
 
   public func optQuestion(question: ?Question) : Testable.TestableItem<?Question> {
-    testOptItem(question, Question.toText, Question.equal);
+    testOptItem(question, Questions.toText, Questions.equal);
   };
 
   public func optCursorMap(cursor_trie: ?CursorMap) : Testable.TestableItem<?CursorMap> {
     testOptItem(cursor_trie, CursorMap.toText, CursorMap.equal);
   };
 
-  public func optInterestBallot(interest_ballot: ?Timestamp<Interest>) : Testable.TestableItem<?Timestamp<Interest>> {
-    testOptItem(
-      interest_ballot,
-      func(interest_ballot: Timestamp<Interest>) : Text {
-        toTextTimestamp(interest_ballot, toTextInterest);
-      },
-      func(a: Timestamp<Interest>, b: Timestamp<Interest>) : Bool {
-        equalTimestamp(a, b, equalInterests);
-      }
-    );
+  public func optInterestBallot(interest_ballot: ?Interest.Ballot) : Testable.TestableItem<?Interest.Ballot> {
+    testOptItem(interest_ballot, Interest.ballotToText, Interest.ballotsEqual);
   };
 
-  public func optAppeal(interest_aggregate: ?Timestamp<Appeal>) : Testable.TestableItem<?Timestamp<Appeal>> {
-    testOptItem(
-      interest_aggregate,
-      func(interest_aggregate: Timestamp<Appeal>) : Text {
-        toTextTimestamp(interest_aggregate, toTextAppeal);
-      },
-      func(a: Timestamp<Appeal>, b: Timestamp<Appeal>) : Bool {
-        equalTimestamp(a, b, equalAppeal);
-      }
-    );
+  // @todo: unused
+  public func optAppeal(appeal: ?Types.Appeal) : Testable.TestableItem<?Types.Appeal> {
+    testOptItem(appeal, Appeal.toText, Appeal.equal);
   };
 
-  public func optOpinionBallot(opinion_ballot: ?Timestamp<Cursor>) : Testable.TestableItem<?Timestamp<Cursor>> {
-    testOptItem(
-      opinion_ballot,
-      func(opinion_ballot: Timestamp<Cursor>) : Text {
-        toTextTimestamp(opinion_ballot, Cursor.toText);
-      },
-      func(a: Timestamp<Cursor>, b: Timestamp<Cursor>) : Bool {
-        equalTimestamp(a, b, Cursor.equal);
-      }
-    );
+  public func appeal(appeal: Types.Appeal) : Testable.TestableItem<Types.Appeal> {
+    { display = Appeal.toText; equals = Appeal.equal; item = appeal; };
   };
 
-  public func optOpinionAggregate(opinion_aggregate: ?Timestamp<Polarization>) : Testable.TestableItem<?Timestamp<Polarization>> {
-    testOptItem(
-      opinion_aggregate,
-      func(opinion_aggregate: Timestamp<Polarization>) : Text {
-        toTextTimestamp(opinion_aggregate, Polarization.toText);
-      },
-      func(a: Timestamp<Polarization>, b: Timestamp<Polarization>) : Bool {
-        equalTimestamp(a, b, Polarization.equal);
-      }
-    );
+  public func optOpinionBallot(opinion_ballot: ?Opinion.Ballot) : Testable.TestableItem<?Opinion.Ballot> {
+    testOptItem(opinion_ballot, Opinion.ballotToText, Opinion.ballotsEqual);
   };
 
-  public func optCategorizationBallot(categorization_ballot: ?Timestamp<CursorMap>) : Testable.TestableItem<?Timestamp<CursorMap>> {
-    testOptItem(
-      categorization_ballot,
-      func(categorization_ballot: Timestamp<CursorMap>) : Text {
-        toTextTimestamp(categorization_ballot, CursorMap.toText);
-      },
-      func(a: Timestamp<CursorMap>, b: Timestamp<CursorMap>) : Bool {
-        equalTimestamp(a, b, CursorMap.equal);
-      }
-    );
+  // @todo: unused
+  public func optPolarization(polarization: ?Polarization) : Testable.TestableItem<?Polarization> {
+    testOptItem(polarization, Polarization.toText, Polarization.equal);
   };
 
-  public func optCategorizationAggregate(categorization_aggregate: ?Timestamp<PolarizationMap>) : Testable.TestableItem<?Timestamp<PolarizationMap>> {
-    testOptItem(
-      categorization_aggregate,
-      func(categorization_aggregate: Timestamp<PolarizationMap>) : Text {
-        toTextTimestamp(categorization_aggregate, PolarizationMap.toText);
-      },
-      func(a: Timestamp<PolarizationMap>, b: Timestamp<PolarizationMap>) : Bool {
-        equalTimestamp(a, b, PolarizationMap.equal);
-      }
-    );
+  public func optCategorizationBallot(categorization_ballot: ?Categorization.Ballot) : Testable.TestableItem<?Categorization.Ballot> {
+    testOptItem(categorization_ballot, Categorization.ballotToText, Categorization.ballotsEqual);
+  };
+
+  // @todo: unused
+  public func optCategorizationAggregate(categorization_aggregate: ?PolarizationMap) : Testable.TestableItem<?PolarizationMap> {
+    testOptItem(categorization_aggregate, PolarizationMap.toText, PolarizationMap.equal);
+  };
+
+  public func polarizationMap(polarization_map: PolarizationMap) : Testable.TestableItem<PolarizationMap> {
+    { display = PolarizationMap.toText; equals = PolarizationMap.equal; item = polarization_map; };
   };
 
   public func categoryPolarizationTrie(polarization_trie: PolarizationMap) : Testable.TestableItem<PolarizationMap> {
-    {
-      display = PolarizationMap.toText;
-      equals = PolarizationMap.equal;
-      item = polarization_trie;
-    };
+    { display = PolarizationMap.toText; equals = PolarizationMap.equal; item = polarization_trie; };
   };
 
+  // @todo: unused
   public func optCursor(cursor: ?Cursor) : Testable.TestableItem<?Cursor> {
     testOptItem(cursor, Cursor.toText, Cursor.equal);
   };
 
+  // @todo: unused
   public func polarization(polarization: Polarization) : Testable.TestableItem<Polarization> {
-    {
-      display = Polarization.toText;
-      equals = Polarization.equal;
-      item = polarization;
-    };
+    { display = Polarization.toText; equals = Polarization.equal; item = polarization; };
   };
 
-  public func testQueryQuestionsResult(query_result: QueryQuestionsResult) : Testable.TestableItem<QueryQuestionsResult> {
-    {
-      display = func (query_result) : Text {
-        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        buffer.add("ids = [");
-        for (id in Array.vals(query_result.ids)) {
-          buffer.add(Nat.toText(id) # ", ");
-        };
-        buffer.add("], next = ");
-        switch(query_result.next_id){
-          case(null){ buffer.add("null"); };
-          case(?id) { buffer.add(Nat.toText(id)); };
-        };
-        Text.join("", buffer.vals());
-      };
-      equals = func (qr1: QueryQuestionsResult, qr2: QueryQuestionsResult) : Bool { 
-        let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat, id2: Nat) : Bool {
-          Nat.equal(id1, id2);
-        });
-        let equal_next = switch(qr1.next_id) {
-          case(null) { 
-            switch(qr2.next_id) {
-              case(null) { true };
-              case(_) { false; };
-            };
-          };
-          case(?next_id1) {
-            switch(qr2.next_id) {
-              case(null) { false };
-              case(?next_id2) { Nat.equal(next_id1, next_id2); };
-            };
-          };
-        };
-        equal_ids and equal_next;
-      };
-      item = query_result;
-    };
-  };
-
-  func toTextInterest(interest: Interest) : Text {
-    switch(interest){ 
-      case(#UP){ "UP"; };
-      case(#DOWN){ "DOWN"; };
-    };
-  };
-
-  func equalInterests(interest1: Interest, interest2: Interest) : Bool {
-    Text.equal(toTextInterest(interest1), toTextInterest(interest2));
-  };
-
-  public func testOptInterest(interest: ?Interest) : Testable.TestableItem<?Interest> {
-    testOptItem(interest, toTextInterest, equalInterests);
-  };
-
-  func toTextAppeal(total: Appeal) : Text {
-    "{ ups = " # Nat.toText(total.ups) # "; downs = " # Nat.toText(total.downs) # " }";
-  };
-
-  func equalAppeal(t1: Appeal, t2: Appeal) : Bool {
-    t1.ups == t2.ups and t1.downs == t2.downs;
-  };
-
-  public func testOptAppeal(total: ?Appeal) : Testable.TestableItem<?Appeal> {
-    testOptItem(total, toTextAppeal, equalAppeal);
-  };
-
-  func toTextBallot<T>(timestamp : Ballot<T>, to_text_elem : (T) -> (Text)) : Text {
-    "{ date = " # Int.toText(timestamp.date) # " (ns); elem = " # to_text_elem(timestamp.elem) # " }";
-  };
-
-  func equalBallot<T>(a : Ballot<T>, b : Ballot<T>, equal_elem : (T, T) -> (Bool)) : Bool {
-    a.date == b.date and equal_elem(a.elem, b.elem);
-  };
+  // @todo
+//  public func testQueryQuestionsResult(query_result: QueryQuestionsResult) : Testable.TestableItem<QueryQuestionsResult> {
+//    {
+//      display = func (query_result) : Text {
+//        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+//        buffer.add("ids = [");
+//        for (id in Array.vals(query_result.ids)) {
+//          buffer.add(Nat.toText(id) # ", ");
+//        };
+//        buffer.add("], next = ");
+//        switch(query_result.next_id){
+//          case(null){ buffer.add("null"); };
+//          case(?id) { buffer.add(Nat.toText(id)); };
+//        };
+//        Text.join("", buffer.vals());
+//      };
+//      equals = func (qr1: QueryQuestionsResult, qr2: QueryQuestionsResult) : Bool { 
+//        let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat, id2: Nat) : Bool {
+//          Nat.equal(id1, id2);
+//        });
+//        let equal_next = switch(qr1.next_id) {
+//          case(null) { 
+//            switch(qr2.next_id) {
+//              case(null) { true };
+//              case(_) { false; };
+//            };
+//          };
+//          case(?next_id1) {
+//            switch(qr2.next_id) {
+//              case(null) { false };
+//              case(?next_id2) { Nat.equal(next_id1, next_id2); };
+//            };
+//          };
+//        };
+//        equal_ids and equal_next;
+//      };
+//      item = query_result;
+//    };
+//  };
 
 };

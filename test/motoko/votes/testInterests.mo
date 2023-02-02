@@ -1,188 +1,149 @@
 import Types "../../../src/godwin_backend/model/Types";
-import Interests "../../../src/godwin_backend/votes/interests";
-import Votes "../../../src/godwin_backend/votes/Votes";
-import Interest "../../../src/godwin_backend/votes/Interests";
-import TestableItems "../testableItems";
+import Interests "../../../src/godwin_backend/model/votes/Interests";
 
-import Map "mo:map/Map";
+import TestableItems "../testableItems";
+import Principals "../Principals";
 
 import Matchers "mo:matchers/Matchers";
 import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
-import Trie "mo:base/Trie";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
-  type Trie<K, V> = Trie.Trie<K, V>;
   type Time = Int;
-  type Map<K, V> = Map.Map<K, V>;
-  // For convenience: from matchers module
-  let { run;test;suite; } = Suite;
-  // For convenience: from other modules
-  type Interest = Types.Interest;
-  type Ballot<T> = Types.Ballot<T>;
-  type Appeal = Types.Appeal;
 
-  public class TestInterests() = {
+  public func run() {
+    
+    let tests = Buffer.Buffer<Suite.Suite>(0);
+    let principals = Principals.init();
 
-    let principal_0 = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe");
-    let principal_1 = Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae");
-    let principal_2 = Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe");
-    let principal_3 = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe");
-    let principal_4 = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae");
-    let principal_5 = Principal.fromText("lejdd-efwn5-h3qqe-4bunw-faabt-qwb7j-oiskz-c3dkg-3q5z5-ozrtn-dqe");
-    let principal_6 = Principal.fromText("amerw-mz3nq-gfkbp-o3qgo-zldsl-upilh-zatjw-66nkr-527cf-m7hnq-pae");
-    let principal_7 = Principal.fromText("gbvlf-igtmq-g5vs2-skrhr-txgij-4f2j3-v2jqy-re5cm-i6hsu-gpzcd-aae");
-    let principal_8 = Principal.fromText("mrdr7-aufxf-oiq6j-hyib2-rxb5m-cqrnb-uzgyq-durnt-75u4x-rrvow-iae");
-    let principal_9 = Principal.fromText("zoyw4-o2dcy-xajcf-e2nvu-436rg-ghrbs-35bzk-nakpb-mvs7t-x4byt-nqe");
+    let votes = Interests.build(Interests.initRegister());
 
-    public func getSuite() : Suite.Suite {
-      
-      let tests = Buffer.Buffer<Suite.Suite>(0);
+    // Question 0 : arbitrary question_id, iteration and date
+    let question_0 : Nat = 0;
+    let iteration_0 : Nat = 0;
+    let date_0 : Time = 123456789;
+    votes.newVote(question_0, iteration_0, date_0);
 
-      let votes = Interest.build(
-        Map.new<Principal, Map<Nat, Map<Nat, Timestamp<Interest>>>>(),
-        Map.new<Nat, Map<Nat, Timestamp<Appeal>>>()
-      );
+    // Add interest
+    var ballot : Interests.Ballot = { date = date_0; answer = #UP};
+    votes.putBallot(principals[0], question_0, iteration_0, ballot);
+    tests.add(Suite.test(
+      "Add Interests",
+      votes.getBallot(principals[0], question_0, iteration_0),
+      Matchers.equals(TestableItems.optInterestBallot(?ballot))
+    ));
+    // Update interest
+    ballot := { ballot with answer = #DOWN };
+    votes.putBallot(principals[0], question_0, iteration_0, ballot);
+    tests.add(Suite.test(
+      "Update Interests",
+      votes.getBallot(principals[0], question_0, iteration_0),
+      Matchers.equals(TestableItems.optInterestBallot(?ballot))
+    ));
+    // Remove interest
+    votes.removeBallot(principals[0], question_0, iteration_0);
+    tests.add(Suite.test(
+      "Remove Interests",
+      votes.getBallot(principals[0], question_0, iteration_0),
+      Matchers.equals(TestableItems.optInterestBallot(null))
+    ));
 
-      // Question 0 : arbitrary question_id, iteration and date
-      let question_0 : Nat = 0;
-      let iteration_0 : Nat = 0;
-      let date_0 : Time = 123456789;
-      votes.newAggregate(question_0, iteration_0, date_0);
+    // Question 1 : arbitrary question_id, iteration and date
+    let question_1 : Nat = 1;
+    let iteration_1 : Nat = 1;
+    let date_1 : Time = 987654321;
+    votes.newVote(question_1, iteration_1, date_1);
 
-      // Test put/remove
-      votes.putBallot(principal_0, question_0, iteration_0, date_0, #UP);
-      tests.add(test(
-        "Add Interests",
-        votes.getBallot(principal_0, question_0, iteration_0),
-        Matchers.equals(TestableItems.optInterestBallot(?{ elem = #UP; date = date_0; }))
-      ));
-      votes.putBallot(principal_0, question_0, iteration_0, date_0, #DOWN);
-      tests.add(test(
-        "Update Interests",
-        votes.getBallot(principal_0, question_0, iteration_0),
-        Matchers.equals(TestableItems.optInterestBallot(?{ elem = #DOWN; date = date_0; }))
-      ));
-      votes.removeBallot(principal_0, question_0, iteration_0);
-      tests.add(test(
-        "Remove Interests",
-        votes.getBallot(principal_0, question_0, iteration_0),
-        Matchers.equals(TestableItems.optInterestBallot(null))
-      ));
+    // Test only ups ( 10 VS 0 )
+    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = #UP; });
+    tests.add(Suite.test(
+      "Get aggregate (1)",
+      votes.getVote(question_1, iteration_1).aggregate,
+      Matchers.equals(TestableItems.appeal({ ups = 10; evens = 0; downs = 0; score = 10; })
+    )));
 
-      // Question 1 : arbitrary question_id, iteration and date
-      let question_1 : Nat = 1;
-      let iteration_1 : Nat = 1;
-      let date_1 : Time = 987654321;
-      votes.newAggregate(question_1, iteration_1, date_1);
+    // Test only downs ( 0 VS 10 )
+    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    tests.add(Suite.test(
+      "Get aggregate (2)",
+      votes.getVote(question_1, iteration_1).aggregate,
+      Matchers.equals(TestableItems.appeal({ ups = 0; evens = 0; downs = 10; score = -10; })
+    )));
 
-      // Test only ups ( 10 VS 0 )
-      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_5, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_6, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_7, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_8, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_9, question_1, iteration_1, date_1, #UP);
-      tests.add(test(
-        "Get aggregate (1)",
-        votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optAppeal(?{
-          date = date_1;
-          elem = { ups = 10; downs = 0; score = 10; };
-        })
-      )));
+    // Test as many ups than downs ( 5 VS 5 )
+    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    tests.add(Suite.test(
+      "Get aggregate (3)",
+      votes.getVote(question_1, iteration_1).aggregate,
+      Matchers.equals(TestableItems.appeal({ ups = 5; evens = 0; downs = 5; score = 0; })
+    )));
 
-      // Test only downs ( 0 VS 10 )
-      votes.putBallot(principal_0, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_1, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_2, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_3, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_4, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_7, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_8, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
-      tests.add(test(
-        "Get aggregate (2)",
-        votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optAppeal(?{
-          date = date_1;
-          elem = { ups = 0; downs = 10; score = -10; };
-        })
-      )));
+    // Test almost only ups ( 9 VS 1 )
+    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    tests.add(Suite.test(
+      "Get aggregate (4)",
+      votes.getVote(question_1, iteration_1).aggregate,
+      Matchers.equals(TestableItems.appeal({ ups = 9; evens = 0; downs = 1; score = 9; }) // down votes have no effect
+    )));
 
-      // Test as many ups than downs ( 5 VS 5 )
-      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_7, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_8, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
-      tests.add(test(
-        "Get aggregate (3)",
-        votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optAppeal(?{
-          date = date_1;
-          elem = { ups = 5; downs = 5; score = 0; };
-        })
-      )));
+    // Test slight majority of ups ( 4 VS 3 )
+    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = #UP; });
+    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = #DOWN; });
+    votes.removeBallot(principals[7], question_1, iteration_1);
+    votes.removeBallot(principals[8], question_1, iteration_1);
+    votes.removeBallot(principals[9], question_1, iteration_1);
+    tests.add(Suite.test(
+      "Get aggregate (1)",
+      votes.getVote(question_1, iteration_1).aggregate,
+      Matchers.equals(TestableItems.appeal({ ups = 4; evens = 0; downs = 3; score = 3; }) // down votes have a slight effect
+    )));
 
-      // Test almost only ups ( 9 VS 1 )
-      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_4, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_5, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_6, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_7, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_8, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_9, question_1, iteration_1, date_1, #DOWN);
-      tests.add(test(
-        "Get aggregate (4)",
-        votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optAppeal(?{
-          date = date_1;
-          elem = { ups = 9; downs = 1; score = 9; }; // down votes have no effect
-        })
-      )));
-
-      // Test slight majority of ups ( 4 VS 3 )
-      votes.putBallot(principal_0, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_1, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_2, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_3, question_1, iteration_1, date_1, #UP);
-      votes.putBallot(principal_4, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_5, question_1, iteration_1, date_1, #DOWN);
-      votes.putBallot(principal_6, question_1, iteration_1, date_1, #DOWN);
-      votes.removeBallot(principal_7, question_1, iteration_1);
-      votes.removeBallot(principal_8, question_1, iteration_1);
-      votes.removeBallot(principal_9, question_1, iteration_1);
-      tests.add(test(
-        "Get aggregate (1)",
-        votes.getAggregate(question_1, iteration_1),
-        Matchers.equals(TestableItems.optAppeal(?{
-          date = date_1;
-          elem = { ups = 4; downs = 3; score = 3; }; // down votes have a slight effect
-        })
-      )));
-
-      suite("Test Interests module", Buffer.toArray(tests));
-    };
+    Suite.run(Suite.suite("Test Interests module", Buffer.toArray(tests)));
   };
-
 };

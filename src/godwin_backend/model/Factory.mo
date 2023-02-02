@@ -11,7 +11,7 @@ import Polls "votes/Polls";
 import State "State";
 import Game "Game";
 import QuestionQueries "QuestionQueries";
-import WSet "../utils/wrappers/WSet";
+import Categories "Categories";
 
 import Set "mo:map/Set";
 
@@ -31,7 +31,7 @@ module {
 
     let admin = state_.admin;
     
-    let categories = WSet.WSet(state_.categories, Set.thash);
+    let categories = Categories.build(state_.categories);
     
     let questions = Questions.build(
       state_.questions.register,

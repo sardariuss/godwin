@@ -7,6 +7,7 @@ import Interests "votes/Interests";
 import Opinion "votes/Opinions";
 import Scheduler "Scheduler";
 import Controller "Controller";
+import Categories "Categories";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -76,7 +77,7 @@ module {
     {
       admin          = admin;
       creation_date  = creation_date;
-      categories     = Set.fromIter(Array.vals(parameters.categories), Set.thash);
+      categories     = Categories.initRegister(parameters.categories);
       users          = {
         register              = Map.new<Principal, User>();
         convictions_half_life = parameters.users.convictions_half_life;
