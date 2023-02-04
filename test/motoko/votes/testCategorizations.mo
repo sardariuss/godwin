@@ -29,12 +29,12 @@ module {
 
   func toCursorMap(cursor_array: CursorArray): CursorMap {
     Utils.arrayToTrie(cursor_array, Categories.key, Categories.equal);
-    //Utils.arrayToMap<Text, Cursor>(cursor_array, Map.thash);
+    //Utils.arrayToMap<Text, Cursor>(cursor_array, Map.thash); // @todo
   };
 
   func toPolarizationMap(polarization_array: PolarizationArray): PolarizationMap {
     Utils.arrayToTrie(polarization_array, Categories.key, Categories.equal);
-    //Utils.arrayToMap<Text, Polarization>(polarization_array, Map.thash);
+    //Utils.arrayToMap<Text, Polarization>(polarization_array, Map.thash); // @todo
   };
 
   public func run() {

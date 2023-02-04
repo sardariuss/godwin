@@ -2,7 +2,8 @@ import Types "Types";
 import Users "Users";
 import QuestionQueries "QuestionQueries";
 import Scheduler "Scheduler";
-import Controller "Controller";
+import Controller "controller/Controller";
+import Model "controller/Model";
 import Questions "Questions";
 import Votes "votes/Votes";
 import Polls "votes/Polls";
@@ -59,6 +60,7 @@ module {
     users_: Users.Users,
     questions_: Questions.Questions,
     queries_: QuestionQueries.QuestionQueries,
+    model_: Model.Model,
     controller_: Controller.Controller,
     scheduler_: Scheduler.Scheduler,
     polls_: Polls.Polls
@@ -92,28 +94,28 @@ module {
       });
     };
 
-    public func getPickRate(/*status: Status*/) : Duration {
-      //Duration.fromTime(scheduler_.getPickRate(status));
-      controller_.getPickRate();
+    public func getInterestPickRate() : Duration {
+      model_.getInterestPickRate();
     };
 
-    public func setPickRate(caller: Principal, /*status: Status,*/ rate: Duration) : Result<(), SetPickRateError> {
+    public func setInterestPickRate(caller: Principal, rate: Duration) : Result<(), SetPickRateError> {
       Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
-        //scheduler_.setPickRate(status, Duration.toTime(rate));
-        controller_.setPickRate(rate);
+        model_.setInterestPickRate(rate);
       });
     };
 
-    public func getDuration(status: Status) : Duration {
-      //Duration.fromTime(scheduler_.getDuration(status));
-      controller_.getDuration(status);
+    public func getStatusDuration(status: Status) : Duration {
+      model_.getStatusDuration(status);
     };
 
-    public func setDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
+    public func setStatusDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
       Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
-        //scheduler_.setDuration(status, Duration.toTime(duration));
-        controller_.setDuration(status, duration);
+        model_.setStatusDuration(status, duration);
       });
+    };
+
+    public func searchQuestions(text: Text, limit: Nat) : [Nat] {
+      questions_.searchQuestions(text, limit);
     };
 
     public func getQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
@@ -185,7 +187,7 @@ module {
     };
 
     public func run(date: Time) {
-      controller_.run(date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
+      controller_.run(questions_.iter(), date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
     };
 
     public func setUserName(principal: Principal, name: Text) : Result<(), SetUserNameError> {

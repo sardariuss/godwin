@@ -17,6 +17,10 @@ import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 
+import TextUtils "../utils/Text";
+import Heap "mo:base/Heap";
+import Order "mo:base/Order";
+
 module {
 
   // For convenience: from base module
@@ -29,6 +33,7 @@ module {
   type WMap<K, V> = WMap.WMap<K, V>;
   type Ref<V> = Ref.Ref<V>;
   type Iter<T> = Iter.Iter<T>;
+  type Order = Order.Order;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -80,15 +85,7 @@ module {
         title;
         text;
         date;
-        status_info = {
-          current = {
-            status = #VOTING(#INTEREST);
-            date;
-            index = 0;
-          };
-          history = [];
-          iterations = [(#VOTING(#INTEREST), 0)];
-        };
+        status_info = StatusHelper.initStatusInfo(date);
       };
       register_.set(question.id, question);
       index_.set(index_.get() + 1);
@@ -107,10 +104,11 @@ module {
     };
 
     public func updateStatus(question_id: Nat, status: Status, date: Time) : Question {
+      // @todo: check if it's not the same status
       // Get the question
       var question = getQuestion(question_id);
       // Update the question status
-      let status_info = StatusHelper.StatusInfo(question);
+      let status_info = StatusHelper.StatusInfo(question.status_info);
       status_info.setCurrent(status, date);
       question := { question with status_info = status_info.share() };
       // Replace the question
@@ -129,6 +127,42 @@ module {
 
     public func addObs(callback: (?Question, ?Question) -> ()) {
       observers_.addObs(callback);
+    };
+
+    type MatchCount = { count: Nat; id: Nat; };
+
+    // Revert the order so that the greatest match is the first pick of the heap
+    func matchCountCompare(m1: MatchCount, m2: MatchCount) : Order {
+      switch(Nat.compare(m1.count, m2.count)){
+        case(#greater) { #less; };
+        case(#less)    { #greater; };
+        case(#equal)   { #equal; };
+      };
+    };
+
+    let lower_case_array = TextUtils.initToLowerCaseArray();
+
+    public func searchQuestions(text: Text, limit: Nat) : [Nat] {
+
+      let lower_text = TextUtils.toLowerCase(text, lower_case_array);
+
+      let heap = Heap.Heap<MatchCount>(matchCountCompare);
+      for (question in iter()) {
+        let lower_title = TextUtils.toLowerCase(question.title, lower_case_array);
+        let match_count = TextUtils.matchCount(lower_text, lower_title);
+        Debug.print("Match count for " # Nat.toText(question.id) # ": " # Nat.toText(match_count) # "\n");
+        heap.put({ count = match_count; id = question.id; });
+      };
+
+      let buffer = Buffer.Buffer<Nat>(limit);
+      label to_array for (index in Iter.range(0, limit - 1)) {
+        switch(heap.removeMin()){
+          case(null) { break to_array; };
+          case(?match_count) { buffer.add(match_count.id); };
+        };
+      };
+
+      Buffer.toArray(buffer);
     };
 
   };

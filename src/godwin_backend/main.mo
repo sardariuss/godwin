@@ -60,20 +60,24 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.removeCategory(caller, category);
   };
 
-  public query func getPickRate() : async Duration {
-    game_.getPickRate();
+  public query func getInterestPickRate() : async Duration {
+    game_.getInterestPickRate();
   };
 
-  public shared({caller}) func setPickRate(rate: Duration) : async Result<(), SetPickRateError> {
-    game_.setPickRate(caller, rate);
+  public shared({caller}) func setInterestPickRate(rate: Duration) : async Result<(), SetPickRateError> {
+    game_.setInterestPickRate(caller, rate);
   };
 
-  public query func getDuration(status: Status) : async Duration {
-    game_.getDuration(status);
+  public query func getStatusDuration(status: Status) : async Duration {
+    game_.getStatusDuration(status);
   };
 
-  public shared({caller}) func setDuration(status: Status, duration: Duration) : async Result<(), SetDurationError> {
-    game_.setDuration(caller, status, duration);
+  public shared({caller}) func setStatusDuration(status: Status, duration: Duration) : async Result<(), SetDurationError> {
+    game_.setStatusDuration(caller, status, duration);
+  };
+
+  public query func searchQuestions(text: Text, limit: Nat) : async [Nat] {
+    game_.searchQuestions(text, limit);
   };
 
   public query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {

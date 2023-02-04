@@ -62,6 +62,10 @@ module {
     }
   };
 
+  public func question(question: Question) : Testable.TestableItem<Question> {
+    { display = Questions.toText; equals = Questions.equal; item = question; };
+  };
+
   public func optQuestion(question: ?Question) : Testable.TestableItem<?Question> {
     testOptItem(question, Questions.toText, Questions.equal);
   };

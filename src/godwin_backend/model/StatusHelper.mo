@@ -39,13 +39,13 @@ module {
   public let status_hash : Map.HashUtils<Status> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b));
 
   public func isHistoryIteration(question: Question, status: Status, iteration: Nat) : Bool {
-    let helper = StatusInfo(question);
+    let helper = StatusInfo(question.status_info);
     not (helper.getCurrentStatus() == status and helper.getCurrentIteration() == iteration) 
       and helper.getIteration(status) <= iteration;
   };
 
   public func isValidIteration(question: Question, status: Status, iteration: Nat) : Bool {
-    let helper = StatusInfo(question);
+    let helper = StatusInfo(question.status_info);
     helper.getIteration(status) <= iteration;
   };
 
@@ -72,20 +72,40 @@ module {
   };
 
   public func getIteration(question: Question, status: Status) : Nat {
-    StatusInfo(question).getIteration(status);
+    StatusInfo(question.status_info).getIteration(status);
   };
 
   public func getIterations(question: Question, status: Status) : Iter<Nat> {
-    StatusInfo(question).getIterations(status);
+    StatusInfo(question.status_info).getIterations(status);
   };
 
-  public class StatusInfo(question: Question) {
+  public func initStatusInfo(date: Time) : Types.StatusInfo {
+    {
+      current = {
+        status = #VOTING(#INTEREST);
+        date;
+        index = 0;
+      };
+      history = [];
+      iterations = [(#VOTING(#INTEREST), 0)];
+    };
+  };
 
-    var current_ = question.status_info.current;
+  public func updateStatusInfo(question: Question, status: Status, date: Time) : Question {
+    let helper = StatusInfo(question.status_info);
+    helper.setCurrent(status, date);
+    {
+      question with status_info = helper.share();
+    };
+  };
+
+  public class StatusInfo(status_info: Types.StatusInfo) {
+
+    var current_ = status_info.current;
     
-    let history_ = Buffer.fromArray<IndexedStatus>(question.status_info.history);
+    let history_ = Buffer.fromArray<IndexedStatus>(status_info.history);
 
-    let iterations_ = Utils.arrayToMap<Status, Nat>(question.status_info.iterations, status_hash);
+    let iterations_ = Utils.arrayToMap<Status, Nat>(status_info.iterations, status_hash);
 
     public func share() : Types.StatusInfo {
       {

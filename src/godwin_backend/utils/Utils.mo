@@ -12,8 +12,6 @@ import Char "mo:base/Char";
 import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 
-import Unicode "Unicode";
-
 module {
 
   // For convenience: from base module
@@ -189,21 +187,21 @@ module {
     { next = func () : ?T { null; }; };
   };
 
-  public func textIntersect(text_1: Text, text_2: Text) : Bool {
-    let to_lower = Unicode.initToLowerCaseArray();
+  public func textIntersect(text_1: Text, text_2: Text, to_lower: [Nat32]) : Nat {
+
     let lower_text_1 = Text.map(text_1, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
     let lower_text_2 = Text.map(text_2, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
 
-    var intersect = false;
-    label whatever for (word in Text.split(lower_text_2, #predicate(Char.isWhitespace))){
-      if (word.size() < 3) continue whatever;
+    var match_count = 0;
+    label find_match for (word in Text.split(lower_text_2, #predicate(Char.isWhitespace))){
+      if (word.size() < 3) continue find_match;
       if (Text.contains(lower_text_1, #text(word))){
-        intersect := true;
-        break whatever;
+        match_count += 1;
+        break find_match;
       };
     };
 
-    intersect;
+    match_count;
   };
 
 };

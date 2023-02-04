@@ -6,7 +6,6 @@ import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
 import Scheduler "Scheduler";
-import Controller "Controller";
 import Categories "Categories";
 
 import Set "mo:map/Set";
@@ -37,13 +36,11 @@ module {
   type PolarizationMap = Types.PolarizationMap;
   type Duration = Types.Duration;
   type Polarization = Types.Polarization;
+  type SchedulerParameters = Types.SchedulerParameters;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type Appeal = Types.Appeal;
   type Status = Types.Status;
-
-  type QuestionOrderBy = QuestionQueries.OrderBy;
-  type QuestionKey = QuestionQueries.Key;
 
   public type State = {
     admin             : Principal;
@@ -58,10 +55,15 @@ module {
       index              : Ref<Nat>;
     };
     queries           : {
-      register           : Map<QuestionOrderBy, OrderedSet<QuestionKey>>;
+      register           : QuestionQueries.Register;
     };
     controller        : {
-      model              : Ref<Controller.DataModel>;
+      model              : {
+        time             : Ref<Time>; 
+        most_interesting : Ref<?Nat>;
+        last_pick_date   : Ref<Time>;
+        params           : Ref<SchedulerParameters>;
+      };
     };
     scheduler         : {
       register:            Scheduler.Register;
@@ -84,13 +86,18 @@ module {
       };
       questions      = {
         register              = Map.new<Nat, Question>();
-        index                 = Ref.initRef(0 : Nat);
+        index                 = Ref.initRef<Nat>(0);
       };
       queries        = {
-        register              = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
+        register              = QuestionQueries.initRegister();
       };
       controller     = {
-        model                 = Ref.initRef(Controller.initDataModel(creation_date, parameters.scheduler));
+        model                 = {
+          time                    = Ref.initRef<Time>(creation_date);
+          most_interesting        = Ref.initRef<?Nat>(null);
+          last_pick_date          = Ref.initRef<Time>(creation_date);
+          params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
+        };
       };
       scheduler      = {
         register              = Scheduler.initRegister(parameters.scheduler, creation_date);

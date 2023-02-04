@@ -52,18 +52,22 @@ module {
   type StatusEntry = { question_id: Nat; status: Status; date: Int; };
   type AppealScore = { question_id: Nat; score: Int; };
 
+  public type Register = Map<OrderBy, OrderedSet<Key>>;
   public type QuestionQueries = Queries.Queries<OrderBy, Key, Question>;
-
   public type QueryQuestionsResult = Queries.QueryResult<Question>;
   public type Direction = Queries.Direction;
 
-  public func addOrderBy(register: Map<OrderBy, OrderedSet<Key>>, order_by: OrderBy) {
+  public func initRegister() : Register {
+    Map.new<OrderBy, OrderedSet<Key>>();
+  };
+
+  public func addOrderBy(register: Register, order_by: OrderBy) {
     if(Option.isNull(Map.get(register, orderByHash, order_by))){
       Map.set(register, orderByHash, order_by, OrderedSet.init<Key>());
     };
   };
 
-  public func build(register: Map<OrderBy, OrderedSet<Key>>, questions: Questions, interests: Interests) : QuestionQueries {
+  public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
 
     let from_key = func(key: Key) : Question {
       questions.getQuestion(unwrapQuestionId(key));
@@ -78,7 +82,7 @@ module {
         case(#STATUS(_))      { toStatusEntry(question); };
         case(#INTEREST_SCORE) {
           // Assume the current iteration is #INTEREST and only the current iteration is used
-          toAppealScore(interests.getVote(question.id, StatusHelper.StatusInfo(question).getCurrentIteration()));
+          toAppealScore(interests.getVote(question.id, StatusHelper.StatusInfo(question.status_info).getCurrentIteration()));
         };
       };
     };
@@ -108,7 +112,7 @@ module {
       );
       // @todo: the obs could be on the status instead of the question
       Option.iterate(new, func(question: Question) {
-        let status_info = StatusHelper.StatusInfo(question);
+        let status_info = StatusHelper.StatusInfo(question.status_info);
         if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
           queries.remove(toAppealScore(interests.getVote(question.id, status_info.getIteration(#VOTING(#INTEREST)))));
         };

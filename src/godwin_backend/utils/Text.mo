@@ -1,16 +1,35 @@
 import Array "mo:base/Array";
 import Nat32 "mo:base/Nat32";
+import Char "mo:base/Char";
+import Text "mo:base/Text";
 
 module {
 
+  // For convenience: from base module
+
+  public func matchCount(text_1: Text, text_2: Text) : Nat {
+    var match_count = 0;
+    // @todo: need to split on punctuation as well
+    for (word in Text.split(text_2, #predicate(Char.isWhitespace))){
+      if (word.size() > 2 and Text.contains(text_1, #text(word))){
+        match_count += 1;
+      };
+    };
+    match_count;
+  };
+
+  public func toLowerCase(text: Text, to_lower: [Nat32]) : Text {
+    Text.map(text, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
+  };
+
   public func initToLowerCaseArray() : [Nat32] {
     Array.tabulate(0xFFFF, func(index: Nat) : Nat32 {
-      toLowerCase(Nat32.fromNat(index));
+      mapToLowerCase(Nat32.fromNat(index));
     });
   };
 
   // from www.ibm.com/docs/en/i/7.2?topic=tables-unicode-uppercase-lowercase-conversion-mapping-table
-  public func toLowerCase(w: Nat32) : Nat32 {
+  func mapToLowerCase(w: Nat32) : Nat32 {
     if(w == 0x0041) {	return 0x0061; };
     if(w == 0x0042) {	return 0x0062; };
     if(w == 0x0043) {	return 0x0063; };

@@ -1,5 +1,5 @@
 //import TestQueries "questions/testQueries";
-//import TestQuestions "questions/testQuestions";
+import TestQuestions "questions/testQuestions";
 //import TestHotRanking "questions/testHotRanking";
 import TestInterests "votes/testInterests";
 import TestOpinions "votes/testOpinions";
@@ -14,7 +14,7 @@ import Suite "mo:matchers/Suite";
 // @todo: fix unit tests
 
 //Suite.run(TestQueries.TestQueries().getSuite());
-//Suite.run(TestQuestions.TestQuestions().getSuite());
+Suite.run(TestQuestions.TestQuestions().getSuite());
 TestInterests.run();
 TestOpinions.run();
 TestCategorizations.run();

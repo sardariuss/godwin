@@ -1,6 +1,8 @@
 import Types "Types";
 import Users "Users";
-import Controller "Controller";
+import Controller "controller/Controller";
+import Schema "controller/Schema";
+import Model "controller/Model";
 import Scheduler "Scheduler";
 import Decay "Decay";
 import Questions "Questions";
@@ -62,8 +64,18 @@ module {
       categories
     );
 
+    let model = Model.build(
+      state_.controller.model.time,
+      state_.controller.model.most_interesting,
+      state_.controller.model.last_pick_date,
+      state_.controller.model.params
+    );
+
+    let schema = Schema.SchemaBuilder(model).build();
+
     let controller = Controller.build(
-      state_.controller.model,
+      schema,
+      model,
       questions,
       polls
     );
@@ -75,7 +87,7 @@ module {
       polls
     );
 
-    Game.Game(admin, categories, users, questions, queries, controller, scheduler, polls);
+    Game.Game(admin, categories, users, questions, queries, model, controller, scheduler, polls);
   };
 
 };
