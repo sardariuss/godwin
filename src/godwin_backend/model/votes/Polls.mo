@@ -2,7 +2,6 @@ import Types "../Types";
 import Interests "Interests";
 import Opinions "Opinions";
 import Categorizations "Categorizations";
-import Controller "../controller/Controller";
 import StatusHelper "../StatusHelper";
 import Cursor "representation/Cursor";
 import Categories "../Categories";
@@ -33,22 +32,6 @@ module {
   type Category = Types.Category;
   type Polarization = Types.Polarization;
   type CategorizationsBallot = Categorizations.Ballot;
-  type Controller = Controller.Controller;
-
-  public func build(controller: Controller, interests: Interests, opinions: Opinions, categorizations: Categorizations, categories: Categories) : Polls {
-    let polls = Polls(interests, opinions, categorizations, categories);
-
-    controller.addObs(func(old: ?Question, new: ?Question) {
-      Option.iterate(new, func(question: Question) {
-        switch(StatusHelper.getCurrentStatus(question)){
-          case(#VOTING(poll)) { polls.openVote(question, poll); };
-          case(_) {};
-        };
-      })
-    });
-    
-    polls;
-  };
 
   public class Polls(interests_: Interests, opinions_: Opinions, categorizations_: Categorizations, categories_: Categories){
 

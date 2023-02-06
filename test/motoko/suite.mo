@@ -14,7 +14,7 @@ import Suite "mo:matchers/Suite";
 // @todo: fix unit tests
 
 //Suite.run(TestQueries.TestQueries().getSuite());
-Suite.run(TestQuestions.TestQuestions().getSuite());
+TestQuestions.run();
 TestInterests.run();
 TestOpinions.run();
 TestCategorizations.run();

@@ -69,14 +69,22 @@ module {
       };
       
       Option.iterate(StateMachine.submitEvent(state_machine, event), func(status: Status) {
-        // Update the question status
-        let question_updated = StatusHelper.updateStatusInfo(question, status, date);
-        questions_.replaceQuestion(question_updated);
-        // Remove the question if it is in the trash
-        if (status == #TRASH){ questions_.removeQuestion(question.id); };
+        let question_updated = switch(status) {
+          case(#TRASH) {
+            // @todo: the votes need to be removed too
+            // Remove the question if it is in the trash
+            questions_.removeQuestion(question.id); 
+            null; 
+          };
+          case(_) {
+            // Update the question status
+            let update = StatusHelper.updateStatusInfo(question, status, date);
+            questions_.replaceQuestion(update);
+            ?update;
+          };
+        };
         // Notify the observers
-        // @todo: should we notify the observers if the question is in the trash?
-        observers_.callObs(?question, ?question_updated);
+        observers_.callObs(?question, question_updated);
       });
     };
 

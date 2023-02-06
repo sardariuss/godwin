@@ -71,6 +71,10 @@ module {
     question.status_info.current.status;
   };
 
+  public func getCurrent(question: Question) : IndexedStatus {
+    question.status_info.current;
+  };
+
   public func getIteration(question: Question, status: Status) : Nat {
     StatusInfo(question.status_info).getIteration(status);
   };

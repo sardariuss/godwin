@@ -109,6 +109,10 @@ module {
       Map.get(getVote(question_id, iteration).ballots, Map.phash, principal);
     };
 
+    public func hasBallot(principal: Principal, question_id: Nat, iteration: Nat) : Bool {
+      Map.has(getVote(question_id, iteration).ballots, Map.phash, principal);
+    };
+
     public func putBallot(principal: Principal, question_id: Nat, iteration: Nat, ballot: Ballot<T>) {
       if (not isBallotValid(ballot)){
         Debug.trap("The ballot is not valid");

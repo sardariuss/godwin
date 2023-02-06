@@ -4,11 +4,10 @@ import Cursor "votes/representation/Cursor";
 import PolarizationMap "votes/representation/PolarizationMap";
 import Opinions "votes/Opinions";
 import Categorizations "votes/Categorizations";
-import StatusHelper "StatusHelper";
-import Controller "controller/Controller";
 import Categories "Categories";
 import Utils "../utils/Utils";
 import WMap "../utils/wrappers/WMap";
+import Decay "Decay";
 
 import Map "mo:map/Map";
 
@@ -26,6 +25,7 @@ import Buffer "mo:base/Buffer";
 module {
 
   // For convenience: from base module
+  type Time = Int;
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
 
@@ -33,6 +33,7 @@ module {
 
   // For convenience: from types module
   type User = Types.User;
+  type Duration = Types.Duration;
   type Question = Types.Question;
   type Category = Types.Category;
   type Categories = Categories.Categories;
@@ -41,7 +42,6 @@ module {
   type PolarizationMap = Types.PolarizationMap;
   type Decay = Types.Decay;
   type WMap<K, V> = WMap.WMap<K, V>;
-  type Controller = Controller.Controller;
   type Categorizations = Categorizations.Categorizations;
   type Opinions = Opinions.Opinions;
   type Status = Types.Status;
@@ -50,27 +50,10 @@ module {
 
   public func build(
     register: Map<Principal, User>,
-    decay_params: ?Decay,
-    controller: Controller,
-    opinions: Opinions,
-    categorizations: Categorizations,
-    categories: Categories
+    date_init: Time,
+    half_life: ?Duration
   ) : Users {
-    let users = Users(WMap.WMap(register, Map.phash), decay_params);
-
-    controller.addObs(func(old: ?Question, new: ?Question) {
-      let old_status = Option.map(old, func(question: Question): Status { question.status_info.current.status; });
-      let new_status = Option.map(new, func(question: Question): Status { question.status_info.current.status; });
-      if (not Utils.equalOpt(old_status, new_status, StatusHelper.equalStatus)){
-        Option.iterate(new, func(question: Question) {
-          if (question.status_info.current.status == #CLOSED){
-            users.updateConvictions(question, opinions, categorizations, categories);
-          };
-        });
-      };
-    });
-
-    users;
+    Users(WMap.WMap(register, Map.phash), Decay.computeOptDecay(date_init, half_life));
   };
 
   public class Users(register_: WMap<Principal, User>, decay_params_: ?Decay) {
@@ -144,6 +127,7 @@ module {
 
     // @todo
     // Warning: assumes that the question is not closed yet but will be after convictions have been updated
+    // Warning: does not work if transition from #VOTING(#INTEREST) to #CLOSED
     // Watchout: this function makes a strong assumption that it is called only once every time the question status will be closed
     public func updateConvictions(question: Question, opinions: Opinions, categorizations: Categorizations, categories: Categories) {
 

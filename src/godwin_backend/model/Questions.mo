@@ -19,12 +19,14 @@ import Iter "mo:base/Iter";
 import TextUtils "../utils/Text";
 import Heap "mo:base/Heap";
 import Order "mo:base/Order";
+import Result "mo:base/Result";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Time = Int;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
@@ -37,6 +39,7 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Status = Types.Status;
+  type GetQuestionError = Types.GetQuestionError;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -63,6 +66,10 @@ module {
   };
 
   public class Questions(register_: WMap<Nat, Question>, index_: WRef<Nat>) {
+
+    public func tryGetQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
+      Result.fromOption(findQuestion(question_id), #QuestionNotFound);
+    };
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
@@ -101,7 +108,7 @@ module {
     public func replaceQuestion(question: Question) {
       switch(register_.get(question.id)){
         case(null) { Debug.trap("The question does not exist"); };
-        case(?question) { 
+        case(_) { 
           ignore register_.put(question.id, question);
         };
       };

@@ -1,7 +1,6 @@
 import Types "Types";
 import Questions "Questions";
 import Interests "votes/Interests";
-import Controller "controller/Controller";
 import StatusHelper "StatusHelper";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
@@ -28,7 +27,7 @@ module {
   type Questions = Questions.Questions;
   type Status = Types.Status;
   type Interests = Interests.Interests;
-  type Controller = Controller.Controller;
+  type Appeal = Types.Appeal;
 
   public type OrderBy = {
     #AUTHOR;
@@ -69,7 +68,7 @@ module {
     };
   };
 
-  public func build(register: Register, controller: Controller, questions: Questions, interests: Interests) : QuestionQueries {
+  public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
 
     let from_key = func(key: Key) : Question {
       questions.getQuestion(unwrapQuestionId(key));
@@ -99,33 +98,12 @@ module {
     );
 
     // @todo: only the status and interest score are plugged so far
-
     addOrderBy(register, #STATUS(#VOTING(#INTEREST)));
     addOrderBy(register, #STATUS(#VOTING(#OPINION)));
     addOrderBy(register, #STATUS(#VOTING(#CATEGORIZATION)));
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #INTEREST_SCORE);
-
-    controller.addObs(func(old: ?Question, new: ?Question){
-      queries.replace(
-        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
-        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
-      );
-      Option.iterate(new, func(question: Question) {
-        let status_info = StatusHelper.StatusInfo(question.status_info);
-        if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
-          queries.remove(toAppealScore(interests.getVote(question.id, status_info.getIteration(#VOTING(#INTEREST)))));
-        };
-      });
-    });
-
-    interests.addObs(func(old: ?InterestVote, new: ?InterestVote){
-      queries.replace(
-        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
-        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
-      );
-    });
 
     queries;
   };

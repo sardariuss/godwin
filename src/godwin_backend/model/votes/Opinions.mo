@@ -3,6 +3,8 @@ import Polarization "representation/Polarization";
 import Cursor "representation/Cursor";
 import Types "../Types";
 import WMap "../../utils/wrappers/WMap";
+import Poll "Poll";
+import Questions "../Questions";
 
 import Map "mo:map/Map";
 
@@ -17,14 +19,28 @@ module {
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
   type TypedBallot = Types.TypedBallot;
+  type Questions = Questions.Questions;
 
   public type Vote = Types.Vote<Cursor, Polarization>;
   public type Register = Map2D<Nat, Nat, Vote>;
   public type Opinions = Votes<Cursor, Polarization>;
+  public type Opinions2 = Poll.Poll<Cursor, Polarization>;
   public type Ballot = Types.Ballot<Cursor>;
 
   public func initRegister() : Register {
     Map.new<Nat, Map<Nat, Vote>>();
+  };
+
+  public func build2(register: Register, questions: Questions) : Opinions2 {
+    let votes = Votes.Votes(
+      WMap.WMap2D<Nat, Nat, Vote>(register, Map.nhash, Map.nhash),
+      Cursor.identity(),
+      Cursor.isValid,
+      Polarization.nil(),
+      Polarization.addCursor,
+      Polarization.subCursor
+    );
+    Poll.Poll(#OPINION, votes, questions);
   };
 
   public func build(register: Register) : Opinions {

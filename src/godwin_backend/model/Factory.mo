@@ -13,10 +13,14 @@ import State "State";
 import Game "Game";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
+import StatusHelper "StatusHelper";
+import Observers "../utils/Observers";
+import Utils "../utils/Utils";
 
 import Set "mo:map/Set";
 
 import Iter "mo:base/Iter";
+import Option "mo:base/Option";
 
 module {
 
@@ -25,6 +29,10 @@ module {
   type PolarizationMap = Types.PolarizationMap;
   type Question = Types.Question;
   type Status = Types.Status;
+  type InterestVote = Interests.Vote;
+  
+  type Key = QuestionQueries.Key;
+  let { toAppealScore; toStatusEntry } = QuestionQueries;
 
   type State = State.State;
 
@@ -57,24 +65,61 @@ module {
       questions
     );
 
-    let queries = QuestionQueries.build(state_.queries.register, controller, questions, interest_votes);
+    let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
     let users = Users.build(
       state_.users.register,
-      Decay.computeOptDecay(state_.creation_date, state_.users.convictions_half_life),
-      controller,
-      opinion_votes,
-      categorization_votes,
-      categories
+      state_.creation_date, 
+      state_.users.convictions_half_life
     );
 
-    let polls = Polls.build(
-      controller,
+    let polls = Polls.Polls(
       interest_votes,
       opinion_votes,
       categorization_votes,
       categories
     );
+
+    controller.addObs(func(old: ?Question, new: ?Question){
+      queries.replace(
+        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
+        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
+      );
+      Option.iterate(new, func(question: Question) {
+        let status_info = StatusHelper.StatusInfo(question.status_info);
+        if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
+          queries.remove(toAppealScore(interest_votes.getVote(question.id, status_info.getIteration(#VOTING(#INTEREST)))));
+        };
+      });
+    });
+
+    interest_votes.addObs(func(old: ?InterestVote, new: ?InterestVote){
+      queries.replace(
+        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
+        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
+      );
+    });
+
+    controller.addObs(func(old: ?Question, new: ?Question) {
+      let old_status = Option.map(old, func(question: Question): Status { question.status_info.current.status; });
+      let new_status = Option.map(new, func(question: Question): Status { question.status_info.current.status; });
+      if (not Utils.equalOpt(old_status, new_status, StatusHelper.equalStatus)){
+        Option.iterate(new, func(question: Question) {
+          if (question.status_info.current.status == #CLOSED){
+            users.updateConvictions(question, opinion_votes, categorization_votes, categories);
+          };
+        });
+      };
+    });
+
+    controller.addObs(func(old: ?Question, new: ?Question) {
+      Option.iterate(new, func(question: Question) {
+        switch(StatusHelper.getCurrentStatus(question)){
+          case(#VOTING(poll)) { polls.openVote(question, poll); };
+          case(_) {};
+        };
+      })
+    });
 
     Game.Game(admin, categories, users, questions, queries, model, controller, polls);
   };
