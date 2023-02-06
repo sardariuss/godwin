@@ -154,6 +154,10 @@ module {
       current_.index;
     };
 
+    public func getCurrentDate() : Time {
+      current_.date;
+    };
+
   };
 
 };

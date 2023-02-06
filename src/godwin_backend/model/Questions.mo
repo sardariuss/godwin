@@ -19,14 +19,12 @@ import Iter "mo:base/Iter";
 import TextUtils "../utils/Text";
 import Heap "mo:base/Heap";
 import Order "mo:base/Order";
-import Result "mo:base/Result";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Time = Int;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
@@ -66,10 +64,6 @@ module {
   };
 
   public class Questions(register_: WMap<Nat, Question>, index_: WRef<Nat>) {
-
-    public func tryGetQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
-      Result.fromOption(findQuestion(question_id), #QuestionNotFound);
-    };
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){

@@ -222,25 +222,6 @@ module {
     #PrincipalIsAnonymous;
   };
 
-  public type PutBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidAnswer;
-    #InvalidStatus;
-  };
-
-  public type GetBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidIteration;
-  };
-
-  public type RevealBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #VotingClosed;
-  };
-
   public type SetPickRateError = {
     #InsufficientCredentials;
   };
@@ -251,6 +232,37 @@ module {
 
   public type GetUserConvictionsError = {
     #PrincipalIsAnonymous;
+  };
+
+  public type GetAggregateError = {
+    #QuestionNotFound;
+    #VoteOngoing;
+  };
+
+  public type GetBallotError = {
+    #QuestionNotFound;
+    #VoteOngoing;
+  };
+
+  public type RevealBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidPoll;
+  };
+
+  public type PutBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidPoll;
+    #InvalidBallot;
+  };
+
+  public type PutFreshBallotError = {
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
+    #InvalidPoll;
+    #UserAlreadyVoted;
+    #InvalidBallot;
   };
 
 };

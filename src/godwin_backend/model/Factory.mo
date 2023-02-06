@@ -8,7 +8,7 @@ import Questions "Questions";
 import Interests "votes/Interests";
 import Opinions "votes/Opinions";
 import Categorizations "votes/Categorizations";
-import Polls "votes/Polls";
+import Poll "votes/Poll";
 import State "State";
 import Game "Game";
 import QuestionQueries "QuestionQueries";
@@ -73,13 +73,6 @@ module {
       state_.users.convictions_half_life
     );
 
-    let polls = Polls.Polls(
-      interest_votes,
-      opinion_votes,
-      categorization_votes,
-      categories
-    );
-
     controller.addObs(func(old: ?Question, new: ?Question){
       queries.replace(
         Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
@@ -114,14 +107,31 @@ module {
 
     controller.addObs(func(old: ?Question, new: ?Question) {
       Option.iterate(new, func(question: Question) {
-        switch(StatusHelper.getCurrentStatus(question)){
-          case(#VOTING(poll)) { polls.openVote(question, poll); };
+        let status_info = StatusHelper.StatusInfo(question.status_info);
+        switch(status_info.getCurrentStatus()){
+          case(#VOTING(poll)){
+            switch(poll){
+              case(#INTEREST) {
+                interest_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+              };
+              case(#OPINION) {
+                opinion_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+              };
+              case(#CATEGORIZATION) {
+                categorization_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+              };
+            };
+          };
           case(_) {};
         };
       })
     });
 
-    Game.Game(admin, categories, users, questions, queries, model, controller, polls);
+    let interest_poll = Poll.Poll(#INTEREST, interest_votes, questions);
+    let opinion_poll = Poll.Poll(#OPINION, opinion_votes, questions);
+    let categorization_poll = Poll.Poll(#CATEGORIZATION, categorization_votes, questions);
+
+    Game.Game(admin, categories, users, questions, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
   };
 
 };

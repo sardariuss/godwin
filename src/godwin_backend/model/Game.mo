@@ -5,7 +5,7 @@ import Controller "controller/Controller";
 import Model "controller/Model";
 import Questions "Questions";
 import Votes "votes/Votes";
-import Polls "votes/Polls";
+import Poll "votes/Poll";
 import Categories "Categories";
 import StatusHelper "StatusHelper";
 import Duration "Duration";
@@ -36,6 +36,16 @@ module {
   type TypedBallot = Types.TypedBallot;
   type TypedAnswer = Types.TypedAnswer;
   type PolarizationArray = Types.PolarizationArray;
+  type Ballot<T> = Types.Ballot<T>;
+  type Interest = Types.Interest;
+  type Appeal = Types.Appeal;
+  type Cursor = Types.Cursor;
+  type Polarization = Types.Polarization;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
+  type InterestPoll = Poll.Poll<Interest, Appeal>;
+  type OpinionPoll = Poll.Poll<Cursor, Polarization>;
+  type CategorizationPoll = Poll.Poll<CursorMap, PolarizationMap>;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -45,13 +55,15 @@ module {
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
-  type PutBallotError = Types.PutBallotError;
-  type GetBallotError = Types.GetBallotError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type TypedAggregate = Types.TypedAggregate;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
+  type GetAggregateError = Types.GetAggregateError;
+  type GetBallotError = Types.GetBallotError;
   type RevealBallotError = Types.RevealBallotError;
+  type PutBallotError = Types.PutBallotError;
+  type PutFreshBallotError = Types.PutFreshBallotError;
 
   public class Game(
     admin_: Principal,
@@ -61,7 +73,9 @@ module {
     queries_: QuestionQueries.QuestionQueries,
     model_: Model.Model,
     controller_: Controller.Controller,
-    polls_: Polls.Polls
+    interest_poll_: InterestPoll,
+    opinion_poll_: OpinionPoll,
+    categorization_poll_: CategorizationPoll
   ) = {
 
     public func getDecay() : ?Decay {
@@ -140,46 +154,44 @@ module {
       });
     };
 
-    public func putBallot(caller: Principal, question_id: Nat, answer: TypedAnswer, date: Time) : Result<(), PutBallotError> {
-      Result.chain<User, (), PutBallotError>(getUser(caller), func(_) {
-        Result.chain<Question, (), PutBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), (), PutBallotError>(Utils.toResult(Polls.matchCurrentPoll(question, answer), #InvalidStatus), func(_) {
-            polls_.putBallot(caller, question, answer, date);
-          })
-        })
-      });
+    public func getInterestAggregate(question_id: Nat, iteration: Nat) : Result<Appeal, GetAggregateError> {
+      interest_poll_.getAggregate(question_id, iteration);
     };
 
-    // Reveal the ballot for the current vote, put a default neutral ballot if no ballot has been given yet
-    // @todo: if the questions is revealed itself, this method has no benefit. The getQuestion and getQuestions 
-    // methods shall reveal the ballot of the questions. But this might bring performance issues (update method isntead of query).
-    public func revealBallot(caller: Principal, question_id: Nat, date: Time) : Result<TypedBallot, RevealBallotError> {
-      Result.chain<User, TypedBallot, RevealBallotError>(getUser(caller), func(_) {
-        Result.chain<Question, TypedBallot, RevealBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<Poll, TypedBallot, RevealBallotError>(Result.fromOption(StatusHelper.getCurrentPoll(question), #VotingClosed), func(poll) {
-            polls_.revealBallot(caller, question.id, StatusHelper.getIteration(question, #VOTING(poll)), poll, date);
-          })
-        })
-      });
+    public func getInterestBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, GetBallotError> {
+      interest_poll_.getBallot(principal, question_id, iteration);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : Result<?TypedBallot, GetBallotError> {
-      Result.chain<User, ?TypedBallot, GetBallotError>(getUser(principal), func(_) {
-        Result.chain<Question, ?TypedBallot, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), ?TypedBallot, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(poll), iteration), #InvalidIteration), func() {
-            polls_.getBallot(principal, question.id, iteration, poll);
-          })
-        })
-      });
+    public func putInterestBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
+      interest_poll_.putFreshBallot(principal, question_id, iteration, date, interest);
     };
 
-    // Get the aggregate of any vote, except the current one
-    public func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : Result<TypedAggregate, GetBallotError> {
-      Result.chain<Question, TypedAggregate, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        Result.mapOk<(), TypedAggregate, GetBallotError>(Utils.toResult(StatusHelper.isHistoryIteration(question, #VOTING(poll), iteration), #InvalidIteration), func() {
-          polls_.getAggregate(question.id, iteration, poll);
-        })
-      });
+    public func getOpinionAggregate(question_id: Nat, iteration: Nat) : Result<Polarization, GetAggregateError> {
+      opinion_poll_.getAggregate(question_id, iteration);
+    };
+
+    public func getOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
+      opinion_poll_.getBallot(principal, question_id, iteration);
+    };
+
+    public func revealOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Result<Ballot<Cursor>, RevealBallotError> {
+      opinion_poll_.revealBallot(principal, question_id, iteration, date);
+    };
+
+    public func putOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
+      opinion_poll_.putBallot(principal, question_id, iteration, date, cursor);
+    };
+
+    public func getCategorizationAggregate(question_id: Nat, iteration: Nat) : Result<PolarizationMap, GetAggregateError> {
+      categorization_poll_.getAggregate(question_id, iteration);
+    };
+      
+    public func getCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CursorMap>, GetBallotError> {
+      categorization_poll_.getBallot(principal, question_id, iteration);
+    };
+      
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: CursorMap) : Result<(), PutFreshBallotError> {
+      categorization_poll_.putFreshBallot(principal, question_id, iteration, date, answer);
     };
 
     public func run(date: Time) {

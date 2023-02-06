@@ -12,6 +12,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
+  type Time = Time.Time;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -33,12 +34,21 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type GetUserError = Types.GetUserError;
   type TypedBallot = Types.TypedBallot;
-  type PutBallotError = Types.PutBallotError;
-  type GetBallotError = Types.GetBallotError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
+  type GetAggregateError = Types.GetAggregateError;
+  type GetBallotError = Types.GetBallotError;
   type RevealBallotError = Types.RevealBallotError;
+  type PutBallotError = Types.PutBallotError;
+  type PutFreshBallotError = Types.PutFreshBallotError;
+  type Ballot<T> = Types.Ballot<T>;
+  type Interest = Types.Interest;
+  type Appeal = Types.Appeal;
+  type Cursor = Types.Cursor;
+  type Polarization = Types.Polarization;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -96,20 +106,44 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.reopenQuestion(caller, question_id, Time.now());
   };
 
-  public shared({caller}) func putBallot(question_id: Nat, answer: TypedAnswer) : async Result<(), PutBallotError> {
-    game_.putBallot(caller, question_id, answer, Time.now());
+  public query func getInterestAggregate(question_id: Nat, iteration: Nat) : async Result<Appeal, GetAggregateError> {
+    game_.getInterestAggregate(question_id, iteration);
   };
 
-  public shared({caller}) func revealBallot(question_id: Nat) : async Result<TypedBallot, RevealBallotError> {
-    game_.revealBallot(caller, question_id, Time.now());
+  public query func getInterestBallot(principal: Principal, question_id: Nat, iteration: Nat) : async Result<?Ballot<Interest>, GetBallotError> {
+    game_.getInterestBallot(principal, question_id, iteration);
   };
 
-  public query func getBallot(principal: Principal, question_id: Nat, iteration: Nat, poll: Poll) : async Result<?TypedBallot, GetBallotError> {
-    game_.getBallot(principal, question_id, iteration, poll);
+  public shared({caller}) func putInterestBallot(question_id: Nat, iteration: Nat, date: Time, interest: Interest) : async Result<(), PutFreshBallotError> {
+    game_.putInterestBallot(caller, question_id, iteration, date, interest);
   };
 
-  public query func getAggregate(question_id: Nat, iteration: Nat, poll: Poll) : async Result<TypedAggregate, GetBallotError> {
-    game_.getAggregate(question_id, iteration, poll);
+  public query func getOpinionAggregate(question_id: Nat, iteration: Nat) : async Result<Polarization, GetAggregateError> {
+    game_.getOpinionAggregate(question_id, iteration);
+  };
+
+  public query func getOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat) : async Result<?Ballot<Cursor>, GetBallotError> {
+    game_.getOpinionBallot(principal, question_id, iteration);
+  };
+
+  public shared({caller}) func revealOpinionBallot(question_id: Nat, iteration: Nat, date: Time) : async Result<Ballot<Cursor>, RevealBallotError> {
+    game_.revealOpinionBallot(caller, question_id, iteration, date);
+  };
+
+  public shared({caller}) func putOpinionBallot(question_id: Nat, iteration: Nat, date: Time, cursor: Cursor) : async Result<(), PutBallotError> {
+    game_.putOpinionBallot(caller, question_id, iteration, date, cursor);
+  };
+
+  public query func getCategorizationAggregate(question_id: Nat, iteration: Nat) : async Result<PolarizationMap, GetAggregateError> {
+    game_.getCategorizationAggregate(question_id, iteration);
+  };
+
+  public query func getCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat) : async Result<?Ballot<CursorMap>, GetBallotError> {
+    game_.getCategorizationBallot(principal, question_id, iteration);
+  };
+
+  public shared({caller}) func putCategorizationBallot(question_id: Nat, iteration: Nat, date: Time, answer: CursorMap) : async Result<(), PutFreshBallotError> {
+    game_.putCategorizationBallot(caller, question_id, iteration, date, answer);
   };
 
   public shared func run() {

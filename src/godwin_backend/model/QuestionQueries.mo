@@ -27,7 +27,6 @@ module {
   type Questions = Questions.Questions;
   type Status = Types.Status;
   type Interests = Interests.Interests;
-  type Appeal = Types.Appeal;
 
   public type OrderBy = {
     #AUTHOR;
