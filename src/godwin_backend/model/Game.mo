@@ -1,7 +1,6 @@
 import Types "Types";
 import Users "Users";
 import QuestionQueries "QuestionQueries";
-import Scheduler "Scheduler";
 import Controller "controller/Controller";
 import Model "controller/Model";
 import Questions "Questions";
@@ -62,7 +61,6 @@ module {
     queries_: QuestionQueries.QuestionQueries,
     model_: Model.Model,
     controller_: Controller.Controller,
-    scheduler_: Scheduler.Scheduler,
     polls_: Polls.Polls
   ) = {
 
@@ -128,9 +126,7 @@ module {
 
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
       Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
-        let question = questions_.createQuestion(caller, date, title, text);
-        polls_.openVote(question, #INTEREST);
-        question;
+        controller_.openQuestion(caller, date, title, text);
       });
     };
 
@@ -187,7 +183,7 @@ module {
     };
 
     public func run(date: Time) {
-      controller_.run(questions_.iter(), date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
+      controller_.run(date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
     };
 
     public func setUserName(principal: Principal, name: Text) : Result<(), SetUserNameError> {

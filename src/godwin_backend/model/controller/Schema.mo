@@ -45,7 +45,14 @@ module {
       Option.getMapped(
         model_.getMostInteresting(),
         func(question_id: Nat) : Bool {
-          question_id == question.id and model_.getTime() > model_.getLastPickDate() + Duration.toTime(model_.getInterestPickRate());
+          if (question_id == question.id) {
+            if (model_.getTime() > model_.getLastPickDate() + Duration.toTime(model_.getInterestPickRate())){
+              // Update the last pick date
+              model_.setLastPickDate(model_.getTime());
+              return true;
+            };
+          };
+          false;
         },
         false
       );

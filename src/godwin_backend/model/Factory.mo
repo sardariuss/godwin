@@ -3,7 +3,6 @@ import Users "Users";
 import Controller "controller/Controller";
 import Schema "controller/Schema";
 import Model "controller/Model";
-import Scheduler "Scheduler";
 import Decay "Decay";
 import Questions "Questions";
 import Interests "votes/Interests";
@@ -46,24 +45,6 @@ module {
     
     let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
 
-    let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
-
-    let users = Users.build(
-      state_.users.register,
-      Decay.computeOptDecay(state_.creation_date, state_.users.convictions_half_life),
-      questions,
-      opinion_votes,
-      categorization_votes,
-      categories
-    );
-
-    let polls = Polls.Polls(
-      interest_votes,
-      opinion_votes,
-      categorization_votes,
-      categories
-    );
-
     let model = Model.build(
       state_.controller.model.time,
       state_.controller.model.most_interesting,
@@ -71,23 +52,31 @@ module {
       state_.controller.model.params
     );
 
-    let schema = Schema.SchemaBuilder(model).build();
-
     let controller = Controller.build(
-      schema,
       model,
-      questions,
-      polls
+      questions
     );
 
-    let scheduler = Scheduler.build(
-      state_.scheduler.register,
-      questions,
-      queries,
-      polls
+    let queries = QuestionQueries.build(state_.queries.register, controller, questions, interest_votes);
+
+    let users = Users.build(
+      state_.users.register,
+      Decay.computeOptDecay(state_.creation_date, state_.users.convictions_half_life),
+      controller,
+      opinion_votes,
+      categorization_votes,
+      categories
     );
 
-    Game.Game(admin, categories, users, questions, queries, model, controller, scheduler, polls);
+    let polls = Polls.build(
+      controller,
+      interest_votes,
+      opinion_votes,
+      categorization_votes,
+      categories
+    );
+
+    Game.Game(admin, categories, users, questions, queries, model, controller, polls);
   };
 
 };

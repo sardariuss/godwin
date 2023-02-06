@@ -1,6 +1,7 @@
 import Types "Types";
 import Questions "Questions";
 import Interests "votes/Interests";
+import Controller "controller/Controller";
 import StatusHelper "StatusHelper";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
@@ -27,6 +28,7 @@ module {
   type Questions = Questions.Questions;
   type Status = Types.Status;
   type Interests = Interests.Interests;
+  type Controller = Controller.Controller;
 
   public type OrderBy = {
     #AUTHOR;
@@ -67,7 +69,7 @@ module {
     };
   };
 
-  public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
+  public func build(register: Register, controller: Controller, questions: Questions, interests: Interests) : QuestionQueries {
 
     let from_key = func(key: Key) : Question {
       questions.getQuestion(unwrapQuestionId(key));
@@ -105,12 +107,11 @@ module {
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #INTEREST_SCORE);
 
-    questions.addObs(func(old: ?Question, new: ?Question){
+    controller.addObs(func(old: ?Question, new: ?Question){
       queries.replace(
         Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
         Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
       );
-      // @todo: the obs could be on the status instead of the question
       Option.iterate(new, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
         if (status_info.getCurrentStatus() == #VOTING(#OPINION)){

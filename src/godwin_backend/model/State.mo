@@ -5,7 +5,6 @@ import Ref "../utils/Ref";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
-import Scheduler "Scheduler";
 import Categories "Categories";
 
 import Set "mo:map/Set";
@@ -65,9 +64,6 @@ module {
         params           : Ref<SchedulerParameters>;
       };
     };
-    scheduler         : {
-      register:            Scheduler.Register;
-    };
     votes             : {
       interest           : Interests.Register;
       opinion            : Opinion.Register;
@@ -98,9 +94,6 @@ module {
           last_pick_date          = Ref.initRef<Time>(creation_date);
           params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
         };
-      };
-      scheduler      = {
-        register              = Scheduler.initRegister(parameters.scheduler, creation_date);
       };
       votes          = {
         interest              = Interests.initRegister();

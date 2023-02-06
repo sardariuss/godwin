@@ -1,5 +1,4 @@
 import Types "Types";
-import Observers "../utils/Observers";
 import WMap "../utils/wrappers/WMap";
 import Ref "../utils/Ref";
 import WRef "../utils/wrappers/WRef";
@@ -65,8 +64,6 @@ module {
 
   public class Questions(register_: WMap<Nat, Question>, index_: WRef<Nat>) {
 
-    let observers_ = Observers.Observers2<Question>();
-
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
         case(null) { Debug.trap("The question does not exist."); };
@@ -89,7 +86,6 @@ module {
       };
       register_.set(question.id, question);
       index_.set(index_.get() + 1);
-      observers_.callObs(null, ?question);
       question;
     };
 
@@ -98,35 +94,21 @@ module {
         case(null) { Debug.trap("The question does not exist"); };
         case(?question) { 
           ignore register_.remove(question.id);
-          observers_.callObs(?question, null);
         };
       };
     };
 
-    public func updateStatus(question_id: Nat, status: Status, date: Time) : Question {
-      // @todo: check if it's not the same status
-      // Get the question
-      var question = getQuestion(question_id);
-      // Update the question status
-      let status_info = StatusHelper.StatusInfo(question.status_info);
-      status_info.setCurrent(status, date);
-      question := { question with status_info = status_info.share() };
-      // Replace the question
-      switch(register_.put(question.id, question)){
-        case(null) { Prelude.unreachable(); };
-        case(?old_question) {
-          observers_.callObs(?old_question, ?question);
+    public func replaceQuestion(question: Question) {
+      switch(register_.get(question.id)){
+        case(null) { Debug.trap("The question does not exist"); };
+        case(?question) { 
+          ignore register_.put(question.id, question);
         };
       };
-      question;
     };
 
     public func iter() : Iter<Question> {
       register_.vals();
-    };
-
-    public func addObs(callback: (?Question, ?Question) -> ()) {
-      observers_.addObs(callback);
     };
 
     type MatchCount = { count: Nat; id: Nat; };

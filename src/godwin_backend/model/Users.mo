@@ -5,7 +5,7 @@ import PolarizationMap "votes/representation/PolarizationMap";
 import Opinions "votes/Opinions";
 import Categorizations "votes/Categorizations";
 import StatusHelper "StatusHelper";
-import Questions "Questions";
+import Controller "controller/Controller";
 import Categories "Categories";
 import Utils "../utils/Utils";
 import WMap "../utils/wrappers/WMap";
@@ -41,7 +41,7 @@ module {
   type PolarizationMap = Types.PolarizationMap;
   type Decay = Types.Decay;
   type WMap<K, V> = WMap.WMap<K, V>;
-  type Questions = Questions.Questions;
+  type Controller = Controller.Controller;
   type Categorizations = Categorizations.Categorizations;
   type Opinions = Opinions.Opinions;
   type Status = Types.Status;
@@ -51,14 +51,14 @@ module {
   public func build(
     register: Map<Principal, User>,
     decay_params: ?Decay,
-    questions: Questions,
+    controller: Controller,
     opinions: Opinions,
     categorizations: Categorizations,
     categories: Categories
   ) : Users {
     let users = Users(WMap.WMap(register, Map.phash), decay_params);
 
-    questions.addObs(func(old: ?Question, new: ?Question) {
+    controller.addObs(func(old: ?Question, new: ?Question) {
       let old_status = Option.map(old, func(question: Question): Status { question.status_info.current.status; });
       let new_status = Option.map(new, func(question: Question): Status { question.status_info.current.status; });
       if (not Utils.equalOpt(old_status, new_status, StatusHelper.equalStatus)){

@@ -1,6 +1,6 @@
 import Questions "../Questions";
+import StatusHelper "../StatusHelper";
 import Types "../Types";
-import Polls "../votes/Polls";
 import Model "Model";
 import Schema "Schema";
 import Event "Event";
@@ -20,79 +20,63 @@ module {
   type Question = Types.Question;
   type Status = Types.Status;
   type Questions = Questions.Questions;
-  type Polls = Polls.Polls;
 
   type Model = Model.Model;
   type Event = Event.Event;
   type Schema = Schema.Schema;
+  
+  public type Callback = (?Question, ?Question) -> ();
 
-  type Callback = (?Question, ?Question) -> ();
-
-  public func build(schema: Schema, model: Model, questions: Questions, polls: Polls) : Controller {
-
-    let controller = Controller(schema, model, questions);
-
-    controller.addObserver(func(old: ?Question, new: ?Question) {
-      Option.iterate(new, func(question: Question) {
-        let indexed_status = question.status_info.current;
-        switch(indexed_status.status){
-          case(#VOTING(poll)){
-            // Open the vote
-            polls.openVote(question, poll);
-            if (poll == #OPINION){
-              // Update the last pick
-              model.setLastPickDate(indexed_status.date);
-            };
-          };
-          case(#TRASH){
-            // Remove the question
-            questions.removeQuestion(question.id);
-          };
-          case(_) {};
-        };
-      });
-    });
-
-    controller;
+  public func build(model: Model, questions: Questions) : Controller {
+    Controller(Schema.SchemaBuilder(model).build(), model, questions);
   };
 
   public class Controller(schema_: Schema, model_: Model, questions_: Questions) = {
 
-    let observers_ = Buffer.Buffer<Callback>(0);
+    let observers_ = Observers.Observers2<Question>();
 
-    public func run(questions: Iter<Question>, time: Time, most_interesting: ?Nat) {
-      model_.setTime(time);
+    public func run(date: Time, most_interesting: ?Nat) {
+      model_.setTime(date);
       model_.setMostInteresting(most_interesting);
-      for (question in questions){
-        submitEvent(question, #TIME_UPDATE, time);
+      for (question in questions_.iter()){
+        submitEvent(question, #TIME_UPDATE, date);
       };
     };
 
-    public func reopenQuestion(question: Question, time: Time) {
-      submitEvent(question, #REOPEN_QUESTION, time);
+    // @todo: to be able to pass the question creation through the validation of the state machine,
+    // we need to create a new question with the status #NEW and then update it with the status #OPEN.
+    // But the ideal would be to have START, NEW (instead of trash) as additional State enum values.
+    public func openQuestion(author: Principal, date: Int, title: Text, text: Text) : Question { 
+      let question = questions_.createQuestion(author, date, title, text);
+      observers_.callObs(null, ?question);
+      question;
     };
 
-    public func addObserver(callback: Callback) {
-      observers_.add(callback);
+    public func reopenQuestion(question: Question, date: Time) {
+      submitEvent(question, #REOPEN_QUESTION, date);
     };
 
-    func submitEvent(question: Question, event: Event, time: Time) {
+    public func addObs(callback: Callback) {
+      observers_.addObs(callback);
+    };
 
-      let current = question.status_info.current.status;
-      
+    func submitEvent(question: Question, event: Event, date: Time) {
+
       let state_machine = {
         schema = schema_;
         model = question;
-        var current = current;
+        var current = question.status_info.current.status;
       };
       
       Option.iterate(StateMachine.submitEvent(state_machine, event), func(status: Status) {
         // Update the question status
-        let updated_question = questions_.updateStatus(question.id, status, time);
+        let question_updated = StatusHelper.updateStatusInfo(question, status, date);
+        questions_.replaceQuestion(question_updated);
+        // Remove the question if it is in the trash
+        if (status == #TRASH){ questions_.removeQuestion(question.id); };
         // Notify the observers
-        for (observer in observers_.vals()){
-          observer(?question, ?updated_question); // @todo: remove questions from parameters
-        };
+        // @todo: should we notify the observers if the question is in the trash?
+        observers_.callObs(?question, ?question_updated);
       });
     };
 
