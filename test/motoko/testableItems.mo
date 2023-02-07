@@ -32,7 +32,7 @@ module {
   type Ballot<T> = Types.Ballot<T>;
   
   // For convenience: from queries module
-  type QueryQuestionsResult = Queries.QueryQuestionsResult;
+  type ScanLimitResult = Queries.ScanLimitResult;
 
   public func testOptItem<T>(item: ?T, to_text: T -> Text, equal: (T, T) -> Bool) : Testable.TestableItem<?T> {
     {
@@ -123,44 +123,43 @@ module {
     { display = Polarization.toText; equals = Polarization.equal; item = polarization; };
   };
 
-  // @todo
-//  public func testQueryQuestionsResult(query_result: QueryQuestionsResult) : Testable.TestableItem<QueryQuestionsResult> {
-//    {
-//      display = func (query_result) : Text {
-//        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-//        buffer.add("ids = [");
-//        for (id in Array.vals(query_result.ids)) {
-//          buffer.add(Nat.toText(id) # ", ");
-//        };
-//        buffer.add("], next = ");
-//        switch(query_result.next_id){
-//          case(null){ buffer.add("null"); };
-//          case(?id) { buffer.add(Nat.toText(id)); };
-//        };
-//        Text.join("", buffer.vals());
-//      };
-//      equals = func (qr1: QueryQuestionsResult, qr2: QueryQuestionsResult) : Bool { 
-//        let equal_ids = Array.equal(qr1.ids, qr2.ids, func(id1: Nat, id2: Nat) : Bool {
-//          Nat.equal(id1, id2);
-//        });
-//        let equal_next = switch(qr1.next_id) {
-//          case(null) { 
-//            switch(qr2.next_id) {
-//              case(null) { true };
-//              case(_) { false; };
-//            };
-//          };
-//          case(?next_id1) {
-//            switch(qr2.next_id) {
-//              case(null) { false };
-//              case(?next_id2) { Nat.equal(next_id1, next_id2); };
-//            };
-//          };
-//        };
-//        equal_ids and equal_next;
-//      };
-//      item = query_result;
-//    };
-//  };
+  public func testScanLimitResult(result: ScanLimitResult) : Testable.TestableItem<ScanLimitResult> {
+    {
+      display = func (result) : Text {
+        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        buffer.add("keys = [");
+        for (id in Array.vals(result.keys)) {
+          buffer.add(Nat.toText(id) # ", ");
+        };
+        buffer.add("], next = ");
+        switch(result.next){
+          case(null){ buffer.add("null"); };
+          case(?id) { buffer.add(Nat.toText(id)); };
+        };
+        Text.join("", buffer.vals());
+      };
+      equals = func (qr1: ScanLimitResult, qr2: ScanLimitResult) : Bool { 
+        let equal_keys = Array.equal(qr1.keys, qr2.keys, func(id1: Nat, id2: Nat) : Bool {
+          Nat.equal(id1, id2);
+        });
+        let equal_next = switch(qr1.next) {
+          case(null) { 
+            switch(qr2.next) {
+              case(null) { true };
+              case(_) { false; };
+            };
+          };
+          case(?next1) {
+            switch(qr2.next) {
+              case(null) { false };
+              case(?next2) { Nat.equal(next1, next2); };
+            };
+          };
+        };
+        equal_keys and equal_next;
+      };
+      item = result;
+    };
+  };
 
 };

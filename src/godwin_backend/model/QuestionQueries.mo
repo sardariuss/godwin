@@ -20,7 +20,7 @@ module {
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
   type InterestVote = Interests.Vote;
-  type Queries2<O, K> = Queries.Queries2<O, K>;
+  type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
@@ -52,49 +52,20 @@ module {
   type StatusEntry = { question_id: Nat; status: Status; date: Int; };
   type AppealScore = { question_id: Nat; score: Int; };
 
-  public type Register = Map<OrderBy, OrderedSet<Key>>;
-  public type QuestionQueries = Queries.Queries<OrderBy, Key, Question>;
-  public type QueryQuestionsResult = Queries.QueryResult<Question>;
+  public type Register = Queries.Register<OrderBy, Key>;
+  public type QuestionQueries = Queries.Queries<OrderBy, Key>;
   public type Direction = Queries.Direction;
+  public type ScanLimitResult = Queries.ScanLimitResult;
 
   public func initRegister() : Register {
-    Map.new<OrderBy, OrderedSet<Key>>();
+    Queries.initRegister<OrderBy, Key>();
   };
 
   public func addOrderBy(register: Register, order_by: OrderBy) {
-    if(Option.isNull(Map.get(register, orderByHash, order_by))){
-      Map.set(register, orderByHash, order_by, OrderedSet.init<Key>());
-    };
+    Queries.addOrderBy(register, orderByHash, order_by);
   };
 
   public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
-
-    let from_key = func(key: Key) : Question {
-      questions.getQuestion(unwrapQuestionId(key));
-    };
-
-    let to_key = func(order_by: OrderBy, question: Question) : Key {
-      switch(order_by){
-        case(#AUTHOR)         { toAuthorEntry(question); };
-        case(#TITLE)          { toTitleEntry(question); };
-        case(#TEXT)           { toTextEntry(question); };
-        case(#DATE)           { toDateEntry(question); };
-        case(#STATUS(_))      { toStatusEntry(question); };
-        case(#INTEREST_SCORE) {
-          // Assume the current iteration is #INTEREST and only the current iteration is used
-          toAppealScore(interests.getVote(question.id, StatusHelper.StatusInfo(question.status_info).getCurrentIteration()));
-        };
-      };
-    };
-
-    let queries = Queries.buildQueries<OrderBy, Key, Question>(
-      register,
-      orderByHash,
-      compareKeys,
-      toOrderBy,
-      from_key,
-      to_key
-    );
 
     // @todo: only the status and interest score are plugged so far
     addOrderBy(register, #STATUS(#VOTING(#INTEREST)));
@@ -103,6 +74,14 @@ module {
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #INTEREST_SCORE);
+
+    let queries = Queries.build<OrderBy, Key>(
+      register,
+      orderByHash,
+      compareKeys,
+      toOrderBy,
+      getKeyIdentifier
+    );
 
     queries;
   };
@@ -150,6 +129,17 @@ module {
       case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
       case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
       case(#INTEREST_SCORE) { compareAppealScores(unwrapAppealScore(a), unwrapAppealScore(b)); };
+    };
+  };
+
+  func getKeyIdentifier(key: Key) : Nat {
+    switch(key){
+      case(#AUTHOR(entry)) { entry.question_id; };
+      case(#TITLE(entry)) { entry.question_id; };
+      case(#TEXT(entry)) { entry.question_id; };
+      case(#DATE(entry)) { entry.question_id; };
+      case(#STATUS(entry)) { entry.question_id; };
+      case(#INTEREST_SCORE(entry)) { entry.question_id; };
     };
   };
 

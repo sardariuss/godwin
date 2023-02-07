@@ -44,8 +44,8 @@ module {
     };
 
     // @todo: to be able to pass the question creation through the validation of the state machine,
-    // we need to create a new question with the status #NEW and then update it with the status #OPEN.
-    // But the ideal would be to have START, NEW (instead of trash) as additional State enum values.
+    // we need to create a new question with the status #START and then update it with the status #VOTING(#INTEREST).
+    // Same thing for the #END status (instead of #TRASH)
     public func openQuestion(author: Principal, date: Int, title: Text, text: Text) : Question { 
       let question = questions_.createQuestion(author, date, title, text);
       observers_.callObs(null, ?question);

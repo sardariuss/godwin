@@ -1,7 +1,7 @@
 import Types "../../../src/godwin_backend/model/Types";
-import Polarization "../../../src/godwin_backend/representation/Polarization";
-import Iteration "../../../src/godwin_backend/votes/iteration";
-import Queries "../../../src/godwin_backend/questions/queries";
+import Polarization "../../../src/godwin_backend/model/votes/representation/Polarization";
+import Queries "../../../src/godwin_backend/model/QuestionQueries";
+
 import TestableItems "../testableItems";
 
 import Matchers "mo:matchers/Matchers";
@@ -28,7 +28,7 @@ module {
     // For convenience: from types module
     type Question = Types.Question;
     
-    let testQuery = TestableItems.testOrderedSet.ScanLimitResult;
+    let testScanResult = TestableItems.testScanLimitResult;
 
     let question_0 :                        Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };
     let question_0_text_update :            Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };
@@ -52,13 +52,13 @@ module {
       queries.add(question_2);
       queries.add(question_3);
       queries.add(question_4);
-      tests.add(test("Query by #TITLE",                               { ids = [4, 3]; next_id = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                                null,                                        null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #TITLE",                               { ids = [2, 1]; next_id = ?0;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                                Queries.initQuestionKey(question_2, #TITLE), null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids = [4, 0]; next_id = ?3;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                        null,                                        null,                                                #bwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids = [3, 2]; next_id = ?1;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                        null,                                        Queries.initQuestionKey(question_3, #CREATION_DATE), #bwd, 2 )))));
-      tests.add(test("Query by #INTEREST",                            { ids = [3, 0]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                             null,                                        null,                                                #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#OPINION))",        { ids = [2, 4]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),         null,                                        null,                                                #fwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION))", { ids = [1];    next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)),  null,                                        null,                                                #fwd, 5 )))));
+      tests.add(test("Query by #TITLE",                               { ids = [4, 3]; next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                                null,                                        null,                                                #fwd, 2 )))));
+      tests.add(test("Query by #TITLE",                               { ids = [2, 1]; next_id = ?0;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                                Queries.initQuestionKey(question_2, #TITLE), null,                                                #fwd, 2 )))));
+      tests.add(test("Query by #CREATION_DATE",                       { ids = [4, 0]; next_id = ?3;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                        null,                                        null,                                                #bwd, 2 )))));
+      tests.add(test("Query by #CREATION_DATE",                       { ids = [3, 2]; next_id = ?1;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                        null,                                        Queries.initQuestionKey(question_3, #CREATION_DATE), #bwd, 2 )))));
+      tests.add(test("Query by #INTEREST",                            { ids = [3, 0]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                             null,                                        null,                                                #bwd, 5 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#OPINION))",        { ids = [2, 4]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),         null,                                        null,                                                #fwd, 5 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION))", { ids = [1];    next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)),  null,                                        null,                                                #fwd, 5 )))));
       
       // Replace questions
       queries.replace(question_0, question_0_text_update);
@@ -66,20 +66,20 @@ module {
       queries.replace(question_2, question_2_interests_update);
       queries.replace(question_3, question_3_selection_stage_update);
       queries.replace(question_4, question_4_categorization_update);
-      tests.add(test("Query by #TITLE (after replace)",                               { ids = [0, 4, 3];    next_id = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after replace)",                       { ids = [4, 0, 1, 3]; next_id = ?2;   }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after replace)",                            { ids = [0];          next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#OPINION)) (after replace)",        { ids = [2, 4];       next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),        null, null, #fwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after replace)", { ids = [1, 3];       next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 5 )))));
+      tests.add(test("Query by #TITLE (after replace)",                               { ids = [0, 4, 3];    next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after replace)",                       { ids = [4, 0, 1, 3]; next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
+      tests.add(test("Query by #INTEREST (after replace)",                            { ids = [0];          next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#OPINION)) (after replace)",        { ids = [2, 4];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),        null, null, #fwd, 5 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after replace)", { ids = [1, 3];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 5 )))));
 
       // Remove questions
       queries.remove(question_0_text_update);
       queries.remove(question_1_date_update);
-      tests.add(test("Query by #TITLE (after remove)",                               { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after remove)",                       { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after remove)",                            { ids = [];        next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#OPINION)) (after remove)",        { ids = [2, 4];    next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),        null, null, #fwd, 4 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after remove)", { ids = [3];       next_id = null; }, Matchers.equals(testQuery(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 4 )))));
+      tests.add(test("Query by #TITLE (after remove)",                               { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
+      tests.add(test("Query by #CREATION_DATE (after remove)",                       { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
+      tests.add(test("Query by #INTEREST (after remove)",                            { ids = [];        next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#OPINION)) (after remove)",        { ids = [2, 4];    next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#OPINION)),        null, null, #fwd, 4 )))));
+      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after remove)", { ids = [3];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 4 )))));
 
       suite("Test Queries module", Buffer.toArray(tests));
     };

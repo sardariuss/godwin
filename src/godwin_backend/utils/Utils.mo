@@ -204,4 +204,16 @@ module {
     match_count;
   };
 
+  public func iterSome<T>(a: ?T, b: ?T, fn: (a: T, b: T) -> ()){
+    switch(a){
+      case(null) {};
+      case(?a) {
+        switch(b){
+          case(null) {};
+          case(?b) { fn(a, b); };
+        };
+      };
+    };
+  };
+
 };

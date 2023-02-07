@@ -134,8 +134,8 @@ module {
       Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : QuestionQueries.QueryQuestionsResult {
-      queries_.queryItems(order_by, direction, limit, Option.map(previous_id, func(id: Nat) : Question { questions_.getQuestion(id); }));
+    public func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : QuestionQueries.ScanLimitResult {
+      queries_.select(order_by, direction, limit, previous_id);
     };
 
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
@@ -195,7 +195,7 @@ module {
     };
 
     public func run(date: Time) {
-      controller_.run(date, Option.map(queries_.entries(#INTEREST_SCORE, #FWD).next(), func(question: Question) : Nat { question.id; }));
+      controller_.run(date, queries_.iter(#INTEREST_SCORE, #FWD).next());
     };
 
     public func setUserName(principal: Principal, name: Text) : Result<(), SetUserNameError> {

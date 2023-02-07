@@ -16,6 +16,7 @@ import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
+import Iter "mo:base/Iter";
 
 module {
 
@@ -83,20 +84,20 @@ module {
     };
     
     // Iter on interest status
-    let iter_interest = queries.entries(#STATUS(#VOTING(#INTEREST)), #FWD);
+    let iter_interest = Iter.map(queries.iter(#STATUS(#VOTING(#INTEREST)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
     tests.add(Suite.test("Iter on interest question (1)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[6]))));
     tests.add(Suite.test("Iter on interest question (2)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[1]))));
     tests.add(Suite.test("Iter on interest question (3)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[0]))));
     tests.add(Suite.test("Iter on interest question (4)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(null))));
     // Iter on opinion status
-    let iter_opinion = queries.entries(#STATUS(#VOTING(#OPINION)), #FWD);
+    let iter_opinion = Iter.map(queries.iter(#STATUS(#VOTING(#OPINION)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
     tests.add(Suite.test("Iter on opinioned question (1)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[5]))));
     tests.add(Suite.test("Iter on opinioned question (2)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[8]))));
     tests.add(Suite.test("Iter on opinioned question (3)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[4]))));
     tests.add(Suite.test("Iter on opinioned question (4)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[9]))));
     tests.add(Suite.test("Iter on opinioned question (5)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(null))));
     // Iter on categorization status
-    let iter_categorization = queries.entries(#STATUS(#VOTING(#CATEGORIZATION)), #FWD);
+    let iter_categorization = Iter.map(queries.iter(#STATUS(#VOTING(#CATEGORIZATION)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
     tests.add(Suite.test("Iter on categorized question (1)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[3]))));
     tests.add(Suite.test("Iter on categorized question (2)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[2]))));
     tests.add(Suite.test("Iter on categorized question (3)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[7]))));

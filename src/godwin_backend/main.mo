@@ -94,7 +94,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getQuestion(question_id);
   };
 
-  public query func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : async QuestionQueries.QueryQuestionsResult {
+  public query func getQuestions(order_by: QuestionQueries.OrderBy, direction: QuestionQueries.Direction, limit: Nat, previous_id: ?Nat) : async QuestionQueries.ScanLimitResult {
     game_.getQuestions(order_by, direction, limit, previous_id);
   };
 

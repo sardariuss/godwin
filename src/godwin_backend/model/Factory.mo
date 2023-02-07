@@ -1,9 +1,7 @@
 import Types "Types";
 import Users "Users";
 import Controller "controller/Controller";
-import Schema "controller/Schema";
 import Model "controller/Model";
-import Decay "Decay";
 import Questions "Questions";
 import Interests "votes/Interests";
 import Opinions "votes/Opinions";
@@ -14,19 +12,11 @@ import Game "Game";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
 import StatusHelper "StatusHelper";
-import Observers "../utils/Observers";
-import Utils "../utils/Utils";
 
-import Set "mo:map/Set";
-
-import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 
 module {
 
-  type Appeal = Types.Appeal;
-  type Polarization = Types.Polarization;
-  type PolarizationMap = Types.PolarizationMap;
   type Question = Types.Question;
   type Status = Types.Status;
   type InterestVote = Interests.Vote;
@@ -48,10 +38,13 @@ module {
     );
 
     let interest_votes = Interests.build(state_.votes.interest);
+    let interest_poll = Poll.Poll(#INTEREST, interest_votes, questions);
     
     let opinion_votes = Opinions.build(state_.votes.opinion);
+    let opinion_poll = Poll.Poll(#OPINION, opinion_votes, questions);
     
     let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
+    let categorization_poll = Poll.Poll(#CATEGORIZATION, categorization_votes, questions);
 
     let model = Model.build(
       state_.controller.model.time,
@@ -73,11 +66,24 @@ module {
       state_.users.convictions_half_life
     );
 
+    // When the question status changes, update the associated key for the #STATUS order_by
     controller.addObs(func(old: ?Question, new: ?Question){
       queries.replace(
         Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
         Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
       );
+    });
+
+    // When the interest votes changes, update the associated key for the #INTEREST_SCORE order_by
+    interest_votes.addObs(func(old: ?InterestVote, new: ?InterestVote){
+      queries.replace(
+        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
+        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
+      );
+    });
+
+    // When the status changes to #VOTING(#OPINION), remove the associated key for the #INTEREST_SCORE order_by
+    controller.addObs(func(old: ?Question, new: ?Question){
       Option.iterate(new, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
         if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
@@ -86,25 +92,20 @@ module {
       });
     });
 
-    interest_votes.addObs(func(old: ?InterestVote, new: ?InterestVote){
-      queries.replace(
-        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
-        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
-      );
-    });
-
+    // When the question status changes from #VOTING(#CATEGORIZATION) to #CLOSED, update the users' convictions
     controller.addObs(func(old: ?Question, new: ?Question) {
-      let old_status = Option.map(old, func(question: Question): Status { question.status_info.current.status; });
-      let new_status = Option.map(new, func(question: Question): Status { question.status_info.current.status; });
-      if (not Utils.equalOpt(old_status, new_status, StatusHelper.equalStatus)){
-        Option.iterate(new, func(question: Question) {
-          if (question.status_info.current.status == #CLOSED){
-            users.updateConvictions(question, opinion_votes, categorization_votes, categories);
-          };
-        });
-      };
+      Option.iterate(old, func(old_question: Question) {
+        if (old_question.status_info.current.status == #VOTING(#CATEGORIZATION)){
+          Option.iterate(new, func(new_question: Question) {
+            if (new_question.status_info.current.status == #CLOSED){
+              users.updateConvictions(new_question, opinion_votes, categorization_votes, categories);
+            };
+          });
+        };
+      });
     });
 
+    // When the question status changes to #VOTING(poll), open the vote for this poll
     controller.addObs(func(old: ?Question, new: ?Question) {
       Option.iterate(new, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
@@ -126,10 +127,6 @@ module {
         };
       })
     });
-
-    let interest_poll = Poll.Poll(#INTEREST, interest_votes, questions);
-    let opinion_poll = Poll.Poll(#OPINION, opinion_votes, questions);
-    let categorization_poll = Poll.Poll(#CATEGORIZATION, categorization_votes, questions);
 
     Game.Game(admin, categories, users, questions, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
   };
