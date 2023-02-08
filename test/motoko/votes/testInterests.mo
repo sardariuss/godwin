@@ -73,7 +73,7 @@ module {
     tests.add(Suite.test(
       "Get aggregate (1)",
       votes.getVote(question_1, iteration_1).aggregate,
-      Matchers.equals(TestableItems.appeal({ ups = 10; evens = 0; downs = 0; score = 10; })
+      Matchers.equals(TestableItems.appeal({ ups = 10; downs = 0; score = 10; })
     )));
 
     // Test only downs ( 0 VS 10 )
@@ -90,7 +90,7 @@ module {
     tests.add(Suite.test(
       "Get aggregate (2)",
       votes.getVote(question_1, iteration_1).aggregate,
-      Matchers.equals(TestableItems.appeal({ ups = 0; evens = 0; downs = 10; score = -10; })
+      Matchers.equals(TestableItems.appeal({ ups = 0; downs = 10; score = -10; })
     )));
 
     // Test as many ups than downs ( 5 VS 5 )
@@ -107,7 +107,7 @@ module {
     tests.add(Suite.test(
       "Get aggregate (3)",
       votes.getVote(question_1, iteration_1).aggregate,
-      Matchers.equals(TestableItems.appeal({ ups = 5; evens = 0; downs = 5; score = 0; })
+      Matchers.equals(TestableItems.appeal({ ups = 5; downs = 5; score = 0; })
     )));
 
     // Test almost only ups ( 9 VS 1 )
@@ -124,7 +124,7 @@ module {
     tests.add(Suite.test(
       "Get aggregate (4)",
       votes.getVote(question_1, iteration_1).aggregate,
-      Matchers.equals(TestableItems.appeal({ ups = 9; evens = 0; downs = 1; score = 9; }) // down votes have no effect
+      Matchers.equals(TestableItems.appeal({ ups = 9; downs = 1; score = 9; }) // down votes have no effect
     )));
 
     // Test slight majority of ups ( 4 VS 3 )
@@ -141,7 +141,7 @@ module {
     tests.add(Suite.test(
       "Get aggregate (1)",
       votes.getVote(question_1, iteration_1).aggregate,
-      Matchers.equals(TestableItems.appeal({ ups = 4; evens = 0; downs = 3; score = 3; }) // down votes have a slight effect
+      Matchers.equals(TestableItems.appeal({ ups = 4; downs = 3; score = 3; }) // down votes have a slight effect
     )));
 
     Suite.run(Suite.suite("Test Interests module", Buffer.toArray(tests)));

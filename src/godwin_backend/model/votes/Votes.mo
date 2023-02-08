@@ -36,15 +36,11 @@ module {
 
   public class Votes<T, A>(
     register_: WMap2D<Nat, Nat, Vote<T, A>>,
-    neutral_answer_: T,
     is_valid_answer: (T) -> Bool,
     empty_aggregate_: A,
     add_to_aggregate_: (A, T) -> A,
     remove_from_aggregate_: (A, T) -> A
   ) {
-
-    // Make sure at construction that the neutral answer is valid
-    assert(is_valid_answer(neutral_answer_));
 
     let observers_ = Observers.Observers2<Vote<T, A>>();
 
@@ -92,17 +88,6 @@ module {
           };
         };
       });
-    };
-
-    public func revealBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Ballot<T> {
-      switch(getBallot(principal, question_id, iteration)){
-        case(?ballot) { ballot; };
-        case(null) {
-          let ballot = { date; answer = neutral_answer_; };
-          putBallot(principal, question_id, iteration, ballot);
-          ballot;
-        };
-      };
     };
 
     public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : ?Ballot<T> {

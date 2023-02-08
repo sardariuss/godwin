@@ -9,7 +9,6 @@ module {
   public func toText(interest: Interest): Text {
     switch(interest) {
       case(#UP) { "UP"; };
-      case(#EVEN) { "EVEN"; };
       case(#DOWN) { "DOWN"; };
     };
   };

@@ -26,51 +26,41 @@ module {
 
     public func getAggregate(question_id: Nat, iteration: Nat) : Result<A, GetAggregateError> {
       Result.chain<Question, A, GetAggregateError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        Result.mapOk<(), A, GetAggregateError>(Utils.toResult(canRevealVote(question, iteration), #VoteOngoing), func(_) {
+        Result.mapOk<(), A, GetAggregateError>(Utils.toResult(canRevealVote(question, iteration), #NotAllowed), func(_) {
           votes_.getVote(question_id, iteration).aggregate;
         })
       });
     };
 
-    public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<T>, GetBallotError> {
-      Result.chain<Question, ?Ballot<T>, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-        Result.mapOk<(), ?Ballot<T>, GetBallotError>(Utils.toResult(canRevealVote(question, iteration), #VoteOngoing), func(_) {
+    public func getBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<T>, GetBallotError> {
+      Result.chain<Question, ?Ballot<T>, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {     
+        Result.mapOk<(), ?Ballot<T>, GetBallotError>(Utils.toResult(Principal.equal(caller, principal) or canRevealVote(question, iteration), #NotAllowed), func(_) {
           votes_.getBallot(principal, question_id, iteration);
         })
       });
     };
 
-    public func revealBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Result<Ballot<T>, RevealBallotError> {
-      Result.chain<(), Ballot<T>, RevealBallotError>(Utils.toResult(not Principal.isAnonymous(principal), #PrincipalIsAnonymous), func(){
-        Result.chain<Question, Ballot<T>, RevealBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), Ballot<T>, RevealBallotError>(Utils.toResult(isCurrentPoll(question), #InvalidPoll), func(_) {
-            votes_.revealBallot(principal, question_id, iteration, date);
-          })
-        })
-      });
-    };
-
-    public func putBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: T) : Result<(), PutBallotError> {
-      Result.chain<(), (), PutBallotError>(Utils.toResult(not Principal.isAnonymous(principal), #PrincipalIsAnonymous), func(){
+    public func putBallot(caller: Principal, question_id: Nat, iteration: Nat, date: Time, answer: T) : Result<(), PutBallotError> {
+      Result.chain<(), (), PutBallotError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
         Result.chain<Question, (), PutBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.chain<(), (), PutBallotError>(Utils.toResult(isCurrentPoll(question), #InvalidPoll), func(_) {
             let ballot = { answer; date; };
             Result.mapOk<(), (), PutBallotError>(Utils.toResult(votes_.isBallotValid(ballot), #InvalidBallot), func(_) {
-              votes_.putBallot(principal, question_id, iteration, ballot);
+              votes_.putBallot(caller, question_id, iteration, ballot);
             })
           })
         })
       });
     };
 
-    public func putFreshBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: T) : Result<(), PutFreshBallotError> {
-      Result.chain<(), (), PutFreshBallotError>(Utils.toResult(not Principal.isAnonymous(principal), #PrincipalIsAnonymous), func(){
+    public func putFreshBallot(caller: Principal, question_id: Nat, iteration: Nat, date: Time, answer: T) : Result<(), PutFreshBallotError> {
+      Result.chain<(), (), PutFreshBallotError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
         Result.chain<Question, (), PutFreshBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.chain<(), (), PutFreshBallotError>(Utils.toResult(isCurrentPoll(question), #InvalidPoll), func(_) {
-            Result.chain<(), (), PutFreshBallotError>(Utils.toResult(votes_.hasBallot(principal, question_id, iteration), #UserAlreadyVoted), func(_) {
+            Result.chain<(), (), PutFreshBallotError>(Utils.toResult(not votes_.hasBallot(caller, question_id, iteration), #AlreadyVoted), func(_) {
               let ballot = { answer; date; };
               Result.mapOk<(), (), PutFreshBallotError>(Utils.toResult(votes_.isBallotValid(ballot), #InvalidBallot), func(_) {
-                votes_.putBallot(principal, question_id, iteration, ballot);
+                votes_.putBallot(caller, question_id, iteration, ballot);
               })
             })
           })

@@ -94,13 +94,11 @@ module {
   
   public type Interest = {
     #UP;
-    #EVEN;
     #DOWN;
   };
 
   public type Appeal = {
     ups: Nat;
-    evens: Nat;
     downs: Nat;
     score: Int;
   };
@@ -139,28 +137,6 @@ module {
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
-
-  public type InterestBallot = Ballot<Interest>;
-  public type OpinionBallot = Ballot<Cursor>;
-  public type CategorizationBallot = Ballot<CursorMap>;
-
-  public type TypedBallot = {
-    #INTEREST: Ballot<Interest>;
-    #OPINION: Ballot<Cursor>;
-    #CATEGORIZATION: Ballot<CursorArray>;
-  };
-
-  public type TypedAnswer = {
-    #INTEREST: Interest;
-    #OPINION: Cursor;
-    #CATEGORIZATION: CursorArray;
-  };
-
-  public type TypedAggregate = {
-    #INTEREST: Appeal;
-    #OPINION: Polarization;
-    #CATEGORIZATION: PolarizationArray;
-  };
 
   public type User = {
     principal: Principal;
@@ -236,12 +212,12 @@ module {
 
   public type GetAggregateError = {
     #QuestionNotFound;
-    #VoteOngoing;
+    #NotAllowed;
   };
 
   public type GetBallotError = {
     #QuestionNotFound;
-    #VoteOngoing;
+    #NotAllowed;
   };
 
   public type RevealBallotError = {
@@ -261,7 +237,7 @@ module {
     #PrincipalIsAnonymous;
     #QuestionNotFound;
     #InvalidPoll;
-    #UserAlreadyVoted;
+    #AlreadyVoted;
     #InvalidBallot;
   };
 

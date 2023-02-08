@@ -33,8 +33,6 @@ module {
   type Status = Types.Status;
   type IndexedStatus = Types.IndexedStatus;
   type Poll = Types.Poll;
-  type TypedBallot = Types.TypedBallot;
-  type TypedAnswer = Types.TypedAnswer;
   type PolarizationArray = Types.PolarizationArray;
   type Ballot<T> = Types.Ballot<T>;
   type Interest = Types.Interest;
@@ -46,6 +44,7 @@ module {
   type InterestPoll = Poll.Poll<Interest, Appeal>;
   type OpinionPoll = Poll.Poll<Cursor, Polarization>;
   type CategorizationPoll = Poll.Poll<CursorMap, PolarizationMap>;
+  type CursorArray = Types.CursorArray;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -57,7 +56,6 @@ module {
   type GetUserError = Types.GetUserError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
-  type TypedAggregate = Types.TypedAggregate;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
   type GetAggregateError = Types.GetAggregateError;
   type GetBallotError = Types.GetBallotError;
@@ -158,8 +156,8 @@ module {
       interest_poll_.getAggregate(question_id, iteration);
     };
 
-    public func getInterestBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, GetBallotError> {
-      interest_poll_.getBallot(principal, question_id, iteration);
+    public func getInterestBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, GetBallotError> {
+      interest_poll_.getBallot(caller, principal, question_id, iteration);
     };
 
     public func putInterestBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
@@ -170,28 +168,30 @@ module {
       opinion_poll_.getAggregate(question_id, iteration);
     };
 
-    public func getOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
-      opinion_poll_.getBallot(principal, question_id, iteration);
-    };
-
-    public func revealOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time) : Result<Ballot<Cursor>, RevealBallotError> {
-      opinion_poll_.revealBallot(principal, question_id, iteration, date);
+    public func getOpinionBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
+      opinion_poll_.getBallot(caller, principal, question_id, iteration);
     };
 
     public func putOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
       opinion_poll_.putBallot(principal, question_id, iteration, date, cursor);
     };
 
-    public func getCategorizationAggregate(question_id: Nat, iteration: Nat) : Result<PolarizationMap, GetAggregateError> {
-      categorization_poll_.getAggregate(question_id, iteration);
+    public func getCategorizationAggregate(question_id: Nat, iteration: Nat) : Result<PolarizationArray, GetAggregateError> {
+      Result.mapOk(categorization_poll_.getAggregate(question_id, iteration), func(polarization_map: PolarizationMap) : PolarizationArray {
+        Utils.trieToArray(polarization_map);
+      });
     };
       
-    public func getCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CursorMap>, GetBallotError> {
-      categorization_poll_.getBallot(principal, question_id, iteration);
+    public func getCategorizationBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CursorArray>, GetBallotError> {
+      Result.mapOk(categorization_poll_.getBallot(caller, principal, question_id, iteration), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
+        Option.map(opt_ballot, func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
+          { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
+        });
+      });
     };
       
-    public func putCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: CursorMap) : Result<(), PutFreshBallotError> {
-      categorization_poll_.putFreshBallot(principal, question_id, iteration, date, answer);
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: CursorArray) : Result<(), PutFreshBallotError> {
+      categorization_poll_.putFreshBallot(principal, question_id, iteration, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
     };
 
     public func run(date: Time) {
