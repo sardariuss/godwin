@@ -2,6 +2,7 @@ import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 
 import Map "mo:map/Map";
+import Set "mo:map/Set";
 
 module {
 
@@ -11,6 +12,7 @@ module {
   type Time = Int;
 
   type Map<K, V> = Map.Map<K, V>;
+  type Set<K> = Set.Set<K>;
 
   public type Duration = {
     #DAYS: Nat;
@@ -76,6 +78,8 @@ module {
     date: Time;
     index: Nat;
   };
+
+  public type VoteId = (Nat, Nat);
 
   public type Vote<T, A> = {
     question_id: Nat;
@@ -143,6 +147,7 @@ module {
     // Optional because we want the user to be able to log based solely on the II,
     // without requiring a user name.
     name: ?Text;  
+    ballots: Set<VoteId>;
     convictions: PolarizationMap;
   };
 

@@ -1,20 +1,20 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, Direction, QueryQuestionsResult, Question, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { OrderBy, Direction, ScanLimitResult, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 import ActorContext from "../ActorContext"
 
 import { useEffect, useState, useContext } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Results = {
-  questions: Question[],
-  next : Question | undefined,
+  ids: bigint[],
+  next : bigint | undefined,
 }
 
-const fromQuery = (query_result: QueryQuestionsResult) => {
-  let questions = Array.from(query_result.items);
+const fromQuery = (query_result: ScanLimitResult) => {
+  let ids = Array.from(query_result.keys);
   let [next] = query_result.next;
-  return { questions, next };
+  return { ids, next };
 }
 
 type ActorContextValues = {
@@ -30,12 +30,12 @@ type ListQuestionsInput = {
 const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
   const {actor} = useContext(ActorContext) as ActorContextValues;
-  const [results, setResults] = useState<Results>({ questions : [], next: undefined});
+  const [results, setResults] = useState<Results>({ ids : [], next: undefined});
   const [categories, setCategories] = useState<string[]>([]);
   const [trigger_next, setTriggerNext] = useState<boolean>(false);
 	
   const refreshQuestions = async () => {
-    let query_result : QueryQuestionsResult = await actor.getQuestions(order_by, query_direction, BigInt(10), []);
+    let query_result : ScanLimitResult = await actor.getQuestions(order_by, query_direction, BigInt(10), []);
     setResults(fromQuery(query_result));
   };
 
@@ -46,10 +46,10 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
   const getNextQuestions = async () => {
     if (results.next !== undefined){
-      let query_result : QueryQuestionsResult = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next.id]);
-      let questions : Question[] = [...new Set([...results.questions, ...Array.from(query_result.items)])];
+      let query_result : ScanLimitResult = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next]);
+      let ids : bigint[] = [...new Set([...results.ids, ...Array.from(query_result.keys)])];
       let [next] = query_result.next;
-      setResults({ questions, next });
+      setResults({ ids, next });
     }
   };
 
@@ -82,9 +82,9 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
 	return (
 		<div className="border border-none mx-96 my-16 justify-center">
-      {[...results.questions].map(question => (
-        <li className="list-none" key={Number(question.id)}> 
-          <QuestionComponent question={question} categories={categories}> </QuestionComponent>
+      {[...results.ids].map(id => (
+        <li className="list-none" key={Number(id)}> 
+          <QuestionComponent question_id={id} categories={categories}> </QuestionComponent>
         </li>
       ))}
     </div>

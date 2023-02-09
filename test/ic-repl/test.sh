@@ -57,16 +57,16 @@ assert _ ~= variant { ok = record {
 call backend.getInterestBallot(default, 0, 0);
 assert _ ~= variant { ok = null };
 "Up vote the question";
-call backend.putInterestBallot(0, 0, variant { UP } );
+call backend.putInterestBallot(0, variant { UP } );
 assert _ == variant { ok };
 "Down vote the question: should fail";
-call backend.putInterestBallot(0, 0, variant { DOWN } );
+call backend.putInterestBallot(0, variant { DOWN } );
 assert _ == variant { err = variant { AlreadyVoted } };
 "Set opinion: should fail";
-call backend.putOpinionBallot(0, 0, 0.5);
+call backend.putOpinionBallot(0, 0.5);
 assert _ == variant { err = variant { InvalidPoll } };
 "Set categorization: should fail";
-call backend.putCategorizationBallot(0, 0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
+call backend.putCategorizationBallot(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
 assert _ == variant { err = variant { InvalidPoll } };
 
 "Open up opinion vote";
@@ -87,16 +87,16 @@ assert _ ~= variant { ok = record {
 call backend.getOpinionBallot(default, 0, 0);
 assert _ ~= variant { ok = null };
 "Set opinion: should succeed";
-call backend.putOpinionBallot(0, 0, -1.0);
+call backend.putOpinionBallot(0, -1.0);
 assert _ == variant { ok };
 "Set opinion again: should succeed";
-call backend.putOpinionBallot(0, 0, 0.5);
+call backend.putOpinionBallot(0, 0.5);
 assert _ == variant { ok };
 "Up vote the question should fail";
-call backend.putInterestBallot(0, 0, variant { UP } );
+call backend.putInterestBallot(0, variant { UP } );
 assert _ == variant { err = variant { InvalidPoll } };
 "Set categorization: should fail";
-call backend.putCategorizationBallot(0, 0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
+call backend.putCategorizationBallot(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; });
 assert _ == variant { err = variant { InvalidPoll } };
 
 call backend.run();
@@ -115,16 +115,16 @@ assert _ ~= variant { ok = record {
 call backend.getCategorizationBallot(default, 0, 0);
 assert _ ~= variant { ok = null };
 "Set categorization: should succeed";
-call backend.putCategorizationBallot(0, 0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; } );
+call backend.putCategorizationBallot(0, vec { record { "IDENTITY"; 1.0; }; record { "COOPERATION"; 0.0; }; } );
 assert _ ~= variant { ok };
 "Set categorization again: should fail";
-call backend.putCategorizationBallot(0, 0, vec { record { "IDENTITY"; -1.0; }; record { "COOPERATION"; 0.0; }; } );
+call backend.putCategorizationBallot(0, vec { record { "IDENTITY"; -1.0; }; record { "COOPERATION"; 0.0; }; } );
 assert _ == variant { err = variant { AlreadyVoted } };
 "Up vote the question should fail";
-call backend.putInterestBallot(0, 0, variant { UP } );
+call backend.putInterestBallot(0, variant { UP } );
 assert _ == variant { err = variant { InvalidPoll } };
 "Set opinion: should fail";
-call backend.putOpinionBallot(0, 0, -1.0);
+call backend.putOpinionBallot(0, -1.0);
 assert _ == variant { err = variant { InvalidPoll } };
 
 "Close the question";

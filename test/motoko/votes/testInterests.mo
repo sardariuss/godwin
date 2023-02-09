@@ -1,6 +1,11 @@
 import Types "../../../src/godwin_backend/model/Types";
 import Interests "../../../src/godwin_backend/model/votes/Interests";
 
+import WSet "../../../src/godwin_backend/utils/wrappers/WSet";
+import Set "mo:map/Set";
+import Map "mo:map/Map";
+import Prim "mo:prim";
+
 import TestableItems "../testableItems";
 import Principals "../Principals";
 
@@ -9,6 +14,9 @@ import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
+import Nat32 "mo:base/Nat32";
+import Nat "mo:base/Nat";
 
 module {
 
@@ -16,7 +24,36 @@ module {
   type Principal = Principal.Principal;
   type Time = Int;
 
+  type Set<K> = Set.Set<K>;
+  type HashUtils<K> = Set.HashUtils<K>;
+
   public func run() {
+
+//    type Key = (Principal, Text);
+//
+//    let pthash: Map.HashUtils<Key> = (
+//      func(key: Key) : Nat = Nat32.toNat((Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff),
+//      func(a: Key, b: Key) : Bool = a.0 == b.0 and a.1 == b.1
+//    );
+
+    type Key = (Nat, Nat);
+
+    let keyhash: Map.HashUtils<Key> = (
+      func(key: Key) : Nat = Nat32.toNat((Nat32.fromNat(key.0) +% Nat32.fromNat(key.1)) & 0x3fffffff),
+      func(a: Key, b: Key) : Bool = a.0 == b.0 and a.1 == b.1
+    );
+
+    let set = WSet.WSet<Key>(Set.new<Key>(), keyhash);
+    set.add((4, 4));
+    set.add((2, 2));
+    set.add((321329107, 321329107));
+    set.add((2, 3));
+    set.delete((2, 2));
+    set.add((6, 6));
+    
+    for (key in set.keys()) {
+      Debug.print(Nat.toText(key.0) # " " # Nat.toText(key.1));
+    };
     
     let tests = Buffer.Buffer<Suite.Suite>(0);
     let principals = Principals.init();

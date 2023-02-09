@@ -20,13 +20,13 @@ const VoteInterest = ({question_id}: Props) => {
 
 	const upVote = async () => {
 		console.log("upVote");
-		let up_vote = await actor.putBallot(question_id, { INTEREST : { 'UP' : null } });
+		let up_vote = await actor.putInterestBallot(question_id, { 'UP' : null } );
 		console.log(up_vote);
 	};
 
 	const downVote = async () => {
 		console.log("downVote");
-    let down_vote = await actor.putBallot(question_id, { INTEREST : { 'DOWN' : null } });
+    let down_vote = await actor.putInterestBallot(question_id, { 'DOWN' : null });
 		console.log(down_vote);
 	};
 

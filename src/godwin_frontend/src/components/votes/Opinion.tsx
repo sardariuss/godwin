@@ -21,7 +21,7 @@ const VoteOpinion = ({question_id}: Props) => {
 
   const updateOpinion = async () => {
 		console.log("updateOpinion");
-    let opinionResult = await actor.putBallot(question_id, { OPINION : opinion });
+    let opinionResult = await actor.putOpinionBallot(question_id, opinion);
 		console.log(opinionResult);
 	};
 

@@ -112,8 +112,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getInterestBallot(caller, principal, question_id, iteration);
   };
 
-  public shared({caller}) func putInterestBallot(question_id: Nat, iteration: Nat, interest: Interest) : async Result<(), PutFreshBallotError> {
-    game_.putInterestBallot(caller, question_id, iteration, Time.now(), interest);
+  public shared({caller}) func putInterestBallot(question_id: Nat, interest: Interest) : async Result<(), PutFreshBallotError> {
+    game_.putInterestBallot(caller, question_id, Time.now(), interest);
   };
 
   public query func getOpinionAggregate(question_id: Nat, iteration: Nat) : async Result<Polarization, GetAggregateError> {
@@ -124,8 +124,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getOpinionBallot(caller, principal, question_id, iteration);
   };
 
-  public shared({caller}) func putOpinionBallot(question_id: Nat, iteration: Nat, cursor: Cursor) : async Result<(), PutBallotError> {
-    game_.putOpinionBallot(caller, question_id, iteration, Time.now(), cursor);
+  public shared({caller}) func putOpinionBallot(question_id: Nat, cursor: Cursor) : async Result<(), PutBallotError> {
+    game_.putOpinionBallot(caller, question_id, Time.now(), cursor);
   };
 
   public query func getCategorizationAggregate(question_id: Nat, iteration: Nat) : async Result<PolarizationArray, GetAggregateError> {
@@ -136,8 +136,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getCategorizationBallot(caller, principal, question_id, iteration);
   };
 
-  public shared({caller}) func putCategorizationBallot(question_id: Nat, iteration: Nat, answer: CursorArray) : async Result<(), PutFreshBallotError> {
-    game_.putCategorizationBallot(caller, question_id, iteration, Time.now(), answer);
+  public shared({caller}) func putCategorizationBallot(question_id: Nat, answer: CursorArray) : async Result<(), PutFreshBallotError> {
+    game_.putCategorizationBallot(caller, question_id, Time.now(), answer);
   };
 
   public shared func run() {

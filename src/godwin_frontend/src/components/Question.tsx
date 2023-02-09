@@ -11,7 +11,7 @@ import { useEffect, useState, useContext } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
-  question: Question,
+  question_id: bigint,
 	categories: string[]
 };
 
@@ -21,32 +21,39 @@ type ActorContextValues = {
 };
 
 // @todo: change the state of the buttons based on the interest for the logged user for this question
-const QuestionBody = ({question, categories}: Props) => {
+const QuestionBody = ({question_id, categories}: Props) => {
 
 	const {actor} = useContext(ActorContext) as ActorContextValues;
-	const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>();
-	const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>();
-	const [categorizationAggregate, setCategorizationAggregate] = useState<PolarizationArray | undefined>();
+	const [question, setQuestion] = useState<Question | undefined>(undefined);
+	const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>(undefined);
+	const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>(undefined);
+	const [categorizationAggregate, setCategorizationAggregate] = useState<PolarizationArray | undefined>(undefined);
+
+	const getQuestion = async () => {
+		let question = await actor.getQuestion(question_id);
+		setQuestion(question['ok']);
+	};
 
 	// @todo: need to check status and handle case where history is empty
 	const getInterestAggregate = async () => {
-		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'INTEREST' : null } ); // @todo: hardcoded iteration
+		let aggregate = await actor.getInterestAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
 		setInterestAggregate(aggregate['ok']?.['INTEREST']);
 	};
 
 	// @todo: need to check status and handle case where history is empty
 	const getOpinionAggregate = async () => {
-		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'OPINION' : null } ); // @todo: hardcoded iteration
+		let aggregate = await actor.getOpinionAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
 		setOpinionAggregate(aggregate['ok']?.['OPINION']);
 	};
 
 	// @todo: need to check status and handle case where history is empty
 	const getCategorizationAggregate = async () => {
-		let aggregate = await actor.getAggregate(question.id, BigInt(0), { 'CATEGORIZATION' : null } ); // @todo: hardcoded iteration
+		let aggregate = await actor.getCategorizationAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
 		setCategorizationAggregate(aggregate['ok']?.['CATEGORIZATION']);
 	};
 
 	useEffect(() => {
+		getQuestion();
 		getInterestAggregate();
 		getOpinionAggregate();
 		getCategorizationAggregate();

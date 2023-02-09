@@ -160,8 +160,8 @@ module {
       interest_poll_.getBallot(caller, principal, question_id, iteration);
     };
 
-    public func putInterestBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
-      interest_poll_.putFreshBallot(principal, question_id, iteration, date, interest);
+    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
+      interest_poll_.putFreshBallot(principal, question_id, date, interest);
     };
 
     public func getOpinionAggregate(question_id: Nat, iteration: Nat) : Result<Polarization, GetAggregateError> {
@@ -172,8 +172,8 @@ module {
       opinion_poll_.getBallot(caller, principal, question_id, iteration);
     };
 
-    public func putOpinionBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      opinion_poll_.putBallot(principal, question_id, iteration, date, cursor);
+    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
+      opinion_poll_.putBallot(principal, question_id, date, cursor);
     };
 
     public func getCategorizationAggregate(question_id: Nat, iteration: Nat) : Result<PolarizationArray, GetAggregateError> {
@@ -190,8 +190,8 @@ module {
       });
     };
       
-    public func putCategorizationBallot(principal: Principal, question_id: Nat, iteration: Nat, date: Time, answer: CursorArray) : Result<(), PutFreshBallotError> {
-      categorization_poll_.putFreshBallot(principal, question_id, iteration, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, answer: CursorArray) : Result<(), PutFreshBallotError> {
+      categorization_poll_.putFreshBallot(principal, question_id, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
     };
 
     public func run(date: Time) {

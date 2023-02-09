@@ -1,4 +1,5 @@
 import Types "Types";
+import Votes "votes/Votes";
 import Polarization "votes/representation/Polarization";
 import Cursor "votes/representation/Cursor";
 import PolarizationMap "votes/representation/PolarizationMap";
@@ -10,6 +11,7 @@ import WMap "../utils/wrappers/WMap";
 import Decay "Decay";
 
 import Map "mo:map/Map";
+import Set "mo:map/Set";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -30,9 +32,11 @@ module {
   type Principal = Principal.Principal;
 
   type Map<K, V> = Map.Map<K, V>;
+  type Set<K> = Set.Set<K>;
 
   // For convenience: from types module
   type User = Types.User;
+  type VoteId = Types.VoteId;
   type Duration = Types.Duration;
   type Question = Types.Question;
   type Category = Types.Category;
@@ -95,6 +99,7 @@ module {
           let new_user = {
             principal;
             name = null;
+            ballots = Set.new<VoteId>();
             convictions = PolarizationMap.nil(categories);
           };
           putUser(new_user);

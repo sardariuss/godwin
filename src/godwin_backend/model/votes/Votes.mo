@@ -10,6 +10,7 @@ import Debug "mo:base/Debug";
 import Prelude "mo:base/Prelude";
 import Iter "mo:base/Iter";
 import Int "mo:base/Int";
+import Nat32 "mo:base/Nat32";
 
 module {
 
@@ -17,6 +18,7 @@ module {
   type Principal = Principal.Principal;
   type Time = Int;
   type Iter<T> = Iter.Iter<T>;
+  type VoteId = Types.VoteId;
 
   type Map<K, V> = Map.Map<K, V>;
 
@@ -25,6 +27,11 @@ module {
 
   // For convenience
   type WMap2D<K1, K2, V> = WMap.WMap2D<K1, K2, V>;
+
+  let votehash: Map.HashUtils<VoteId> = (
+    func(id: VoteId) : Nat = Nat32.toNat((Nat32.fromNat(id.0) +% Nat32.fromNat(id.1)) & 0x3fffffff),
+    func(a: VoteId, b: VoteId) : Bool = a.0 == b.0 and a.1 == b.1
+  );
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
