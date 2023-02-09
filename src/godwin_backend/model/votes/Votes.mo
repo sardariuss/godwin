@@ -150,4 +150,52 @@ module {
 
   };
 
+  public class History<T, A>(register_: WMap2D<Nat, Nat, Vote<T, A>>) {
+
+    public func addVote(question_id: Nat, iteration: Nat, vote: Vote<T, A>) {
+      switch(findVote(question_id, iteration)){
+        case(null) { ignore register_.put(question_id, iteration, vote); };
+        case(_) { Debug.trap("The vote already exists"); };
+      };
+    };
+
+    public func findVote(question_id: Nat, iteration: Nat) : ?Vote<T, A> {
+      register_.get(question_id, iteration);
+    };
+
+    public func getVote(question_id: Nat, iteration: Nat) : Vote<T, A> {
+      switch(findVote(question_id, iteration)){
+        case(null) { Debug.trap("The vote does not exist"); };
+        case(?vote) { vote; };
+      };
+    };
+
+    public func getVotes(question_id: Nat) : Iter<Vote<T, A>>{
+      switch(register_.getAll(question_id)){
+        case(null) { { next = func () : ?Vote<T, A> { null; }; }; };
+        case(?votes){
+          // @todo: test, because it assumes the votes have been added chronologically and the map keeps insertion order
+          Map.vals(votes);
+        };
+      };
+    };
+
+    public func deleteVotes(question_id: Nat) {
+      Option.iterate(register_.getAll(question_id), func(votes: Map<Nat, Vote<T, A>>){
+        for (iteration in Map.keys(votes)){
+          ignore register_.remove(question_id, iteration);
+        };
+      });
+    };
+
+    public func getBallot(principal: Principal, question_id: Nat, iteration: Nat) : ?Ballot<T> {
+      Map.get(getVote(question_id, iteration).ballots, Map.phash, principal);
+    };
+
+    public func hasBallot(principal: Principal, question_id: Nat, iteration: Nat) : Bool {
+      Map.has(getVote(question_id, iteration).ballots, Map.phash, principal);
+    };
+
+  };
+
 };

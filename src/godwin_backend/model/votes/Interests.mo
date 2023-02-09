@@ -17,6 +17,7 @@ module {
   public type Register = Map2D<Nat, Nat, Vote>;
   public type Interests = Votes<Interest, Appeal>;
   public type Ballot = Types.Ballot<Interest>;
+  public type History = Votes.History<Interest, Appeal>;
 
   public func initRegister() : Register {
     Map.new<Nat, Map<Nat, Vote>>();
