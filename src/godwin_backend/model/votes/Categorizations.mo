@@ -20,7 +20,6 @@ module {
   public type Register = Map2D<Nat, Nat, Vote>;
   public type Categorizations = Votes<CursorMap, PolarizationMap>;
   public type Ballot = Types.Ballot<CursorMap>;
-  public type History = Votes.History<CursorMap, PolarizationMap>;
 
   public func initRegister() : Register {
     Map.new<Nat, Map<Nat, Vote>>();

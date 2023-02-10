@@ -6,6 +6,7 @@ import Utils "../../utils/Utils";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
+import Option "mo:base/Option";
 
 module {
 
@@ -32,10 +33,10 @@ module {
       });
     };
 
-    public func getBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<T>, GetBallotError> {
+    public func findBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<T>, GetBallotError> {
       Result.chain<Question, ?Ballot<T>, GetBallotError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {     
         Result.mapOk<(), ?Ballot<T>, GetBallotError>(Utils.toResult(Principal.equal(caller, principal) or canRevealVote(question, iteration), #NotAllowed), func(_) {
-          votes_.getBallot(principal, question_id, iteration);
+          votes_.findBallot(principal, question_id, iteration);
         })
       });
     };
@@ -68,10 +69,21 @@ module {
       });
     };
 
+    // @todo: do not expose the inner votes
+    public func getVotes() : Votes<T, A> {
+      votes_;
+    };
+
     func canRevealVote(question: Question, iteration: Nat) : Bool {
       let status_info = StatusHelper.StatusInfo(question.status_info);
       let current_status = status_info.getCurrentStatus();
-      current_status == #REJECTED or current_status == #CLOSED or iteration < status_info.getIteration(#VOTING(poll_));
+      if (current_status == #REJECTED or current_status == #CLOSED) {
+        return true;
+      };
+      if (Option.getMapped(status_info.findIteration(#VOTING(poll_)), func(it: Nat) : Bool { iteration < it; }, false)){
+        return true;
+      };
+      return false;
     };
 
     func getCurrentIteration(question: Question) : ?Nat { 

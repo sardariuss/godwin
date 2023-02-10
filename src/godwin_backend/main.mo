@@ -47,6 +47,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
   type CursorArray = Types.CursorArray;
+  type GetUserVotesError = Types.GetUserVotesError;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -148,8 +149,12 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.setUserName(caller, name);
   };
 
-  public shared({caller}) func getUserConvictions() : async Result<Types.PolarizationArray, GetUserConvictionsError> {
-    game_.getUserConvictions(caller);
+  public query func getUserConvictions(principal: Principal) : async Result<Types.PolarizationArray, GetUserConvictionsError> {
+    game_.getUserConvictions(principal);
+  };
+
+  public query func getUserVotes(principal: Principal) : async Result<[Ballot<Cursor>], GetUserVotesError> {
+    game_.getUserVotes(principal);
   };
 
   // @todo

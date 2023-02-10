@@ -98,7 +98,7 @@ module {
         if (old_question.status_info.current.status == #VOTING(#CATEGORIZATION)){
           Option.iterate(new, func(new_question: Question) {
             if (new_question.status_info.current.status == #CLOSED){
-              users.updateConvictions(new_question, opinion_votes, categorization_votes, categories);
+              users.onVoteClosed(new_question, opinion_votes, categorization_votes, categories);
             };
           });
         };

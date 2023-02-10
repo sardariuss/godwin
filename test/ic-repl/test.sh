@@ -140,9 +140,13 @@ assert _ ~= variant { ok = record {
   };
 }};
 
-"Get default user, convictions to update";
+"Get user's convictions";
 call backend.getUserConvictions(default);
 assert _ == variant { ok = vec { 
     record { "IDENTITY"; record { left = 0.0; center = 0.5; right = 0.5; }; };
     record { "COOPERATION"; record { left = 0.0; center = 0.0; right = 0.0; }; };
 } };
+
+"Get user's opinion votes";
+call backend.getUserVotes(default);
+assert _ ~= variant { ok = vec { record { answer = 0.5; }; } };

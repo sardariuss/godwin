@@ -32,7 +32,7 @@ module {
     votes.putBallot(principals[0], question_0, iteration_0, ballot);
     tests.add(Suite.test(
       "Add ballot",
-      votes.getBallot(principals[0], question_0, iteration_0),
+      votes.findBallot(principals[0], question_0, iteration_0),
       Matchers.equals(TestableItems.optOpinionBallot(?ballot))
     ));
     // Update opinion
@@ -40,14 +40,14 @@ module {
     votes.putBallot(principals[0], question_0, iteration_0, ballot);
     tests.add(Suite.test(
       "Update ballot",
-      votes.getBallot(principals[0], question_0, iteration_0),
+      votes.findBallot(principals[0], question_0, iteration_0),
       Matchers.equals(TestableItems.optOpinionBallot(?ballot))
     ));
     // Remove opinion
     votes.removeBallot(principals[0], question_0, iteration_0);
     tests.add(Suite.test(
       "Remove ballot",
-      votes.getBallot(principals[0], question_0, iteration_0),
+      votes.findBallot(principals[0], question_0, iteration_0),
       Matchers.equals(TestableItems.optOpinionBallot(null))
     ));
 

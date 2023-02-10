@@ -147,16 +147,73 @@ module {
     // Optional because we want the user to be able to log based solely on the II,
     // without requiring a user name.
     name: ?Text;  
-    ballots: Set<VoteId>;
+    votes: Set<VoteId>;
     convictions: PolarizationMap;
   };
 
-  // @todo: temporary
-
-  public type CreateQuestionError = {
+  public type GetUserError = {
     #PrincipalIsAnonymous;
+  };
+
+  public type VerifyCredentialsError = {
     #InsufficientCredentials;
   };
+
+  public type AddCategoryError = VerifyCredentialsError or {
+    #CategoryAlreadyExists;
+  };
+
+  public type RemoveCategoryError = VerifyCredentialsError or {
+    #CategoryDoesntExist;
+  };
+
+  public type GetQuestionError = {
+    #QuestionNotFound;
+  };
+
+  public type OpenQuestionError = GetUserError;
+  
+  public type ReopenQuestionError = GetUserError or GetQuestionError or {
+    #InvalidStatus;
+  };
+
+  public type SetUserNameError = GetUserError;
+
+  public type SetPickRateError = VerifyCredentialsError;
+
+  public type SetDurationError = VerifyCredentialsError;
+
+  public type GetUserConvictionsError = GetUserError;
+
+  public type GetUserVotesError = GetUserError;
+
+  public type GetAggregateError = GetQuestionError or {
+    #NotAllowed;
+  };
+
+  public type GetBallotError = GetQuestionError or {
+    #NotAllowed;
+  };
+
+  public type RevealBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
+  };
+
+  public type PutBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
+    #InvalidBallot;
+  };
+
+  public type PutFreshBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
+    #AlreadyVoted;
+    #InvalidBallot;
+  };
+
+    // @todo: temporary
+
+  public type CreateQuestionError = GetUserError or VerifyCredentialsError;
+  
   public type CreateStatus = {
     #VOTING: {
       #INTEREST: { interest_score: Int; };
@@ -165,85 +222,6 @@ module {
     };
     #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
     #REJECTED : { interest_score: Int; };
-  };
-
-  public type AddCategoryError = {
-    #InsufficientCredentials;
-    #CategoryAlreadyExists;
-  };
-
-  public type RemoveCategoryError = {
-    #InsufficientCredentials;
-    #CategoryDoesntExist;
-  };
-
-  public type GetQuestionError = {
-    #QuestionNotFound;
-  };
-
-  public type OpenQuestionError = {
-    #PrincipalIsAnonymous;
-  };
-  
-  public type ReopenQuestionError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidStatus;
-  };
-
-  public type SetUserNameError = {
-    #PrincipalIsAnonymous;
-  };
-
-  public type VerifyCredentialsError = {
-    #InsufficientCredentials;
-  };
-
-  public type GetUserError = {
-    #PrincipalIsAnonymous;
-  };
-
-  public type SetPickRateError = {
-    #InsufficientCredentials;
-  };
-
-  public type SetDurationError = {
-    #InsufficientCredentials;
-  };
-
-  public type GetUserConvictionsError = {
-    #PrincipalIsAnonymous;
-  };
-
-  public type GetAggregateError = {
-    #QuestionNotFound;
-    #NotAllowed;
-  };
-
-  public type GetBallotError = {
-    #QuestionNotFound;
-    #NotAllowed;
-  };
-
-  public type RevealBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidPoll;
-  };
-
-  public type PutBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidPoll;
-    #InvalidBallot;
-  };
-
-  public type PutFreshBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidPoll;
-    #AlreadyVoted;
-    #InvalidBallot;
   };
 
 };

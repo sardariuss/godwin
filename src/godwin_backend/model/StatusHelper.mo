@@ -139,9 +139,13 @@ module {
       };
     };
 
+    public func findIteration(status: Status) : ?Nat {
+      Map.get(iterations_, status_hash, status);
+    };
+
     public func getIterations(status: Status) : Iter<Nat> {
       switch(Map.get(iterations_, status_hash, status)){
-        case(null) { Debug.trap("The status index is missing"); };
+        case(null) { { next = func () : ?Nat { null; }; }; };
         case(?idx) { Iter.range(0, idx); };
       };
     };

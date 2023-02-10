@@ -62,6 +62,7 @@ module {
   type RevealBallotError = Types.RevealBallotError;
   type PutBallotError = Types.PutBallotError;
   type PutFreshBallotError = Types.PutFreshBallotError;
+  type GetUserVotesError = Types.GetUserVotesError;
 
   public class Game(
     admin_: Principal,
@@ -157,7 +158,7 @@ module {
     };
 
     public func getInterestBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, GetBallotError> {
-      interest_poll_.getBallot(caller, principal, question_id, iteration);
+      interest_poll_.findBallot(caller, principal, question_id, iteration);
     };
 
     public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
@@ -169,7 +170,7 @@ module {
     };
 
     public func getOpinionBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
-      opinion_poll_.getBallot(caller, principal, question_id, iteration);
+      opinion_poll_.findBallot(caller, principal, question_id, iteration);
     };
 
     public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
@@ -183,7 +184,7 @@ module {
     };
       
     public func getCategorizationBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CursorArray>, GetBallotError> {
-      Result.mapOk(categorization_poll_.getBallot(caller, principal, question_id, iteration), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
+      Result.mapOk(categorization_poll_.findBallot(caller, principal, question_id, iteration), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
         Option.map(opt_ballot, func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
           { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
         });
@@ -207,6 +208,12 @@ module {
     public func getUserConvictions(principal: Principal) : Result<PolarizationArray, GetUserConvictionsError> {
       Result.mapOk<User, Types.PolarizationArray, GetUserConvictionsError>(getUser(principal), func(user) {
         Utils.trieToArray(user.convictions);
+      });
+    };
+
+    public func getUserVotes(principal: Principal) : Result<[Ballot<Cursor>], GetUserVotesError> {
+      Result.mapOk<User, [Ballot<Cursor>], GetUserVotesError>(getUser(principal), func(user) {
+        users_.getVotes(principal, opinion_poll_.getVotes());
       });
     };
 

@@ -51,6 +51,7 @@ module {
   type Status = Types.Status;
   type CategorizationVote = Categorizations.Vote;
   type OpinionVote = Opinions.Vote;
+  type OpinionBallot = Opinions.Ballot;
 
   public func build(
     register: Map<Principal, User>,
@@ -99,7 +100,7 @@ module {
           let new_user = {
             principal;
             name = null;
-            ballots = Set.new<VoteId>();
+            votes = Set.new<VoteId>();
             convictions = PolarizationMap.nil(categories);
           };
           putUser(new_user);
@@ -130,11 +131,18 @@ module {
       });
     };
 
+    public func getVotes(principal: Principal, opinions: Opinions) : [OpinionBallot] {
+      let user = getUser(principal);
+      Iter.toArray(Iter.map(Set.keys(user.votes), func((question_id, iteration): (Nat, Nat)) : OpinionBallot {
+        opinions.getBallot(principal, question_id, iteration);
+      }));
+    };
+
     // @todo
     // Warning: assumes that the question is not closed yet but will be after convictions have been updated
     // Warning: does not work if transition from #VOTING(#INTEREST) to #CLOSED
     // Watchout: this function makes a strong assumption that it is called only once every time the question status will be closed
-    public func updateConvictions(question: Question, opinions: Opinions, categorizations: Categorizations, categories: Categories) {
+    public func onVoteClosed(question: Question, opinions: Opinions, categorizations: Categorizations, categories: Categories) {
 
       let (new_categorization, previous_categorization) = do {
         let categorization_votes = Buffer.fromIter<CategorizationVote>(categorizations.getVotes(question.id));
@@ -165,13 +173,18 @@ module {
       // and adding the contribution of the new categorization
       for (old_vote in old_opinon_votes){
         for ((principal, {answer; date;}) in Map.entries(old_vote.ballots)){
-          updateBallotContribution(principal, answer, date, categories, new_categorization, previous_categorization);
+          let user = getUser(principal);
+          updateBallotContribution(user, answer, date, categories, new_categorization, previous_categorization);
         };
       };
 
-      // Process new votes by just adding the contribution of the new categorization
+      // Process new votes
       for ((principal, {answer; date;}) in Map.entries(new_opinion_vote.ballots)){
-        updateBallotContribution(principal, answer, date, categories, new_categorization, null);
+        let user = getUser(principal);
+        // Add the contribution of the new categorization
+        updateBallotContribution(user, answer, date, categories, new_categorization, null);
+        // Add the vote to the user's list of votes
+        Set.add(user.votes, Votes.votehash, (new_opinion_vote.question_id, new_opinion_vote.iteration));
       };
     };
 
@@ -181,15 +194,13 @@ module {
     // The PolarizationMap.mul uses a leftJoin, so that the resulting convictions contains
     // only the categories from the definitions.
     func updateBallotContribution(
-      principal: Principal,
+      user: User,
       user_opinion: Cursor,
       date: Int,
       categories: Categories,
       new_categorization: PolarizationMap,
-      old_categorization: ?PolarizationMap) {
-
-      let user = getUser(principal);
-
+      old_categorization: ?PolarizationMap) 
+    {
       // Create a Polarization trie from the cursor, based on given categories.
       let opinion_trie = Utils.make(categories.keys(), Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
 
