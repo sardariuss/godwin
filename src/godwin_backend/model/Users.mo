@@ -173,14 +173,14 @@ module {
       // and adding the contribution of the new categorization
       for (old_vote in old_opinon_votes){
         for ((principal, {answer; date;}) in Map.entries(old_vote.ballots)){
-          let user = getUser(principal);
+          let user = getOrCreateUser(principal, categories);
           updateBallotContribution(user, answer, date, categories, new_categorization, previous_categorization);
         };
       };
 
       // Process new votes
       for ((principal, {answer; date;}) in Map.entries(new_opinion_vote.ballots)){
-        let user = getUser(principal);
+        let user = getOrCreateUser(principal, categories);
         // Add the contribution of the new categorization
         updateBallotContribution(user, answer, date, categories, new_categorization, null);
         // Add the vote to the user's list of votes

@@ -1,23 +1,17 @@
-import { Category, Cursor, _SERVICE} from "./../../../declarations/godwin_backend/godwin_backend.did";
-import ActorContext from "../../ActorContext"
+import { Category, Cursor } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { ActorContext } from "../../ActorContext"
 
 import React, { useContext, useState } from "react";
-import { ActorSubclass } from "@dfinity/agent";
 
 type Props = {
   question_id: bigint,
   categories: string[]
 };
 
-type ActorContextValues = {
-  actor: ActorSubclass<_SERVICE>,
-  logged_in: boolean
-};
-
 // @todo: change the state of the buttons based on the categorization for the logged user for this question
 const VoteCategorization = ({question_id, categories}: Props) => {
 
-	const {actor, logged_in} = useContext(ActorContext) as ActorContextValues;
+	const {actor, isAuthenticated} = useContext(ActorContext);
   const [categorization, setCategorization] = useState<Map<Category, Cursor>>(new Map(categories.map(category => [category, 0.0])));
 
   const updateCategorization = async () => {
@@ -45,7 +39,7 @@ const VoteCategorization = ({question_id, categories}: Props) => {
         categories.map(category => (
           <div key={question_id + "_" + category}>
             <label htmlFor="small-range" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> { category + " " + getCursor(category) } </label>
-            <input id="small-range" min="-1" max="1" step="0.1" disabled={!logged_in} type="range" onChange={(e) => updateCategory(category, Number(e.target.value))} onMouseUp={(e) => updateCategorization()} className="w-24 h-1 mb-6 bg-gray-200 rounded-lg appearance-none cursor-pointer range-sm dark:bg-gray-700"></input>
+            <input id="small-range" min="-1" max="1" step="0.1" disabled={!isAuthenticated} type="range" onChange={(e) => updateCategory(category, Number(e.target.value))} onMouseUp={(e) => updateCategorization()} className="w-24 h-1 mb-6 bg-gray-200 rounded-lg appearance-none cursor-pointer range-sm dark:bg-gray-700"></input>
           </div>
         )
         )

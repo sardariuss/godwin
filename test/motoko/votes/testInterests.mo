@@ -11,8 +11,6 @@ import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
-import Debug "mo:base/Debug";
-import Nat32 "mo:base/Nat32";
 import Nat "mo:base/Nat";
 
 module {

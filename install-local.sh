@@ -24,3 +24,12 @@ dfx deploy godwin_backend --argument '(record {
     rejected_duration = variant { DAYS = 1 };
   };
 })'
+
+# Deploy the internet identity
+dfx deploy internet_identity
+
+# @todo: Deploy the frontend
+dfx canister create godwin_frontend
+
+# Generate the candid files
+dfx generate

@@ -1,10 +1,9 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, Direction, ScanLimitResult, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
-import ActorContext from "../ActorContext"
+import { OrderBy, Direction, ScanLimitResult } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { ActorContext } from "../ActorContext"
 
 import { useEffect, useState, useContext } from "react";
-import { ActorSubclass } from "@dfinity/agent";
 
 type Results = {
   ids: bigint[],
@@ -17,11 +16,6 @@ const fromQuery = (query_result: ScanLimitResult) => {
   return { ids, next };
 }
 
-type ActorContextValues = {
-  actor: ActorSubclass<_SERVICE>,
-  logged_in: boolean
-};
-
 type ListQuestionsInput = {
   order_by: OrderBy,
   query_direction: Direction
@@ -29,7 +23,7 @@ type ListQuestionsInput = {
 
 const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 
-  const {actor} = useContext(ActorContext) as ActorContextValues;
+  const {actor} = useContext(ActorContext);
   const [results, setResults] = useState<Results>({ ids : [], next: undefined});
   const [categories, setCategories] = useState<string[]>([]);
   const [trigger_next, setTriggerNext] = useState<boolean>(false);

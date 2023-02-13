@@ -2,6 +2,7 @@ import Types "model/Types";
 import QuestionQueries "model/QuestionQueries"; // @todo
 import State "model/State";
 import Factory "model/Factory";
+import Scenario "../../test/motoko/Scenario"; // @todo
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -52,6 +53,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
   let game_ = Factory.build(state_);
+
+  //let game_ = Scenario.run(Time.now(), #DAYS(1), #MINUTES(5), 50);
 
   public query func getDecay() : async ?Decay {
     game_.getDecay();

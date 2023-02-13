@@ -14,6 +14,8 @@ import Categories "Categories";
 import StatusHelper "StatusHelper";
 
 import Option "mo:base/Option";
+import Debug "mo:base/Debug";
+import Nat "mo:base/Nat";
 
 module {
 
@@ -82,12 +84,12 @@ module {
       );
     });
 
-    // When the status changes to #VOTING(#OPINION), remove the associated key for the #INTEREST_SCORE order_by
-    controller.addObs(func(old: ?Question, new: ?Question){
-      Option.iterate(new, func(question: Question) {
+    // When the status changes from #VOTING(#INTEREST), remove the associated key for the #INTEREST_SCORE order_by
+    controller.addObs(func(old: ?Question, _: ?Question){
+      Option.iterate(old, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
-        if (status_info.getCurrentStatus() == #VOTING(#OPINION)){
-          queries.remove(toAppealScore(interest_votes.getVote(question.id, status_info.getIteration(#VOTING(#INTEREST)))));
+        if (status_info.getCurrentStatus() == #VOTING(#INTEREST)){
+          queries.remove(toAppealScore(interest_votes.getVote(question.id, status_info.getCurrentIteration())));
         };
       });
     });

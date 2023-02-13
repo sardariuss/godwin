@@ -2,15 +2,9 @@ import { _SERVICE, Appeal, Polarization, PolarizationArray} from "./../../../dec
 
 import PolarizationComponent from "./Polarization";
 
-import ActorContext from "../../ActorContext"
+import { ActorContext } from "../../ActorContext"
 
-import { useEffect, useState, useContext } from "react";
-import { ActorSubclass } from "@dfinity/agent";
-
-type ActorContextValues = {
-  actor: ActorSubclass<_SERVICE>,
-  logged_in: boolean
-};
+import { useContext } from "react";
 
 type Props = {
   interest_aggregate: Appeal | undefined,
@@ -20,7 +14,7 @@ type Props = {
 
 const Aggregates = ({interest_aggregate, opinion_aggregate, categorization_aggregate}: Props) => {
 
-  const {actor} = useContext(ActorContext) as ActorContextValues;
+  const {actor} = useContext(ActorContext);
 
 	return (
     <>

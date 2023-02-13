@@ -9,8 +9,6 @@ import TestCategorizations "votes/testCategorizations";
 
 import TestStatusHelper "model/TestStatusHelper";
 
-import Suite "mo:matchers/Suite";
-
 // @todo: fix unit tests
 
 //Suite.run(TestQueries.TestQueries().getSuite());

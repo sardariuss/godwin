@@ -77,13 +77,20 @@ module {
     func canRevealVote(question: Question, iteration: Nat) : Bool {
       let status_info = StatusHelper.StatusInfo(question.status_info);
       let current_status = status_info.getCurrentStatus();
-      if (current_status == #REJECTED or current_status == #CLOSED) {
-        return true;
-      };
-      if (Option.getMapped(status_info.findIteration(#VOTING(poll_)), func(it: Nat) : Bool { iteration < it; }, false)){
-        return true;
-      };
-      return false;
+      // Check the iteration exists
+      Option.getMapped(
+        status_info.findIteration(#VOTING(poll_)), 
+        func(it: Nat) : Bool { 
+          if (iteration < it) {
+            true;
+          } else if (iteration == it) {
+            current_status == #REJECTED or current_status == #CLOSED;
+          } else {
+            false;
+          };
+        }, 
+        false
+      );
     };
 
     func getCurrentIteration(question: Question) : ?Nat { 
