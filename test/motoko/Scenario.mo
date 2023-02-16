@@ -81,6 +81,7 @@ module {
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.05){
             ignore game.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
+            Debug.print("User '" # Principal.toText(principal) # "' gave his opinion.");
           };
         };
       };

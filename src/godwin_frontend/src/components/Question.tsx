@@ -54,7 +54,7 @@ const QuestionBody = ({question_id, categories}: Props) => {
   }, []);
 
 	return (
-		<div className="flex flex-col py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white">
+		<div className="flex flex-col py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white hover:dark:border">
 			<div className="flex flex-row justify-start gap-x-10 text-lg font-semibold">
 				{ 
 					question?.status_info.current.status['VOTING'] !== undefined ? (
@@ -74,14 +74,14 @@ const QuestionBody = ({question_id, categories}: Props) => {
 						/> : <div>@todo impossible</div>
 				}
 				<div className="flex flex-col justify-start gap-x-10 text-lg font-semibold">
-					<div className="flex flex-row justify-start gap-x-10 text-lg font-semibold">
+					<div className="flex flex-row justify-start gap-x-10 text-lg font-normal">
 						<div> { question === undefined ? "id" : question.id} </div>
 						<div> { question === undefined ? "title" : question.title} </div>
 					</div>
 					<div className="flex flex-row justify-start gap-x-10">
 						<div>History size: {question === undefined ? "iteration" : question.status_info.history.length}</div>
 						<div>Status: { question === undefined ? "status" : statusToString(question.status_info.current.status)} </div>
-						<div>Created: { question === undefined ? "date" : nsToStrDate(question.date)}</div>
+						<div className="text-sm font-extralight">Created: { question === undefined ? "date" : nsToStrDate(question.date)}</div>
 					</div>
 				</div>
 			</div>

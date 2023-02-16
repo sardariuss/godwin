@@ -12,6 +12,7 @@ const VoteInterest = ({question_id}: Props) => {
 	const {actor, isAuthenticated} = useContext(ActorContext);
 
 	const upVote = async () => {
+    // 🤔 🧠 
 		console.log("upVote");
 		let up_vote = await actor.putInterestBallot(question_id, { 'UP' : null } );
 		console.log(up_vote);
@@ -23,18 +24,29 @@ const VoteInterest = ({question_id}: Props) => {
 		console.log(down_vote);
 	};
 
+  const duplicateVote = async () => {
+		console.log("duplicateVote");
+    // @todo
+	};
+
 	return (
-    <ul className="flex flex-row items-center justify-evenly space-x-1">
+    <ul className="flex flex-row items-center justify-evenly space-x-1 rounded-lg">
       <li>
         <input type="radio" disabled={!isAuthenticated} onClick={(e) => upVote()} id={"up-vote_" + question_id} name={"vote_" + question_id} value="up-vote" className="hidden peer" required/>
-        <label htmlFor={"up-vote_" + question_id} className="inline-flex font-bold cursor-pointer justify-center items-center px-4 py-2 text-gray-500 bg-white rounded-lg dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-green-500 peer-checked:border-green-500 peer-checked:text-green-500 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700">
-          ⇧
+        <label htmlFor={"up-vote_" + question_id} className="inline-flex text-xl font-bold cursor-pointer justify-center items-center px-2 py-2 rounded-lg dark:hover:bg-gray-700 dark:hover:text-2xl">
+         🤓
         </label>
       </li>
       <li>
         <input type="radio" disabled={!isAuthenticated} onChange={(e) => downVote()} id={"down-vote_" + question_id} name={"vote_" + question_id} value="down-vote" className="hidden peer"/>
-        <label htmlFor={"down-vote_" + question_id} className="inline-flex font-bold cursor-pointer justify-center items-center px-5 py-2 text-gray-500 bg-white rounded-lg dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-red-500 peer-checked:border-red-500 peer-checked:text-red-500 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700">
-          ⇩
+        <label htmlFor={"down-vote_" + question_id} className="inline-flex text-xl font-bold cursor-pointer justify-center items-center px-2 py-2 text-gray-500 rounded-lg dark:hover:bg-gray-700 dark:hover:text-2xl">
+         🤡
+        </label>
+      </li>
+      <li>
+        <input type="radio" disabled={!isAuthenticated} onChange={(e) => duplicateVote()} id={"duplicate-vote_" + question_id} name={"vote_" + question_id} value="duplicate-vote" className="hidden peer"/>
+        <label htmlFor={"duplicate-vote_" + question_id} className="inline-flex text-xl font-bold cursor-pointer justify-center items-center px-2 py-2 text-gray-500 rounded-lg dark:hover:bg-gray-700 dark:hover:text-2xl">
+         👀
         </label>
       </li>
     </ul>

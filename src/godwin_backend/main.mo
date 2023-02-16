@@ -50,11 +50,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CursorArray = Types.CursorArray;
   type GetUserVotesError = Types.GetUserVotesError;
 
-  stable var state_ = State.initState(caller, Time.now(), parameters);
+  //stable var state_ = State.initState(caller, Time.now(), parameters);
 
-  let game_ = Factory.build(state_);
+  //let game_ = Factory.build(state_);
 
-  //let game_ = Scenario.run(Time.now(), #DAYS(1), #MINUTES(5), 50);
+  let game_ = Scenario.run(Time.now(), #HOURS(6), #MINUTES(5), 20);
 
   public query func getDecay() : async ?Decay {
     game_.getDecay();
@@ -156,7 +156,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getUserConvictions(principal);
   };
 
-  public query func getUserVotes(principal: Principal) : async Result<[Ballot<Cursor>], GetUserVotesError> {
+  public query func getUserVotes(principal: Principal) : async Result<[(Nat, Nat)], GetUserVotesError> {
     game_.getUserVotes(principal);
   };
 

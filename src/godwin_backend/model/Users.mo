@@ -51,7 +51,6 @@ module {
   type Status = Types.Status;
   type CategorizationVote = Categorizations.Vote;
   type OpinionVote = Opinions.Vote;
-  type OpinionBallot = Opinions.Ballot;
 
   public func build(
     register: Map<Principal, User>,
@@ -131,11 +130,9 @@ module {
       });
     };
 
-    public func getVotes(principal: Principal, opinions: Opinions) : [OpinionBallot] {
+    public func getVotes(principal: Principal, opinions: Opinions) : [(Nat, Nat)] {
       let user = getUser(principal);
-      Iter.toArray(Iter.map(Set.keys(user.votes), func((question_id, iteration): (Nat, Nat)) : OpinionBallot {
-        opinions.getBallot(principal, question_id, iteration);
-      }));
+      Iter.toArray(Set.keys(user.votes)); // @todo: use keyDesc from latest map version
     };
 
     // @todo

@@ -211,8 +211,8 @@ module {
       });
     };
 
-    public func getUserVotes(principal: Principal) : Result<[Ballot<Cursor>], GetUserVotesError> {
-      Result.mapOk<User, [Ballot<Cursor>], GetUserVotesError>(getUser(principal), func(user) {
+    public func getUserVotes(principal: Principal) : Result<[(Nat, Nat)], GetUserVotesError> {
+      Result.mapOk<User, [(Nat, Nat)], GetUserVotesError>(getUser(principal), func(user) {
         users_.getVotes(principal, opinion_poll_.getVotes());
       });
     };
