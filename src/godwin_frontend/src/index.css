@@ -9,3 +9,104 @@
 		@apply font-inter;
 	}
 }
+
+:root {
+  --shrug: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>🤷</text></svg>");
+  --thumb-up: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>👍</text></svg>");
+  --thumb-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>👎</text></svg>");
+}
+
+/*Chrome*/
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  input[type='range'] {
+    width: var(--slider-width);
+    height: 15px;
+    background: transparent;
+  }
+  
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 15px;
+    -webkit-appearance: none;
+    background: linear-gradient(
+      to right,
+      transparent        0%,
+      transparent        var(--margin-left),
+      var(--left-color)  var(--margin-left),
+      var(--left-color)  var(--progress-percent),
+      var(--right-color) var(--progress-percent),
+      var(--right-color) var(--margin-right),
+      transparent        var(--margin-right),
+      transparent        100%
+    );
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin-top: -15px;
+    appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border: 0;
+    background-color: transparent;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+
+  input[type='range'].shrug::-webkit-slider-thumb {
+    background-image: var(--shrug);
+  }
+
+  input[type='range'].up::-webkit-slider-thumb {
+    background-image: var(--thumb-up);
+  }
+
+  input[type='range'].down::-webkit-slider-thumb {
+    background-image: var(--thumb-down);
+  }
+
+
+}
+
+/* Firefox */
+
+input[type="range"]::-moz-range-track {  
+  height: 15px;
+  width: var(--slider-width);
+  background: linear-gradient(
+    to right,
+    transparent        0%,
+    transparent        var(--margin-left),
+    var(--left-color)  var(--margin-left),
+    var(--left-color)  var(--progress-percent),
+    var(--right-color) var(--progress-percent),
+    var(--right-color) var(--margin-right),
+    transparent        var(--margin-right),
+    transparent        100%
+  );
+}
+
+input[type="range"]::-moz-range-thumb {
+  /* Use https://stackoverflow.com/questions/41609481/trouble-styling-range-input-thumb */
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border: 0;
+  background-color: transparent;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+input[type="range"].up::-moz-range-thumb {
+  background-image: var(--thumb-up);
+}
+
+input[type="range"].down::-moz-range-thumb {
+  background-image: var(--thumb-down);
+}
+
+input[type="range"].shrug::-moz-range-thumb {
+  background-image: var(--shrug);
+}
