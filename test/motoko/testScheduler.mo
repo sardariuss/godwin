@@ -92,8 +92,7 @@ module {
 
       let status_durations = [
         (#INTEREST, #NS(500)),
-        (#VOTING(#OPINION), #NS(300)),
-        (#VOTING(#CATEGORIZATION), #NS(500)),
+        (#OPEN, #NS(300)),
         (#REJECTED, #NS(400))
       ];
 

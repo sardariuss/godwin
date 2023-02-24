@@ -6,6 +6,8 @@ import Map "mo:map/Map";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
+import Option "mo:base/Option";
+import Array "mo:base/Array";
 
 module {
 
@@ -21,13 +23,11 @@ module {
   type Question = Types.Question;
   type Status = Types.Status;
   type IndexedStatus = Types.IndexedStatus;
-  type Poll = Types.Poll;
 
   public func statusToText(status: Status) : Text {
     switch(status){
-      case(#VOTING(#INTEREST))       { "VOTING(INTEREST)"; };
-      case(#VOTING(#OPINION))        { "VOTING(OPINION)"; };
-      case(#VOTING(#CATEGORIZATION)) { "VOTING(CATEGORIZATION)"; };
+      case(#CANDIDATE)               { "CANDIDATE"; };
+      case(#OPEN)                    { "OPEN"; };
       case(#CLOSED)                  { "CLOSED"; };
       case(#REJECTED)                { "REJECTED"; };
       case(#TRASH)                   { "TRASH"; };
@@ -53,20 +53,6 @@ module {
     question.status_info.current.status == status;
   };
 
-  public func getCurrentPoll(question: Question) : ?Poll {
-    switch(question.status_info.current.status){
-      case(#VOTING(poll)) { ?poll; };
-      case(_)             { null;  };
-    };
-  };
-
-  public func iterateVotingStatus(question: Question, f: Poll -> ()) {
-    switch(question.status_info.current.status){
-      case(#VOTING(poll)) { f(poll); };
-      case(_){};
-    };
-  };
-
   public func getCurrentStatus(question: Question) : Status {
     question.status_info.current.status;
   };
@@ -86,12 +72,12 @@ module {
   public func initStatusInfo(date: Time) : Types.StatusInfo {
     {
       current = {
-        status = #VOTING(#INTEREST);
+        status = #CANDIDATE;
         date;
         index = 0;
       };
       history = [];
-      iterations = [(#VOTING(#INTEREST), 0)];
+      iterations = [(#CANDIDATE, 0)];
     };
   };
 
@@ -148,6 +134,10 @@ module {
         case(null) { { next = func () : ?Nat { null; }; }; };
         case(?idx) { Iter.range(0, idx); };
       };
+    };
+
+    public func isCurrentStatus(status_array: [Status]) : Bool {
+      Option.isSome(Array.find(status_array, func (status: Status) : Bool = current_.status == status));
     };
 
     public func getCurrentStatus() : Status {

@@ -13,6 +13,7 @@ module {
   type Time = Int;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
 
+  type Status = Types.Status;
   type Question = Types.Question;
   type Votes<T, A> = Votes.Votes<T, A>;
   type Ballot<T> = Types.Ballot<T>;
@@ -23,7 +24,7 @@ module {
   type PutBallotError = Types.PutBallotError;
   type PutFreshBallotError = Types.PutFreshBallotError;
 
-  public class Poll<T, A>(poll_: Types.Poll, votes_: Votes<T, A>, questions_: Questions){
+  public class Poll<T, A>(status_: [Types.Status], votes_: Votes<T, A>, questions_: Questions){
 
     public func getAggregate(question_id: Nat, iteration: Nat) : Result<A, GetAggregateError> {
       Result.chain<Question, A, GetAggregateError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
@@ -75,31 +76,33 @@ module {
     };
 
     func canRevealVote(question: Question, iteration: Nat) : Bool {
-      let status_info = StatusHelper.StatusInfo(question.status_info);
-      let current_status = status_info.getCurrentStatus();
-      // Check the iteration exists
-      Option.getMapped(
-        status_info.findIteration(#VOTING(poll_)), 
-        func(it: Nat) : Bool { 
-          if (iteration < it) {
-            true;
-          } else if (iteration == it) {
-            current_status == #REJECTED or current_status == #CLOSED;
-          } else {
-            false;
-          };
-        }, 
-        false
-      );
+      true; // @todo
+//      let status_info = StatusHelper.StatusInfo(question.status_info);
+//      let current_status = status_info.getCurrentStatus();
+//      // Check the iteration exists
+//      Option.getMapped(
+//        status_info.findIteration(#VOTING(poll_)), 
+//        func(it: Nat) : Bool { 
+//          if (iteration < it) {
+//            true;
+//          } else if (iteration == it) {
+//            current_status == #REJECTED or current_status == #CLOSED;
+//          } else {
+//            false;
+//          };
+//        }, 
+//        false
+//      );
     };
 
     func getCurrentIteration(question: Question) : ?Nat { 
-      let status_info = StatusHelper.StatusInfo(question.status_info);
-      if (status_info.getCurrentStatus() == #VOTING(poll_)) {
-        ?status_info.getIteration(#VOTING(poll_));
-      } else {
-        null;
-      };
+      ?0; // @todo
+//      let status_info = StatusHelper.StatusInfo(question.status_info);
+//      if (status_info.getCurrentStatus() == #VOTING(poll_)) {
+//        ?status_info.getIteration(#VOTING(poll_));
+//      } else {
+//        null;
+//      };
     };
 
   };

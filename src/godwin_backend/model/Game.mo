@@ -32,7 +32,6 @@ module {
   type Duration = Duration.Duration;
   type Status = Types.Status;
   type IndexedStatus = Types.IndexedStatus;
-  type Poll = Types.Poll;
   type PolarizationArray = Types.PolarizationArray;
   type Ballot<T> = Types.Ballot<T>;
   type Interest = Types.Interest;
@@ -226,15 +225,6 @@ module {
         users_.getOrCreateUser(principal, categories_);
       });
     };
-
-    // @todo
-//    public func createQuestions(principal: Principal, inputs: [(Text, CreateStatus)]) : Result<[Question], CreateQuestionError> {
-//      Result.chain<(), [Question], CreateQuestionError>(verifyCredentials(principal), func () {
-//        Result.mapOk<User, [Question], CreateQuestionError>(getUser(principal), func(_) {
-//          Admin.createQuestions(questions_, principal, inputs);
-//        })
-//      });
-//    };
 
   };
 

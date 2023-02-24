@@ -22,13 +22,12 @@ module {
 
     public func build() : Schema {
       let schema = StateMachine.init<Status, Event, Question>(StatusHelper.status_hash, Event.event_hash);
-      StateMachine.addTransition(schema, #VOTING(#INTEREST),       #REJECTED,                timedOutFirstIteration, [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #VOTING(#INTEREST),       #CLOSED,                  timedOutNextIterations, [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CANDIDATE,       #REJECTED,                timedOutFirstIteration, [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CANDIDATE,       #CLOSED,                  timedOutNextIterations, [#TIME_UPDATE]);
       StateMachine.addTransition(schema, #REJECTED,                #TRASH,                   timedOut,               [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #VOTING(#INTEREST),       #VOTING(#OPINION),        tickMostInteresting,    [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #VOTING(#OPINION),        #VOTING(#CATEGORIZATION), timedOut,               [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #VOTING(#CATEGORIZATION), #CLOSED,                  timedOut,               [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #CLOSED,                  #VOTING(#INTEREST),       passThrough,            [#REOPEN_QUESTION]);
+      StateMachine.addTransition(schema, #CANDIDATE,       #OPEN,        tickMostInteresting,    [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #OPEN,        #CLOSED,                  timedOut,               [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CLOSED,                  #CANDIDATE,       passThrough,            [#REOPEN_QUESTION]);
       schema;
     };
 

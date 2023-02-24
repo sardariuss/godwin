@@ -24,7 +24,6 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Duration = Duration.Duration;
   type Status = Types.Status;
   type PolarizationArray = Types.PolarizationArray;
-  type Poll = Types.Poll;
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
   type GetQuestionError = Types.GetQuestionError;
@@ -160,10 +159,5 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   public query func getUserVotes(principal: Principal) : async Result<[(Nat, Nat)], GetUserVotesError> {
     game_.getUserVotes(principal);
   };
-
-  // @todo
-//  public shared({caller}) func createQuestions(inputs: [(Text, CreateStatus)]) : async Result<[Question], CreateQuestionError> {
-//    game_.createQuestions(caller, inputs);
-//  };
 
 };

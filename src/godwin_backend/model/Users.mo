@@ -138,7 +138,7 @@ module {
 
     // @todo
     // Warning: assumes that the question is not closed yet but will be after convictions have been updated
-    // Warning: does not work if transition from #VOTING(#INTEREST) to #CLOSED
+    // Warning: does not work if transition from #CANDIDATE to #CLOSED
     // Watchout: this function makes a strong assumption that it is called only once every time the question status will be closed
     public func onVoteClosed(question: Question, opinions: Opinions, categorizations: Categorizations, categories: Categories) {
 

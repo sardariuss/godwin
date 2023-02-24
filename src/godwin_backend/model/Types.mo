@@ -26,7 +26,6 @@ module {
     interest_pick_rate: Duration;
     interest_duration: Duration;
     opinion_duration: Duration;
-    categorization_duration: Duration;
     rejected_duration: Duration;
   };
 
@@ -57,16 +56,11 @@ module {
   };
 
   public type Status = {
-    #VOTING: Poll;
+    #CANDIDATE;
+    #OPEN;
     #CLOSED;
     #REJECTED;
     #TRASH;
-  };
-
-  public type Poll = {
-    #INTEREST;
-    #OPINION;
-    #CATEGORIZATION;
   };
 
   public type IndexedStatus = {
@@ -204,20 +198,6 @@ module {
     #InvalidPoll;
     #AlreadyVoted;
     #InvalidBallot;
-  };
-
-    // @todo: temporary
-
-  public type CreateQuestionError = GetUserError or VerifyCredentialsError;
-  
-  public type CreateStatus = {
-    #VOTING: {
-      #INTEREST: { interest_score: Int; };
-      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-    };
-    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-    #REJECTED : { interest_score: Int; };
   };
 
 };

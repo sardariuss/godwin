@@ -36,23 +36,23 @@ module {
       { id = 3; author = principals[3]; title = "title3"; text = ""; date = 5123; status_info = StatusHelper.initStatusInfo(5123); },
       { id = 4; author = principals[4]; title = "title4"; text = ""; date = 3132; status_info = StatusHelper.initStatusInfo(3132); },
       { id = 5; author = principals[5]; title = "title5"; text = ""; date = 3132; status_info = StatusHelper.initStatusInfo(3132); },
-      { id = 6; author = principals[6]; title = "title6"; text = ""; date = 4213; status_info = StatusHelper.initStatusInfo(4213); },
+      { id = 6; author = principals[6]; title = "title6"; text = ""; date = 4213; status_info = StatusHelper.initStatusInfo(2012); },
       { id = 7; author = principals[7]; title = "title7"; text = ""; date = 4213; status_info = StatusHelper.initStatusInfo(4213); },
-      { id = 8; author = principals[8]; title = "title8"; text = ""; date = 9711; status_info = StatusHelper.initStatusInfo(9711); },
+      { id = 8; author = principals[8]; title = "title8"; text = ""; date = 9711; status_info = StatusHelper.initStatusInfo(9311); },
       { id = 9; author = principals[9]; title = "title9"; text = ""; date = 9711; status_info = StatusHelper.initStatusInfo(9711); }
     ];
 
     let array_modified : [Question] = [
       array_originals[0],
       array_originals[1],
-      StatusHelper.updateStatusInfo(array_originals[2], #VOTING(#CATEGORIZATION), 2432),
-      StatusHelper.updateStatusInfo(array_originals[3], #VOTING(#CATEGORIZATION), 1321),
-      StatusHelper.updateStatusInfo(array_originals[4], #VOTING(#OPINION),        7234),
-      StatusHelper.updateStatusInfo(array_originals[5], #VOTING(#OPINION),        3132),
+      StatusHelper.updateStatusInfo(array_originals[2], #OPEN,        2432),
+      array_originals[3],
+      StatusHelper.updateStatusInfo(array_originals[4], #OPEN,        7234),
+      StatusHelper.updateStatusInfo(array_originals[5], #OPEN,        3132),
       array_originals[6],
-      StatusHelper.updateStatusInfo(array_originals[7], #VOTING(#CATEGORIZATION), 4213),
-      StatusHelper.updateStatusInfo(array_originals[8], #VOTING(#OPINION),        5431),
-      StatusHelper.updateStatusInfo(array_originals[9], #VOTING(#OPINION),        9711)
+      array_originals[7],
+      StatusHelper.updateStatusInfo(array_originals[8], #OPEN,        5431),
+      StatusHelper.updateStatusInfo(array_originals[9], #OPEN,        9711)
     ];
 
     let tests = Buffer.Buffer<Suite.Suite>(array_originals.size() * 4);
@@ -84,24 +84,21 @@ module {
     };
     
     // Iter on interest status
-    let iter_interest = Iter.map(queries.iter(#STATUS(#VOTING(#INTEREST)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
+    let iter_interest = Iter.map(queries.iter(#STATUS(#CANDIDATE), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
     tests.add(Suite.test("Iter on interest question (1)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[6]))));
-    tests.add(Suite.test("Iter on interest question (2)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[1]))));
-    tests.add(Suite.test("Iter on interest question (3)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[0]))));
-    tests.add(Suite.test("Iter on interest question (4)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(null))));
+    tests.add(Suite.test("Iter on interest question (2)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[7]))));
+    tests.add(Suite.test("Iter on interest question (3)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[3]))));
+    tests.add(Suite.test("Iter on interest question (4)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[1]))));
+    tests.add(Suite.test("Iter on interest question (5)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[0]))));
+    tests.add(Suite.test("Iter on interest question (6)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(null))));
     // Iter on opinion status
-    let iter_opinion = Iter.map(queries.iter(#STATUS(#VOTING(#OPINION)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
-    tests.add(Suite.test("Iter on opinioned question (1)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[5]))));
-    tests.add(Suite.test("Iter on opinioned question (2)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[8]))));
-    tests.add(Suite.test("Iter on opinioned question (3)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[4]))));
+    let iter_opinion = Iter.map(queries.iter(#STATUS(#OPEN), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
+    tests.add(Suite.test("Iter on opinioned question (1)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[2]))));
+    tests.add(Suite.test("Iter on opinioned question (2)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[5]))));
+    tests.add(Suite.test("Iter on opinioned question (3)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[8]))));
+    tests.add(Suite.test("Iter on opinioned question (4)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[4]))));
     tests.add(Suite.test("Iter on opinioned question (4)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[9]))));
     tests.add(Suite.test("Iter on opinioned question (5)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(null))));
-    // Iter on categorization status
-    let iter_categorization = Iter.map(queries.iter(#STATUS(#VOTING(#CATEGORIZATION)), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
-    tests.add(Suite.test("Iter on categorized question (1)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[3]))));
-    tests.add(Suite.test("Iter on categorized question (2)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[2]))));
-    tests.add(Suite.test("Iter on categorized question (3)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[7]))));
-    tests.add(Suite.test("Iter on categorized question (4)", iter_categorization.next(), Matchers.equals(TestableItems.optQuestion(null))));
 
     Suite.run(Suite.suite("Test Questions module", Buffer.toArray(tests)));
 

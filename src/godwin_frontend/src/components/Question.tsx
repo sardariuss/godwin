@@ -58,16 +58,11 @@ const QuestionBody = ({question_id, categories}: Props) => {
 	return (
 		<div className="flex flex-row py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white hover:dark:border">
 			<div className="flex flex-row w-1/3 gap-x-10 text-lg font-semibold">
-				{ 
-					question?.status_info.current.status['VOTING'] !== undefined ? (
-						question?.status_info.current.status['VOTING']['INTEREST'] !== undefined ?
-							<VoteInterest question_id={question.id}/> : 
-						question?.status_info.current.status['VOTING']['OPINION'] !== undefined ?
-							<VoteOpinion question_id={question.id}/> :
-						question?.status_info.current.status['VOTING']['CATEGORIZATION'] !== undefined ?
-							<VoteCategorization question_id={question.id} categories={categories}/> :
-							<div>@todo impossible</div>
-					) :
+				{
+					question?.status_info.current.status['CANDIDATE'] !== undefined ?
+						<VoteInterest question_id={question.id}/> : 
+					question?.status_info.current.status['OPEN'] !== undefined ?
+						<VoteOpinion question_id={question.id}/> : 
 					question?.status_info.current.status['CLOSED'] !== undefined || question?.status_info.current.status['REJECTED'] !== undefined ?
 						<Aggregates 
 							interest_aggregate={interestAggregate}

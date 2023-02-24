@@ -50,9 +50,8 @@ module {
 
     public func getStatusDuration(status: Status) : Duration {
       switch(status){
-        case(#VOTING(#INTEREST)) { params_.get().interest_duration; };
-        case(#VOTING(#OPINION)) { params_.get().opinion_duration; };
-        case(#VOTING(#CATEGORIZATION)) { params_.get().categorization_duration; };
+        case(#CANDIDATE) { params_.get().interest_duration; };
+        case(#OPEN) { params_.get().opinion_duration; };
         case(#REJECTED) { params_.get().rejected_duration; };
         case(_) { Debug.trap("There is no duration for this status"); };
       };
@@ -60,9 +59,8 @@ module {
 
     public func setStatusDuration(status: Status, duration: Duration) {
       switch(status){
-        case(#VOTING(#INTEREST)) {       params_.set({ params_.get() with interest_duration       = duration; }) };
-        case(#VOTING(#OPINION)) {        params_.set({ params_.get() with opinion_duration        = duration; }) };
-        case(#VOTING(#CATEGORIZATION)) { params_.set({ params_.get() with categorization_duration = duration; }) };
+        case(#CANDIDATE) {       params_.set({ params_.get() with interest_duration       = duration; }) };
+        case(#OPEN) {        params_.set({ params_.get() with opinion_duration        = duration; }) };
         case(#REJECTED) {                params_.set({ params_.get() with rejected_duration       = duration; }) };
         case(_) { Debug.trap("Cannot set a duration for this status"); };
       };

@@ -48,15 +48,9 @@ function App() {
                 }
               />
               <Route
-                path="/opinion"
+                path="/open"
                 element={
-                  <ListQuestions key={"list_opinion"} order_by={{ 'STATUS' : { 'VOTING' : { 'OPINION' : null } }}} query_direction={{ 'FWD' : null }}/>
-                }
-              />
-              <Route
-                path="/categorization"
-                element={
-                  <ListQuestions key={"list_categorization"} order_by={{ 'STATUS' : { 'VOTING' : { 'CATEGORIZATION' : null } }}} query_direction={{ 'FWD' : null }}/>
+                  <ListQuestions key={"list_opinion"} order_by={{ 'STATUS' : { 'OPEN' : null } }} query_direction={{ 'FWD' : null }}/>
                 }
               />
               <Route

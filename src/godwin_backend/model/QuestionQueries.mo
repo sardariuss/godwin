@@ -68,9 +68,8 @@ module {
   public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
 
     // @todo: only the status and interest score are plugged so far
-    addOrderBy(register, #STATUS(#VOTING(#INTEREST)));
-    addOrderBy(register, #STATUS(#VOTING(#OPINION)));
-    addOrderBy(register, #STATUS(#VOTING(#CATEGORIZATION)));
+    addOrderBy(register, #STATUS(#CANDIDATE));
+    addOrderBy(register, #STATUS(#OPEN));
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #INTEREST_SCORE);
@@ -94,9 +93,8 @@ module {
       case(#DATE){ "DATE"; };
       case(#STATUS(status)) { 
         switch(status){
-          case(#VOTING(#INTEREST)) { "VOTING_INTEREST"; };
-          case(#VOTING(#OPINION)) { "VOTING_OPINION"; };
-          case(#VOTING(#CATEGORIZATION)) { "VOTING_CATEGORIZATION"; };
+          case(#CANDIDATE) { "VOTING_INTEREST"; };
+          case(#OPEN) { "VOTING_OPINION"; };
           case(#CLOSED) { "CLOSED"; };
           case(#REJECTED) { "REJECTED"; };
           case(#TRASH) { "TRASH"; };

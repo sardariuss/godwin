@@ -40,13 +40,13 @@ module {
     );
 
     let interest_votes = Interests.build(state_.votes.interest);
-    let interest_poll = Poll.Poll(#INTEREST, interest_votes, questions);
+    let interest_poll = Poll.Poll([#CANDIDATE], interest_votes, questions);
     
     let opinion_votes = Opinions.build(state_.votes.opinion);
-    let opinion_poll = Poll.Poll(#OPINION, opinion_votes, questions);
+    let opinion_poll = Poll.Poll([#OPEN], opinion_votes, questions);
     
     let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
-    let categorization_poll = Poll.Poll(#CATEGORIZATION, categorization_votes, questions);
+    let categorization_poll = Poll.Poll([#OPEN], categorization_votes, questions);
 
     let model = Model.build(
       state_.controller.model.time,
@@ -84,20 +84,20 @@ module {
       );
     });
 
-    // When the status changes from #VOTING(#INTEREST), remove the associated key for the #INTEREST_SCORE order_by
+    // When the status changes from #CANDIDATE, remove the associated key for the #INTEREST_SCORE order_by
     controller.addObs(func(old: ?Question, _: ?Question){
       Option.iterate(old, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
-        if (status_info.getCurrentStatus() == #VOTING(#INTEREST)){
+        if (status_info.getCurrentStatus() == #CANDIDATE){
           queries.remove(toAppealScore(interest_votes.getVote(question.id, status_info.getCurrentIteration())));
         };
       });
     });
 
-    // When the question status changes from #VOTING(#CATEGORIZATION) to #CLOSED, update the users' convictions
+    // When the question status changes from #OPEN to #CLOSED, update the users' convictions
     controller.addObs(func(old: ?Question, new: ?Question) {
       Option.iterate(old, func(old_question: Question) {
-        if (old_question.status_info.current.status == #VOTING(#CATEGORIZATION)){
+        if (old_question.status_info.current.status == #OPEN){
           Option.iterate(new, func(new_question: Question) {
             if (new_question.status_info.current.status == #CLOSED){
               users.onVoteClosed(new_question, opinion_votes, categorization_votes, categories);
@@ -107,25 +107,21 @@ module {
       });
     });
 
-    // When the question status changes to #VOTING(poll), open the vote for this poll
+    // When the question status changes, open the respective vote(s)
     controller.addObs(func(old: ?Question, new: ?Question) {
       Option.iterate(new, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
         switch(status_info.getCurrentStatus()){
-          case(#VOTING(poll)){
-            switch(poll){
-              case(#INTEREST) {
-                interest_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
-              };
-              case(#OPINION) {
-                opinion_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
-              };
-              case(#CATEGORIZATION) {
-                categorization_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
-              };
-            };
+          case(#CANDIDATE) {
+            interest_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
           };
-          case(_) {};
+          case(#OPEN) {
+            opinion_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+            categorization_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+          };
+          case(_) {
+            // Do nothing
+          };
         };
       })
     });

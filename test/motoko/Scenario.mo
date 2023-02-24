@@ -47,7 +47,6 @@ module {
         interest_pick_rate = #HOURS(2);
         interest_duration = #HOURS(6);
         opinion_duration = #HOURS(6);
-        categorization_duration = #HOURS(6);
         rejected_duration = #HOURS(6);
       };
     };
@@ -69,7 +68,7 @@ module {
         ignore game.openQuestion(Random.randomUser(fuzzer, principals), Random.randomTitle(fuzzer), "", time);
       };
 
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#VOTING(#INTEREST)), #FWD, 1000, null).keys)){
+      for (question_id in Array.vals(game.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.1){
             ignore game.putInterestBallot(principal, question_id, time, Random.randomInterest(fuzzer));
@@ -77,18 +76,13 @@ module {
         };
       };
 
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#VOTING(#OPINION)), #FWD, 1000, null).keys)){
+      for (question_id in Array.vals(game.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
         for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.05){
+          if (Random.random(fuzzer) < 0.08){
             ignore game.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
             Debug.print("User '" # Principal.toText(principal) # "' gave his opinion.");
           };
-        };
-      };
-
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#VOTING(#CATEGORIZATION)), #FWD, 1000, null).keys)){
-        for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.05){
+          if (Random.random(fuzzer) < 0.04){
             ignore game.putCategorizationBallot(principal, question_id, time, Random.randomCategorization(fuzzer, parameters.categories));
           };
         };
