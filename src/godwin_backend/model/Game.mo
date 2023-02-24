@@ -8,7 +8,7 @@ import Votes "votes/Votes";
 import Poll "votes/Poll";
 import Categories "Categories";
 import StatusHelper "StatusHelper";
-import Duration "Duration";
+import Duration "../utils/Duration";
 import Utils "../utils/Utils";
 
 import Result "mo:base/Result";
@@ -29,7 +29,7 @@ module {
   type User = Types.User;
   type Category = Types.Category;
   type Decay = Types.Decay;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Status = Types.Status;
   type IndexedStatus = Types.IndexedStatus;
   type Poll = Types.Poll;

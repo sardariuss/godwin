@@ -1,5 +1,5 @@
 import StatusHelper "../StatusHelper";
-import Duration "../Duration";
+import Duration "../../utils/Duration";
 import Types "../Types";
 import Model "Model";
 import Event "Event";

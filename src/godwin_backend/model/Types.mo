@@ -4,6 +4,8 @@ import Principal "mo:base/Principal";
 import Map "mo:map/Map";
 import Set "mo:map/Set";
 
+import Duration "../utils/Duration";
+
 module {
 
   // For convenience: from base module
@@ -14,13 +16,7 @@ module {
   type Map<K, V> = Map.Map<K, V>;
   type Set<K> = Set.Set<K>;
 
-  public type Duration = {
-    #DAYS: Nat;
-    #HOURS: Nat;
-    #MINUTES: Nat;
-    #SECONDS: Nat;
-    #NS: Nat; // To be able to ease the tests on the scheduler
-  };
+  type Duration = Duration.Duration;
 
   public type UserParameters = {
     convictions_half_life: ?Duration;

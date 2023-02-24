@@ -9,6 +9,7 @@ import Categories "Categories";
 import Utils "../utils/Utils";
 import WMap "../utils/wrappers/WMap";
 import Decay "Decay";
+import Duration "../utils/Duration";
 
 import Map "mo:map/Map";
 import Set "mo:map/Set";
@@ -37,7 +38,7 @@ module {
   // For convenience: from types module
   type User = Types.User;
   type VoteId = Types.VoteId;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Question = Types.Question;
   type Category = Types.Category;
   type Categories = Categories.Categories;

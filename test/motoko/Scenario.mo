@@ -3,7 +3,7 @@ import Interests "../../src/godwin_backend/model/votes/Interests";
 import Game "../../src/godwin_backend/model/Game";
 import Factory "../../src/godwin_backend/model/Factory";
 import State "../../src/godwin_backend/model/State";
-import Duration "../../src/godwin_backend/model/Duration";
+import Duration "../../src/godwin_backend/utils/Duration";
 
 import WSet "../../src/godwin_backend/utils/wrappers/WSet";
 
@@ -30,7 +30,7 @@ module {
   type Principal = Principal.Principal;
   type Time = Int;
   type Game = Game.Game;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Fuzzer = Fuzz.Fuzzer;
 
   public func run(end_date: Time, simulation_duration: Duration, tick_duration: Duration, num_users: Nat) : Game {

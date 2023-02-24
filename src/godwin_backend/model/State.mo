@@ -6,6 +6,7 @@ import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
 import Categories "Categories";
+import Duration "../utils/Duration";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -33,7 +34,7 @@ module {
   type Category = Types.Category;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Polarization = Types.Polarization;
   type SchedulerParameters = Types.SchedulerParameters;
   type Ballot<T> = Types.Ballot<T>;

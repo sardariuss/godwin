@@ -2,13 +2,14 @@ import Debug "mo:base/Debug";
 
 import Ref "../../utils/Ref";
 import WRef "../../utils/wrappers/WRef";
+import Duration "../../utils/Duration";
 import Types "../Types";
 
 module {
 
   type Time = Int;
   type Status = Types.Status;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
 

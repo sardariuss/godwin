@@ -3,6 +3,7 @@ import QuestionQueries "model/QuestionQueries"; // @todo
 import State "model/State";
 import Factory "model/Factory";
 import Scenario "../../test/motoko/Scenario"; // @todo
+import Duration "utils/Duration";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -20,7 +21,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type User = Types.User;
   type Category = Types.Category;
   type Decay = Types.Decay;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Status = Types.Status;
   type PolarizationArray = Types.PolarizationArray;
   type Poll = Types.Poll;

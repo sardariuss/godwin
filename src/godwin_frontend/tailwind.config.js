@@ -10,7 +10,13 @@ module.exports = {
       },
 			height: {
         '128': '32rem',
-      }
+      },
+			colors: {
+        'google-blue': '#4285F4',
+				'google-red': "#DB4437",
+				'google-yellow': "#F4B400",
+				'google-green': "#0F9D58",
+      },
 		},
 	},
 	plugins: [],
