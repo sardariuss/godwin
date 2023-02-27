@@ -18,41 +18,41 @@ const UserComponent = () => {
 
   const navigate = useNavigate();
 
-	const refreshUser = async () => {
-    //let principal = await Actor.agentOf(actor)?.getPrincipal();
-    // @todo
-    let principal = Principal.fromText("crxri-e7kai-wzyt5-uqxrb-kqy");
-    if (principal !== undefined){
-      let queryConvictions = await actor.getUserConvictions(principal);
-      if (queryConvictions['ok'] !== undefined) {
-        setConvictions(queryConvictions['ok']);
-      };
-      let queryVotes = await actor.getUserVotes(principal);
-      let votes = queryVotes['ok'];
-      if (votes !== undefined) {
-        setVotes(queryVotes['ok']);
-        for (let i = 0; i < votes.length; i++) {
-          let ballot = await actor.getOpinionBallot(principal, votes[i][0], votes[i][1]);
-          if (ballot['ok'] !== undefined) {
-            setVotes2([...votes2, ballot['ok']]);
-          } else {
-            setVotes2([]);
-          }
-        };
-      }
-    }
-	}
+//	const refreshUser = async () => {
+//    //let principal = await Actor.agentOf(actor)?.getPrincipal();
+//    // @todo
+//    let principal = Principal.fromText("crxri-e7kai-wzyt5-uqxrb-kqy");
+//    if (principal !== undefined){
+//      let queryConvictions = await actor.getUserConvictions(principal);
+//      if (queryConvictions['ok'] !== undefined) {
+//        setConvictions(queryConvictions['ok']);
+//      };
+//      let queryVotes = await actor.getUserVotes(principal);
+//      let votes = queryVotes['ok'];
+//      if (votes !== undefined) {
+//        setVotes(queryVotes['ok']);
+//        for (let i = 0; i < votes.length; i++) {
+//          let ballot = await actor.getOpinionBallot(principal, votes[i][0], votes[i][1]);
+//          if (ballot['ok'] !== undefined) {
+//            setVotes2([...votes2, ballot['ok']]);
+//          } else {
+//            setVotes2([]);
+//          }
+//        };
+//      }
+//    }
+//	}
 
   const getVote = () => {
     return "@todo";
   };
 
 	useEffect(() => {
-		refreshUser();
+		//refreshUser();
   }, []);
 
   useEffect(() => {
-		refreshUser();
+		//refreshUser();
   }, [isAuthenticated]);
 
 	return (

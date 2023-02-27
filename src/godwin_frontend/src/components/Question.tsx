@@ -19,6 +19,7 @@ const QuestionBody = ({question_id, categories}: Props) => {
 
 	const {actor} = useContext(ActorContext);
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
+	// @todo
 	const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>(undefined);
 	const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>(undefined);
 	const [categorizationAggregate, setCategorizationAggregate] = useState<PolarizationArray | undefined>(undefined);
@@ -28,29 +29,8 @@ const QuestionBody = ({question_id, categories}: Props) => {
 		setQuestion(question['ok']);
 	};
 
-	// @todo: need to check status and handle case where history is empty
-	const getInterestAggregate = async () => {
-		let aggregate = await actor.getInterestAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
-		setInterestAggregate(aggregate['ok']);
-	};
-
-	// @todo: need to check status and handle case where history is empty
-	const getOpinionAggregate = async () => {
-		let aggregate = await actor.getOpinionAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
-		setOpinionAggregate(aggregate['ok']);
-	};
-
-	// @todo: need to check status and handle case where history is empty
-	const getCategorizationAggregate = async () => {
-		let aggregate = await actor.getCategorizationAggregate(question_id, BigInt(0)); // @todo: hardcoded iteration
-		setCategorizationAggregate(aggregate['ok']);
-	};
-
 	useEffect(() => {
 		getQuestion();
-		getInterestAggregate();
-		getOpinionAggregate();
-		getCategorizationAggregate();
   }, []);
 
 	const show = true;
@@ -59,16 +39,12 @@ const QuestionBody = ({question_id, categories}: Props) => {
 		<div className="flex flex-row py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white hover:dark:border">
 			<div className="flex flex-row w-1/3 gap-x-10 text-lg font-semibold">
 				{
-					question?.status_info.current.status['CANDIDATE'] !== undefined ?
+					question?.status_info.status['CANDIDATE'] !== undefined ?
 						<VoteInterest question_id={question.id}/> : 
-					question?.status_info.current.status['OPEN'] !== undefined ?
+					question?.status_info.status['OPEN'] !== undefined ?
 						<VoteOpinion question_id={question.id}/> : 
-					question?.status_info.current.status['CLOSED'] !== undefined || question?.status_info.current.status['REJECTED'] !== undefined ?
-						<Aggregates 
-							interest_aggregate={interestAggregate}
-							opinion_aggregate={opinionAggregate}
-							categorization_aggregate={categorizationAggregate}
-						/> : <div>@todo impossible</div>
+					question?.status_info.status['CLOSED'] !== undefined || question?.status_info.status['REJECTED'] !== undefined ?
+						<div> @todo </div> : <div>@todo impossible</div>
 				}
 			</div>
 			<div className="flex flex-row w-2/3 justify-start gap-x-10">

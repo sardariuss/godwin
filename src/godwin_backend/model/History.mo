@@ -91,12 +91,13 @@ module {
     };
 
     public func getStatusIndex(question_id: Nat, status: Status) : Nat {
-      switch(status_history_.get(question_id)){
-        case(null) { Debug.trap("Question_id not found"); };
-        case(?history) {
+      Option.getMapped(
+        status_history_.get(question_id),
+        func(history: StatusHistory) : Nat {
           Option.get(Map.get(history.records, Status.status_hash, status), []).size();
-        };
-      };
+        },
+        0
+      );
     };
 
     public func findUserHistory(principal: Principal, categories: Categories) : ?UserHistory {
@@ -135,44 +136,39 @@ module {
     };
 
     public func add(question_id: Nat, status_record: StatusRecord) {
-      switch(status_history_.get(question_id)){
-        case(null) { Debug.trap("Question_id not found"); };
-        case(?history){
-          let status = toStatus(status_record);
-          // Add to the records
-          let records = history.records;
-          let status_records = Buffer.fromArray<StatusRecord>(Option.get(Map.get(records, Status.status_hash, status), []));
-          // Update the users convictions if needed
-          switch(status_record){
-            case(#OPEN({vote_opinion; vote_categorization;})){
-              let new_categorization = vote_categorization.aggregate;
-              let previous_categorization = Option.map(status_records.getOpt(status_records.size() - 1), func(status_record2: StatusRecord) : PolarizationMap {
-                switch(status_record2){
-                  case(#OPEN({vote_categorization; vote_opinion;})) { vote_categorization.aggregate; };
-                  case(_) { Debug.trap("@todo"); };
-                };
-              });
-              let new_opinion_ballots = vote_opinion.ballots;
-              let old_opinion_ballots = Buffer.map<StatusRecord, Map<Principal, Types.Ballot<Cursor>>>(status_records, func (status_record2: StatusRecord) : Map<Principal, Types.Ballot<Cursor>> {
-                switch(status_record2){
-                  case(#OPEN({vote_categorization; vote_opinion;})) { vote_opinion.ballots; };
-                  case(_) { Debug.trap("@todo"); };
-                };
-              });
-              onVoteClosed(question_id, previous_categorization, new_categorization, old_opinion_ballots.vals(), new_opinion_ballots);
+      let history = Option.get(status_history_.get(question_id), { records = Map.new<Status, [StatusRecord]>(); timeline = []; });
+      let status = toStatus(status_record);
+      // Add to the records
+      let status_records = Buffer.fromArray<StatusRecord>(Option.get(Map.get(history.records, Status.status_hash, status), []));
+      // Update the users convictions if needed
+      switch(status_record){
+        case(#OPEN({vote_opinion; vote_categorization;})){
+          let new_categorization = vote_categorization.aggregate;
+          let previous_categorization = Option.map(status_records.getOpt(status_records.size() - 1), func(status_record2: StatusRecord) : PolarizationMap {
+            switch(status_record2){
+              case(#OPEN({vote_categorization; vote_opinion;})) { vote_categorization.aggregate; };
+              case(_) { Debug.trap("@todo"); };
             };
-            case(_) {
+          });
+          let new_opinion_ballots = vote_opinion.ballots;
+          let old_opinion_ballots = Buffer.map<StatusRecord, Map<Principal, Types.Ballot<Cursor>>>(status_records, func (status_record2: StatusRecord) : Map<Principal, Types.Ballot<Cursor>> {
+            switch(status_record2){
+              case(#OPEN({vote_categorization; vote_opinion;})) { vote_opinion.ballots; };
+              case(_) { Debug.trap("@todo"); };
             };
-          };
-          status_records.add(status_record);
-          Map.set(records, Status.status_hash, status, Buffer.toArray(status_records));
-          // Add to the timeline
-          let timeline = Buffer.fromArray<(Status, Nat)>(history.timeline);
-          timeline.add((status, status_records.size() - 1));
-          // Update the history
-          status_history_.set(question_id, {records; timeline = Buffer.toArray(timeline)});
+          });
+          onVoteClosed(question_id, previous_categorization, new_categorization, old_opinion_ballots.vals(), new_opinion_ballots);
+        };
+        case(_) {
         };
       };
+      status_records.add(status_record);
+      Map.set(history.records, Status.status_hash, status, Buffer.toArray(status_records));
+      // Add to the timeline
+      let timeline = Buffer.fromArray<(Status, Nat)>(history.timeline);
+      timeline.add((status, status_records.size() - 1));
+      // Update the history
+      status_history_.set(question_id, {records = history.records; timeline = Buffer.toArray(timeline)});
     };
 
     // Watchout: this function makes a strong assumption that it is called only once every time the question status transitions from #OPEN to #CLOSED

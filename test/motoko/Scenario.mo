@@ -60,7 +60,6 @@ module {
     let principals = Random.generatePrincipals(fuzzer, num_users);
 
     while (time < end_date) {
-      Debug.print("Tick: " # Int.toText(time));
       time := time + Duration.toTime(tick_duration);
 
       if (Random.random(fuzzer) < 0.2) {
@@ -71,6 +70,7 @@ module {
       for (question_id in Array.vals(game.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.1){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
             ignore game.putInterestBallot(principal, question_id, time, Random.randomInterest(fuzzer));
           };
         };
@@ -79,10 +79,12 @@ module {
       for (question_id in Array.vals(game.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.08){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));
             ignore game.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
-            Debug.print("User '" # Principal.toText(principal) # "' gave his opinion.");
+            
           };
           if (Random.random(fuzzer) < 0.04){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(question_id));
             ignore game.putCategorizationBallot(principal, question_id, time, Random.randomCategorization(fuzzer, parameters.categories));
           };
         };
@@ -90,7 +92,9 @@ module {
 
       for (question_id in Array.vals(game.getQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
         if (Random.random(fuzzer) < 0.01){
-          ignore game.reopenQuestion(Random.randomUser(fuzzer, principals), question_id, time);
+          let principal = Random.randomUser(fuzzer, principals);
+          Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
+          ignore game.reopenQuestion(principal, question_id, time);
         };
       };
 

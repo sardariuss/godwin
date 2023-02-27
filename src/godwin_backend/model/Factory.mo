@@ -81,31 +81,37 @@ module {
         Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
       );
 
-      Option.iterate(old, func(question: Question) {
-        // Remove the associated key for the #INTEREST_SCORE order_by
-        if (question.status_info.status == #CANDIDATE){
-          queries.remove(toAppealScore(interest_votes.getVote(question.id)));
-        };
+      Option.iterate(old, func(question: Question) {       
         // Remove the vote and put it in the history
         let status_record = switch(question.status_info.status){
-          case(#CANDIDATE) {#CANDIDATE({
-            date = question.status_info.date;
-            vote_interest = interest_votes.removeVote(question.id); 
-          }); };
-          case(#OPEN) {     #OPEN({
-            date = question.status_info.date;
-            vote_opinion = opinion_votes.removeVote(question.id);
-            vote_categorization = categorization_votes.removeVote(question.id);
-          }); };
-          case(#CLOSED){    #CLOSED({
-            date = question.status_info.date;
-          }); };
-          case(#REJECTED){  #REJECTED({
-            date = question.status_info.date;
-          }); };
-          case(#TRASH){     #TRASH({
-            date = question.status_info.date;
-          }); };
+          case(#CANDIDATE) {
+            #CANDIDATE({
+              date = question.status_info.date;
+              vote_interest = interest_votes.removeVote(question.id); 
+            }); 
+          };
+          case(#OPEN) {
+            #OPEN({
+              date = question.status_info.date;
+              vote_opinion = opinion_votes.removeVote(question.id);
+              vote_categorization = categorization_votes.removeVote(question.id);
+            }); 
+          };
+          case(#CLOSED){
+            #CLOSED({
+              date = question.status_info.date;
+            });
+          };
+          case(#REJECTED){
+            #REJECTED({
+              date = question.status_info.date;
+            });
+          };
+          case(#TRASH){
+            #TRASH({
+              date = question.status_info.date;
+            });
+          };
         };
         history.add(question.id, status_record);
       });
