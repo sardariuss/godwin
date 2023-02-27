@@ -1,5 +1,4 @@
 import Types "Types";
-import Users "Users";
 import Controller "controller/Controller";
 import Model "controller/Model";
 import Questions "Questions";
@@ -12,6 +11,7 @@ import Game "Game";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
 import StatusHelper "StatusHelper";
+import History "History";
 
 import Option "mo:base/Option";
 import Debug "mo:base/Debug";
@@ -21,7 +21,8 @@ module {
 
   type Question = Types.Question;
   type Status = Types.Status;
-  type InterestVote = Interests.Vote;
+  type InterestVote = Interests.Vote2;
+  type Time = Int;
   
   type Key = QuestionQueries.Key;
   let { toAppealScore; toStatusEntry } = QuestionQueries;
@@ -39,14 +40,14 @@ module {
       state_.questions.index
     );
 
-    let interest_votes = Interests.build(state_.votes.interest);
-    let interest_poll = Poll.Poll([#CANDIDATE], interest_votes, questions);
+    let interest_votes = Interests.build2(state_.votes.interest);
+    let interest_poll = Poll.Poll(interest_votes);
     
-    let opinion_votes = Opinions.build(state_.votes.opinion);
-    let opinion_poll = Poll.Poll([#OPEN], opinion_votes, questions);
+    let opinion_votes = Opinions.build2(state_.votes.opinion);
+    let opinion_poll = Poll.Poll(opinion_votes);
     
-    let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
-    let categorization_poll = Poll.Poll([#OPEN], categorization_votes, questions);
+    let categorization_votes = Categorizations.build2(state_.votes.categorization, categories);
+    let categorization_poll = Poll.Poll(categorization_votes);
 
     let model = Model.build(
       state_.controller.model.time,
@@ -62,11 +63,8 @@ module {
 
     let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
-    let users = Users.build(
-      state_.users.register,
-      state_.creation_date, 
-      state_.users.convictions_half_life
-    );
+    let { status_history; user_history; convictions_half_life; } = state_.history;
+    let histories = History.build(status_history, user_history, convictions_half_life, state_.creation_date, categories);
 
     // When the question status changes, update the associated key for the #STATUS order_by
     controller.addObs(func(old: ?Question, new: ?Question){
@@ -89,44 +87,60 @@ module {
       Option.iterate(old, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
         if (status_info.getCurrentStatus() == #CANDIDATE){
-          queries.remove(toAppealScore(interest_votes.getVote(question.id, status_info.getCurrentIteration())));
+          queries.remove(toAppealScore(interest_votes.getVote(question.id)));
         };
       });
     });
 
-    // When the question status changes from #OPEN to #CLOSED, update the users' convictions
     controller.addObs(func(old: ?Question, new: ?Question) {
-      Option.iterate(old, func(old_question: Question) {
-        if (old_question.status_info.current.status == #OPEN){
-          Option.iterate(new, func(new_question: Question) {
-            if (new_question.status_info.current.status == #CLOSED){
-              users.onVoteClosed(new_question, opinion_votes, categorization_votes, categories);
-            };
-          });
+      Option.iterate(old, func(question: Question) {
+        let status_info = StatusHelper.StatusInfo(question.status_info);
+        // Remove the associated key for the #INTEREST_SCORE order_by
+        if (status_info.getCurrentStatus() == #CANDIDATE){
+          queries.remove(toAppealScore(interest_votes.getVote(question.id)));
         };
+        // Remove the vote and put it in the history
+        let status_record = switch(status_info.getCurrentStatus()){
+          case(#CANDIDATE) {#CANDIDATE({
+            date = status_info.getCurrentDate();
+            vote_interest = interest_votes.removeVote(question.id); 
+          }); };
+          case(#OPEN) {     #OPEN({
+            date = status_info.getCurrentDate();
+            vote_opinion = opinion_votes.removeVote(question.id);
+            vote_categorization = categorization_votes.removeVote(question.id);
+          }); };
+          case(#CLOSED){    #CLOSED({
+            date = status_info.getCurrentDate();
+          }); };
+          case(#REJECTED){  #REJECTED({
+            date = status_info.getCurrentDate();
+          }); };
+          case(#TRASH){     #TRASH({
+            date = status_info.getCurrentDate();
+          }); };
+        };
+        histories.add(question.id, status_record);
       });
-    });
 
-    // When the question status changes, open the respective vote(s)
-    controller.addObs(func(old: ?Question, new: ?Question) {
       Option.iterate(new, func(question: Question) {
         let status_info = StatusHelper.StatusInfo(question.status_info);
         switch(status_info.getCurrentStatus()){
           case(#CANDIDATE) {
-            interest_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+            interest_votes.newVote(question.id);
           };
           case(#OPEN) {
-            opinion_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
-            categorization_votes.newVote(question.id, status_info.getCurrentIteration(), status_info.getCurrentDate());
+            opinion_votes.newVote(question.id);
+            categorization_votes.newVote(question.id);
           };
           case(_) {
-            // Do nothing
           };
         };
-      })
+      });
+      
     });
 
-    Game.Game(admin, categories, users, questions, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
+    Game.Game(admin, categories, questions, histories, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
   };
 
 };

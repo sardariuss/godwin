@@ -18,7 +18,7 @@ module {
 
   type Duration = Duration.Duration;
 
-  public type UserParameters = {
+  public type HistoryParameters = {
     convictions_half_life: ?Duration;
   };
 
@@ -31,7 +31,7 @@ module {
 
   public type Parameters = {
     categories: [Category];
-    users: UserParameters;
+    history: HistoryParameters;
     scheduler: SchedulerParameters;
   };
 
@@ -55,6 +55,43 @@ module {
     iterations: [(Status, Nat)];
   };
 
+  public type StatusHistory = {
+    records: Map<Status, [StatusRecord]>;
+    timeline: [(Status, Nat)];
+  };
+
+  public type StatusRecord = {
+    #CANDIDATE: {
+      date: Time;
+      vote_interest: Vote2<Interest, Appeal>;
+    };
+    #OPEN: {
+      date: Time;
+      vote_opinion: Vote2<Cursor, Polarization>;
+      vote_categorization: Vote2<CursorMap, PolarizationMap>;
+    };
+    #CLOSED: {
+      date: Time;
+    };
+    #REJECTED: {
+      date: Time;
+    };
+    #TRASH: {
+      date: Time;
+    };
+  };
+
+  public type UserHistory = {
+    convictions: PolarizationMap;
+    ballots: Set<VoteId>;
+  };
+
+  // @todo
+  public type PublicUserHistory = {
+    convictions: PolarizationArray;
+    ballots: [VoteId];
+  };
+
   public type Status = {
     #CANDIDATE;
     #OPEN;
@@ -75,6 +112,12 @@ module {
     question_id: Nat;
     iteration: Nat;
     date: Time; // @todo: redondant with IndexedStatus.date
+    ballots: Map<Principal, Ballot<T>>;
+    aggregate: A;
+  };
+
+  public type Vote2<T, A> = {
+    question_id: Nat;
     ballots: Map<Principal, Ballot<T>>;
     aggregate: A;
   };
@@ -131,15 +174,6 @@ module {
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
-
-  public type User = {
-    principal: Principal;
-    // Optional because we want the user to be able to log based solely on the II,
-    // without requiring a user name.
-    name: ?Text;  
-    votes: Set<VoteId>;
-    convictions: PolarizationMap;
-  };
 
   public type GetUserError = {
     #PrincipalIsAnonymous;

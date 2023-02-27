@@ -1,5 +1,4 @@
 import Types "Types";
-import Users "Users";
 import QuestionQueries "QuestionQueries";
 import Controller "controller/Controller";
 import Model "controller/Model";
@@ -10,6 +9,9 @@ import Categories "Categories";
 import StatusHelper "StatusHelper";
 import Duration "../utils/Duration";
 import Utils "../utils/Utils";
+import History "History";
+
+import Set "mo:map/Set";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -26,7 +28,6 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type User = Types.User;
   type Category = Types.Category;
   type Decay = Types.Decay;
   type Duration = Duration.Duration;
@@ -66,8 +67,8 @@ module {
   public class Game(
     admin_: Principal,
     categories_: Categories.Categories,
-    users_: Users.Users,
     questions_: Questions.Questions,
+    history_: History.History,
     queries_: QuestionQueries.QuestionQueries,
     model_: Model.Model,
     controller_: Controller.Controller,
@@ -77,7 +78,7 @@ module {
   ) = {
 
     public func getDecay() : ?Decay {
-      users_.getDecay();
+      history_.getDecay();
     };
 
     public func getCategories() : [Category] {
@@ -89,7 +90,7 @@ module {
         Result.mapOk<(), (), AddCategoryError>(Utils.toResult(not categories_.has(category), #CategoryAlreadyExists), func() {
           categories_.add(category);
           // Also add the category to users' profile // @todo: use an obs instead?
-          users_.addCategory(category);
+          history_.addCategory(category);
         })
       });
     };
@@ -99,7 +100,7 @@ module {
         Result.mapOk<(), (), RemoveCategoryError>(Utils.toResult(categories_.has(category), #CategoryDoesntExist), func() {
           categories_.add(category);
           // Also remove the category from users' profile // @todo: use an obs instead?
-          users_.removeCategory(category);
+          history_.removeCategory(category);
         })
       });
     };
@@ -137,13 +138,13 @@ module {
     };
 
     public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
-      Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
+      Result.mapOk<(), Question, OpenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
         controller_.openQuestion(caller, date, title, text);
       });
     };
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
-      Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
+      Result.chain<(), (), ReopenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
           Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
             controller_.reopenQuestion(question, date);
@@ -152,38 +153,24 @@ module {
       });
     };
 
-    public func getInterestAggregate(question_id: Nat, iteration: Nat) : Result<Appeal, GetAggregateError> {
-      interest_poll_.getAggregate(question_id, iteration);
-    };
-
-    public func getInterestBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Interest>, GetBallotError> {
-      interest_poll_.findBallot(caller, principal, question_id, iteration);
+    public func getInterestBallot(caller: Principal, question_id: Nat) : Result<?Ballot<Interest>, GetBallotError> {
+      interest_poll_.findBallot(caller, question_id);
     };
 
     public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
       interest_poll_.putFreshBallot(principal, question_id, date, interest);
     };
 
-    public func getOpinionAggregate(question_id: Nat, iteration: Nat) : Result<Polarization, GetAggregateError> {
-      opinion_poll_.getAggregate(question_id, iteration);
-    };
-
-    public func getOpinionBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
-      opinion_poll_.findBallot(caller, principal, question_id, iteration);
+    public func getOpinionBallot(caller: Principal, question_id: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
+      opinion_poll_.findBallot(caller, question_id);
     };
 
     public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
       opinion_poll_.putBallot(principal, question_id, date, cursor);
     };
-
-    public func getCategorizationAggregate(question_id: Nat, iteration: Nat) : Result<PolarizationArray, GetAggregateError> {
-      Result.mapOk(categorization_poll_.getAggregate(question_id, iteration), func(polarization_map: PolarizationMap) : PolarizationArray {
-        Utils.trieToArray(polarization_map);
-      });
-    };
       
-    public func getCategorizationBallot(caller: Principal, principal: Principal, question_id: Nat, iteration: Nat) : Result<?Ballot<CursorArray>, GetBallotError> {
-      Result.mapOk(categorization_poll_.findBallot(caller, principal, question_id, iteration), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
+    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<?Ballot<CursorArray>, GetBallotError> {
+      Result.mapOk(categorization_poll_.findBallot(caller, question_id), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
         Option.map(opt_ballot, func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
           { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
         });
@@ -194,36 +181,21 @@ module {
       categorization_poll_.putFreshBallot(principal, question_id, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
     };
 
+    public func getUserHistory(principal: Principal) : ?Types.PublicUserHistory {
+      Option.map(history_.findUserHistory(principal, categories_), func(user_history: Types.UserHistory) : Types.PublicUserHistory {
+        { 
+          convictions = Utils.trieToArray(user_history.convictions);
+          ballots = Iter.toArray(Set.keys(user_history.ballots));
+        };
+      });
+    };
+
     public func run(date: Time) {
       controller_.run(date, queries_.iter(#INTEREST_SCORE, #FWD).next());
     };
 
-    public func setUserName(principal: Principal, name: Text) : Result<(), SetUserNameError> {
-      Result.mapOk<User, (), SetUserNameError>(getUser(principal), func(_) {
-        users_.setUserName(principal, name);
-      });
-    };
-
-    public func getUserConvictions(principal: Principal) : Result<PolarizationArray, GetUserConvictionsError> {
-      Result.mapOk<User, Types.PolarizationArray, GetUserConvictionsError>(getUser(principal), func(user) {
-        Utils.trieToArray(user.convictions);
-      });
-    };
-
-    public func getUserVotes(principal: Principal) : Result<[(Nat, Nat)], GetUserVotesError> {
-      Result.mapOk<User, [(Nat, Nat)], GetUserVotesError>(getUser(principal), func(user) {
-        users_.getVotes(principal, opinion_poll_.getVotes());
-      });
-    };
-
     func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
       Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == admin_, #InsufficientCredentials), (func(){}));
-    };
-
-    func getUser(principal: Principal) : Result<User, GetUserError> {
-      Result.mapOk<(), User, GetUserError>(Utils.toResult(not Principal.isAnonymous(principal), #PrincipalIsAnonymous), func(){
-        users_.getOrCreateUser(principal, categories_);
-      });
     };
 
   };

@@ -7,6 +7,7 @@ import Interests "votes/Interests";
 import Opinion "votes/Opinions";
 import Categories "Categories";
 import Duration "../utils/Duration";
+import History "History";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -30,7 +31,6 @@ module {
   type Parameters = Types.Parameters;
   type Question = Types.Question;
   type Cursor = Types.Cursor;
-  type User = Types.User;
   type Category = Types.Category;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
@@ -41,15 +41,13 @@ module {
   type Vote<T, A> = Types.Vote<T, A>;
   type Appeal = Types.Appeal;
   type Status = Types.Status;
+  type StatusHistory = Types.StatusHistory;
+  type UserHistory = Types.UserHistory;
 
   public type State = {
     admin             : Principal;
     creation_date     : Time;
     categories        : Set<Category>;
-    users             : {
-      register           : Map<Principal, User>;
-      convictions_half_life: ?Duration;
-    };
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;
@@ -70,6 +68,11 @@ module {
       opinion            : Opinion.Register;
       categorization     : Categorization.Register;
     };
+    history           : {
+      status_history         : Map<Nat, StatusHistory>;
+      user_history           : Map<Principal, UserHistory>;
+      convictions_half_life  : ?Duration;
+    };
   };
 
   public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
@@ -77,10 +80,6 @@ module {
       admin          = admin;
       creation_date  = creation_date;
       categories     = Categories.initRegister(parameters.categories);
-      users          = {
-        register              = Map.new<Principal, User>();
-        convictions_half_life = parameters.users.convictions_half_life;
-      };
       questions      = {
         register              = Map.new<Nat, Question>();
         index                 = Ref.initRef<Nat>(0);
@@ -100,6 +99,11 @@ module {
         interest              = Interests.initRegister();
         opinion               = Opinion.initRegister();
         categorization        = Categorization.initRegister();
+      };
+      history        = {
+        status_history            = Map.new<Nat, StatusHistory>();
+        user_history              = Map.new<Principal, UserHistory>();
+        convictions_half_life     = parameters.history.convictions_half_life;
       };
     };
   };

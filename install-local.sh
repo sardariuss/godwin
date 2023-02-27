@@ -13,7 +13,7 @@ dfx deploy godwin_backend --argument '(record {
     "JUSTICE";
     "CHANGE";
   };
-  users = record {
+  history = record {
     convictions_half_life = null;
   };
   scheduler = record {
