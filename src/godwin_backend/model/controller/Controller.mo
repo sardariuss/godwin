@@ -1,9 +1,9 @@
 import Questions "../Questions";
-import StatusHelper "../StatusHelper";
 import Types "../Types";
 import Model "Model";
 import Schema "Schema";
 import Event "Event";
+import History "../History";
 
 import StateMachine "../../utils/StateMachine";
 import Observers "../../utils/Observers";
@@ -20,6 +20,7 @@ module {
   type Question = Types.Question;
   type Status = Types.Status;
   type Questions = Questions.Questions;
+  type History = History.History;
 
   type Model = Model.Model;
   type Event = Event.Event;
@@ -27,8 +28,8 @@ module {
   
   public type Callback = (?Question, ?Question) -> ();
 
-  public func build(model: Model, questions: Questions) : Controller {
-    Controller(Schema.SchemaBuilder(model).build(), model, questions);
+  public func build(model: Model, history: History, questions: Questions) : Controller {
+    Controller(Schema.SchemaBuilder(model, history.getStatusIndex).build(), model, questions);
   };
 
   public class Controller(schema_: Schema, model_: Model, questions_: Questions) = {
@@ -65,7 +66,7 @@ module {
       let state_machine = {
         schema = schema_;
         model = question;
-        var current = question.status_info.current.status;
+        var current = question.status_info.status;
       };
       
       Option.iterate(StateMachine.submitEvent(state_machine, event), func(status: Status) {
@@ -78,7 +79,7 @@ module {
           };
           case(_) {
             // Update the question status
-            let update = StatusHelper.updateStatusInfo(question, status, date);
+            let update = { question with status_info = { status; date; } };
             questions_.replaceQuestion(update);
             ?update;
           };

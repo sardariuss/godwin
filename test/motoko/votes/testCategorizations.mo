@@ -47,54 +47,51 @@ module {
 
     // Question 0 : arbitrary question_id, iteration and date
     let question_0 : Nat = 0;
-    let iteration_0 : Nat = 0;
-    let date_0 : Time = 123456789;
-    votes.newVote(question_0, iteration_0, date_0);
+    votes.newVote(question_0);
 
     // Add categorization
-    var ballot = { date = date_0; answer = toCursorMap([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)]) };
-    votes.putBallot(principals[0], question_0, iteration_0, ballot);
+    var ballot = { date = 123456789; answer = toCursorMap([("IDENTITY", 1.0), ("ECONOMY", 0.5), ("CULTURE", 0.0)]) };
+    votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Add ballot", 
-      votes.findBallot(principals[0], question_0, iteration_0), 
+      votes.findBallot(principals[0], question_0), 
       Matchers.equals(TestableItems.optCategorizationBallot(?ballot))
     ));
     // Update categorization
     ballot := { ballot with answer = toCursorMap([("IDENTITY", 0.0), ("ECONOMY", 1.0), ("CULTURE", -0.5)]) };
-    votes.putBallot(principals[0], question_0, iteration_0, ballot);
+    votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Update ballot",
-      votes.findBallot(principals[0], 0, 0),
+      votes.findBallot(principals[0], 0),
       Matchers.equals(TestableItems.optCategorizationBallot(?ballot))
     ));
     // Remove categorization
-    votes.removeBallot(principals[0], question_0, iteration_0);
+    votes.removeBallot(principals[0], question_0);
     tests.add(Suite.test(
       "Remove ballot",
-      votes.findBallot(principals[0], question_0, iteration_0),
+      votes.findBallot(principals[0], question_0),
       Matchers.equals(TestableItems.optCategorizationBallot(null))
     ));
 
     // Question 1 : arbitrary question_id, iteration and date
     let question_1 : Nat = 1;
-    let iteration_1 : Nat = 1;
     let date_1 : Time = 987654321;
-    votes.newVote(question_1, iteration_1, date_1);
+    votes.newVote(question_1);
 
-    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]); });
-    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]); });
-    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[0], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]); });
+    votes.putBallot(principals[1], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[2], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[3], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[4], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]); });
+    votes.putBallot(principals[5], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[6], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[7], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[8], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[9], question_1, { date = date_1; answer = toCursorMap([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]); });
 
     tests.add(Suite.test(
       "Get aggregate (1)",
-      votes.getVote(question_1, iteration_1).aggregate,
+      votes.getVote(question_1).aggregate,
       Matchers.equals(TestableItems.polarizationMap(toPolarizationMap(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
@@ -103,16 +100,16 @@ module {
     )));
 
     // Update some votes, the non-updated ballots do not impact the aggregate (meaning they won't even be considered as 0.0)
-    votes.putBallot(principals[5], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[6], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[7], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[8], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
-    votes.putBallot(principals[9], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[5], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[6], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[7], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[8], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.0), ("ECONOMY",  0.0), ("CULTURE", -1.0)]); });
+    votes.putBallot(principals[9], question_1, { date = date_1; answer = toCursorMap([("IDENTITY", -1.0), ("ECONOMY", -0.5), ("CULTURE", -1.0)]); });
 
     // The aggregate shall contain the new category
     tests.add(Suite.test(
       "Get aggregate (2)",
-      votes.getVote(question_1, iteration_1).aggregate,
+      votes.getVote(question_1).aggregate,
       Matchers.equals(TestableItems.polarizationMap(toPolarizationMap(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),
@@ -121,15 +118,15 @@ module {
     )));
 
     // Update some votes
-    votes.putBallot(principals[0], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]); });
-    votes.putBallot(principals[1], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[2], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[3], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]); });
-    votes.putBallot(principals[4], question_1, iteration_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]); });
+    votes.putBallot(principals[0], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.5)]); });
+    votes.putBallot(principals[1], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[2], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.5), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[3], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  1.0), ("ECONOMY",  0.0), ("CULTURE",  0.0)]); });
+    votes.putBallot(principals[4], question_1, { date = date_1; answer = toCursorMap([("IDENTITY",  0.5), ("ECONOMY",  0.0), ("CULTURE", -0.5)]); });
     // The aggregate shall not have the removed category
     tests.add(Suite.test(
       "Get aggregate (3)",
-      votes.getVote(question_1, iteration_1).aggregate,
+      votes.getVote(question_1).aggregate,
       Matchers.equals(TestableItems.polarizationMap(toPolarizationMap(
           [("IDENTITY", { left = 1.0; center = 4.0; right = 5.0; }),
             ("ECONOMY",  { left = 0.5; center = 8.0; right = 1.5; }),

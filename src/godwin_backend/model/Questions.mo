@@ -2,7 +2,7 @@ import Types "Types";
 import WMap "../utils/wrappers/WMap";
 import Ref "../utils/Ref";
 import WRef "../utils/wrappers/WRef";
-import StatusHelper "StatusHelper";
+import Status "Status";
 
 import Map "mo:map/Map";
 
@@ -46,7 +46,7 @@ module {
     buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
-    buffer.add("status: " # StatusHelper.statusToText(question.status_info.current.status)); // @todo: put the whole status_info
+    buffer.add("status: " # Status.statusToText(question.status_info.status)); // @todo: put the whole status_info
     Text.join("", buffer.vals());
   };
   
@@ -56,7 +56,7 @@ module {
        and Text.equal(q1.title, q2.title)
        and Text.equal(q1.text, q2.text)
        and Int.equal(q1.date, q2.date)
-       and StatusHelper.equalStatus(q1.status_info.current.status, q2.status_info.current.status); // @todo: put the whole status_info
+       and Status.equalStatus(q1.status_info.status, q2.status_info.status); // @todo: put the whole status_info
   };
 
   public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
@@ -83,7 +83,10 @@ module {
         title;
         text;
         date;
-        status_info = StatusHelper.initStatusInfo(date);
+        status_info = {
+          status = #CANDIDATE;
+          date;
+        };
       };
       register_.set(question.id, question);
       index_.set(index_.get() + 1);

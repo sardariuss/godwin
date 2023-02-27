@@ -1,4 +1,4 @@
-import StatusHelper "../StatusHelper";
+import Status "../Status";
 import Duration "../../utils/Duration";
 import Types "../Types";
 import Model "Model";
@@ -18,26 +18,25 @@ module {
   
   public type Schema = StateMachine.Schema<Status, Event, Question>;
 
-  public class SchemaBuilder(model_: Model) {
+  public class SchemaBuilder(model_: Model, get_status_index_: (Nat, Status) -> Nat) {
 
     public func build() : Schema {
-      let schema = StateMachine.init<Status, Event, Question>(StatusHelper.status_hash, Event.event_hash);
-      StateMachine.addTransition(schema, #CANDIDATE,       #REJECTED,                timedOutFirstIteration, [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #CANDIDATE,       #CLOSED,                  timedOutNextIterations, [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #REJECTED,                #TRASH,                   timedOut,               [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #CANDIDATE,       #OPEN,        tickMostInteresting,    [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #OPEN,        #CLOSED,                  timedOut,               [#TIME_UPDATE]);
-      StateMachine.addTransition(schema, #CLOSED,                  #CANDIDATE,       passThrough,            [#REOPEN_QUESTION]);
+      let schema = StateMachine.init<Status, Event, Question>(Status.status_hash, Event.event_hash);
+      StateMachine.addTransition(schema, #CANDIDATE, #REJECTED,  timedOutFirstIteration, [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CANDIDATE, #CLOSED,    timedOutNextIterations, [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #REJECTED,  #TRASH,     timedOut,               [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CANDIDATE, #OPEN,      tickMostInteresting,    [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #OPEN,      #CLOSED,    timedOut,               [#TIME_UPDATE]);
+      StateMachine.addTransition(schema, #CLOSED,    #CANDIDATE, passThrough,            [#REOPEN_QUESTION]);
       schema;
     };
 
     func timedOutFirstIteration(question: Question) : Bool {
-      question.status_info.current.index == 0 and timedOut(question);
+      get_status_index_(question.id, #CANDIDATE) == 0 and timedOut(question);
     };
 
     func timedOutNextIterations(question: Question) : Bool {
-      let indexed_status = question.status_info.current;
-      question.status_info.current.index > 0 and timedOut(question);
+      get_status_index_(question.id, #CANDIDATE) > 0 and timedOut(question);
     };
 
     func tickMostInteresting(question: Question) : Bool {
@@ -58,8 +57,7 @@ module {
     };
 
     func timedOut(question: Question) : Bool {
-      let indexed_status = question.status_info.current;
-      model_.getTime() > indexed_status.date + Duration.toTime(model_.getStatusDuration(indexed_status.status));
+      model_.getTime() > question.status_info.date + Duration.toTime(model_.getStatusDuration(question.status_info.status));
     };
 
     func passThrough(question: Question) : Bool {

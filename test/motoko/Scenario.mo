@@ -40,7 +40,7 @@ module {
         "IDENTITY",
         "ECONOMY",
         "CULTURE" ];
-      users = {
+      history = {
         convictions_half_life = null;
       };
       scheduler = {

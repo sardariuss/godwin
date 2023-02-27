@@ -50,9 +50,8 @@ module {
   };
 
   public type StatusInfo = {
-    current: IndexedStatus;
-    history: [IndexedStatus];
-    iterations: [(Status, Nat)];
+    status: Status;
+    date: Time;
   };
 
   public type StatusHistory = {
@@ -63,12 +62,12 @@ module {
   public type StatusRecord = {
     #CANDIDATE: {
       date: Time;
-      vote_interest: Vote2<Interest, Appeal>;
+      vote_interest: Vote<Interest, Appeal>;
     };
     #OPEN: {
       date: Time;
-      vote_opinion: Vote2<Cursor, Polarization>;
-      vote_categorization: Vote2<CursorMap, PolarizationMap>;
+      vote_opinion: Vote<Cursor, Polarization>;
+      vote_categorization: Vote<CursorMap, PolarizationMap>;
     };
     #CLOSED: {
       date: Time;
@@ -100,23 +99,9 @@ module {
     #TRASH;
   };
 
-  public type IndexedStatus = {
-    status: Status;
-    date: Time;
-    index: Nat;
-  };
-
   public type VoteId = (Nat, Nat);
 
   public type Vote<T, A> = {
-    question_id: Nat;
-    iteration: Nat;
-    date: Time; // @todo: redondant with IndexedStatus.date
-    ballots: Map<Principal, Ballot<T>>;
-    aggregate: A;
-  };
-
-  public type Vote2<T, A> = {
     question_id: Nat;
     ballots: Map<Principal, Ballot<T>>;
     aggregate: A;

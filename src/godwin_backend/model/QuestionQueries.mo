@@ -1,7 +1,6 @@
 import Types "Types";
 import Questions "Questions";
 import Interests "votes/Interests";
-import StatusHelper "StatusHelper";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
 
@@ -19,14 +18,14 @@ module {
 
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
-  type InterestVote = Interests.Vote2;
+  type InterestVote = Interests.Vote;
   type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
   type Questions = Questions.Questions;
   type Status = Types.Status;
-  type Interests = Interests.Interests2;
+  type Interests = Interests.Interests;
 
   public type OrderBy = {
     #AUTHOR;
@@ -237,8 +236,8 @@ module {
   public func toStatusEntry(question: Question) : Key {
     #STATUS({
       question_id = question.id;
-      status = question.status_info.current.status;
-      date = question.status_info.current.date;
+      status = question.status_info.status;
+      date = question.status_info.date;
     });
   };
 

@@ -6,7 +6,6 @@ import Questions "Questions";
 import Votes "votes/Votes";
 import Poll "votes/Poll";
 import Categories "Categories";
-import StatusHelper "StatusHelper";
 import Duration "../utils/Duration";
 import Utils "../utils/Utils";
 import History "History";
@@ -32,7 +31,6 @@ module {
   type Decay = Types.Decay;
   type Duration = Duration.Duration;
   type Status = Types.Status;
-  type IndexedStatus = Types.IndexedStatus;
   type PolarizationArray = Types.PolarizationArray;
   type Ballot<T> = Types.Ballot<T>;
   type Interest = Types.Interest;
@@ -146,7 +144,7 @@ module {
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
       Result.chain<(), (), ReopenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
+          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(question.status_info.status == #CLOSED, #InvalidStatus), func() {
             controller_.reopenQuestion(question, date);
           })
         })

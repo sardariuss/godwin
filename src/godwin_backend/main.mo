@@ -2,7 +2,7 @@ import Types "model/Types";
 import QuestionQueries "model/QuestionQueries"; // @todo
 import State "model/State";
 import Factory "model/Factory";
-//import Scenario "../../test/motoko/Scenario"; // @todo
+import Scenario "../../test/motoko/Scenario"; // @todo
 import Duration "utils/Duration";
 
 import Result "mo:base/Result";
@@ -49,11 +49,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CursorArray = Types.CursorArray;
   type GetUserVotesError = Types.GetUserVotesError;
 
-  stable var state_ = State.initState(caller, Time.now(), parameters);
+  //stable var state_ = State.initState(caller, Time.now(), parameters);
 
-  let game_ = Factory.build(state_);
+  //let game_ = Factory.build(state_);
 
-  //let game_ = Scenario.run(Time.now(), #HOURS(6), #MINUTES(5), 20);
+  let game_ = Scenario.run(Time.now(), #HOURS(6), #MINUTES(5), 20);
 
   public query func getDecay() : async ?Decay {
     game_.getDecay();

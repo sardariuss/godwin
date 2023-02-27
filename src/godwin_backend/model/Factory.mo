@@ -10,7 +10,6 @@ import State "State";
 import Game "Game";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
-import StatusHelper "StatusHelper";
 import History "History";
 
 import Option "mo:base/Option";
@@ -21,7 +20,7 @@ module {
 
   type Question = Types.Question;
   type Status = Types.Status;
-  type InterestVote = Interests.Vote2;
+  type InterestVote = Interests.Vote;
   type Time = Int;
   
   type Key = QuestionQueries.Key;
@@ -40,13 +39,13 @@ module {
       state_.questions.index
     );
 
-    let interest_votes = Interests.build2(state_.votes.interest);
+    let interest_votes = Interests.build(state_.votes.interest);
     let interest_poll = Poll.Poll(interest_votes);
     
-    let opinion_votes = Opinions.build2(state_.votes.opinion);
+    let opinion_votes = Opinions.build(state_.votes.opinion);
     let opinion_poll = Poll.Poll(opinion_votes);
     
-    let categorization_votes = Categorizations.build2(state_.votes.categorization, categories);
+    let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
     let categorization_poll = Poll.Poll(categorization_votes);
 
     let model = Model.build(
@@ -56,23 +55,16 @@ module {
       state_.controller.model.params
     );
 
-    let controller = Controller.build(
-      model,
-      questions
-    );
-
     let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
     let { status_history; user_history; convictions_half_life; } = state_.history;
-    let histories = History.build(status_history, user_history, convictions_half_life, state_.creation_date, categories);
+    let history = History.build(status_history, user_history, convictions_half_life, state_.creation_date, categories);
 
-    // When the question status changes, update the associated key for the #STATUS order_by
-    controller.addObs(func(old: ?Question, new: ?Question){
-      queries.replace(
-        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
-        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
-      );
-    });
+    let controller = Controller.build(
+      model,
+      history,
+      questions
+    );
 
     // When the interest votes changes, update the associated key for the #INTEREST_SCORE order_by
     interest_votes.addObs(func(old: ?InterestVote, new: ?InterestVote){
@@ -82,50 +74,45 @@ module {
       );
     });
 
-    // When the status changes from #CANDIDATE, remove the associated key for the #INTEREST_SCORE order_by
-    controller.addObs(func(old: ?Question, _: ?Question){
-      Option.iterate(old, func(question: Question) {
-        let status_info = StatusHelper.StatusInfo(question.status_info);
-        if (status_info.getCurrentStatus() == #CANDIDATE){
-          queries.remove(toAppealScore(interest_votes.getVote(question.id)));
-        };
-      });
-    });
-
     controller.addObs(func(old: ?Question, new: ?Question) {
+      // When the question status changes, update the associated key for the #STATUS order_by
+      queries.replace(
+        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
+        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
+      );
+
       Option.iterate(old, func(question: Question) {
-        let status_info = StatusHelper.StatusInfo(question.status_info);
         // Remove the associated key for the #INTEREST_SCORE order_by
-        if (status_info.getCurrentStatus() == #CANDIDATE){
+        if (question.status_info.status == #CANDIDATE){
           queries.remove(toAppealScore(interest_votes.getVote(question.id)));
         };
         // Remove the vote and put it in the history
-        let status_record = switch(status_info.getCurrentStatus()){
+        let status_record = switch(question.status_info.status){
           case(#CANDIDATE) {#CANDIDATE({
-            date = status_info.getCurrentDate();
+            date = question.status_info.date;
             vote_interest = interest_votes.removeVote(question.id); 
           }); };
           case(#OPEN) {     #OPEN({
-            date = status_info.getCurrentDate();
+            date = question.status_info.date;
             vote_opinion = opinion_votes.removeVote(question.id);
             vote_categorization = categorization_votes.removeVote(question.id);
           }); };
           case(#CLOSED){    #CLOSED({
-            date = status_info.getCurrentDate();
+            date = question.status_info.date;
           }); };
           case(#REJECTED){  #REJECTED({
-            date = status_info.getCurrentDate();
+            date = question.status_info.date;
           }); };
           case(#TRASH){     #TRASH({
-            date = status_info.getCurrentDate();
+            date = question.status_info.date;
           }); };
         };
-        histories.add(question.id, status_record);
+        history.add(question.id, status_record);
       });
 
       Option.iterate(new, func(question: Question) {
-        let status_info = StatusHelper.StatusInfo(question.status_info);
-        switch(status_info.getCurrentStatus()){
+        // Open a new vote
+        switch(question.status_info.status){
           case(#CANDIDATE) {
             interest_votes.newVote(question.id);
           };
@@ -140,7 +127,7 @@ module {
       
     });
 
-    Game.Game(admin, categories, questions, histories, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
+    Game.Game(admin, categories, questions, history, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
   };
 
 };

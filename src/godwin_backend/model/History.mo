@@ -1,7 +1,7 @@
 import Types "Types";
 import Utils "../utils/Utils";
 import WMap "../utils/wrappers/WMap";
-import StatusHelper "StatusHelper";
+import Status "Status";
 import Categories "Categories";
 import Votes "votes/Votes";
 import Polarization "votes/representation/Polarization";
@@ -41,7 +41,6 @@ module {
   type Question = Types.Question;
   type Status = Types.Status;
   type StatusRecord = Types.StatusRecord;
-  type IndexedStatus = Types.IndexedStatus;
   type StatusHistory = Types.StatusHistory;
   type VoteId = Types.VoteId;
   type Duration = Duration.Duration;
@@ -91,6 +90,15 @@ module {
       status_history_.get(question_id);
     };
 
+    public func getStatusIndex(question_id: Nat, status: Status) : Nat {
+      switch(status_history_.get(question_id)){
+        case(null) { Debug.trap("Question_id not found"); };
+        case(?history) {
+          Option.get(Map.get(history.records, Status.status_hash, status), []).size();
+        };
+      };
+    };
+
     public func findUserHistory(principal: Principal, categories: Categories) : ?UserHistory {
       if (Principal.isAnonymous(principal)){
         null;
@@ -133,7 +141,7 @@ module {
           let status = toStatus(status_record);
           // Add to the records
           let records = history.records;
-          let status_records = Buffer.fromArray<StatusRecord>(Option.get(Map.get(records, StatusHelper.status_hash, status), []));
+          let status_records = Buffer.fromArray<StatusRecord>(Option.get(Map.get(records, Status.status_hash, status), []));
           // Update the users convictions if needed
           switch(status_record){
             case(#OPEN({vote_opinion; vote_categorization;})){
@@ -157,7 +165,7 @@ module {
             };
           };
           status_records.add(status_record);
-          Map.set(records, StatusHelper.status_hash, status, Buffer.toArray(status_records));
+          Map.set(records, Status.status_hash, status, Buffer.toArray(status_records));
           // Add to the timeline
           let timeline = Buffer.fromArray<(Status, Nat)>(history.timeline);
           timeline.add((status, status_records.size() - 1));

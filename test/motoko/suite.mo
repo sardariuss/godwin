@@ -7,8 +7,6 @@ import TestCategorizations "votes/testCategorizations";
 //import TestScheduler "testmodel/QuestionQueries";
 //import TestUsers "testUsers";
 
-import TestStatusHelper "model/TestStatusHelper";
-
 // @todo: fix unit tests
 
 //Suite.run(TestQueries.TestQueries().getSuite());

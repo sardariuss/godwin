@@ -1,6 +1,5 @@
 import Types "../../../src/godwin_backend/model/Types";
 import Questions "../../../src/godwin_backend/model/Questions";
-import StatusHelper "../../../src/godwin_backend/model/StatusHelper";
 import Queries "../../../src/godwin_backend/model/QuestionQueries";
 import Interests "../../../src/godwin_backend/model/votes/Interests";
 
@@ -30,29 +29,29 @@ module {
     let principals = Principals.init();
 
     let array_originals : [Question] = [
-      { id = 0; author = principals[0]; title = "title0"; text = ""; date = 9000; status_info = StatusHelper.initStatusInfo(9000); },
-      { id = 1; author = principals[1]; title = "title1"; text = ""; date = 8493; status_info = StatusHelper.initStatusInfo(8493); },
-      { id = 2; author = principals[2]; title = "title2"; text = ""; date = 2432; status_info = StatusHelper.initStatusInfo(2432); },
-      { id = 3; author = principals[3]; title = "title3"; text = ""; date = 5123; status_info = StatusHelper.initStatusInfo(5123); },
-      { id = 4; author = principals[4]; title = "title4"; text = ""; date = 3132; status_info = StatusHelper.initStatusInfo(3132); },
-      { id = 5; author = principals[5]; title = "title5"; text = ""; date = 3132; status_info = StatusHelper.initStatusInfo(3132); },
-      { id = 6; author = principals[6]; title = "title6"; text = ""; date = 4213; status_info = StatusHelper.initStatusInfo(2012); },
-      { id = 7; author = principals[7]; title = "title7"; text = ""; date = 4213; status_info = StatusHelper.initStatusInfo(4213); },
-      { id = 8; author = principals[8]; title = "title8"; text = ""; date = 9711; status_info = StatusHelper.initStatusInfo(9311); },
-      { id = 9; author = principals[9]; title = "title9"; text = ""; date = 9711; status_info = StatusHelper.initStatusInfo(9711); }
+      { id = 0; author = principals[0]; title = "title0"; text = ""; date = 9000; status_info = { status = #CANDIDATE; date = 9000; }; },
+      { id = 1; author = principals[1]; title = "title1"; text = ""; date = 8493; status_info = { status = #CANDIDATE; date = 8493; }; },
+      { id = 2; author = principals[2]; title = "title2"; text = ""; date = 2432; status_info = { status = #CANDIDATE; date = 2432; }; },
+      { id = 3; author = principals[3]; title = "title3"; text = ""; date = 5123; status_info = { status = #CANDIDATE; date = 5123; }; },
+      { id = 4; author = principals[4]; title = "title4"; text = ""; date = 3132; status_info = { status = #CANDIDATE; date = 3132; }; },
+      { id = 5; author = principals[5]; title = "title5"; text = ""; date = 3132; status_info = { status = #CANDIDATE; date = 3132; }; },
+      { id = 6; author = principals[6]; title = "title6"; text = ""; date = 4213; status_info = { status = #CANDIDATE; date = 2012; }; },
+      { id = 7; author = principals[7]; title = "title7"; text = ""; date = 4213; status_info = { status = #CANDIDATE; date = 4213; }; },
+      { id = 8; author = principals[8]; title = "title8"; text = ""; date = 9711; status_info = { status = #CANDIDATE; date = 9311; }; },
+      { id = 9; author = principals[9]; title = "title9"; text = ""; date = 9711; status_info = { status = #CANDIDATE; date = 9711; }; }
     ];
 
     let array_modified : [Question] = [
       array_originals[0],
       array_originals[1],
-      StatusHelper.updateStatusInfo(array_originals[2], #OPEN,        2432),
+      { array_originals[2] with status_info = { status = #OPEN; date = 2432; } },
       array_originals[3],
-      StatusHelper.updateStatusInfo(array_originals[4], #OPEN,        7234),
-      StatusHelper.updateStatusInfo(array_originals[5], #OPEN,        3132),
+      { array_originals[4] with status_info = { status = #OPEN; date = 7234; } },
+      { array_originals[5] with status_info = { status = #OPEN; date = 3132; } },
       array_originals[6],
       array_originals[7],
-      StatusHelper.updateStatusInfo(array_originals[8], #OPEN,        5431),
-      StatusHelper.updateStatusInfo(array_originals[9], #OPEN,        9711)
+      { array_originals[8] with status_info = { status = #OPEN; date = 5431; } },
+      { array_originals[9] with status_info = { status = #OPEN; date = 9711; } }
     ];
 
     let tests = Buffer.Buffer<Suite.Suite>(array_originals.size() * 4);

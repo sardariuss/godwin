@@ -1,4 +1,4 @@
-import StatusHelper "../../../src/godwin_backend/model/StatusHelper";
+import Status "../../../src/godwin_backend/model/Status";
 
 module { 
 
