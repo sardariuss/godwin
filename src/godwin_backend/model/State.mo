@@ -47,7 +47,7 @@ module {
   public type State = {
     admin             : Principal;
     creation_date     : Time;
-    categories        : Set<Category>;
+    categories        : Categories.Register;
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;

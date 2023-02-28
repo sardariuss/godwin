@@ -37,9 +37,10 @@ module {
 
     let parameters = {
       categories = [
-        "IDENTITY",
-        "ECONOMY",
-        "CULTURE" ];
+        ("IDENTITY", { left = { name = "CONSTRUCTIVISM";   symbol = "🧩"; color = "#f26c0d"; }; right = { name = "ESSENTIALISM"; symbol = "💎"; color = "#f2a60d"; }; }),
+        ("ECONOMY",  { left = { name = "SOCIALISM";        symbol = "🌹"; color = "#0fca02"; }; right = { name = "CAPITALISM";   symbol = "🎩"; color = "#02ca27"; }; }),
+        ("CULTURE",  { left = { name = "PROGRESSIVISM";    symbol = "⚡"; color = "#2c00cc"; }; right = { name = "CONSERVATISM"; symbol = "🧊"; color = "#5f00cc"; }; }),
+      ];
       history = {
         convictions_half_life = null;
       };

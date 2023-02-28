@@ -100,15 +100,15 @@ module {
       );
     };
 
-    public func findUserHistory(principal: Principal, categories: Categories) : ?UserHistory {
+    public func findUserHistory(principal: Principal) : ?UserHistory {
       if (Principal.isAnonymous(principal)){
         null;
       } else {
-        ?getUserHistory(principal, categories);
+        ?getUserHistory(principal);
       };
     };
 
-    public func getUserHistory(principal: Principal, categories: Categories) : UserHistory {
+    public func getUserHistory(principal: Principal) : UserHistory {
       if (Principal.isAnonymous(principal)){
         Debug.trap("User's principal cannot be anonymous.");
       };
@@ -117,7 +117,7 @@ module {
         case(null) {
           {
             ballots = Set.new<VoteId>();
-            convictions = PolarizationMap.nil(categories);
+            convictions = PolarizationMap.nil(categories_);
           };
         };
       };
@@ -183,7 +183,7 @@ module {
       // and adding the contribution of the new categorization
       for (old_vote in old_opinions_ballots){
         for ((principal, {answer; date;}) in Map.entries(old_vote)){
-          var user_history = getUserHistory(principal, categories_);
+          var user_history = getUserHistory(principal);
           user_history := { user_history with convictions = updateBallotContribution(user_history.convictions, answer, date, new_categorization, previous_categorization); };
           user_history_.set(principal, user_history);
         };
@@ -191,7 +191,7 @@ module {
 
       // Process new votes
       Iter.iterate<(Principal, Types.Ballot<Cursor>)>(Map.entries(new_opinion_ballots), func((principal, {answer; date;}), index) {
-        var user_history = getUserHistory(principal, categories_);
+        var user_history = getUserHistory(principal);
         Set.add(user_history.ballots, Votes.votehash, (question_id, index));
         user_history := { user_history with
           convictions = updateBallotContribution(user_history.convictions, answer, date, new_categorization, null);

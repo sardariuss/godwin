@@ -35,6 +35,7 @@ module {
   type Cursor = Types.Cursor;
   type Category = Types.Category;
   type CursorArray = Types.CursorArray;
+  type CategoryArray = Types.CategoryArray;
 
    let list_questions = [
     "One is not born, but rather becomes, a woman.",
@@ -172,9 +173,9 @@ module {
     list_questions[fuzzer.nat.randomRange(0, list_questions.size() - 1)];
   };
 
-  public func randomCategorization(fuzzer: Fuzzer, categories: [Category]) : CursorArray {
+  public func randomCategorization(fuzzer: Fuzzer, categories: CategoryArray) : CursorArray {
     let cursors = Buffer.Buffer<(Category, Cursor)>(categories.size());
-    for (category in Array.vals(categories)) {
+    for ((category, info) in Array.vals(categories)) {
       cursors.add((category, fuzzer.float.randomRange(-1.0, 1.0)));
     };
     Buffer.toArray(cursors);

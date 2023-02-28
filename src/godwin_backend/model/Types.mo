@@ -30,7 +30,7 @@ module {
   };
 
   public type Parameters = {
-    categories: [Category];
+    categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;
   };
@@ -113,6 +113,19 @@ module {
   };
 
   public type Category = Text;
+  
+  public type CategoryArray = [(Category, CategoryInfo)];
+
+  public type CategoryInfo = {
+    left: CategorySide;
+    right: CategorySide;
+  };
+
+  public type CategorySide = {
+    name: Text;
+    symbol: Text;
+    color: Text;
+  };
   
   public type Interest = {
     #UP;

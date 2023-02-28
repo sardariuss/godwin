@@ -1,8 +1,8 @@
 import Types "Types";
 
-import WSet "../utils/wrappers/WSet";
+import WMap "../utils/wrappers/WMap";
 
-import Set "mo:map/Set";
+import Map "mo:map/Map";
 
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";
@@ -12,21 +12,24 @@ module {
 
   type Key<K> = Trie.Key<K>;
   type Category = Types.Category;
-  type Set<K> = Set.Set<K>;
-  type WSet<K> = WSet.WSet<K>;
+  type Map<K, V> = Map.Map<K, V>;
+  type WMap<K, V> = WMap.WMap<K, V>;
 
-  public type Register = Set<Category>;
-  public type Categories = WSet<Category>;
+  type CategoryArray = Types.CategoryArray;
+  type CategoryInfo = Types.CategoryInfo;
+
+  public type Register = Map<Category, CategoryInfo>;
+  public type Categories = WMap<Category, CategoryInfo>;
 
   public func key(a: Category) : Key<Category> { { key = a; hash = Text.hash(a); } };
   public func equal(a: Category, b: Category) : Bool { Text.equal(a, b); };
 
-  public func initRegister(array: [Category]) : Register {
-    Set.fromIter(Array.vals(array), Set.thash);
+  public func initRegister(array: CategoryArray) : Register {
+    Map.fromIter(Array.vals(array), Map.thash);
   };
 
   public func build(register: Register) : Categories {
-    WSet.WSet(register, Set.thash);
+    WMap.WMap(register, Map.thash);
   };
 
 };

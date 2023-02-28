@@ -1,6 +1,6 @@
 import { ActorContext } from "../../ActorContext"
 
-import RangeSlider from "./RangeSlider";
+import { RangeSlider } from "./RangeSlider";
 
 import { nsToStrDate } from "../../utils";
 
@@ -301,7 +301,7 @@ const VoteOpinion = ({questionId}: Props) => {
 	return (
     <div className="flex flex-col items-center space-y-2">
       <RangeSlider 
-        questionId={ questionId }
+        id={ "slider_opinion_" + questionId }
         cursor={ opinion }
         setCursor={ setOpinion }
         leftColor={ "#0F9D58" }

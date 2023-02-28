@@ -48,6 +48,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type PolarizationMap = Types.PolarizationMap;
   type CursorArray = Types.CursorArray;
   type GetUserVotesError = Types.GetUserVotesError;
+  type CategoryInfo = Types.CategoryInfo;
+  type CategoryArray = Types.CategoryArray;
 
   //stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -59,12 +61,12 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getDecay();
   };
 
-  public query func getCategories() : async [Category] {
+  public query func getCategories() : async CategoryArray {
     game_.getCategories();
   };
 
-  public shared({caller}) func addCategory(category: Category) : async Result<(), AddCategoryError> {
-    game_.addCategory(caller, category);
+  public shared({caller}) func addCategory(category: Category, info: CategoryInfo) : async Result<(), AddCategoryError> {
+    game_.addCategory(caller, category, info);
   };
 
   public shared({caller}) func removeCategory(category: Category) : async Result<(), RemoveCategoryError> {

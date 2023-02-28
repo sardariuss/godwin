@@ -42,7 +42,11 @@ const QuestionBody = ({question_id, categories}: Props) => {
 					question?.status_info.status['CANDIDATE'] !== undefined ?
 						<VoteInterest questionId={question.id}/> : 
 					question?.status_info.status['OPEN'] !== undefined ?
-						<VoteOpinion questionId={question.id}/> : 
+						<div className="flex flex-col justify-start gap-x-10 text-lg font-semibold">
+							<VoteOpinion questionId={question.id}/>
+							<VoteCategorization questionId={question.id}/>
+						</div>
+						: 
 					question?.status_info.status['CLOSED'] !== undefined || question?.status_info.status['REJECTED'] !== undefined ?
 						<div> @todo </div> : <div>@todo impossible</div>
 				}

@@ -61,6 +61,8 @@ module {
   type PutBallotError = Types.PutBallotError;
   type PutFreshBallotError = Types.PutFreshBallotError;
   type GetUserVotesError = Types.GetUserVotesError;
+  type CategoryInfo = Types.CategoryInfo;
+  type CategoryArray = Types.CategoryArray;
 
   public class Game(
     admin_: Principal,
@@ -79,14 +81,14 @@ module {
       history_.getDecay();
     };
 
-    public func getCategories() : [Category] {
-      Iter.toArray(categories_.keys());
+    public func getCategories() : CategoryArray {
+      Iter.toArray(categories_.entries());
     };
 
-    public func addCategory(caller: Principal, category: Category) : Result<(), AddCategoryError> {
+    public func addCategory(caller: Principal, category: Category, info: CategoryInfo) : Result<(), AddCategoryError> {
       Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func() {
         Result.mapOk<(), (), AddCategoryError>(Utils.toResult(not categories_.has(category), #CategoryAlreadyExists), func() {
-          categories_.add(category);
+          categories_.set(category, info);
           // Also add the category to users' profile // @todo: use an obs instead?
           history_.addCategory(category);
         })
@@ -96,7 +98,7 @@ module {
     public func removeCategory(caller: Principal, category: Category) : Result<(), RemoveCategoryError> {
       Result.chain<(), (), RemoveCategoryError>(verifyCredentials(caller), func () {
         Result.mapOk<(), (), RemoveCategoryError>(Utils.toResult(categories_.has(category), #CategoryDoesntExist), func() {
-          categories_.add(category);
+          categories_.delete(category);
           // Also remove the category from users' profile // @todo: use an obs instead?
           history_.removeCategory(category);
         })
@@ -180,7 +182,7 @@ module {
     };
 
     public func getUserHistory(principal: Principal) : ?Types.PublicUserHistory {
-      Option.map(history_.findUserHistory(principal, categories_), func(user_history: Types.UserHistory) : Types.PublicUserHistory {
+      Option.map(history_.findUserHistory(principal), func(user_history: Types.UserHistory) : Types.PublicUserHistory {
         { 
           convictions = Utils.trieToArray(user_history.convictions);
           ballots = Iter.toArray(Set.keys(user_history.ballots));

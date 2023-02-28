@@ -1,48 +1,97 @@
-import { Category, Cursor } from "./../../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext } from "../../ActorContext"
+import { CategoriesContext } from "../../CategoriesContext"
 
-import React, { useContext, useState } from "react";
+import { CursorArray } from "./../../../declarations/godwin_backend/godwin_backend.did";
+
+import { RangeSlider2 } from "./RangeSlider";
+
+import { nsToStrDate } from "../../utils";
+
+import React, { useContext, useState, useEffect } from "react";
 
 type Props = {
-  question_id: bigint,
-  categories: string[]
+  questionId: bigint;
 };
 
-// @todo: change the state of the buttons based on the categorization for the logged user for this question
-const VoteCategorization = ({question_id, categories}: Props) => {
+// Array<[Category, CategoryInfo]> -> Array<[Category, Cursor__1]>
+const initCategorization = (categories: Array<[string, any]>) => {
+  let categorization: number[] = [];
+  for (let i = 0; i < categories.length; i++) {
+    categorization.push(0.0);
+  }
+  return categorization;
+};
+
+const VoteCategorization = ({questionId}: Props) => {
 
 	const {actor, isAuthenticated} = useContext(ActorContext);
-  const [categorization, setCategorization] = useState<Map<Category, Cursor>>(new Map(categories.map(category => [category, 0.0])));
+  const {categories} = useContext(CategoriesContext);
+  const [categorization, setCategorization] = useState<number[]>(initCategorization(categories));
+  const [voteDate, setVoteDate] = useState<bigint | null>(null);
+
+  const setCategoryCursor = (category_index: number, cursor: number) => {
+    setCategorization(old_categorization => { 
+      let new_categorization = old_categorization;
+      new_categorization[category_index] = cursor;
+      console.log(new_categorization); 
+      return new_categorization; 
+    });
+  };
 
   const updateCategorization = async () => {
-    let categorizationResult = await actor.putCategorizationBallot(question_id, Array.from(categorization, ([category, cursor]) => ([category, cursor])));
-    console.log(categorizationResult);
-	}
+    let categorization_ballot : CursorArray = [];
+    categories.map((category, index) => { categorization_ballot.push([category[0], categorization[index]]); });
+    let categorization_vote = await actor.putCategorizationBallot(questionId, categorization_ballot);
+    console.log(categorization_vote);
+    await getBallot();
+	};
 
-  const updateCategory = (category: string, cursor: number) => {
-    setCategorization(new Map(categorization.set(category, cursor)));
+  const getBallot = async () => {
+    if (isAuthenticated){
+      let categorization_vote = await actor.getCategorizationBallot(questionId);
+      if (categorization_vote['ok'] !== undefined && categorization_vote['ok'].length > 0) {
+        setCategorization(categorization_vote['ok'][0].answer);
+        setVoteDate(categorization_vote['ok'][0].date);
+      } else {
+        setCategorization(initCategorization(categories));
+        setVoteDate(null);
+      }
+    }
   }
 
-  const getCursor = (category: string) => {
-    const cursor = categorization.get(category);
-    if (cursor === undefined) { return "UNDEF";        }
-    if (cursor > 0.6)         { return "RIGHT";        }
-    if (cursor > 0.2)         { return "RATHER RIGHT"; }
-    if (cursor > -0.2)        { return "NEUTRAL";      }
-    if (cursor > -0.6)        { return "RATHER LEFT";  }
-    else                      { return "LEFT";         }
-  }
+  useEffect(() => {
+    getBallot();
+  }, []);
 
 	return (
-    <div className="flex flex-col items-center space-x-1">
+    <div className="flex flex-col items-center space-y-2">
+      <ul className="list-none">
       {
-        categories.map(category => (
-          <div key={question_id + "_" + category}>
-            <label htmlFor="small-range" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> { category + " " + getCursor(category) } </label>
-            <input id="small-range" min="-1" max="1" step="0.1" disabled={!isAuthenticated} type="range" onChange={(e) => updateCategory(category, Number(e.target.value))} onMouseUp={(e) => updateCategorization()} className="w-24 h-1 mb-6 bg-gray-200 rounded-lg appearance-none cursor-pointer range-sm dark:bg-gray-700"></input>
-          </div>
-        )
-        )
+        categories.map((category, index) => (
+          <li key={category[0]}>
+          <RangeSlider2 
+            id={ category[0] + questionId.toString() }
+            index = { index }
+            cursor={ categorization }
+            setCursor={ setCategoryCursor }
+            category= { category[0] }
+            leftLabel= { category[1].left.name }
+            rightLabel= { category[1].right.name }
+            leftColor={ category[1].left.color }
+            rightColor={ category[1].right.color }
+            thumbLeft={ category[1].left.symbol }
+            thumbCenter={ "🙏" }
+            thumbRight={ category[1].right.symbol }
+            onMouseUp={ () => {} }
+          ></RangeSlider2>
+          </li>
+        ))
+      }
+      </ul>
+      {
+        voteDate !== null ?
+          <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
+          <></>
       }
     </div>
 	);
