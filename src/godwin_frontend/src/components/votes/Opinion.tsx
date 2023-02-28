@@ -1,5 +1,8 @@
 import { ActorContext } from "../../ActorContext"
-import Color from 'colorjs.io';
+
+import RangeSlider from "./RangeSlider";
+
+import { nsToStrDate } from "../../utils";
 
 import ReactApexChart from 'react-apexcharts';
 
@@ -11,55 +14,41 @@ import React, { useContext, useState, useEffect } from "react";
 
 Chart.register(...registerables);
 
-type Props = {
-  question_id: bigint;
+type Props={
+  questionId: bigint;
 };
 
-// @todo: change the state of the buttons based on the opinion for the logged user for this question
-const VoteOpinion = ({question_id}: Props) => {
+const VoteOpinion = ({questionId}: Props) => {
 
 	const {actor, isAuthenticated} = useContext(ActorContext);
   const [opinion, setOpinion] = useState<number>(0.0);
-  const [leftColor, setLeftColor] = useState<string>("#DB4437");
-  const [rightColor, setRightColor] = useState<string>("#0F9D58");
-  const sliderWidth = 200;
-  const thumbSize = 50;
-  const marginWidth = thumbSize / 2;
-  const marginRatio = marginWidth / sliderWidth;
-
-  const white = new Color("white");
-  const yellow = new Color("#F4B400");
-  //const greenwhite = white.range("#0F9D58", { space: "lch", outputSpace: "lch" });
-  const yellowwhite = white.range("#F4B400", { space: "lch", outputSpace: "lch"});
-  const greenyellow = yellow.range("#0F9D58", { space: "lch", outputSpace: "lch" });
-  const redyellow = yellow.range("#DB4437", { space: "lch", outputSpace: "lch"});
-
-  const fromRange = (range: any, value: number) => {
-    return new Color(range(value).toString()).to("srgb").toString({format: "hex"});
-  };
-
-  useEffect(() => {
-
-//    if (opinion > 0) {
-//      setRightColor(new Color(yellowwhite(1 - opinion).toString()).to("srgb").toString({format: "hex"}));
-//      setLeftColor(new Color(greenyellow(opinion).toString()).to("srgb").toString({format: "hex"}));
-//    } else {
-//      setLeftColor(new Color(yellowwhite(1 + opinion).toString()).to("srgb").toString({format: "hex"}));
-//      setRightColor(new Color(redyellow(-opinion).toString()).to("srgb").toString({format: "hex"}));
-//    }
-
-    const greenwhite = white.range("#0F9D58", { space: "lch", outputSpace: "lch"});
-    setLeftColor(new Color(greenwhite(opinion > 0 ? opinion : 0).toString()).to("srgb").toString({format: "hex"}));
-    const redwhite = white.range("#DB4437", { space: "lch", outputSpace: "lch"});
-    setRightColor(new Color(redwhite(opinion < 0 ? -opinion : 0).toString()).to("srgb").toString({format: "hex"}));
-  }, [opinion]);
+  const [voteDate, setVoteDate] = useState<bigint | null>(null);
 
   const updateOpinion = async () => {
-    await actor.putOpinionBallot(question_id, opinion);
+    let opinion_vote = await actor.putOpinionBallot(questionId, opinion);
+    console.log(opinion_vote);
+    await getBallot();
 	};
 
+  const getBallot = async () => {
+    if (isAuthenticated){
+      let opinion_vote = await actor.getOpinionBallot(questionId);
+      if (opinion_vote['ok'] !== undefined && opinion_vote['ok'].length > 0) {
+        setOpinion(opinion_vote['ok'][0].answer);
+        setVoteDate(opinion_vote['ok'][0].date);
+      } else {
+        setOpinion(0.0);
+        setVoteDate(null);
+      }
+    }
+  }
+
+  useEffect(() => {
+    getBallot();
+  }, []);
+
   /*
-  type Data = { x: number; y: number;}[];
+  type Data={ x: number; y: number;}[];
   let data : Data = [];
   data.push({x: -1.0, y: 0.5});
   data.push({x: -0.5, y: 1.5});
@@ -80,7 +69,7 @@ const VoteOpinion = ({question_id}: Props) => {
 
   let colors = data.map((point) => getColor(point.x));
       
-  const chartData = {
+  const chartData={
     datasets: [
       {
         data: data,
@@ -118,7 +107,7 @@ const VoteOpinion = ({question_id}: Props) => {
   ];
 
 
-  let options = {
+  let options={
     chart: {
       height: 200,
       type: "heatmap",
@@ -186,7 +175,7 @@ const VoteOpinion = ({question_id}: Props) => {
     }
   ];
 
-  let stacked_bar_options = {
+  let stacked_bar_options={
     chart: {
       stacked: true,
       stackType: '100%',
@@ -310,27 +299,30 @@ const VoteOpinion = ({question_id}: Props) => {
   };
 
 	return (
-    <div className="flex flex-col items-center space-x-1 space-y-2">
-      <div className="text-xs font-extralight">
-        { opinion }
-      </div>
-      <input id={"opinion_input_" + question_id.toString()} min="-1" max="1" step="0.02" disabled={!isAuthenticated} type="range" onChange={(e) => setOpinion(Number(e.target.value))} onMouseUp={(e) => updateOpinion()} className={"input appearance-none " + (opinion > 0.33 ? "up" : opinion < -0.33 ? "down" : "shrug") } 
-      style={{
-        "--progress-percent": `${ ((marginRatio + ((opinion + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
-        "--left-color": `${leftColor}`,
-        "--right-color": `${rightColor}`,
-        "--margin-left": `${(marginRatio * 100).toString() + "%"}`,
-        "--margin-right": `${((1 - marginRatio) * 100).toString() + "%"}`,
-        "--slider-width": `${sliderWidth + "px"}`,
-        "--thumb-size": `${thumbSize + "px"}`} as React.CSSProperties
-      }/>
+    <div className="flex flex-col items-center space-y-2">
+      <RangeSlider 
+        questionId={ questionId }
+        cursor={ opinion }
+        setCursor={ setOpinion }
+        leftColor={ "#0F9D58" }
+        rightColor={ "#DB4437" }
+        thumbLeft={ "👎" }
+        thumbCenter={ "🤷" }
+        thumbRight={ "👍" }
+        onMouseUp={ () => updateOpinion() }
+      ></RangeSlider>
+      {
+        voteDate !== null ?
+          <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
+          <></>
+      }
       { /*}
       <div className="w-[100px] h-[50px] bg-gray-400">
         <ScatterChart chartData={chartData}/>
       </div>
       <ReactApexChart options={options} series={series} type="heatmap" height={350} />
-    */ }
       <ReactApexChart options={stacked_bar_options} series={stacked_bar_series} type="bar" height={50} />
+      */ }
     </div>
 	);
 };

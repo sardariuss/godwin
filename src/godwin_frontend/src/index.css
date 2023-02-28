@@ -10,12 +10,6 @@
 	}
 }
 
-:root {
-  --shrug: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>🤷</text></svg>");
-  --thumb-up: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>👍</text></svg>");
-  --thumb-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>👎</text></svg>");
-}
-
 /*Chrome*/
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   input[type='range'] {
@@ -29,14 +23,14 @@
     -webkit-appearance: none;
     background: linear-gradient(
       to right,
-      transparent        0%,
-      transparent        var(--margin-left),
-      var(--left-color)  var(--margin-left),
-      var(--left-color)  var(--progress-percent),
-      var(--right-color) var(--progress-percent),
-      var(--right-color) var(--margin-right),
-      transparent        var(--margin-right),
-      transparent        100%
+      transparent               0%,
+      transparent               var(--margin-left),
+      var(--slider-left-color)  var(--margin-left),
+      var(--slider-left-color)  var(--progress-percent),
+      var(--slider-right-color) var(--progress-percent),
+      var(--slider-right-color) var(--margin-right),
+      transparent               var(--margin-right),
+      transparent               100%
     );
   }
 
@@ -54,18 +48,17 @@
     cursor: pointer;
   }
 
-  input[type='range'].shrug::-webkit-slider-thumb {
-    background-image: var(--shrug);
+  input[type='range'].left::-webkit-slider-thumb {
+    background-image: var(--thumb-left);
   }
 
-  input[type='range'].up::-webkit-slider-thumb {
-    background-image: var(--thumb-up);
+  input[type='range'].center::-webkit-slider-thumb {
+    background-image: var(--thumb-center);
   }
 
-  input[type='range'].down::-webkit-slider-thumb {
-    background-image: var(--thumb-down);
+  input[type='range'].right::-webkit-slider-thumb {
+    background-image: var(--thumb-right);
   }
-
 
 }
 
@@ -76,14 +69,14 @@ input[type="range"]::-moz-range-track {
   width: var(--slider-width);
   background: linear-gradient(
     to right,
-    transparent        0%,
-    transparent        var(--margin-left),
-    var(--left-color)  var(--margin-left),
-    var(--left-color)  var(--progress-percent),
-    var(--right-color) var(--progress-percent),
-    var(--right-color) var(--margin-right),
-    transparent        var(--margin-right),
-    transparent        100%
+    transparent               0%,
+    transparent               var(--margin-left),
+    var(--slider-left-color)  var(--margin-left),
+    var(--slider-left-color)  var(--progress-percent),
+    var(--slider-right-color) var(--progress-percent),
+    var(--slider-right-color) var(--margin-right),
+    transparent               var(--margin-right),
+    transparent               100%
   );
 }
 
@@ -99,14 +92,14 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
-input[type="range"].up::-moz-range-thumb {
-  background-image: var(--thumb-up);
+input[type="range"].left::-moz-range-thumb {
+  background-image: var(--thumb-left);
 }
 
-input[type="range"].down::-moz-range-thumb {
-  background-image: var(--thumb-down);
+input[type="range"].center::-moz-range-thumb {
+  background-image: var(--thumb-center);
 }
 
-input[type="range"].shrug::-moz-range-thumb {
-  background-image: var(--shrug);
+input[type="range"].right::-moz-range-thumb {
+  background-image: var(--thumb-right);
 }
