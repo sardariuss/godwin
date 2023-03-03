@@ -52,7 +52,7 @@ module {
     let observers_ = Observers.Observers2<Vote<T, A>>();
 
     public func newVote(question_id: Nat){
-      if (Option.isSome(register_.get(question_id))){
+      if (register_.has(question_id)){
         Debug.trap("A vote already exists for this question and iteration");
       };
       let vote = {
@@ -64,7 +64,7 @@ module {
     };
 
     public func findVote(question_id: Nat) : ?Vote<T, A> {
-      register_.get(question_id);
+      register_.getOpt(question_id);
     };
 
     public func getVote(question_id: Nat) : Vote<T, A> {

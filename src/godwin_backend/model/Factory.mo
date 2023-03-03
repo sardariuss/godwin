@@ -48,7 +48,18 @@ module {
     let categorization_votes = Categorizations.build(state_.votes.categorization, categories);
     let categorization_poll = Poll.Poll(categorization_votes);
 
+    let history = History.build(
+      state_.history.status_history,
+      state_.history.interests_history,
+      state_.history.opinons_history,
+      state_.history.categorizations_history,
+      state_.history.user_history,
+      state_.history.convictions_half_life,
+      state_.creation_date,
+      categories);
+
     let model = Model.build(
+      history,
       state_.controller.model.time,
       state_.controller.model.most_interesting,
       state_.controller.model.last_pick_date,
@@ -57,12 +68,8 @@ module {
 
     let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
-    let { status_history; user_history; convictions_half_life; } = state_.history;
-    let history = History.build(status_history, user_history, convictions_half_life, state_.creation_date, categories);
-
     let controller = Controller.build(
       model,
-      history,
       questions
     );
 
@@ -81,53 +88,26 @@ module {
         Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
       );
 
+      // Put the previous status in history (transferring the vote to the history if needed)
       Option.iterate(old, func(question: Question) {       
-        // Remove the vote and put it in the history
-        let status_record = switch(question.status_info.status){
-          case(#CANDIDATE) {
-            #CANDIDATE({
-              date = question.status_info.date;
-              vote_interest = interest_votes.removeVote(question.id); 
-            }); 
-          };
-          case(#OPEN) {
-            #OPEN({
-              date = question.status_info.date;
-              vote_opinion = opinion_votes.removeVote(question.id);
-              vote_categorization = categorization_votes.removeVote(question.id);
-            }); 
-          };
-          case(#CLOSED){
-            #CLOSED({
-              date = question.status_info.date;
-            });
-          };
-          case(#REJECTED){
-            #REJECTED({
-              date = question.status_info.date;
-            });
-          };
-          case(#TRASH){
-            #TRASH({
-              date = question.status_info.date;
-            });
-          };
+        let status_data = switch(question.status_info.status){
+          case(#CANDIDATE) { #CANDIDATE({ vote_interest =             interest_votes.removeVote(question.id); }); };
+          case(#OPEN)      { #OPEN     ({ vote_opinion =               opinion_votes.removeVote(question.id); 
+                                          vote_categorization = categorization_votes.removeVote(question.id); }); };
+          case(#CLOSED)    { #CLOSED   (); };
+          case(#REJECTED)  { #REJECTED (); };
+          case(#TRASH)     { #TRASH    (); };
         };
-        history.add(question.id, status_record);
+        history.add(question.id, question.status_info, status_data);
       });
 
+      // Open a new vote if needed
       Option.iterate(new, func(question: Question) {
-        // Open a new vote
         switch(question.status_info.status){
-          case(#CANDIDATE) {
-            interest_votes.newVote(question.id);
-          };
-          case(#OPEN) {
-            opinion_votes.newVote(question.id);
-            categorization_votes.newVote(question.id);
-          };
-          case(_) {
-          };
+          case(#CANDIDATE) {       interest_votes.newVote(question.id); };
+          case(#OPEN)      {        opinion_votes.newVote(question.id);            
+                             categorization_votes.newVote(question.id); };
+          case(_)          {};
         };
       });
       

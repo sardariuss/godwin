@@ -42,7 +42,11 @@ module {
     let tests = Buffer.Buffer<Suite.Suite>(0);
     let principals = Principals.init();
 
-    let categories = Categories.build(Categories.initRegister(["IDENTITY", "ECONOMY", "CULTURE"]));
+    let categories = Categories.build(Categories.initRegister([
+      ("IDENTITY", { left = { name = "CONSTRUCTIVISM";   symbol = "🧩"; color = "#f26c0d"; }; right = { name = "ESSENTIALISM"; symbol = "💎"; color = "#f2a60d"; }; }),
+      ("ECONOMY",  { left = { name = "SOCIALISM";        symbol = "🌹";  color = "#0fca02"; }; right = { name = "CAPITALISM";   symbol = "🎩"; color = "#02ca27"; }; }),
+      ("CULTURE",  { left = { name = "PROGRESSIVISM";    symbol = "🌊"; color = "#2c00cc"; }; right = { name = "CONSERVATISM"; symbol = "🧊"; color = "#5f00cc"; }; }),
+    ]));
     let votes = Categorizations.build(Categorizations.initRegister(), categories);
 
     // Question 0 : arbitrary question_id, iteration and date

@@ -3,6 +3,7 @@ import Utils "../Utils";
 import Map "mo:map/Map";
 
 import Iter "mo:base/Iter";
+import Debug "mo:base/Debug";
 
 module {
 
@@ -24,8 +25,15 @@ module {
 
   public class WMap<K, V>(map_: Map<K, V>, hash_: HashUtils<K>) {
 
-    public func get(key: K): ?V {
+    public func getOpt(key: K): ?V {
       Map.get(map_, hash_, key);
+    };
+
+    public func get(key: K): V {
+      switch(getOpt(key)){
+        case(null) { Debug.trap("Key not found"); };
+        case(?v) { v };
+      };
     };
       
     public func has(key: K): Bool {
@@ -95,9 +103,16 @@ module {
   };
 
   public class WMap2D<K1, K2, V>(map_: Map<K1, Map<K2, V>>, hash1_: HashUtils<K1>, hash2_: HashUtils<K2>) {
-    
-    public func get(key1: K1, key2: K2): ?V {
+
+    public func getOpt(key1: K1, key2: K2): ?V {
       Utils.get2D(map_, hash1_, key1, hash2_, key2);
+    };
+    
+    public func get(key1: K1, key2: K2): V {
+      switch(getOpt(key1, key2)){
+        case(null) { Debug.trap("Keys not found"); };
+        case(?v) { v };
+      };
     };
 
     public func getAll(key1: K1): ?Map<K2, V> {
@@ -106,6 +121,10 @@ module {
       
     public func put(key1: K1, key2: K2, value: V): ?V {
       Utils.put2D(map_, hash1_, key1, hash2_, key2, value);
+    };
+
+    public func set(key1: K1, key2: K2, value: V) {
+      ignore put(key1, key2, value);
     };
       
     public func remove(key1: K1, key2: K2): ?V {

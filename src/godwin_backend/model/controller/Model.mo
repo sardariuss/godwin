@@ -3,6 +3,7 @@ import Debug "mo:base/Debug";
 import Ref "../../utils/Ref";
 import WRef "../../utils/wrappers/WRef";
 import Duration "../../utils/Duration";
+import History "../History";
 import Types "../Types";
 
 module {
@@ -12,9 +13,17 @@ module {
   type Duration = Duration.Duration;
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
+  type History = History.History;
 
-  public func build(time: Ref<Time>, most_interesting: Ref<?Nat>, last_pick_date: Ref<Time>, params: Ref<Types.SchedulerParameters>) : Model {
+  public func build(
+    history: History,
+    time: Ref<Time>,
+    most_interesting: Ref<?Nat>,
+    last_pick_date: Ref<Time>,
+    params: Ref<Types.SchedulerParameters>
+  ) : Model {
     Model(
+      history,
       WRef.WRef(time),
       WRef.WRef(most_interesting),
       WRef.WRef(last_pick_date),
@@ -22,7 +31,17 @@ module {
     );
   };
 
-  public class Model(time_: WRef<Time>, most_interesting_: WRef<?Nat>, last_pick_date_: WRef<Time>, params_: WRef<Types.SchedulerParameters>) = {
+  public class Model(
+    history_: History,
+    time_: WRef<Time>,
+    most_interesting_: WRef<?Nat>,
+    last_pick_date_: WRef<Time>,
+    params_: WRef<Types.SchedulerParameters>
+  ) = {
+
+    public func getStatusIteration(question_id: Nat, status: Status) : Nat { 
+      history_.getStatusIteration(question_id, status);
+    };
 
     public func getTime() : Time {
       time_.get();

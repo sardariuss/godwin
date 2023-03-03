@@ -50,6 +50,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetUserVotesError = Types.GetUserVotesError;
   type CategoryInfo = Types.CategoryInfo;
   type CategoryArray = Types.CategoryArray;
+  type UserHistory = Types.UserHistory;
+  type VoteId = Types.VoteId;
 
   //stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -133,8 +135,16 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.putCategorizationBallot(caller, question_id, Time.now(), answer);
   };
 
-  public query func getUserHistory(principal: Principal) : async ?Types.PublicUserHistory {
-    game_.getUserHistory(principal);
+  public query func getStatusHistory(question_id: Nat) : async ?[(Status, [Time])] {
+    game_.getStatusHistory(question_id);
+  };
+
+  public query func getUserConvictions(principal: Principal) : async ?PolarizationArray {
+    game_.getUserConvictions(principal);
+  };
+
+  public query func getUserVotes(principal: Principal) : async ?[VoteId] {
+    game_.getUserVotes(principal);
   };
 
   public shared func run() {

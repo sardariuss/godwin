@@ -43,6 +43,7 @@ module {
   type Status = Types.Status;
   type StatusHistory = Types.StatusHistory;
   type UserHistory = Types.UserHistory;
+  type Interest = Types.Interest;
 
   public type State = {
     admin             : Principal;
@@ -69,9 +70,12 @@ module {
       categorization     : Categorization.Register;
     };
     history           : {
-      status_history         : Map<Nat, StatusHistory>;
-      user_history           : Map<Principal, UserHistory>;
-      convictions_half_life  : ?Duration;
+      status_history          : Map<Nat, StatusHistory>;
+      interests_history       : Map2D<Nat, Nat, Vote<Interest, Appeal>>;
+      opinons_history         : Map2D<Nat, Nat, Vote<Cursor, Polarization>>;
+      categorizations_history : Map2D<Nat, Nat, Vote<CursorMap, PolarizationMap>>;
+      user_history            : Map<Principal, UserHistory>;
+      convictions_half_life   : ?Duration;
     };
   };
 
@@ -102,6 +106,9 @@ module {
       };
       history        = {
         status_history            = Map.new<Nat, StatusHistory>();
+        interests_history         = Map.new<Nat, Map<Nat, Vote<Interest, Appeal>>>();
+        opinons_history           = Map.new<Nat, Map<Nat, Vote<Cursor, Polarization>>>();
+        categorizations_history   = Map.new<Nat, Map<Nat, Vote<CursorMap, PolarizationMap>>>();
         user_history              = Map.new<Principal, UserHistory>();
         convictions_half_life     = parameters.history.convictions_half_life;
       };

@@ -73,7 +73,7 @@ module {
     };
 
     public func findQuestion(question_id: Nat) : ?Question {
-      register_.get(question_id);
+      register_.getOpt(question_id);
     };
 
     public func createQuestion(author: Principal, date: Int, title: Text, text: Text) : Question {
@@ -85,6 +85,7 @@ module {
         date;
         status_info = {
           status = #CANDIDATE;
+          iteration = 0;
           date;
         };
       };
@@ -94,7 +95,7 @@ module {
     };
 
     public func removeQuestion(question_id: Nat) {
-      switch(register_.get(question_id)){
+      switch(register_.getOpt(question_id)){
         case(null) { Debug.trap("The question does not exist"); };
         case(?question) { 
           ignore register_.remove(question.id);
@@ -103,7 +104,7 @@ module {
     };
 
     public func replaceQuestion(question: Question) {
-      switch(register_.get(question.id)){
+      switch(register_.getOpt(question.id)){
         case(null) { Debug.trap("The question does not exist"); };
         case(_) { 
           ignore register_.put(question.id, question);

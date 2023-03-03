@@ -28,8 +28,8 @@ module {
   
   public type Callback = (?Question, ?Question) -> ();
 
-  public func build(model: Model, history: History, questions: Questions) : Controller {
-    Controller(Schema.SchemaBuilder(model, history.getStatusIndex).build(), model, questions);
+  public func build(model: Model, questions: Questions) : Controller {
+    Controller(Schema.SchemaBuilder(model).build(), model, questions);
   };
 
   public class Controller(schema_: Schema, model_: Model, questions_: Questions) = {
@@ -79,7 +79,8 @@ module {
           };
           case(_) {
             // Update the question status
-            let update = { question with status_info = { status; date; } };
+            let iteration = model_.getStatusIteration(question.id, status);
+            let update = { question with status_info = { status; iteration; date; } };
             questions_.replaceQuestion(update);
             ?update;
           };

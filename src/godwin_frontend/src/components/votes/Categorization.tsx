@@ -22,6 +22,8 @@ const initCategorization = (categories: Array<[string, any]>) => {
   return categorization;
 };
 
+// @todo: the categorization state is NOT updated by the RangeSlider2 (somwhow it doesn't work with an array)
+// @todo: add a button to actually vote
 const VoteCategorization = ({questionId}: Props) => {
 
 	const {actor, isAuthenticated} = useContext(ActorContext);

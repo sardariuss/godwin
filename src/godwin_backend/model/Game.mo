@@ -24,6 +24,7 @@ module {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Time = Int;
+  type Set<K> = Set.Set<K>;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -63,6 +64,9 @@ module {
   type GetUserVotesError = Types.GetUserVotesError;
   type CategoryInfo = Types.CategoryInfo;
   type CategoryArray = Types.CategoryArray;
+  type StatusHistory = Types.StatusHistory;
+  type UserHistory = Types.UserHistory;
+  type VoteId = Types.VoteId;
 
   public class Game(
     admin_: Principal,
@@ -181,12 +185,21 @@ module {
       categorization_poll_.putFreshBallot(principal, question_id, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
     };
 
-    public func getUserHistory(principal: Principal) : ?Types.PublicUserHistory {
-      Option.map(history_.findUserHistory(principal), func(user_history: Types.UserHistory) : Types.PublicUserHistory {
-        { 
-          convictions = Utils.trieToArray(user_history.convictions);
-          ballots = Iter.toArray(Set.keys(user_history.ballots));
-        };
+    public func getStatusHistory(question_id: Nat) : ?[(Status, [Time])] {
+      Option.map(history_.getStatusHistory(question_id), func(status_history: StatusHistory) : [(Status, [Time])] {
+        Utils.mapToArray(status_history);
+      });
+    };
+
+    public func getUserConvictions(principal: Principal) : ?PolarizationArray {
+      Option.map(history_.getUserConvictions(principal), func(convictions: PolarizationMap) : PolarizationArray {
+        Utils.trieToArray(convictions);
+      });
+    };
+
+    public func getUserVotes(principal: Principal) : ?[VoteId] {
+      Option.map(history_.getUserVotes(principal), func(votes: Set<VoteId>) : [VoteId] {
+        Iter.toArray(Set.keys(votes));
       });
     };
 

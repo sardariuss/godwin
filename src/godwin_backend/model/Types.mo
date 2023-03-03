@@ -51,44 +51,24 @@ module {
 
   public type StatusInfo = {
     status: Status;
+    iteration: Nat;
     date: Time;
   };
 
-  public type StatusHistory = {
-    records: Map<Status, [StatusRecord]>;
-    timeline: [(Status, Nat)];
+  public type StatusData = {
+    #CANDIDATE: { vote_interest:       Vote<Interest, Appeal>;              };
+    #OPEN:      { vote_opinion:        Vote<Cursor, Polarization>;
+                  vote_categorization: Vote<CursorMap, PolarizationMap>;    };
+    #CLOSED:    ();
+    #REJECTED:  ();
+    #TRASH:     ();
   };
 
-  public type StatusRecord = {
-    #CANDIDATE: {
-      date: Time;
-      vote_interest: Vote<Interest, Appeal>;
-    };
-    #OPEN: {
-      date: Time;
-      vote_opinion: Vote<Cursor, Polarization>;
-      vote_categorization: Vote<CursorMap, PolarizationMap>;
-    };
-    #CLOSED: {
-      date: Time;
-    };
-    #REJECTED: {
-      date: Time;
-    };
-    #TRASH: {
-      date: Time;
-    };
-  };
+  public type StatusHistory = Map<Status, [Time]>;
 
   public type UserHistory = {
     convictions: PolarizationMap;
-    ballots: Set<VoteId>;
-  };
-
-  // @todo
-  public type PublicUserHistory = {
-    convictions: PolarizationArray;
-    ballots: [VoteId];
+    votes: Set<VoteId>;
   };
 
   public type Status = {

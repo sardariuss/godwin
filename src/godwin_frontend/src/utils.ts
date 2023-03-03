@@ -1,11 +1,11 @@
 import { Status } from "./../declarations/godwin_backend/godwin_backend.did";
 
 export const statusToString = (status: Status) => {
-  if (status['VOTING']?.['INTEREST'] !== undefined) { return 'INTEREST'; };
-  if (status['VOTING']?.['OPINION'] !== undefined) { return 'OPINION'; };
-  if (status['VOTING']?.['CATEGORIZATION'] !== undefined) { return 'CATEGORIZATION'; };
-  if (status['CLOSED'] !== undefined) { return 'CLOSED'; };  
-  if (status['INTEREST'] !== undefined) { return 'INTEREST'; };
+  if (status['CANDIDATE'] !== undefined) return 'Candidate';
+  if (status['OPEN'] !== undefined) return 'Open';
+  if (status['CLOSED'] !== undefined) return 'Closed';
+  if (status['REJECTED'] !== undefined) return 'Timed out';
+  if (status['TRASH'] !== undefined) return 'Trash';
   return '@todo';
 };
 

@@ -18,7 +18,7 @@ module {
   
   public type Schema = StateMachine.Schema<Status, Event, Question>;
 
-  public class SchemaBuilder(model_: Model, get_status_index_: (Nat, Status) -> Nat) {
+  public class SchemaBuilder(model_: Model) {
 
     public func build() : Schema {
       let schema = StateMachine.init<Status, Event, Question>(Status.status_hash, Event.event_hash);
@@ -32,11 +32,11 @@ module {
     };
 
     func timedOutFirstIteration(question: Question) : Bool {
-      get_status_index_(question.id, #CANDIDATE) == 0 and timedOut(question);
+      model_.getStatusIteration(question.id, #CANDIDATE) == 0 and timedOut(question);
     };
 
     func timedOutNextIterations(question: Question) : Bool {
-      get_status_index_(question.id, #CANDIDATE) > 0 and timedOut(question);
+      model_.getStatusIteration(question.id, #CANDIDATE) > 0 and timedOut(question);
     };
 
     func tickMostInteresting(question: Question) : Bool {

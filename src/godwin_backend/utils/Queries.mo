@@ -61,7 +61,7 @@ module {
   ) {
 
     public func add(key: Key) {
-      Option.iterate(register_.get(to_order_by_(key)), func(inner: Inner<Key>){
+      Option.iterate(register_.getOpt(to_order_by_(key)), func(inner: Inner<Key>){
         let id = get_identifier_(key);
         if (Map.has(inner.key_map, Map.nhash, id)) {
           Debug.trap("Cannot add new element with id '" # Nat.toText(id) # "' because it already exists for this order_by");
@@ -72,7 +72,7 @@ module {
     };
 
     public func remove(key: Key) {
-      Option.iterate(register_.get(to_order_by_(key)), func(inner: Inner<Key>){
+      Option.iterate(register_.getOpt(to_order_by_(key)), func(inner: Inner<Key>){
         let id = get_identifier_(key);
         if (not Map.has(inner.key_map, Map.nhash, id)) {
           Debug.trap("Cannot remove element with id '" # Nat.toText(id) # "' because it does not exist for this order_by");
@@ -94,7 +94,7 @@ module {
       direction: Direction,
       limit: Nat
     ) : ScanLimitResult {
-      switch(register_.get(order_by)){
+      switch(register_.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find ordered_set for this order_by"); };
         case(?inner){
           switch(OrderedSet.keys(inner.ordered_set).next()){
@@ -131,7 +131,7 @@ module {
     };
 
     public func iter(order_by: OrderBy, direction: Direction) : Iter<Nat> {
-      switch(register_.get(order_by)){
+      switch(register_.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?inner){ 
           Iter.map(OrderedSet.iter(inner.ordered_set, direction), func(key: Key) : Nat { get_identifier_(key); });
@@ -140,7 +140,7 @@ module {
     };
 
     func unwrapKey(id: Nat, order_by: OrderBy) : Key {
-      switch(register_.get(order_by)){
+      switch(register_.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find ordered_set for this order_by"); };
         case(?inner){
           switch(Map.get(inner.key_map, Map.nhash, id)){

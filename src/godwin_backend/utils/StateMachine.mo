@@ -40,7 +40,7 @@ module {
   public func addTransition<S, E, M>(schema: Schema<S, E, M>, from: S, to: S, condition: Condition<M>, events: [E]) {
     ignore schema.transitions.put(from, to, condition);
     for (event in Array.vals<E>(events)) {
-      let set = Option.get(schema.events.get(event, from), Set.new<S>());
+      let set = Option.get(schema.events.getOpt(event, from), Set.new<S>());
       ignore Set.put<S>(set, schema.state_hash, to);
       ignore schema.events.put(event, from, set);
     };
@@ -58,12 +58,12 @@ module {
   };
 
   func getNextStates<E, S>(events: Events<E, S>, event: E, from: S) : Iter<S> {
-    Set.keys(Option.get(events.get(event, from), Set.new<S>()));
+    Set.keys(Option.get(events.getOpt(event, from), Set.new<S>()));
   };
   
   func canTransition<S, M>(transitions: Transitions<S, M>, from: S, to: S, model: M) : Bool {
     Option.getMapped<Condition<M>, Bool>(
-      transitions.get(from, to), 
+      transitions.getOpt(from, to), 
       func(condition: Condition<M>) : Bool {
         condition(model);
       },

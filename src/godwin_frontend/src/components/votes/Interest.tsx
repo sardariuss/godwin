@@ -77,7 +77,7 @@ const VoteInterest = ({questionId}: Props) => {
   }, [isAuthenticated]);
 
 	return (
-    <div className="flex flex-col gap-y-2 w-full justify-center">
+    <div className="flex flex-col gap-y-2 w-full justify-center text-lg font-semibold">
       <div>
         <ul className="flex flew-row w-full justify-center">
           <li>
