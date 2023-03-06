@@ -9,6 +9,23 @@ export const statusToString = (status: Status) => {
   return '@todo';
 };
 
+export enum StatusEnum {
+  CANDIDATE,
+  OPEN,
+  CLOSED,
+  REJECTED,
+  TRASH,
+};
+
+export const statusToEnum = (status: Status) => {
+  if (status['CANDIDATE'] !== undefined) return StatusEnum.CANDIDATE;
+  if (status['OPEN'] !== undefined) return StatusEnum.OPEN;
+  if (status['CLOSED'] !== undefined) return StatusEnum.CLOSED;
+  if (status['REJECTED'] !== undefined) return StatusEnum.REJECTED;
+  if (status['TRASH'] !== undefined) return StatusEnum.TRASH;
+  throw new Error('Unknown status');
+};
+
 const getMonthStr = (month: number) => {
   // months are zero indexed
   switch (month) {

@@ -108,6 +108,18 @@ module {
       status_history_.getOpt(question_id);
     };
 
+    public func getInterestVote(question_id: Nat, iteration: Nat) : ?InterestVote {
+      interests_history_.getOpt(question_id, iteration);
+    };
+
+    public func getOpinionVote(question_id: Nat, iteration: Nat) : ?OpinionVote {
+      opinons_history_.getOpt(question_id, iteration);
+    };
+
+    public func getCategorizationVote(question_id: Nat, iteration: Nat) : ?CategorizationVote {
+      categorizations_history_.getOpt(question_id, iteration);
+    };
+
     public func getStatusIteration(question_id: Nat, status: Status) : Nat {
       Option.getMapped(
         status_history_.getOpt(question_id),

@@ -1,9 +1,9 @@
 import { ActorContext } from "../../ActorContext"
 import { CategoriesContext } from "../../CategoriesContext"
 
-import { CursorArray } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { CursorArray, Category, CategoryInfo } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-import { RangeSlider2 } from "./RangeSlider";
+import { RangeSlider } from "./RangeSlider";
 
 import { nsToStrDate } from "../../utils";
 
@@ -13,37 +13,33 @@ type Props = {
   questionId: bigint;
 };
 
-// Array<[Category, CategoryInfo]> -> Array<[Category, Cursor__1]>
-const initCategorization = (categories: Array<[string, any]>) => {
-  let categorization: number[] = [];
-  for (let i = 0; i < categories.length; i++) {
-    categorization.push(0.0);
+const initCategorization = (categories: Map<Category, CategoryInfo>) => {
+  let categorization: CursorArray = [];
+  for (const [category, _] of categories.entries()) {
+    categorization.push([category, 0.0]);
   }
   return categorization;
-};
+}
 
-// @todo: the categorization state is NOT updated by the RangeSlider2 (somwhow it doesn't work with an array)
-// @todo: add a button to actually vote
+// @todo: add a button to perform the vote
 const VoteCategorization = ({questionId}: Props) => {
 
 	const {actor, isAuthenticated} = useContext(ActorContext);
   const {categories} = useContext(CategoriesContext);
-  const [categorization, setCategorization] = useState<number[]>(initCategorization(categories));
+  const [categorization, setCategorization] = useState<CursorArray>(initCategorization(categories));
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
 
   const setCategoryCursor = (category_index: number, cursor: number) => {
     setCategorization(old_categorization => { 
       let new_categorization = old_categorization;
-      new_categorization[category_index] = cursor;
+      new_categorization[category_index] = [old_categorization[category_index][0], cursor];
       console.log(new_categorization); 
       return new_categorization; 
     });
   };
 
   const updateCategorization = async () => {
-    let categorization_ballot : CursorArray = [];
-    categories.map((category, index) => { categorization_ballot.push([category[0], categorization[index]]); });
-    let categorization_vote = await actor.putCategorizationBallot(questionId, categorization_ballot);
+    let categorization_vote = await actor.putCategorizationBallot(questionId, categorization);
     console.log(categorization_vote);
     await getBallot();
 	};
@@ -69,23 +65,21 @@ const VoteCategorization = ({questionId}: Props) => {
     <div className="flex flex-col items-center space-y-2">
       <ul className="list-none">
       {
-        categories.map((category, index) => (
-          <li key={category[0]}>
-          <RangeSlider2 
-            id={ category[0] + questionId.toString() }
-            index = { index }
-            cursor={ categorization }
-            setCursor={ setCategoryCursor }
-            category= { category[0] }
-            leftLabel= { category[1].left.name }
-            rightLabel= { category[1].right.name }
-            leftColor={ category[1].left.color }
-            rightColor={ category[1].right.color }
-            thumbLeft={ category[1].left.symbol }
+        categorization.map(([category, cursor], index) => (
+          <li key={category}>
+          <RangeSlider
+            id={ category + questionId.toString() }
+            cursor={ cursor }
+            setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
+            leftLabel= { categories.get(category).left.name }
+            rightLabel= { categories.get(category).right.name }
+            leftColor={ categories.get(category).left.color }
+            rightColor={ categories.get(category).right.color }
+            thumbLeft={ categories.get(category).left.symbol }
             thumbCenter={ "🙏" }
-            thumbRight={ category[1].right.symbol }
-            onMouseUp={ () => {} }
-          ></RangeSlider2>
+            thumbRight={ categories.get(category).right.symbol }
+            onMouseUp={ () => { updateCategorization() } }
+          ></RangeSlider>
           </li>
         ))
       }

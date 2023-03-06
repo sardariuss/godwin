@@ -87,6 +87,12 @@ module {
     aggregate: A;
   };
 
+  public type PublicVote<T, A> = {
+    question_id: Nat;
+    ballots: [(Principal, Ballot<T>)];
+    aggregate: A;
+  };
+
   public type Ballot<T> = {
     date: Int;
     answer: T;

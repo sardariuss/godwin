@@ -3,6 +3,7 @@ import WMap "../../utils/wrappers/WMap";
 
 import Map "mo:map/Map";
 import Observers "../../utils/Observers";
+import Utils "../../utils/Utils";
 
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
@@ -24,9 +25,18 @@ module {
 
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
+  type PublicVote<T, A> = Types.PublicVote<T, A>;
 
   // For convenience
   type WMap<K, V> = WMap.WMap<K, V>;
+
+  public func toPublicVote<T, A>(vote: Vote<T, A>) : PublicVote<T, A> {
+    {
+      question_id = vote.question_id;
+      ballots = Utils.mapToArray(vote.ballots);
+      aggregate = vote.aggregate;
+    }
+  };
 
   public let votehash: Map.HashUtils<VoteId> = (
     func(id: VoteId) : Nat = Nat32.toNat((Nat32.fromNat(id.0) +% Nat32.fromNat(id.1)) & 0x3fffffff),

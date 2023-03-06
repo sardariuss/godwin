@@ -78,7 +78,7 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
 		<div className="border border-none mx-96 my-16 justify-center">
       {[...results.ids].map(id => (
         <li className="list-none" key={Number(id)}> 
-          <QuestionComponent question_id={id} categories={categories}> </QuestionComponent>
+          <QuestionComponent questionId={id} categories={categories}> </QuestionComponent>
         </li>
       ))}
     </div>

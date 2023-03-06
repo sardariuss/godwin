@@ -77,44 +77,44 @@ const VoteInterest = ({questionId}: Props) => {
   }, [isAuthenticated]);
 
 	return (
-    <div className="flex flex-col gap-y-2 w-full justify-center text-lg font-semibold">
+    <div className="flex flex-col gap-y-2 w-full justify-center items-center text-lg font-semibold">
       <div>
         <ul className="flex flew-row w-full justify-center">
-          <li>
+          <li className="inline-block">
             <input type="radio" disabled={ voteDate !== null } checked={ voteBallot === InterestEnum.UP } onClick={() => setVoteBallot(InterestEnum.UP)} onChange={() => {}} id={"interest-up" + questionId.toString() } name={"interest" + questionId.toString() } value="interest-up" className="hidden peer" required/>
             {
               voteDate !== null ? 
-                <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 🤓
                 </label>
                : 
-                <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 🤓
                 </label>
             }
           </li>
-          <li>
+          <li className="inline-block">
             <input type="radio" disabled={ voteDate !== null } checked={ voteBallot === InterestEnum.DOWN } onClick={() => setVoteBallot(InterestEnum.DOWN)} onChange={() => {}} id={"interest-down" + questionId.toString() } name={"interest" + questionId.toString() } value="interest-down" className="hidden peer"/>
             {
               voteDate !== null ? 
-                <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 🤡
                 </label>
                : 
-                <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 🤡
                 </label>
             }
           </li>
-          <li>
+          <li className="inline-block">
             <input type="radio" disabled={ voteDate !== null } checked={ voteBallot === InterestEnum.DUPLICATE } onClick={() => setVoteBallot(InterestEnum.DUPLICATE)} onChange={() => {}} id={"duplicate" + questionId.toString() } name={"interest" + questionId.toString() } value="duplicate" className="hidden peer"/>
             {
               voteDate !== null ? 
-                <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 👀
                 </label>
                : 
-                <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-800">
+                <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
                 👀
                 </label>
             }
@@ -122,8 +122,8 @@ const VoteInterest = ({questionId}: Props) => {
         </ul>
         {
           voteDate !== null ?
-          <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
-          <button type="button" disabled={!isAuthenticated || voteBallot === null} onClick={() => putBallot()} className="w-full text-gray-900 text-center items-center bg-white hover:enabled:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:enabled:bg-gray-700 mr-2 mb-2">
+          <div className="p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
+          <button type="button" disabled={!isAuthenticated || voteBallot === null} onClick={() => putBallot()} className="w-full text-gray-900 bg-white hover:enabled:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm dark:focus:ring-gray-600 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:hover:enabled:bg-gray-700 mr-2 mb-2">
             💰 Vote
           </button>
         }

@@ -1,6 +1,7 @@
 import Types "Types";
 import QuestionQueries "QuestionQueries";
 import Controller "controller/Controller";
+import Categorizations "votes/Categorizations";
 import Model "controller/Model";
 import Questions "Questions";
 import Votes "votes/Votes";
@@ -34,6 +35,8 @@ module {
   type Status = Types.Status;
   type PolarizationArray = Types.PolarizationArray;
   type Ballot<T> = Types.Ballot<T>;
+  type Vote<T, A> = Types.Vote<T, A>;
+  type PublicVote<T, A> = Types.PublicVote<T, A>;
   type Interest = Types.Interest;
   type Appeal = Types.Appeal;
   type Cursor = Types.Cursor;
@@ -188,6 +191,24 @@ module {
     public func getStatusHistory(question_id: Nat) : ?[(Status, [Time])] {
       Option.map(history_.getStatusHistory(question_id), func(status_history: StatusHistory) : [(Status, [Time])] {
         Utils.mapToArray(status_history);
+      });
+    };
+
+    public func getInterestVote(question_id: Nat, iteration: Nat) : ?PublicVote<Interest, Appeal> {
+      Option.map(history_.getInterestVote(question_id, iteration), func(vote: Vote<Interest, Appeal>) : PublicVote<Interest, Appeal> {
+        Votes.toPublicVote(vote);
+      });
+    };
+
+    public func getOpinionVote(question_id: Nat, iteration: Nat) : ?PublicVote<Cursor, Polarization> {
+      Option.map(history_.getOpinionVote(question_id, iteration), func(vote: Vote<Cursor, Polarization>) : PublicVote<Cursor, Polarization> {
+        Votes.toPublicVote(vote);
+      });
+    };
+
+    public func getCategorizationVote(question_id: Nat, iteration: Nat) : ?PublicVote<CursorArray, PolarizationArray> {
+      Option.map(history_.getCategorizationVote(question_id, iteration), func(vote: Vote<CursorMap, PolarizationMap>) : PublicVote<CursorArray, PolarizationArray> {
+        Categorizations.toPublicVote(vote);
       });
     };
 

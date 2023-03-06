@@ -1,4 +1,4 @@
-import { Appeal, Polarization, PolarizationArray, Question } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Appeal, Polarization, PolarizationArray, Question, StatusInfo, Status, Time } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext } from "../ActorContext"
 import VoteInterest from "./votes/Interest";
 import VoteOpinion from "./votes/Opinion";
@@ -7,59 +7,94 @@ import VoteCategorization from "./votes/Categorization";
 import StatusHistoryComponent from "./StatusHistory";
 
 import { useEffect, useState, useContext } from "react";
+import Aggregates from "./votes/Aggregates";
+import { StatusEnum, statusToEnum } from "../utils";
 
 type Props = {
-  question_id: bigint,
-	categories: string[]
+  questionId: bigint
 };
 
-// @todo: change the state of the buttons based on the interest for the logged user for this question
-const QuestionBody = ({question_id, categories}: Props) => {
+function toMap(history_array: Array<[Status, Array<Time>]>) : Map<StatusEnum, Array<Time>> {
+	let historyMap = new Map<StatusEnum, Array<Time>>();
+  for (let [status, dates] of history_array) {
+		historyMap.set(statusToEnum(status), dates);
+  }
+	console.log("historyMap: " + historyMap);
+  return historyMap;
+};
+
+function toArray(history_array: Array<[Status, Array<Time>]>) : StatusInfo[] {
+  let history: StatusInfo[] = [];
+  for (let [status, dates] of history_array) {
+    let iteration = 0;
+    for (let date of dates) {
+      history.push({status: status, iteration: BigInt(iteration), date: date});
+      console.log("iteration: " + iteration + " date: " + date + " status: " + status + "");
+      iteration++;
+    }
+  }
+  return history.sort((a, b) => Number(b.date - a.date));
+};
+
+const QuestionBody = ({questionId}: Props) => {
 
 	const {actor} = useContext(ActorContext);
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
-	// @todo
-	const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>(undefined);
-	const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>(undefined);
-	const [categorizationAggregate, setCategorizationAggregate] = useState<PolarizationArray | undefined>(undefined);
+	const [statusHistoryArray, setStatusHistoryArray] = useState<StatusInfo[]>([]);
+	const [statusHistoryMap, setStatusHistoryMap] = useState<Map<StatusEnum, Array<Time>>>();
 
 	const getQuestion = async () => {
-		let question = await actor.getQuestion(question_id);
+		let question = await actor.getQuestion(questionId);
 		setQuestion(question['ok']);
 	};
 
+	const fetchStatusHistory = async () => {
+    let history = await actor.getStatusHistory(questionId);
+    if (history[0] !== undefined){
+      console.log(history[0]);
+      setStatusHistoryArray(toArray(history[0]));
+			setStatusHistoryMap(toMap(history[0]));
+    };
+  };
+
 	useEffect(() => {
 		getQuestion();
+		fetchStatusHistory();
   }, []);
 
 	const show = true;
 
 	return (
-		<div className="flex flex-row py-1 px-10 bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white hover:dark:border">
-			<div className="flex flex-row w-2/3 justify-start">
-				<div className="flex flex-col justify-start text-lg font-semibold gap-y-2">
-					<div className="justify-start text-lg font-normal">
-						{ question === undefined ? "n/a" : question.title }
-					</div>
-					<div className="flex items-center space-x-10">
-						<StatusHistoryComponent questionId={question_id}/>
-					</div>
+		<div className="flex flex-row bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white border-slate-700 border hover:dark:border-slate-400">
+			<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
+				<div className="justify-start text-lg font-normal">
+					{ question === undefined ? "n/a" : question.title }
+				</div>
+				<div className="flex items-center">
+					<StatusHistoryComponent questionId={questionId} statusHistory={statusHistoryArray}/>
+				</div>
+				<div>
+				{
+					question?.status_info.status['CLOSED'] !== undefined || question?.status_info.status['REJECTED'] !== undefined ?
+						<Aggregates questionId={questionId} statusHistory={statusHistoryMap}></Aggregates> :
+						<></>
+				}
 				</div>
 			</div>
-			<div className="flex flex-row w-1/3">
-				{
-					question?.status_info.status['CANDIDATE'] !== undefined ?
-						<VoteInterest questionId={question.id}/> : 
-					question?.status_info.status['OPEN'] !== undefined ?
+			{
+				question?.status_info.status['CANDIDATE'] !== undefined ?
+					<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
+						<VoteInterest questionId={question.id}/>
+					</div> :
+				question?.status_info.status['OPEN'] !== undefined ?
+					<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
 						<div className="flex flex-col justify-start">
 							<VoteOpinion questionId={question.id}/>
 							<VoteCategorization questionId={question.id}/>
 						</div>
-						: 
-					question?.status_info.status['CLOSED'] !== undefined || question?.status_info.status['REJECTED'] !== undefined ?
-						<div> @todo </div> : <div>@todo impossible</div>
-				}
-			</div>
+					</div> :
+					<></>
+			}
 		</div>
 	);
 };

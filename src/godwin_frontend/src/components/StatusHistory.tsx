@@ -1,36 +1,18 @@
-import { StatusInfo, Status, Time } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { StatusInfo } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext } from "../ActorContext"
 import StatusComponent from "./Status";
-import VoteInterest from "./votes/Interest";
-import VoteOpinion from "./votes/Opinion";
-import VoteCategorization from "./votes/Categorization";
-import Aggregates from "./votes/Aggregates";
 
 import { useEffect, useState, useContext } from "react";
 
 type Props = {
   questionId: bigint,
-	categories: string[]
+  statusHistory: StatusInfo[]
 };
 
-function convertHistory(history_array: Array<[Status, Array<Time>]>) : StatusInfo[] {
-  let history: StatusInfo[] = [];
-  for (let [status, dates] of history_array) {
-    let iteration = 0;
-    for (let date of dates) {
-      history.push({status: status, iteration: BigInt(iteration), date: date});
-      console.log("iteration: " + iteration + " date: " + date + " status: " + status + "");
-      iteration++;
-    }
-  }
-  return history.sort((a, b) => Number(b.date - a.date));
-};
-
-const StatusHistoryComponent = ({questionId}: Props) => {
+const StatusHistoryComponent = ({questionId, statusHistory}: Props) => {
 
 	const {actor} = useContext(ActorContext);
   const [statusInfo, setStatusInfo] = useState<StatusInfo | undefined>(undefined);
-  const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
 	const fetchStatusInfo = async () => {
@@ -42,17 +24,8 @@ const StatusHistoryComponent = ({questionId}: Props) => {
     }
 	}
 
-  const fetchStatusHistory = async () => {
-    let history = await actor.getStatusHistory(questionId);
-    if (history[0] !== undefined){
-      console.log(history[0]);
-      setStatusHistory(convertHistory(history[0]));
-    };
-  };
-
 	useEffect(() => {
 		fetchStatusInfo();
-    fetchStatusHistory();
   }, []);
 
 	return (
