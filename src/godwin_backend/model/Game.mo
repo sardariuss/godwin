@@ -144,9 +144,9 @@ module {
       queries_.select(order_by, direction, limit, previous_id);
     };
 
-    public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
+    public func openQuestion(caller: Principal, text: Text, date: Time) : Result<Question, OpenQuestionError> {
       Result.mapOk<(), Question, OpenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
-        controller_.openQuestion(caller, date, title, text);
+        controller_.openQuestion(caller, date, text);
       });
     };
 

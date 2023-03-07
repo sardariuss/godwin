@@ -65,7 +65,7 @@ module {
 
       if (Random.random(fuzzer) < 0.3) {
         Debug.print("Open question!");
-        ignore game.openQuestion(Random.randomUser(fuzzer, principals), Random.randomTitle(fuzzer), "", time);
+        ignore game.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time);
       };
 
       for (question_id in Array.vals(game.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){

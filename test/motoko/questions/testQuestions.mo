@@ -29,29 +29,29 @@ module {
     let principals = Principals.init();
 
     let array_originals : [Question] = [
-      { id = 0; author = principals[0]; title = "title0"; text = ""; date = 9000; status_info = { status = #CANDIDATE; date = 9000; }; },
-      { id = 1; author = principals[1]; title = "title1"; text = ""; date = 8493; status_info = { status = #CANDIDATE; date = 8493; }; },
-      { id = 2; author = principals[2]; title = "title2"; text = ""; date = 2432; status_info = { status = #CANDIDATE; date = 2432; }; },
-      { id = 3; author = principals[3]; title = "title3"; text = ""; date = 5123; status_info = { status = #CANDIDATE; date = 5123; }; },
-      { id = 4; author = principals[4]; title = "title4"; text = ""; date = 3132; status_info = { status = #CANDIDATE; date = 3132; }; },
-      { id = 5; author = principals[5]; title = "title5"; text = ""; date = 3132; status_info = { status = #CANDIDATE; date = 3132; }; },
-      { id = 6; author = principals[6]; title = "title6"; text = ""; date = 4213; status_info = { status = #CANDIDATE; date = 2012; }; },
-      { id = 7; author = principals[7]; title = "title7"; text = ""; date = 4213; status_info = { status = #CANDIDATE; date = 4213; }; },
-      { id = 8; author = principals[8]; title = "title8"; text = ""; date = 9711; status_info = { status = #CANDIDATE; date = 9311; }; },
-      { id = 9; author = principals[9]; title = "title9"; text = ""; date = 9711; status_info = { status = #CANDIDATE; date = 9711; }; }
+      { id = 0; author = principals[0]; text = "question0"; date = 9000; status_info = { status = #CANDIDATE; iteration = 0; date = 9000; }; },
+      { id = 1; author = principals[1]; text = "question1"; date = 8493; status_info = { status = #CANDIDATE; iteration = 0; date = 8493; }; },
+      { id = 2; author = principals[2]; text = "question2"; date = 2432; status_info = { status = #CANDIDATE; iteration = 0; date = 2432; }; },
+      { id = 3; author = principals[3]; text = "question3"; date = 5123; status_info = { status = #CANDIDATE; iteration = 0; date = 5123; }; },
+      { id = 4; author = principals[4]; text = "question4"; date = 3132; status_info = { status = #CANDIDATE; iteration = 0; date = 3132; }; },
+      { id = 5; author = principals[5]; text = "question5"; date = 3132; status_info = { status = #CANDIDATE; iteration = 0; date = 3132; }; },
+      { id = 6; author = principals[6]; text = "question6"; date = 4213; status_info = { status = #CANDIDATE; iteration = 0; date = 2012; }; },
+      { id = 7; author = principals[7]; text = "question7"; date = 4213; status_info = { status = #CANDIDATE; iteration = 0; date = 4213; }; },
+      { id = 8; author = principals[8]; text = "question8"; date = 9711; status_info = { status = #CANDIDATE; iteration = 0; date = 9311; }; },
+      { id = 9; author = principals[9]; text = "question9"; date = 9711; status_info = { status = #CANDIDATE; iteration = 0; date = 9711; }; }
     ];
 
     let array_modified : [Question] = [
       array_originals[0],
       array_originals[1],
-      { array_originals[2] with status_info = { status = #OPEN; date = 2432; } },
+      { array_originals[2] with status_info = { status = #OPEN; iteration = 0; date = 2432; } },
       array_originals[3],
-      { array_originals[4] with status_info = { status = #OPEN; date = 7234; } },
-      { array_originals[5] with status_info = { status = #OPEN; date = 3132; } },
+      { array_originals[4] with status_info = { status = #OPEN; iteration = 0; date = 7234; } },
+      { array_originals[5] with status_info = { status = #OPEN; iteration = 0; date = 3132; } },
       array_originals[6],
       array_originals[7],
-      { array_originals[8] with status_info = { status = #OPEN; date = 5431; } },
-      { array_originals[9] with status_info = { status = #OPEN; date = 9711; } }
+      { array_originals[8] with status_info = { status = #OPEN; iteration = 0; date = 5431; } },
+      { array_originals[9] with status_info = { status = #OPEN; iteration = 0; date = 9711; } }
     ];
 
     let tests = Buffer.Buffer<Suite.Suite>(array_originals.size() * 4);
@@ -65,7 +65,7 @@ module {
     for (new_question in Array.vals(array_originals)){
       tests.add(Suite.test(
         "Create question " # Nat.toText(new_question.id),
-        questions.createQuestion(new_question.author, new_question.date, new_question.title, new_question.text), 
+        questions.createQuestion(new_question.author, new_question.date, new_question.text), 
         Matchers.equals(TestableItems.question(new_question))
       ));
       queries.replace(null, ?Queries.toStatusEntry(new_question));

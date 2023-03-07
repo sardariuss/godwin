@@ -50,7 +50,7 @@ module {
       let users = Users.build(Map.new<Principal, User>(), null);
 
       let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
-      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
+      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct");
       questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 
       // Create the users

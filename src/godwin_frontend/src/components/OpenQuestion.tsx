@@ -23,7 +23,7 @@ const OpenQuestion = ({setShowAskQuestion}: Props) => {
   }
 
   const submitQuestion = async () => {
-    actor.openQuestion(text, "").then((res) => {
+    actor.openQuestion(text).then((res) => {
       console.log(res);
       setText("");
       setShowAskQuestion(false);

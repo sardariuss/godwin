@@ -104,8 +104,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     game_.getQuestions(order_by, direction, limit, previous_id);
   };
 
-  public shared({caller}) func openQuestion(title: Text, text: Text) : async Result<Question, OpenQuestionError> {
-    game_.openQuestion(caller, title, text, Time.now());
+  public shared({caller}) func openQuestion(text: Text) : async Result<Question, OpenQuestionError> {
+    game_.openQuestion(caller, text, Time.now());
   };
 
   public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), ReopenQuestionError> {

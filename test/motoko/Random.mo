@@ -169,7 +169,7 @@ module {
     fuzzer.float.randomRange(-1.0, 1.0);
   };
 
-  public func randomTitle(fuzzer: Fuzzer) : Text { 
+  public func randomQuestion(fuzzer: Fuzzer) : Text { 
     list_questions[fuzzer.nat.randomRange(0, list_questions.size() - 1)];
   };
 

@@ -29,7 +29,6 @@ module {
 
   public type OrderBy = {
     #AUTHOR;
-    #TITLE;
     #TEXT;
     #DATE;
     #STATUS: Status;
@@ -38,7 +37,6 @@ module {
 
   public type Key = {
     #AUTHOR: AuthorEntry;
-    #TITLE: TextEntry;
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
@@ -87,7 +85,6 @@ module {
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
       case(#AUTHOR){ "AUTHOR"; };
-      case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
       case(#DATE){ "DATE"; };
       case(#STATUS(status)) { 
@@ -110,7 +107,6 @@ module {
   func toOrderBy(key: Key) : OrderBy {
     switch(key){
       case(#AUTHOR(_)){ #AUTHOR; };
-      case(#TITLE(_)){ #TITLE; };
       case(#TEXT(_)){ #TEXT; };
       case(#DATE(_)){ #DATE; };
       case(#STATUS(entry)) { #STATUS(entry.status); };
@@ -121,7 +117,6 @@ module {
   func compareKeys(a: Key, b: Key) : Order {
     switch(toOrderBy(a)){
       case(#AUTHOR){ compareAuthorEntries(unwrapAuthor(a), unwrapAuthor(b)); };
-      case(#TITLE){ compareTextEntries(unwrapTitle(a), unwrapTitle(b)); };
       case(#TEXT){ compareTextEntries(unwrapText(a), unwrapText(b)); };
       case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
       case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
@@ -132,7 +127,6 @@ module {
   func getKeyIdentifier(key: Key) : Nat {
     switch(key){
       case(#AUTHOR(entry)) { entry.question_id; };
-      case(#TITLE(entry)) { entry.question_id; };
       case(#TEXT(entry)) { entry.question_id; };
       case(#DATE(entry)) { entry.question_id; };
       case(#STATUS(entry)) { entry.question_id; };
@@ -143,12 +137,6 @@ module {
   func unwrapAuthor(key: Key) : AuthorEntry {
     switch(key){
       case(#AUTHOR(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
-    };
-  };
-  func unwrapTitle(key: Key) : TextEntry {
-    switch(key){
-      case(#TITLE(entry)) { entry; };
       case(_) { Debug.trap("@todo"); };
     };
   };
@@ -179,7 +167,6 @@ module {
   public func unwrapQuestionId(key: Key) : Nat {
     switch(key){
       case(#AUTHOR(entry))         { entry.question_id; };
-      case(#TITLE(entry))          { entry.question_id; };
       case(#TEXT(entry))           { entry.question_id; };
       case(#DATE(entry))           { entry.question_id; };
       case(#STATUS(entry))         { entry.question_id; };
@@ -210,13 +197,6 @@ module {
     #AUTHOR({
       question_id = question.id;
       author = question.author;
-      date = question.date;
-    });
-  };
-  public func toTitleEntry(question: Question) : Key {
-    #TITLE({
-      question_id = question.id;
-      text = question.title;
       date = question.date;
     });
   };

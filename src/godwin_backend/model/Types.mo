@@ -43,7 +43,6 @@ module {
   public type Question = {
     id: Nat;
     author: Principal;
-    title: Text;
     text: Text;
     date: Time;
     status_info: StatusInfo;

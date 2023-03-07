@@ -68,7 +68,7 @@ const QuestionBody = ({questionId}: Props) => {
 		<div className="flex flex-row bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white border-slate-700 border hover:dark:border-slate-400">
 			<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
 				<div className="justify-start text-lg font-normal">
-					{ question === undefined ? "n/a" : question.title }
+					{ question === undefined ? "n/a" : question.text }
 				</div>
 				<div className="flex items-center">
 					<StatusHistoryComponent questionId={questionId} statusHistory={statusHistoryArray}/>

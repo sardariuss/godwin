@@ -43,7 +43,6 @@ module {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
     buffer.add("id: " # Nat.toText(question.id) # ", ");
     buffer.add("author: " # Principal.toText(question.author) # ", ");
-    buffer.add("title: " # question.title # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
     buffer.add("status: " # Status.statusToText(question.status_info.status)); // @todo: put the whole status_info
@@ -53,7 +52,6 @@ module {
   public func equal(q1: Question, q2: Question) : Bool {
     return Nat.equal(q1.id, q2.id)
        and Principal.equal(q1.author, q2.author)
-       and Text.equal(q1.title, q2.title)
        and Text.equal(q1.text, q2.text)
        and Int.equal(q1.date, q2.date)
        and Status.equalStatus(q1.status_info.status, q2.status_info.status); // @todo: put the whole status_info
@@ -76,11 +74,10 @@ module {
       register_.getOpt(question_id);
     };
 
-    public func createQuestion(author: Principal, date: Int, title: Text, text: Text) : Question {
+    public func createQuestion(author: Principal, date: Int, text: Text) : Question {
       let question = {
         id = index_.get();
         author;
-        title;
         text;
         date;
         status_info = {
@@ -135,8 +132,8 @@ module {
 
       let heap = Heap.Heap<MatchCount>(matchCountCompare);
       for (question in iter()) {
-        let lower_title = TextUtils.toLowerCase(question.title, lower_case_array);
-        let match_count = TextUtils.matchCount(lower_text, lower_title);
+        let lower_text = TextUtils.toLowerCase(question.text, lower_case_array);
+        let match_count = TextUtils.matchCount(lower_text, lower_text);
         Debug.print("Match count for " # Nat.toText(question.id) # ": " # Nat.toText(match_count) # "\n");
         heap.put({ count = match_count; id = question.id; });
       };
