@@ -12,6 +12,8 @@ import { Chart, registerables } from 'chart.js';
 
 import React, { useContext, useState, useEffect } from "react";
 
+import Color from 'colorjs.io';
+
 Chart.register(...registerables);
 
 type Props={
@@ -47,7 +49,6 @@ const VoteOpinion = ({questionId}: Props) => {
     getBallot();
   }, []);
 
-  /*
   type Data={ x: number; y: number;}[];
   let data : Data = [];
   data.push({x: -1.0, y: 0.5});
@@ -133,7 +134,7 @@ const VoteOpinion = ({questionId}: Props) => {
     legend: {
       show: false
     },
-    colors: [fromRange(redyellow, 1.0), fromRange(redyellow, 0.5), fromRange(redyellow, 0.0), fromRange(greenyellow, 0.5), fromRange(greenyellow, 1.0)],
+    colors: ["red"],
     title: {
       text: 'HeatMap Chart (Single color)',
       show: false
@@ -158,7 +159,7 @@ const VoteOpinion = ({questionId}: Props) => {
         enabled: false,
       }
     },
-  };*/
+  };
 
   let stacked_bar_series = [
     {
@@ -316,13 +317,13 @@ const VoteOpinion = ({questionId}: Props) => {
           <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
           <></>
       }
-      { /*}
+      {/*
       <div className="w-[100px] h-[50px] bg-gray-400">
         <ScatterChart chartData={chartData}/>
       </div>
       <ReactApexChart options={options} series={series} type="heatmap" height={350} />
       <ReactApexChart options={stacked_bar_options} series={stacked_bar_series} type="bar" height={50} />
-      */ }
+      */}
     </div>
 	);
 };

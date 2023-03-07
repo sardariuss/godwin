@@ -145,6 +145,7 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
 
 	return (
     <div>
+    <div>
       <ul className="hidden text-sm font-medium text-center text-gray-500 rounded-lg shadow sm:flex divide-x divide-gray-200 dark:divide-gray-700 dark:text-gray-400">
         <li className="w-full">
         <div className={"inline-block w-full p-4 bg-white rounded-l-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (interestWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
@@ -165,6 +166,33 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
           </div>
         </li>
       </ul>
+    </div>
+    {/*
+    <div>
+      <ol className="flex items-center w-full space-y-5">
+            <li className="text-sm font-light whitespace-nowrap">
+              Opinion:
+            </li>
+            <ol className="flex w-full justify-end">
+              <li className="flex w-[70px] h-4 bg-google-red justify-center overflow-visible text-black/100 hover:z-0">
+                <div className="text-xs font-extralight whitespace-nowrap">
+                  35% 👎
+                </div>
+              </li>
+              <li className="flex w-[80px] h-4 bg-white justify-center overflow-visible text-black/100 hover:z-0">
+                <div className="text-xs font-extralight whitespace-nowrap">
+                  40% 🤷
+                </div>
+              </li>
+              <li className="flex w-[50px] h-4 bg-google-green justify-center overflow-visible text-black/100 hover:z-0">
+                <div className="text-xs font-extralight whitespace-nowrap">
+                  25% 👍
+                </div>
+              </li>
+            </ol>
+          </ol>
+      </div>
+     */}
     </div>
 	);
 };
