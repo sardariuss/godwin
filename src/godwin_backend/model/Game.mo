@@ -17,6 +17,9 @@ import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 
+import TokenVote "TokenVote";
+import Token "canister:godwin_token";
+
 module {
 
   // For convenience: from base module
@@ -62,6 +65,11 @@ module {
     scheduler_: Scheduler.Scheduler,
     polls_: Polls.Polls
   ) = {
+
+    let interest_vote_accounts_ = TokenVote.TokenVote();
+    let categorization_vote_accounts_ = TokenVote.TokenVote();
+
+    let subaccount_generator_ = TokenVote.SubaccountGenerator();
 
     public func getDecay() : ?Decay {
       users_.getDecay();
@@ -123,22 +131,48 @@ module {
       queries_.queryItems(order_by, direction, limit, Option.map(previous_id, func(id: Nat) : Question { questions_.getQuestion(id); }));
     };
 
-    public func openQuestion(caller: Principal, title: Text, text: Text, date: Time) : Result<Question, OpenQuestionError> {
-      Result.mapOk<User, Question, OpenQuestionError>(getUser(caller), func(_) {
-        let question = questions_.createQuestion(caller, date, title, text);
-        polls_.openVote(question, #INTEREST);
-        question;
-      });
+    public func openQuestion(master: Types.Master, caller: Principal, title: Text, text: Text, date: Time) : async Result<Question, OpenQuestionError> {
+      switch(getUser(caller)){
+        case(#err(err)) { #err(err); }; 
+        case(#ok(_)){
+          let voting_price = 1321321;
+          let subaccount = subaccount_generator_.generateSubaccount();
+          switch(await master.transferToSubGodwin(caller, voting_price, subaccount)){
+            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
+            case(#ok){
+              let question = questions_.createQuestion(caller, date, title, text); // @todo: make sure it cannot trap
+              polls_.openVote(question, #INTEREST);
+              interest_vote_accounts_.linkSubaccount(question.id, 0, subaccount);
+              #ok(question);
+            };
+          };
+        };
+      };
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
-      Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
+    public func reopenQuestion(master: Types.Master, caller: Principal, question_id: Nat, date: Time) : async Result<(), ReopenQuestionError> {
+      let precondition = Result.chain<User, (), ReopenQuestionError>(getUser(caller), func(_) {
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus), func() {
-            controller_.reopenQuestion(question, date);
-          })
+          Utils.toResult(StatusHelper.isCurrentStatus(question, #CLOSED), #InvalidStatus);
         })
       });
+
+      switch(precondition){
+        case(#err(err)) { #err(err); }; 
+        case(#ok(_)){
+          let question = questions_.getQuestion(question_id);
+          let voting_price = 1321321;
+          let subaccount = subaccount_generator_.generateSubaccount();
+          switch(await master.transferToSubGodwin(caller, voting_price, subaccount)){
+            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
+            case(#ok){
+              controller_.reopenQuestion(question, date);
+              interest_vote_accounts_.linkSubaccount(question.id, 1, subaccount); // @todo
+              #ok();
+            };
+          };
+        };
+      };
     };
 
     public func putBallot(caller: Principal, question_id: Nat, answer: TypedAnswer, date: Time) : Result<(), PutBallotError> {

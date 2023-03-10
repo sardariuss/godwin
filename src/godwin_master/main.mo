@@ -7,17 +7,14 @@ import ICRC1 "mo:icrc1/ICRC1";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Nat64 "mo:base/Nat64";
-import Debug "mo:base/Debug";
-import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Int "mo:base/Int";
 import Nat "mo:base/Nat";
 
 import Token "canister:godwin_token";
 
-shared actor class Master() = this_ {
+actor Master = {
 
   type Parameters = Types.Parameters;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
@@ -30,7 +27,7 @@ shared actor class Master() = this_ {
   public shared func createSubGodwin(parameters: Parameters) {
 
     let new_sub = await (system Godwin.Godwin)(#new {settings = ?{ 
-      controllers = ?[Principal.fromActor(this_)];
+      controllers = ?[Principal.fromActor(Master)];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;

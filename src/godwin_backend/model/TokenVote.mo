@@ -18,31 +18,26 @@ module {
 
   public class TokenVote() {
 
-    let accounts_ : Map2D<Nat, Nat, Account> = Map.new();
+    let subaccounts_ : Map2D<Nat, Nat, Blob> = Map.new();
 
-    public func linkAccount(question_id: Nat, iteration: Nat, account: Account) {
-      ignore Utils.put2D(accounts_, Map.nhash, question_id, Map.nhash, iteration, account); // @todo
+    public func linkSubaccount(question_id: Nat, iteration: Nat, subaccount: Blob) {
+      ignore Utils.put2D(subaccounts_, Map.nhash, question_id, Map.nhash, iteration, subaccount); // @todo
     };
 
-    public func getAccount(question_id: Nat, iteration: Nat) : ?Account {
-      Utils.get2D(accounts_, Map.nhash, question_id, Map.nhash, iteration);
+    public func getSubaccount(question_id: Nat, iteration: Nat) : ?Blob {
+      Utils.get2D(subaccounts_, Map.nhash, question_id, Map.nhash, iteration);
     };
 
   };
 
-  public class AccountGenerator() {
+  public class SubaccountGenerator() {
 
     var index_ : Nat = 0;
 
-    let sub_identifier_ : Principal = Principal.fromText("@todo");
-
-    public func generateAccount() : Account {
-      let account = {
-        owner = sub_identifier_;
-        subaccount = ?bytesToSubaccount(natToBytes(index_));
-      };
+    public func generateSubaccount() : Blob {
+      let subaccount = bytesToSubaccount(natToBytes(index_));
       index_ := index_ + 1;
-      return account;
+      return subaccount;
     };
 
   };
