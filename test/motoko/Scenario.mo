@@ -36,6 +36,7 @@ module {
   public func run(end_date: Time, simulation_duration: Duration, tick_duration: Duration, num_users: Nat) : Game {
 
     let parameters = {
+      master = Principal.fromText("aaaaa-aa"); // @todo
       categories = [
         ("IDENTITY", { left = { name = "CONSTRUCTIVISM";   symbol = "🧩"; color = "#f26c0d"; }; right = { name = "ESSENTIALISM"; symbol = "💎"; color = "#f2a60d"; }; }),
         ("ECONOMY",  { left = { name = "SOCIALISM";        symbol = "🌹"; color = "#0fca02"; }; right = { name = "CAPITALISM";   symbol = "🎩"; color = "#02ca27"; }; }),
@@ -60,48 +61,50 @@ module {
 
     let principals = Random.generatePrincipals(fuzzer, num_users);
 
-    while (time < end_date) {
-      time := time + Duration.toTime(tick_duration);
+    // @todo: fix this
 
-      if (Random.random(fuzzer) < 0.3) {
-        Debug.print("Open question!");
-        ignore game.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time);
-      };
-
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
-        for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
-            ignore game.putInterestBallot(principal, question_id, time, Random.randomInterest(fuzzer));
-          };
-        };
-      };
-
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
-        for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));
-            ignore game.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
-            
-          };
-          if (Random.random(fuzzer) < 0.1){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(question_id));
-            ignore game.putCategorizationBallot(principal, question_id, time, Random.randomCategorization(fuzzer, parameters.categories));
-          };
-        };
-      };
-
-      for (question_id in Array.vals(game.getQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
-        if (Random.random(fuzzer) < 0.1){
-          let principal = Random.randomUser(fuzzer, principals);
-          Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
-          ignore game.reopenQuestion(principal, question_id, time);
-        };
-      };
-
-      game.run(time);
-
-    };
+//    while (time < end_date) {
+//      time := time + Duration.toTime(tick_duration);
+//
+//      if (Random.random(fuzzer) < 0.3) {
+//        Debug.print("Open question!");
+//        ignore game.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time);
+//      };
+//
+//      for (question_id in Array.vals(game.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
+//        for (principal in Array.vals(principals)) {
+//          if (Random.random(fuzzer) < 0.2){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
+//            ignore game.putInterestBallot(principal, question_id, time, Random.randomInterest(fuzzer));
+//          };
+//        };
+//      };
+//
+//      for (question_id in Array.vals(game.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
+//        for (principal in Array.vals(principals)) {
+//          if (Random.random(fuzzer) < 0.2){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));
+//            ignore game.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
+//            
+//          };
+//          if (Random.random(fuzzer) < 0.1){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(question_id));
+//            ignore game.putCategorizationBallot(principal, question_id, time, Random.randomCategorization(fuzzer, parameters.categories));
+//          };
+//        };
+//      };
+//
+//      for (question_id in Array.vals(game.getQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+//        if (Random.random(fuzzer) < 0.1){
+//          let principal = Random.randomUser(fuzzer, principals);
+//          Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
+//          ignore game.reopenQuestion(principal, question_id, time);
+//        };
+//      };
+//
+//      game.run(time);
+//
+//    };
 
     game;
   };

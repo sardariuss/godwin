@@ -1,5 +1,8 @@
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
+import Result "mo:base/Result";
+
+import ICRC1 "mo:icrc1/ICRC1";
 
 import Map "mo:map/Map";
 import Set "mo:map/Set";
@@ -12,6 +15,7 @@ module {
   type Trie<K, V> = Trie.Trie<K, V>;
   type Principal = Principal.Principal;
   type Time = Int;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   type Map<K, V> = Map.Map<K, V>;
   type Set<K> = Set.Set<K>;
@@ -29,7 +33,18 @@ module {
     rejected_duration: Duration;
   };
 
+  type CredentialErrors = {
+    #NotAllowed;
+  };
+
+  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
+
+  public type Master = actor {
+    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async Result<(), TransferFromUserError>;
+  };
+
   public type Parameters = {
+    master: Principal;
     categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;

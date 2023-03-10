@@ -7,13 +7,42 @@ let additions =
         { name = "stableRBT"
         , version = "v0.6.0"
         , repo = "https://github.com/canscale/StableRBTree"
-        , dependencies = ["base"] : List Text
+        , dependencies = ["base"]
         },
         { name = "map"
         , repo = "https://github.com/ZhenyaUsenko/motoko-hash-map"
         , version = "v7.0.0"
-        , dependencies = [ "base"]
-        }
+        , dependencies = ["base"]
+        },
+        {
+        name = "StableTrieMap",
+        version = "main",
+        repo = "https://github.com/NatLabs/StableTrieMap",
+        dependencies = ["base"] : List Text
+        },
+        {
+        name = "StableBuffer",
+        version = "v0.2.0",
+        repo = "https://github.com/canscale/StableBuffer",
+        dependencies = ["base"] : List Text
+        },
+        {
+        name = "array",
+        version = "v0.2.0",
+        repo = "https://github.com/aviate-labs/array.mo",
+        dependencies = ["base"] : List Text
+        },
+        {
+        name = "itertools",
+        version = "main",
+        repo = "https://github.com/NatLabs/Itertools.mo",
+        dependencies = ["base"] : List Text
+        },
+        { name = "icrc1"
+        , version = "main"
+        , repo = "https://github.com/NatLabs/icrc1/"
+        , dependencies = ["base"]
+        },
     ] : List Package
 
 let overrides =

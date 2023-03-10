@@ -105,11 +105,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func openQuestion(text: Text) : async Result<Question, OpenQuestionError> {
-    game_.openQuestion(caller, text, Time.now());
+    await game_.openQuestion(getMaster(), caller, text, Time.now());
   };
 
   public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), ReopenQuestionError> {
-    game_.reopenQuestion(caller, question_id, Time.now());
+    await game_.reopenQuestion(getMaster(), caller, question_id, Time.now());
   };
 
   public query({caller}) func getInterestBallot(question_id: Nat) : async Result<?Ballot<Interest>, GetBallotError> {
@@ -162,6 +162,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   public shared func run() {
     game_.run(Time.now());
+  };
+
+  func getMaster() : Types.Master {
+    actor(Principal.toText(parameters.master)); // @todo: store the master principal as member ?
   };
 
 };

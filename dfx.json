@@ -5,7 +5,21 @@
       "type": "motoko",
       "declarations": {
         "output": "src/godwin_frontend/declarations/godwin_backend"
-      }
+      },
+      "dependencies": [
+        "godwin_token"
+      ]
+    },
+    "godwin_master":{
+      "main": "src/godwin_master/main.mo",
+      "type": "motoko",
+      "dependencies": [
+        "godwin_token"
+      ]
+    },
+    "godwin_token":{
+      "main": "src/godwin_token/main.mo",
+      "type": "motoko"
     },
     "godwin_frontend": {
       "dependencies": [

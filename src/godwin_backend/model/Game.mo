@@ -19,6 +19,9 @@ import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 
+import TokenVote "TokenVote";
+import Token "canister:godwin_token";
+
 module {
 
   // For convenience: from base module
@@ -84,6 +87,11 @@ module {
     categorization_poll_: CategorizationPoll
   ) = {
 
+    let interest_vote_accounts_ = TokenVote.TokenVote();
+    let categorization_vote_accounts_ = TokenVote.TokenVote();
+
+    let subaccount_generator_ = TokenVote.SubaccountGenerator();
+
     public func getDecay() : ?Decay {
       history_.getDecay();
     };
@@ -144,20 +152,48 @@ module {
       queries_.select(order_by, direction, limit, previous_id);
     };
 
-    public func openQuestion(caller: Principal, text: Text, date: Time) : Result<Question, OpenQuestionError> {
-      Result.mapOk<(), Question, OpenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
-        controller_.openQuestion(caller, date, text);
-      });
+    public func openQuestion(master: Types.Master, caller: Principal, text: Text, date: Time) : async Result<Question, OpenQuestionError> {
+      let precondition = Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous);
+      switch(precondition){
+        case(#err(err)) { #err(err); }; 
+        case(#ok(_)){
+          let voting_price = 1321321;
+          let subaccount = subaccount_generator_.generateSubaccount();
+          switch(await master.transferToSubGodwin(caller, voting_price, subaccount)){
+            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
+            case(#ok){
+              let question = controller_.openQuestion(caller, date, text); // @todo: make sure it cannot trap
+              interest_vote_accounts_.linkSubaccount(question.id, 0, subaccount);
+              #ok(question);
+            };
+          };
+        };
+      };
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : Result<(), ReopenQuestionError> {
-      Result.chain<(), (), ReopenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(){
+    public func reopenQuestion(master: Types.Master, caller: Principal, question_id: Nat, date: Time) : async Result<(), ReopenQuestionError> {
+      let precondition = Result.chain<(), (), ReopenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(_) {
         Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(questions_.findQuestion(question_id), #QuestionNotFound), func(question) {
-          Result.mapOk<(), (), ReopenQuestionError>(Utils.toResult(question.status_info.status == #CLOSED, #InvalidStatus), func() {
-            controller_.reopenQuestion(question, date);
-          })
+          Utils.toResult(question.status_info.status == #CLOSED, #InvalidStatus)
         })
       });
+
+      switch(precondition){
+        case(#err(err)) { #err(err); }; 
+        case(#ok(_)){
+          let question = questions_.getQuestion(question_id);
+          let voting_price = 1321321;
+          let subaccount = subaccount_generator_.generateSubaccount();
+          switch(await master.transferToSubGodwin(caller, voting_price, subaccount)){
+            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
+            case(#ok){
+              controller_.reopenQuestion(question, date);
+              interest_vote_accounts_.linkSubaccount(question.id, 1, subaccount); // @todo
+              #ok();
+            };
+          };
+        };
+      };
     };
 
     public func getInterestBallot(caller: Principal, question_id: Nat) : Result<?Ballot<Interest>, GetBallotError> {
