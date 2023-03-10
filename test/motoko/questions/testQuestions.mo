@@ -1,9 +1,10 @@
 import Types "../../../src/godwin_backend/model/Types";
-import Questions "../../../src/godwin_backend/Questions";
-import Queries "../../../src/godwin_backend/questions/queries";
-import Iteration "../../../src/godwin_backend/votes/iteration";
-import Observers "../../../src/godwin_backend/utils/Observers";
+import Questions "../../../src/godwin_backend/model/Questions";
+import Queries "../../../src/godwin_backend/model/QuestionQueries";
+import Interests "../../../src/godwin_backend/model/votes/Interests";
+
 import TestableItems "../testableItems";
+import Principals "../Principals";
 
 import Map "mo:map/Map";
 
@@ -14,99 +15,92 @@ import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
-import Trie "mo:base/Trie";
+import Iter "mo:base/Iter";
 
 module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
-  type Trie<K, V> = Trie.Trie<K, V>;
-  // For convenience: from matchers module
-  let { run;test;suite; } = Suite;
   // For convenience: from types module
   type Question = Types.Question;
-  type Interest = Types.Interest;
   
-  public class TestQuestions() = {
+  public func run() {
 
-    let array_originals_ : [Question] = [
-      { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Sexual orientation is a social construct";   text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 1; author = Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae"); title = "Borders should eventually be abolished.";    text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 2; author = Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe"); title = "A good citizen is a patriot.";               text = ""; date = 2432; status = #INTEREST({ date = 2432; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 3; author = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe"); title = "The labor market enslaves workers.";         text = ""; date = 5123; status = #INTEREST({ date = 5123; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 4; author = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae"); title = "We should be retiring earlier.";             text = ""; date = 3132; status = #INTEREST({ date = 3132; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 5; author = Principal.fromText("lejdd-efwn5-h3qqe-4bunw-faabt-qwb7j-oiskz-c3dkg-3q5z5-ozrtn-dqe"); title = "Marriage should be abolished.";              text = ""; date = 3132; status = #INTEREST({ date = 3132; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 6; author = Principal.fromText("amerw-mz3nq-gfkbp-o3qgo-zldsl-upilh-zatjw-66nkr-527cf-m7hnq-pae"); title = "Euthanasia should be authorized.";           text = ""; date = 4213; status = #INTEREST({ date = 4213; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 7; author = Principal.fromText("gbvlf-igtmq-g5vs2-skrhr-txgij-4f2j3-v2jqy-re5cm-i6hsu-gpzcd-aae"); title = "We must fight against global warming.";      text = ""; date = 4213; status = #INTEREST({ date = 4213; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 8; author = Principal.fromText("mrdr7-aufxf-oiq6j-hyib2-rxb5m-cqrnb-uzgyq-durnt-75u4x-rrvow-iae"); title = "Exploitation of fossil fuels is necessary."; text = ""; date = 9711; status = #INTEREST({ date = 9711; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
-      { id = 9; author = Principal.fromText("zoyw4-o2dcy-xajcf-e2nvu-436rg-ghrbs-35bzk-nakpb-mvs7t-x4byt-nqe"); title = "The police should be armed.";                text = ""; date = 9711; status = #INTEREST({ date = 9711; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 0; }; }); interests_history = []; vote_history = []; },
+    let principals = Principals.init();
+
+    let array_originals : [Question] = [
+      { id = 0; author = principals[0]; text = "question0"; date = 9000; status_info = { status = #CANDIDATE; iteration = 0; date = 9000; }; },
+      { id = 1; author = principals[1]; text = "question1"; date = 8493; status_info = { status = #CANDIDATE; iteration = 0; date = 8493; }; },
+      { id = 2; author = principals[2]; text = "question2"; date = 2432; status_info = { status = #CANDIDATE; iteration = 0; date = 2432; }; },
+      { id = 3; author = principals[3]; text = "question3"; date = 5123; status_info = { status = #CANDIDATE; iteration = 0; date = 5123; }; },
+      { id = 4; author = principals[4]; text = "question4"; date = 3132; status_info = { status = #CANDIDATE; iteration = 0; date = 3132; }; },
+      { id = 5; author = principals[5]; text = "question5"; date = 3132; status_info = { status = #CANDIDATE; iteration = 0; date = 3132; }; },
+      { id = 6; author = principals[6]; text = "question6"; date = 4213; status_info = { status = #CANDIDATE; iteration = 0; date = 2012; }; },
+      { id = 7; author = principals[7]; text = "question7"; date = 4213; status_info = { status = #CANDIDATE; iteration = 0; date = 4213; }; },
+      { id = 8; author = principals[8]; text = "question8"; date = 9711; status_info = { status = #CANDIDATE; iteration = 0; date = 9311; }; },
+      { id = 9; author = principals[9]; text = "question9"; date = 9711; status_info = { status = #CANDIDATE; iteration = 0; date = 9711; }; }
     ];
 
-    let array_modified_ : [Question] = [
-      { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Sexual orientation is a social construct";   text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 13; }; }); interests_history = []; vote_history = []; },
-      { id = 1; author = Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae"); title = "Borders should eventually be abolished.";    text = ""; date = 6286; status = #INTEREST({ date = 6286; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 12; }; }); interests_history = []; vote_history = []; },
-      { id = 2; author = Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe"); title = "A good citizen is a patriot.";               text = ""; date = 2432; status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 2432, []) });                  interests_history = []; vote_history = []; },
-      { id = 3; author = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe"); title = "The labor market enslaves workers.";         text = ""; date = 1321; status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 1321, []) });                  interests_history = []; vote_history = []; },
-      { id = 4; author = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae"); title = "We should be retiring earlier.";             text = ""; date = 7234; status = #OPEN( { stage = #OPINION; iteration = Iteration.new(7234); });                                                             interests_history = []; vote_history = []; },
-      { id = 5; author = Principal.fromText("lejdd-efwn5-h3qqe-4bunw-faabt-qwb7j-oiskz-c3dkg-3q5z5-ozrtn-dqe"); title = "Marriage should be abolished.";              text = ""; date = 3132; status = #OPEN( { stage = #OPINION; iteration = Iteration.new(3132); });                                                             interests_history = []; vote_history = []; },
-      { id = 6; author = Principal.fromText("amerw-mz3nq-gfkbp-o3qgo-zldsl-upilh-zatjw-66nkr-527cf-m7hnq-pae"); title = "Euthanasia should be authorized.";           text = ""; date = 4213; status = #INTEREST({ date = 4213; ballots = Trie.empty<Principal, Interest>(); aggregate = { ups = 0; downs = 0; score = 75; }; }); interests_history = []; vote_history = []; },
-      { id = 7; author = Principal.fromText("gbvlf-igtmq-g5vs2-skrhr-txgij-4f2j3-v2jqy-re5cm-i6hsu-gpzcd-aae"); title = "We must fight against global warming.";      text = ""; date = 3421; status = #OPEN( { stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 4213, []) });                  interests_history = []; vote_history = []; },
-      { id = 8; author = Principal.fromText("mrdr7-aufxf-oiq6j-hyib2-rxb5m-cqrnb-uzgyq-durnt-75u4x-rrvow-iae"); title = "Exploitation of fossil fuels is necessary."; text = ""; date = 5431; status = #OPEN( { stage = #OPINION; iteration = Iteration.new(5431); });                                                             interests_history = []; vote_history = []; },
-      { id = 9; author = Principal.fromText("zoyw4-o2dcy-xajcf-e2nvu-436rg-ghrbs-35bzk-nakpb-mvs7t-x4byt-nqe"); title = "The police should be armed.";                text = ""; date = 9711; status = #OPEN( { stage = #OPINION; iteration = Iteration.new(9711); });                                                             interests_history = []; vote_history = []; },
+    let array_modified : [Question] = [
+      array_originals[0],
+      array_originals[1],
+      { array_originals[2] with status_info = { status = #OPEN; iteration = 0; date = 2432; } },
+      array_originals[3],
+      { array_originals[4] with status_info = { status = #OPEN; iteration = 0; date = 7234; } },
+      { array_originals[5] with status_info = { status = #OPEN; iteration = 0; date = 3132; } },
+      array_originals[6],
+      array_originals[7],
+      { array_originals[8] with status_info = { status = #OPEN; iteration = 0; date = 5431; } },
+      { array_originals[9] with status_info = { status = #OPEN; iteration = 0; date = 9711; } }
     ];
 
-    public func getSuite() : Suite.Suite {
+    let tests = Buffer.Buffer<Suite.Suite>(array_originals.size() * 4);
+    
+    let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
 
-      let tests = Buffer.Buffer<Suite.Suite>(array_originals_.size() * 4);
-      
-      let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
-
-      let queries = Queries.build(Queries.initRegister());
-
-      // Add observers to sync queries
-      questions.addObs(#QUESTION_ADDED, queries.add);
-      questions.addObs(#QUESTION_REMOVED, queries.remove);
-      
-      // Test that created questions are equal to original questions
-      for (index in Array.keys(array_originals_)){
-        let original = array_originals_[index];
-        let new_question = questions.createQuestion(original.author, original.date, original.title, original.text);
-        tests.add(test(
-          "Create question " # Nat.toText(index), ?original, Matchers.equals(TestableItems.optQuestion(?new_question))));
-      };
-      
-      // Test replacing the questions
-      for (index in Array.keys(array_modified_)){
-        questions.replaceQuestion(array_modified_[index]);
-        tests.add(test(
-          "Replace question " # Nat.toText(index),
-          questions.findQuestion(index),
-          Matchers.equals(TestableItems.optQuestion(?array_modified_[index]))));
-      };
-      
-      // Test iterating on selection stage
-      let iter_interest = queries.entries(#STATUS_DATE(#INTEREST), #fwd);
-      tests.add(test("Iter on interest question (1)", questions.next(iter_interest), Matchers.equals(TestableItems.optQuestion(?array_modified_[6]))));
-      tests.add(test("Iter on interest question (2)", questions.next(iter_interest), Matchers.equals(TestableItems.optQuestion(?array_modified_[1]))));
-      tests.add(test("Iter on interest question (3)", questions.next(iter_interest), Matchers.equals(TestableItems.optQuestion(?array_modified_[0]))));
-      // @todo: fix this
-      //tests.add(test("Iter on interest question (4)", questions.next(iter_interest), Matchers.equals(TestableItems.optQuestion(null))));
-
-      let iter_opinion = queries.entries(#STATUS_DATE(#OPEN(#OPINION)), #fwd);
-      tests.add(test("Iter on opinioned question (1)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[5]))));
-      tests.add(test("Iter on opinioned question (2)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[8]))));
-      tests.add(test("Iter on opinioned question (3)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[4]))));
-      tests.add(test("Iter on opinioned question (4)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(?array_modified_[9]))));
-      tests.add(test("Iter on opinioned question (5)", questions.next(iter_opinion), Matchers.equals(TestableItems.optQuestion(null))));
-
-      let iter_categorization = queries.entries(#STATUS_DATE(#OPEN(#CATEGORIZATION)), #fwd);
-      tests.add(test("Iter on categorized question (1)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[3]))));
-      tests.add(test("Iter on categorized question (2)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[2]))));
-      tests.add(test("Iter on categorized question (3)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(?array_modified_[7]))));
-      tests.add(test("Iter on categorized question (4)", questions.next(iter_categorization), Matchers.equals(TestableItems.optQuestion(null))));
-
-      suite("Test Questions module", Buffer.toArray(tests));
+    let interest_votes = Interests.build(Interests.initRegister());
+    let queries = Queries.build(Queries.initRegister(), questions, interest_votes);
+    
+    // Test that created questions are equal to original questions
+    for (new_question in Array.vals(array_originals)){
+      tests.add(Suite.test(
+        "Create question " # Nat.toText(new_question.id),
+        questions.createQuestion(new_question.author, new_question.date, new_question.text), 
+        Matchers.equals(TestableItems.question(new_question))
+      ));
+      queries.replace(null, ?Queries.toStatusEntry(new_question));
     };
+    
+    // Test udapting the status
+    for (updated_question in Array.vals(array_modified)){
+      questions.replaceQuestion(updated_question);
+      tests.add(Suite.test(
+        "Replace question " # Nat.toText(updated_question.id),
+        questions.getQuestion(updated_question.id),
+        Matchers.equals(TestableItems.question(updated_question))
+      ));
+      queries.replace(?Queries.toStatusEntry(array_originals[updated_question.id]), ?Queries.toStatusEntry(updated_question));
+    };
+    
+    // Iter on interest status
+    let iter_interest = Iter.map(queries.iter(#STATUS(#CANDIDATE), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
+    tests.add(Suite.test("Iter on interest question (1)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[6]))));
+    tests.add(Suite.test("Iter on interest question (2)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[7]))));
+    tests.add(Suite.test("Iter on interest question (3)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[3]))));
+    tests.add(Suite.test("Iter on interest question (4)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[1]))));
+    tests.add(Suite.test("Iter on interest question (5)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[0]))));
+    tests.add(Suite.test("Iter on interest question (6)", iter_interest.next(), Matchers.equals(TestableItems.optQuestion(null))));
+    // Iter on opinion status
+    let iter_opinion = Iter.map(queries.iter(#STATUS(#OPEN), #FWD), func(id: Nat) : Question { questions.getQuestion(id); });
+    tests.add(Suite.test("Iter on opinioned question (1)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[2]))));
+    tests.add(Suite.test("Iter on opinioned question (2)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[5]))));
+    tests.add(Suite.test("Iter on opinioned question (3)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[8]))));
+    tests.add(Suite.test("Iter on opinioned question (4)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[4]))));
+    tests.add(Suite.test("Iter on opinioned question (4)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(?array_modified[9]))));
+    tests.add(Suite.test("Iter on opinioned question (5)", iter_opinion.next(), Matchers.equals(TestableItems.optQuestion(null))));
+
+    Suite.run(Suite.suite("Test Questions module", Buffer.toArray(tests)));
+
   };
 
 };

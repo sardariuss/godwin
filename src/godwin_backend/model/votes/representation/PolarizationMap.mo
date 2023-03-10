@@ -22,7 +22,7 @@ module {
   // For convenience: from other modules
 
   public func nil(categories: Categories) : PolarizationMap {
-    Utils.make(Iter.toArray(categories.keys()), Categories.key, Categories.equal, Polarization.nil());
+    Utils.make(categories.keys(), Categories.key, Categories.equal, Polarization.nil());
   };
 
   public func addCursorMap(polarization_trie: PolarizationMap, cursor_trie: CursorMap) : PolarizationMap {
@@ -64,10 +64,6 @@ module {
   public func toCursorMap(polarization_trie: PolarizationMap) : CursorMap {
     Trie.mapFilter(polarization_trie, func(_: Text, polarization: Polarization) : ?Cursor { ?Polarization.toCursor(polarization); });
   };
-
-//  public func keys(polarization_trie: PolarizationMap) : Set<Category> {
-//    Utils.keys(polarization_trie, Categories.key, Categories.equal);
-//  };
 
   public func equal(a: PolarizationMap, b: PolarizationMap) : Bool {
     Trie.equalStructure(a, b, Categories.equal, Polarization.equal);

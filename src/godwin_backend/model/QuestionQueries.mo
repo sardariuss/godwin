@@ -1,7 +1,6 @@
 import Types "Types";
 import Questions "Questions";
 import Interests "votes/Interests";
-import StatusHelper "StatusHelper";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
 
@@ -20,7 +19,7 @@ module {
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
   type InterestVote = Interests.Vote;
-  type Queries2<O, K> = Queries.Queries2<O, K>;
+  type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
@@ -30,7 +29,6 @@ module {
 
   public type OrderBy = {
     #AUTHOR;
-    #TITLE;
     #TEXT;
     #DATE;
     #STATUS: Status;
@@ -39,7 +37,6 @@ module {
 
   public type Key = {
     #AUTHOR: AuthorEntry;
-    #TITLE: TextEntry;
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
@@ -52,68 +49,35 @@ module {
   type StatusEntry = { question_id: Nat; status: Status; date: Int; };
   type AppealScore = { question_id: Nat; score: Int; };
 
-  public type QuestionQueries = Queries.Queries<OrderBy, Key, Question>;
-
-  public type QueryQuestionsResult = Queries.QueryResult<Question>;
+  public type Register = Queries.Register<OrderBy, Key>;
+  public type QuestionQueries = Queries.Queries<OrderBy, Key>;
   public type Direction = Queries.Direction;
+  public type ScanLimitResult = Queries.ScanLimitResult;
 
-  public func addOrderBy(register: Map<OrderBy, OrderedSet<Key>>, order_by: OrderBy) {
-    if(Option.isNull(Map.get(register, orderByHash, order_by))){
-      Map.set(register, orderByHash, order_by, OrderedSet.init<Key>());
-    };
+  public func initRegister() : Register {
+    Queries.initRegister<OrderBy, Key>();
   };
 
-  public func build(register: Map<OrderBy, OrderedSet<Key>>, questions: Questions, interests: Interests) : QuestionQueries {
+  public func addOrderBy(register: Register, order_by: OrderBy) {
+    Queries.addOrderBy(register, orderByHash, order_by);
+  };
 
-    let from_key = func(key: Key) : Question {
-      questions.getQuestion(unwrapQuestionId(key));
-    };
-
-    let to_key = func(order_by: OrderBy, question: Question) : Key {
-      switch(order_by){
-        case(#AUTHOR)         { toAuthorEntry(question); };
-        case(#TITLE)          { toTitleEntry(question); };
-        case(#TEXT)           { toTextEntry(question); };
-        case(#DATE)           { toDateEntry(question); };
-        case(#STATUS(_))      { toStatusEntry(question); };
-        case(#INTEREST_SCORE) {
-          // Assume the current iteration is #INTEREST and only the current iteration is used
-          toAppealScore(interests.getVote(question.id, StatusHelper.StatusInfo(question).getCurrentIteration()));
-        };
-      };
-    };
-
-    let queries = Queries.buildQueries<OrderBy, Key, Question>(
-      register,
-      orderByHash,
-      compareKeys,
-      toOrderBy,
-      from_key,
-      to_key
-    );
+  public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
 
     // @todo: only the status and interest score are plugged so far
-
-    addOrderBy(register, #STATUS(#VOTING(#INTEREST)));
-    addOrderBy(register, #STATUS(#VOTING(#OPINION)));
-    addOrderBy(register, #STATUS(#VOTING(#CATEGORIZATION)));
+    addOrderBy(register, #STATUS(#CANDIDATE));
+    addOrderBy(register, #STATUS(#OPEN));
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #INTEREST_SCORE);
 
-    questions.addObs(func(old: ?Question, new: ?Question){
-      queries.replace(
-        Option.map(old, func(vote: Question) : Key { toStatusEntry(vote); }),
-        Option.map(new, func(vote: Question) : Key { toStatusEntry(vote); })
-      );
-    });
-
-    interests.addObs(func(old: ?InterestVote, new: ?InterestVote){
-      queries.replace(
-        Option.map(old, func(vote: InterestVote) : Key { toAppealScore(vote); }),
-        Option.map(new, func(vote: InterestVote) : Key { toAppealScore(vote); })
-      );
-    });
+    let queries = Queries.build<OrderBy, Key>(
+      register,
+      orderByHash,
+      compareKeys,
+      toOrderBy,
+      getKeyIdentifier
+    );
 
     queries;
   };
@@ -121,14 +85,12 @@ module {
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
       case(#AUTHOR){ "AUTHOR"; };
-      case(#TITLE){ "TITLE"; };
       case(#TEXT){ "TEXT"; };
       case(#DATE){ "DATE"; };
       case(#STATUS(status)) { 
         switch(status){
-          case(#VOTING(#INTEREST)) { "VOTING_INTEREST"; };
-          case(#VOTING(#OPINION)) { "VOTING_OPINION"; };
-          case(#VOTING(#CATEGORIZATION)) { "VOTING_CATEGORIZATION"; };
+          case(#CANDIDATE) { "VOTING_INTEREST"; };
+          case(#OPEN) { "VOTING_OPINION"; };
           case(#CLOSED) { "CLOSED"; };
           case(#REJECTED) { "REJECTED"; };
           case(#TRASH) { "TRASH"; };
@@ -145,7 +107,6 @@ module {
   func toOrderBy(key: Key) : OrderBy {
     switch(key){
       case(#AUTHOR(_)){ #AUTHOR; };
-      case(#TITLE(_)){ #TITLE; };
       case(#TEXT(_)){ #TEXT; };
       case(#DATE(_)){ #DATE; };
       case(#STATUS(entry)) { #STATUS(entry.status); };
@@ -156,7 +117,6 @@ module {
   func compareKeys(a: Key, b: Key) : Order {
     switch(toOrderBy(a)){
       case(#AUTHOR){ compareAuthorEntries(unwrapAuthor(a), unwrapAuthor(b)); };
-      case(#TITLE){ compareTextEntries(unwrapTitle(a), unwrapTitle(b)); };
       case(#TEXT){ compareTextEntries(unwrapText(a), unwrapText(b)); };
       case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
       case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
@@ -164,15 +124,19 @@ module {
     };
   };
 
+  func getKeyIdentifier(key: Key) : Nat {
+    switch(key){
+      case(#AUTHOR(entry)) { entry.question_id; };
+      case(#TEXT(entry)) { entry.question_id; };
+      case(#DATE(entry)) { entry.question_id; };
+      case(#STATUS(entry)) { entry.question_id; };
+      case(#INTEREST_SCORE(entry)) { entry.question_id; };
+    };
+  };
+
   func unwrapAuthor(key: Key) : AuthorEntry {
     switch(key){
       case(#AUTHOR(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
-    };
-  };
-  func unwrapTitle(key: Key) : TextEntry {
-    switch(key){
-      case(#TITLE(entry)) { entry; };
       case(_) { Debug.trap("@todo"); };
     };
   };
@@ -203,10 +167,9 @@ module {
   public func unwrapQuestionId(key: Key) : Nat {
     switch(key){
       case(#AUTHOR(entry))         { entry.question_id; };
-      case(#TITLE(entry))          { entry.question_id; };
       case(#TEXT(entry))           { entry.question_id; };
-      case(#DATE(entry))  { entry.question_id; };
-      case(#STATUS(entry))    { entry.question_id; };
+      case(#DATE(entry))           { entry.question_id; };
+      case(#STATUS(entry))         { entry.question_id; };
       case(#INTEREST_SCORE(entry)) { entry.question_id; };
     };
   };
@@ -237,13 +200,6 @@ module {
       date = question.date;
     });
   };
-  public func toTitleEntry(question: Question) : Key {
-    #TITLE({
-      question_id = question.id;
-      text = question.title;
-      date = question.date;
-    });
-  };
   public func toTextEntry(question: Question) : Key {
     #TEXT({
       question_id = question.id;
@@ -260,8 +216,8 @@ module {
   public func toStatusEntry(question: Question) : Key {
     #STATUS({
       question_id = question.id;
-      status = question.status_info.current.status;
-      date = question.status_info.current.date;
+      status = question.status_info.status;
+      date = question.status_info.date;
     });
   };
 

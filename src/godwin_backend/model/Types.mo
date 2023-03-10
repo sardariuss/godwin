@@ -5,6 +5,9 @@ import Result "mo:base/Result";
 import ICRC1 "mo:icrc1/ICRC1";
 
 import Map "mo:map/Map";
+import Set "mo:map/Set";
+
+import Duration "../utils/Duration";
 
 module {
 
@@ -15,16 +18,11 @@ module {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   type Map<K, V> = Map.Map<K, V>;
+  type Set<K> = Set.Set<K>;
 
-  public type Duration = {
-    #DAYS: Nat;
-    #HOURS: Nat;
-    #MINUTES: Nat;
-    #SECONDS: Nat;
-    #NS: Nat; // To be able to ease the tests on the scheduler
-  };
+  type Duration = Duration.Duration;
 
-  public type UserParameters = {
+  public type HistoryParameters = {
     convictions_half_life: ?Duration;
   };
 
@@ -32,7 +30,6 @@ module {
     interest_pick_rate: Duration;
     interest_duration: Duration;
     opinion_duration: Duration;
-    categorization_duration: Duration;
     rejected_duration: Duration;
   };
 
@@ -48,8 +45,8 @@ module {
 
   public type Parameters = {
     master: Principal;
-    categories: [Category];
-    users: UserParameters;
+    categories: CategoryArray;
+    history: HistoryParameters;
     scheduler: SchedulerParameters;
   };
 
@@ -61,42 +58,52 @@ module {
   public type Question = {
     id: Nat;
     author: Principal;
-    title: Text;
     text: Text;
     date: Time;
     status_info: StatusInfo;
   };
 
   public type StatusInfo = {
-    current: IndexedStatus;
-    history: [IndexedStatus];
-    iterations: [(Status, Nat)];
+    status: Status;
+    iteration: Nat;
+    date: Time;
+  };
+
+  public type StatusData = {
+    #CANDIDATE: { vote_interest:       Vote<Interest, Appeal>;              };
+    #OPEN:      { vote_opinion:        Vote<Cursor, Polarization>;
+                  vote_categorization: Vote<CursorMap, PolarizationMap>;    };
+    #CLOSED:    ();
+    #REJECTED:  ();
+    #TRASH:     ();
+  };
+
+  public type StatusHistory = Map<Status, [Time]>;
+
+  public type UserHistory = {
+    convictions: PolarizationMap;
+    votes: Set<VoteId>;
   };
 
   public type Status = {
-    #VOTING: Poll;
+    #CANDIDATE;
+    #OPEN;
     #CLOSED;
     #REJECTED;
     #TRASH;
   };
 
-  public type Poll = {
-    #INTEREST;
-    #OPINION;
-    #CATEGORIZATION;
-  };
-
-  public type IndexedStatus = {
-    status: Status;
-    date: Time;
-    index: Nat;
-  };
+  public type VoteId = (Nat, Nat);
 
   public type Vote<T, A> = {
     question_id: Nat;
-    iteration: Nat;
-    date: Time; // @todo: redondant with IndexedStatus.date
     ballots: Map<Principal, Ballot<T>>;
+    aggregate: A;
+  };
+
+  public type PublicVote<T, A> = {
+    question_id: Nat;
+    ballots: [(Principal, Ballot<T>)];
     aggregate: A;
   };
 
@@ -107,15 +114,26 @@ module {
 
   public type Category = Text;
   
+  public type CategoryArray = [(Category, CategoryInfo)];
+
+  public type CategoryInfo = {
+    left: CategorySide;
+    right: CategorySide;
+  };
+
+  public type CategorySide = {
+    name: Text;
+    symbol: Text;
+    color: Text;
+  };
+  
   public type Interest = {
     #UP;
-    #EVEN;
     #DOWN;
   };
 
   public type Appeal = {
     ups: Nat;
-    evens: Nat;
     downs: Nat;
     score: Int;
   };
@@ -155,77 +173,7 @@ module {
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
 
-  public type InterestBallot = Ballot<Interest>;
-  public type OpinionBallot = Ballot<Cursor>;
-  public type CategorizationBallot = Ballot<CursorMap>;
-
-  public type TypedBallot = {
-    #INTEREST: Ballot<Interest>;
-    #OPINION: Ballot<Cursor>;
-    #CATEGORIZATION: Ballot<CursorArray>;
-  };
-
-  public type TypedAnswer = {
-    #INTEREST: Interest;
-    #OPINION: Cursor;
-    #CATEGORIZATION: CursorArray;
-  };
-
-  public type TypedAggregate = {
-    #INTEREST: Appeal;
-    #OPINION: Polarization;
-    #CATEGORIZATION: PolarizationArray;
-  };
-
-  public type User = {
-    principal: Principal;
-    // Optional because we want the user to be able to log based solely on the II,
-    // without requiring a user name.
-    name: ?Text;  
-    convictions: PolarizationMap;
-  };
-
-  // @todo: temporary
-
-//  public type CreateQuestionError = {
-//    #PrincipalIsAnonymous;
-//    #InsufficientCredentials;
-//  };
-//  public type CreateStatus = {
-//    #INTEREST: { interest_score: Int; };
-//    #OPEN: {
-//      #OPINION : { interest_score: Int; opinion_aggregate: Polarization; };
-//      #CATEGORIZATION : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-//    };
-//    #CLOSED : { interest_score: Int; opinion_aggregate: Polarization; categorization_aggregate: PolarizationArray; };
-//    #REJECTED : { interest_score: Int; };
-//  };
-
-  public type AddCategoryError = {
-    #InsufficientCredentials;
-    #CategoryAlreadyExists;
-  };
-
-  public type RemoveCategoryError = {
-    #InsufficientCredentials;
-    #CategoryDoesntExist;
-  };
-
-  public type GetQuestionError = {
-    #QuestionNotFound;
-  };
-
-  public type OpenQuestionError = {
-    #PrincipalIsAnonymous;
-  };
-  
-  public type ReopenQuestionError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidStatus;
-  };
-
-  public type SetUserNameError = {
+  public type GetUserError = {
     #PrincipalIsAnonymous;
   };
 
@@ -233,33 +181,55 @@ module {
     #InsufficientCredentials;
   };
 
-  public type GetUserError = {
-    #PrincipalIsAnonymous;
+  public type AddCategoryError = VerifyCredentialsError or {
+    #CategoryAlreadyExists;
   };
 
-  public type PutBallotError = {
-    #PrincipalIsAnonymous;
+  public type RemoveCategoryError = VerifyCredentialsError or {
+    #CategoryDoesntExist;
+  };
+
+  public type GetQuestionError = {
     #QuestionNotFound;
-    #InvalidAnswer;
+  };
+
+  public type OpenQuestionError = GetUserError;
+  
+  public type ReopenQuestionError = GetUserError or GetQuestionError or {
     #InvalidStatus;
   };
 
-  public type GetBallotError = {
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #InvalidIteration;
+  public type SetUserNameError = GetUserError;
+
+  public type SetPickRateError = VerifyCredentialsError;
+
+  public type SetDurationError = VerifyCredentialsError;
+
+  public type GetUserConvictionsError = GetUserError;
+
+  public type GetUserVotesError = GetUserError;
+
+  public type GetAggregateError = GetQuestionError or {
+    #NotAllowed;
   };
 
-  public type SetPickRateError = {
-    #InsufficientCredentials;
+  public type GetBallotError = GetQuestionError or {
+    #NotAllowed;
   };
 
-  public type SetDurationError = {
-    #InsufficientCredentials;
+  public type RevealBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
   };
 
-  public type GetUserConvictionsError = {
-    #PrincipalIsAnonymous;
+  public type PutBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
+    #InvalidBallot;
+  };
+
+  public type PutFreshBallotError = GetUserError or GetQuestionError or {
+    #InvalidPoll;
+    #AlreadyVoted;
+    #InvalidBallot;
   };
 
 };

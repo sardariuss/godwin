@@ -1,4 +1,4 @@
-import { Polarization} from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 type Props = {
   polarization: Polarization,

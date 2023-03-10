@@ -8,6 +8,9 @@ import Buffer "mo:base/Buffer";
 import Option "mo:base/Option";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
+import Char "mo:base/Char";
+import Nat32 "mo:base/Nat32";
+import Text "mo:base/Text";
 
 module {
 
@@ -77,9 +80,9 @@ module {
     join;
   };
 
-  public func make<K, V>(keys: [K], k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, init_val: V) : Trie<K, V> {
+  public func make<K, V>(keys: Iter<K>, k_compute : (K) -> Key<K>, k_eq : (K, K) -> Bool, init_val: V) : Trie<K, V> {
     var trie = Trie.empty<K, V>();
-    for (k in Array.vals(keys)) {
+    for (k in keys) {
       trie := Trie.put(trie, k_compute(k), k_eq, init_val).0;
     };
     trie;
@@ -182,6 +185,35 @@ module {
 
   public func nullIter<T>() : Iter<T> {
     { next = func () : ?T { null; }; };
+  };
+
+  public func textIntersect(text_1: Text, text_2: Text, to_lower: [Nat32]) : Nat {
+
+    let lower_text_1 = Text.map(text_1, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
+    let lower_text_2 = Text.map(text_2, func(w: Char) : Char { return Char.fromNat32(to_lower[Nat32.toNat(Char.toNat32(w))]); });
+
+    var match_count = 0;
+    label find_match for (word in Text.split(lower_text_2, #predicate(Char.isWhitespace))){
+      if (word.size() < 3) continue find_match;
+      if (Text.contains(lower_text_1, #text(word))){
+        match_count += 1;
+        break find_match;
+      };
+    };
+
+    match_count;
+  };
+
+  public func iterSome<T>(a: ?T, b: ?T, fn: (a: T, b: T) -> ()){
+    switch(a){
+      case(null) {};
+      case(?a) {
+        switch(b){
+          case(null) {};
+          case(?b) { fn(a, b); };
+        };
+      };
+    };
   };
 
 };

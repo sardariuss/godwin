@@ -9,3 +9,97 @@
 		@apply font-inter;
 	}
 }
+
+/*Chrome*/
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  input[type='range'] {
+    width: var(--slider-width);
+    height: 15px;
+    background: transparent;
+  }
+  
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 15px;
+    -webkit-appearance: none;
+    background: linear-gradient(
+      to right,
+      transparent               0%,
+      transparent               var(--margin-left),
+      var(--slider-left-color)  var(--margin-left),
+      var(--slider-left-color)  var(--progress-percent),
+      var(--slider-right-color) var(--progress-percent),
+      var(--slider-right-color) var(--margin-right),
+      transparent               var(--margin-right),
+      transparent               100%
+    );
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin-top: -15px;
+    appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border: 0;
+    background-color: transparent;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+
+  input[type='range'].left::-webkit-slider-thumb {
+    background-image: var(--thumb-left);
+  }
+
+  input[type='range'].center::-webkit-slider-thumb {
+    background-image: var(--thumb-center);
+  }
+
+  input[type='range'].right::-webkit-slider-thumb {
+    background-image: var(--thumb-right);
+  }
+
+}
+
+/* Firefox */
+
+input[type="range"]::-moz-range-track {  
+  height: 15px;
+  width: var(--slider-width);
+  background: linear-gradient(
+    to right,
+    transparent               0%,
+    transparent               var(--margin-left),
+    var(--slider-left-color)  var(--margin-left),
+    var(--slider-left-color)  var(--progress-percent),
+    var(--slider-right-color) var(--progress-percent),
+    var(--slider-right-color) var(--margin-right),
+    transparent               var(--margin-right),
+    transparent               100%
+  );
+}
+
+input[type="range"]::-moz-range-thumb {
+  /* Use https://stackoverflow.com/questions/41609481/trouble-styling-range-input-thumb */
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border: 0;
+  background-color: transparent;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+input[type="range"].left::-moz-range-thumb {
+  background-image: var(--thumb-left);
+}
+
+input[type="range"].center::-moz-range-thumb {
+  background-image: var(--thumb-center);
+}
+
+input[type="range"].right::-moz-range-thumb {
+  background-image: var(--thumb-right);
+}

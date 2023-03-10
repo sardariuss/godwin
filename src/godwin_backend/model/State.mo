@@ -5,8 +5,9 @@ import Ref "../utils/Ref";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
-import Scheduler "Scheduler";
-import Controller "Controller";
+import Categories "Categories";
+import Duration "../utils/Duration";
+import History "History";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -30,45 +31,51 @@ module {
   type Parameters = Types.Parameters;
   type Question = Types.Question;
   type Cursor = Types.Cursor;
-  type User = Types.User;
   type Category = Types.Category;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type Duration = Types.Duration;
+  type Duration = Duration.Duration;
   type Polarization = Types.Polarization;
+  type SchedulerParameters = Types.SchedulerParameters;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type Appeal = Types.Appeal;
   type Status = Types.Status;
-
-  type QuestionOrderBy = QuestionQueries.OrderBy;
-  type QuestionKey = QuestionQueries.Key;
+  type StatusHistory = Types.StatusHistory;
+  type UserHistory = Types.UserHistory;
+  type Interest = Types.Interest;
 
   public type State = {
     admin             : Principal;
     creation_date     : Time;
-    categories        : Set<Category>;
-    users             : {
-      register           : Map<Principal, User>;
-      convictions_half_life: ?Duration;
-    };
+    categories        : Categories.Register;
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;
     };
     queries           : {
-      register           : Map<QuestionOrderBy, OrderedSet<QuestionKey>>;
+      register           : QuestionQueries.Register;
     };
     controller        : {
-      model              : Ref<Controller.DataModel>;
-    };
-    scheduler         : {
-      register:            Scheduler.Register;
+      model              : {
+        time             : Ref<Time>; 
+        most_interesting : Ref<?Nat>;
+        last_pick_date   : Ref<Time>;
+        params           : Ref<SchedulerParameters>;
+      };
     };
     votes             : {
       interest           : Interests.Register;
       opinion            : Opinion.Register;
       categorization     : Categorization.Register;
+    };
+    history           : {
+      status_history          : Map<Nat, StatusHistory>;
+      interests_history       : Map2D<Nat, Nat, Vote<Interest, Appeal>>;
+      opinons_history         : Map2D<Nat, Nat, Vote<Cursor, Polarization>>;
+      categorizations_history : Map2D<Nat, Nat, Vote<CursorMap, PolarizationMap>>;
+      user_history            : Map<Principal, UserHistory>;
+      convictions_half_life   : ?Duration;
     };
   };
 
@@ -76,28 +83,34 @@ module {
     {
       admin          = admin;
       creation_date  = creation_date;
-      categories     = Set.fromIter(Array.vals(parameters.categories), Set.thash);
-      users          = {
-        register              = Map.new<Principal, User>();
-        convictions_half_life = parameters.users.convictions_half_life;
-      };
+      categories     = Categories.initRegister(parameters.categories);
       questions      = {
         register              = Map.new<Nat, Question>();
-        index                 = Ref.initRef(0 : Nat);
+        index                 = Ref.initRef<Nat>(0);
       };
       queries        = {
-        register              = Map.new<QuestionOrderBy, OrderedSet<QuestionKey>>();
+        register              = QuestionQueries.initRegister();
       };
       controller     = {
-        model                 = Ref.initRef(Controller.initDataModel(creation_date, parameters.scheduler));
-      };
-      scheduler      = {
-        register              = Scheduler.initRegister(parameters.scheduler, creation_date);
+        model                 = {
+          time                    = Ref.initRef<Time>(creation_date);
+          most_interesting        = Ref.initRef<?Nat>(null);
+          last_pick_date          = Ref.initRef<Time>(creation_date);
+          params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
+        };
       };
       votes          = {
         interest              = Interests.initRegister();
         opinion               = Opinion.initRegister();
         categorization        = Categorization.initRegister();
+      };
+      history        = {
+        status_history            = Map.new<Nat, StatusHistory>();
+        interests_history         = Map.new<Nat, Map<Nat, Vote<Interest, Appeal>>>();
+        opinons_history           = Map.new<Nat, Map<Nat, Vote<Cursor, Polarization>>>();
+        categorizations_history   = Map.new<Nat, Map<Nat, Vote<CursorMap, PolarizationMap>>>();
+        user_history              = Map.new<Principal, UserHistory>();
+        convictions_half_life     = parameters.history.convictions_half_life;
       };
     };
   };

@@ -1,6 +1,8 @@
 import Types "../../Types";
 
 import Float "mo:base/Float";
+import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 
 module {
 
@@ -8,35 +10,42 @@ module {
   type Interest = Types.Interest;
   type Appeal = Types.Appeal;
 
+  public func toText(appeal: Appeal) : Text {
+    "ups: " # Nat.toText(appeal.ups) 
+      # ", downs: " # Nat.toText(appeal.downs) 
+      # ", score: " # Int.toText(appeal.score);
+  };
+
+  public func equal(appeal1: Appeal, appeal2: Appeal) : Bool {
+    Nat.equal(appeal1.ups, appeal2.ups)
+      and Nat.equal(appeal1.downs, appeal2.downs)
+      and Int.equal(appeal1.score, appeal2.score);
+  };
+
   public func init() : Appeal {
-    { ups = 0; evens = 0;  downs = 0; score = 0; };
+    { ups = 0; downs = 0; score = 0; };
   };
 
   public func add(appeal: Appeal, interest: Interest) : Appeal {
     var ups = appeal.ups;
-    var evens = appeal.evens;
     var downs = appeal.downs;
     switch(interest){
       case(#UP){ ups := appeal.ups + 1; };
-      case(#EVEN){ evens := appeal.evens + 1; };
       case(#DOWN){ downs := appeal.downs + 1; };
     };
-    { ups; downs; evens; score = computeScore(ups, downs); };
+    { ups; downs; score = computeScore(ups, downs); };
   };
 
   public func remove(appeal: Appeal, interest: Interest) : Appeal {
     var ups = appeal.ups;
-    var evens = appeal.evens;
     var downs = appeal.downs;
     switch(interest){
       case(#UP){ ups := appeal.ups - 1; };
-      case(#EVEN){ evens := appeal.evens - 1; };
       case(#DOWN){ downs := appeal.downs - 1; };
     };
-    { ups; downs; evens; score = computeScore(ups, downs); };
+    { ups; downs; score = computeScore(ups, downs); };
   };
 
-  // @todo: weight score with evens ?
   func computeScore(ups: Nat, downs: Nat) : Int {
     if (ups + downs == 0) { return 0; };
     let f_ups = Float.fromInt(ups);

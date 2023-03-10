@@ -50,7 +50,7 @@ module {
       let users = Users.build(Map.new<Principal, User>(), null);
 
       let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
-      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct", "");
+      ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct");
       questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 
       // Create the users
@@ -97,7 +97,7 @@ module {
 //            ("CULTURE",  {left = 0.0; center = 1.0; right = 0.0;})
 //          ], Categories.key, Categories.equal); };
 //      iteration := { iteration with categorization; };
-//      questions.replaceQuestion({ questions.getQuestion(0) with status = #OPEN({ stage = #CATEGORIZATION; iteration;}) });
+//      questions.replaceQuestion({ questions.getQuestion(0) with status = #VOTING({ stage = #CATEGORIZATION; iteration;}) });
 //
 //      users.updateConvictions(iteration, [], null);
 //

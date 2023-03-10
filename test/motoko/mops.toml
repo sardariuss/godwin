@@ -1,0 +1,6 @@
+[dependencies]
+base = "0.7.3"
+matchers = "https://github.com/kritzcreek/motoko-matchers"
+stableRBT = "https://github.com/canscale/StableRBTree#v0.6.0"
+map = "https://github.com/ZhenyaUsenko/motoko-hash-map#v7.0.0"
+fuzz = "0.1.0"
