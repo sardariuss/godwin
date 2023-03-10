@@ -1,10 +1,19 @@
-import Debug "mo:base/Debug";
+import Types "../Types";
+import QuestionQueries "../QuestionQueries";
+import Categorizations "../votes/Categorizations";
+import Questions "../Questions";
+import Votes "../votes/Votes";
+import Categories "../Categories";
+import History "../History";
+import SubaccountGenerator "../token/SubaccountGenerator";
+import SubaccountMap "../token/SubaccountMap";
 
 import Ref "../../utils/Ref";
 import WRef "../../utils/wrappers/WRef";
 import Duration "../../utils/Duration";
-import History "../History";
-import Types "../Types";
+
+import Debug "mo:base/Debug";
+import Principal "mo:base/Principal";
 
 module {
 
@@ -13,34 +22,79 @@ module {
   type Duration = Duration.Duration;
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
+  type SchedulerParameters = Types.SchedulerParameters;
+  type Master = Types.Master;
+  type Categories = Categories.Categories;
+  type Questions = Questions.Questions;
   type History = History.History;
+  type QuestionQueries = QuestionQueries.QuestionQueries;
+  type InterestVotes = Votes.Votes<Types.Interest, Types.Appeal>;
+  type OpinionVotes = Votes.Votes<Types.Cursor, Types.Polarization>;
+  type CategorizationVotes = Votes.Votes<Types.CursorMap, Types.PolarizationMap>;
+  type SubaccountMap = SubaccountMap.SubaccountMap;
+  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
 
   public func build(
-    history: History,
+    admin: Ref<Principal>,
     time: Ref<Time>,
-    most_interesting: Ref<?Nat>,
     last_pick_date: Ref<Time>,
-    params: Ref<Types.SchedulerParameters>
+    params: Ref<SchedulerParameters>,
+    categories: Categories,
+    questions: Questions,
+    history: History,
+    queries: QuestionQueries,
+    interest_votes: InterestVotes,
+    opinion_votes: OpinionVotes,
+    categorization_votes: CategorizationVotes,
+    interest_subaccounts: SubaccountMap,
+    categorization_subaccounts: SubaccountMap,
+    subaccount_generator: SubaccountGenerator
   ) : Model {
     Model(
-      history,
+      WRef.WRef(admin),
       WRef.WRef(time),
-      WRef.WRef(most_interesting),
       WRef.WRef(last_pick_date),
-      WRef.WRef(params)
+      WRef.WRef(params),
+      categories,
+      questions,
+      history,
+      queries,
+      interest_votes,
+      opinion_votes,
+      categorization_votes,
+      interest_subaccounts,
+      categorization_subaccounts,
+      subaccount_generator
     );
   };
 
   public class Model(
-    history_: History,
+    admin_: WRef<Principal>,
     time_: WRef<Time>,
-    most_interesting_: WRef<?Nat>,
     last_pick_date_: WRef<Time>,
-    params_: WRef<Types.SchedulerParameters>
+    params_: WRef<SchedulerParameters>,
+    categories_: Categories,
+    questions_: Questions,
+    history_: History,
+    queries_: QuestionQueries,
+    interest_votes_: InterestVotes,
+    opinion_votes_: OpinionVotes,
+    categorization_votes_: CategorizationVotes,
+    interest_subaccounts_: SubaccountMap,
+    categorization_subaccounts_: SubaccountMap,
+    subaccount_generator_: SubaccountGenerator
   ) = {
 
-    public func getStatusIteration(question_id: Nat, status: Status) : Nat { 
-      history_.getStatusIteration(question_id, status);
+    public func getMaster() : Master {
+      actor(Principal.toText(admin_.get())); // @todo: shall the admin and the master be different?
+    };
+
+    public func getAdmin(): Principal {
+      admin_.get();
+    };
+
+    public func setAdmin(admin: Principal) {
+      admin_.set(admin);
     };
 
     public func getTime() : Time {
@@ -49,14 +103,6 @@ module {
 
     public func setTime(time: Time) {
       time_.set(time);
-    };
-
-    public func getMostInteresting() : ?Nat {
-      most_interesting_.get();
-    };
-
-    public func setMostInteresting(most_interesting: ?Nat) {
-      most_interesting_.set(most_interesting);
     };
 
     public func getLastPickDate() : Time {
@@ -91,6 +137,46 @@ module {
 
     public func setInterestPickRate(rate: Duration) {
       params_.set({ params_.get() with interest_pick_rate = rate });
+    };
+
+    public func getCategories(): Categories {
+      categories_;
+    };
+
+    public func getQuestions(): Questions {
+      questions_;
+    };
+
+    public func getHistory(): History {
+      history_;
+    };
+
+    public func getQueries(): QuestionQueries {
+      queries_;
+    };
+
+    public func getInterestVotes(): InterestVotes {
+      interest_votes_;
+    };
+
+    public func getOpinionVotes(): OpinionVotes {
+      opinion_votes_;
+    };
+
+    public func getCategorizationVotes(): CategorizationVotes {
+      categorization_votes_;
+    };
+
+    public func getInterestSubaccounts(): SubaccountMap {
+      interest_subaccounts_;
+    };
+
+    public func getCategorizationSubaccounts(): SubaccountMap {
+      categorization_subaccounts_;
+    };
+
+    public func getSubaccountGenerator(): SubaccountGenerator {
+      subaccount_generator_;
     };
 
   };

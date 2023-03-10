@@ -6,8 +6,9 @@ import Interests "votes/Interests";
 import Opinions "votes/Opinions";
 import Categorizations "votes/Categorizations";
 import Poll "votes/Poll";
+import SubaccountGenerator "token/SubaccountGenerator";
+import SubaccountMap "token/SubaccountMap";
 import State "State";
-import Game "Game";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
 import History "History";
@@ -22,13 +23,14 @@ module {
   type Status = Types.Status;
   type InterestVote = Interests.Vote;
   type Time = Int;
+  type Controller = Controller.Controller;
   
   type Key = QuestionQueries.Key;
   let { toAppealScore; toStatusEntry } = QuestionQueries;
 
   type State = State.State;
 
-  public func build(state_: State) : Game.Game {
+  public func build(state_: State) : Controller {
 
     let admin = state_.admin;
     
@@ -58,20 +60,30 @@ module {
       state_.creation_date,
       categories);
 
-    let model = Model.build(
-      history,
-      state_.controller.model.time,
-      state_.controller.model.most_interesting,
-      state_.controller.model.last_pick_date,
-      state_.controller.model.params
-    );
-
     let queries = QuestionQueries.build(state_.queries.register, questions, interest_votes);
 
-    let controller = Controller.build(
-      model,
-      questions
+    let interest_subaccounts = SubaccountMap.SubaccountMap(state_.subaccounts.interest_subaccounts);
+    let categorization_subaccounts = SubaccountMap.SubaccountMap(state_.subaccounts.categorization_subaccounts);
+    let subaccount_generator = SubaccountGenerator.build(state_.subaccounts.index);
+
+    let model = Model.build(
+      state_.admin,
+      state_.controller.model.time,
+      state_.controller.model.last_pick_date,
+      state_.controller.model.params,
+      categories,
+      questions,
+      history,
+      queries,
+      interest_votes,
+      opinion_votes,
+      categorization_votes,
+      interest_subaccounts,
+      categorization_subaccounts,
+      subaccount_generator
     );
+
+    let controller = Controller.build(model);
 
     // When the interest votes changes, update the associated key for the #INTEREST_SCORE order_by
     interest_votes.addObs(func(old: ?InterestVote, new: ?InterestVote){
@@ -81,39 +93,7 @@ module {
       );
     });
 
-    controller.addObs(func(old: ?Question, new: ?Question) {
-      // When the question status changes, update the associated key for the #STATUS order_by
-      queries.replace(
-        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
-        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
-      );
-
-      // Put the previous status in history (transferring the vote to the history if needed)
-      Option.iterate(old, func(question: Question) {       
-        let status_data = switch(question.status_info.status){
-          case(#CANDIDATE) { #CANDIDATE({ vote_interest =             interest_votes.removeVote(question.id); }); };
-          case(#OPEN)      { #OPEN     ({ vote_opinion =               opinion_votes.removeVote(question.id); 
-                                          vote_categorization = categorization_votes.removeVote(question.id); }); };
-          case(#CLOSED)    { #CLOSED   (); };
-          case(#REJECTED)  { #REJECTED (); };
-          case(#TRASH)     { #TRASH    (); };
-        };
-        history.add(question.id, question.status_info, status_data);
-      });
-
-      // Open a new vote if needed
-      Option.iterate(new, func(question: Question) {
-        switch(question.status_info.status){
-          case(#CANDIDATE) {       interest_votes.newVote(question.id); };
-          case(#OPEN)      {        opinion_votes.newVote(question.id);            
-                             categorization_votes.newVote(question.id); };
-          case(_)          {};
-        };
-      });
-      
-    });
-
-    Game.Game(admin, categories, questions, history, queries, model, controller, interest_poll, opinion_poll, categorization_poll);
+    controller;
   };
 
 };

@@ -44,7 +44,6 @@ module {
   };
 
   public type Parameters = {
-    master: Principal;
     categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;

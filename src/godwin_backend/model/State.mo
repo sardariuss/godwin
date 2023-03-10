@@ -46,7 +46,7 @@ module {
   type Interest = Types.Interest;
 
   public type State = {
-    admin             : Principal;
+    admin             : Ref<Principal>;
     creation_date     : Time;
     categories        : Categories.Register;
     questions         : {
@@ -59,7 +59,6 @@ module {
     controller        : {
       model              : {
         time             : Ref<Time>; 
-        most_interesting : Ref<?Nat>;
         last_pick_date   : Ref<Time>;
         params           : Ref<SchedulerParameters>;
       };
@@ -77,11 +76,16 @@ module {
       user_history            : Map<Principal, UserHistory>;
       convictions_half_life   : ?Duration;
     };
+    subaccounts      : {
+      interest_subaccounts        : Map2D<Nat, Nat, Blob>;
+      categorization_subaccounts  : Map2D<Nat, Nat, Blob>;
+      index                       : Ref<Nat>;
+    };
   };
 
   public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
     {
-      admin          = admin;
+      admin          = Ref.initRef<Principal>(admin);
       creation_date  = creation_date;
       categories     = Categories.initRegister(parameters.categories);
       questions      = {
@@ -94,7 +98,6 @@ module {
       controller     = {
         model                 = {
           time                    = Ref.initRef<Time>(creation_date);
-          most_interesting        = Ref.initRef<?Nat>(null);
           last_pick_date          = Ref.initRef<Time>(creation_date);
           params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
         };
@@ -111,6 +114,11 @@ module {
         categorizations_history   = Map.new<Nat, Map<Nat, Vote<CursorMap, PolarizationMap>>>();
         user_history              = Map.new<Principal, UserHistory>();
         convictions_half_life     = parameters.history.convictions_half_life;
+      };
+      subaccounts      = {
+        interest_subaccounts        = Map.new<Nat, Map<Nat, Blob>>();
+        categorization_subaccounts  = Map.new<Nat, Map<Nat, Blob>>();
+        index                       = Ref.initRef<Nat>(0);
       };
     };
   };
