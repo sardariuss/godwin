@@ -35,7 +35,7 @@ module {
     votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Add Interests",
-      votes.findBallot(principals[0], question_0),
+      votes.getBallot(principals[0], question_0),
       Matchers.equals(TestableItems.optInterestBallot(?ballot))
     ));
     // Update interest
@@ -43,14 +43,14 @@ module {
     votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Update Interests",
-      votes.findBallot(principals[0], question_0),
+      votes.getBallot(principals[0], question_0),
       Matchers.equals(TestableItems.optInterestBallot(?ballot))
     ));
     // Remove interest
     votes.removeBallot(principals[0], question_0);
     tests.add(Suite.test(
       "Remove Interests",
-      votes.findBallot(principals[0], question_0),
+      votes.getBallot(principals[0], question_0),
       Matchers.equals(TestableItems.optInterestBallot(null))
     ));
 

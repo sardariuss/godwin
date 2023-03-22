@@ -7,6 +7,11 @@ import Categories "../Categories";
 import History "../History";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import SubaccountMap "../token/SubaccountMap";
+import StatusManager "../StatusManager2";
+
+import Interests2 "../votes/Interests2";
+import Opinions2 "../votes/Opinions2";
+import Categorizations2 "../votes/Categorizations2";
 
 import Ref "../../utils/Ref";
 import WRef "../../utils/wrappers/WRef";
@@ -33,6 +38,11 @@ module {
   type CategorizationVotes = Votes.Votes<Types.CursorMap, Types.PolarizationMap>;
   type SubaccountMap = SubaccountMap.SubaccountMap;
   type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
+  type StatusManager = StatusManager.StatusManager;
+
+  type InterestVotes2 = Interests2.Interests;
+  type OpinionVotes2 = Opinions2.Opinions;
+  type CategorizationVotes2 = Categorizations2.Categorizations;
 
   public func build(
     admin: Ref<Principal>,
@@ -41,14 +51,12 @@ module {
     params: Ref<SchedulerParameters>,
     categories: Categories,
     questions: Questions,
+    status_manager: StatusManager,
     history: History,
     queries: QuestionQueries,
-    interest_votes: InterestVotes,
-    opinion_votes: OpinionVotes,
-    categorization_votes: CategorizationVotes,
-    interest_subaccounts: SubaccountMap,
-    categorization_subaccounts: SubaccountMap,
-    subaccount_generator: SubaccountGenerator
+    interest_votes: InterestVotes2,
+    opinion_votes: OpinionVotes2,
+    categorization_votes: CategorizationVotes2
   ) : Model {
     Model(
       WRef.WRef(admin),
@@ -57,14 +65,12 @@ module {
       WRef.WRef(params),
       categories,
       questions,
+      status_manager,
       history,
       queries,
       interest_votes,
       opinion_votes,
-      categorization_votes,
-      interest_subaccounts,
-      categorization_subaccounts,
-      subaccount_generator
+      categorization_votes
     );
   };
 
@@ -75,14 +81,12 @@ module {
     params_: WRef<SchedulerParameters>,
     categories_: Categories,
     questions_: Questions,
+    status_manager_: StatusManager,
     history_: History,
     queries_: QuestionQueries,
-    interest_votes_: InterestVotes,
-    opinion_votes_: OpinionVotes,
-    categorization_votes_: CategorizationVotes,
-    interest_subaccounts_: SubaccountMap,
-    categorization_subaccounts_: SubaccountMap,
-    subaccount_generator_: SubaccountGenerator
+    interest_votes_: InterestVotes2,
+    opinion_votes_: OpinionVotes2,
+    categorization_votes_: CategorizationVotes2
   ) = {
 
     public func getMaster() : Master {
@@ -147,6 +151,10 @@ module {
       questions_;
     };
 
+    public func getStatusManager(): StatusManager {
+      status_manager_;
+    };
+
     public func getHistory(): History {
       history_;
     };
@@ -155,28 +163,16 @@ module {
       queries_;
     };
 
-    public func getInterestVotes(): InterestVotes {
+    public func getInterestVotes(): InterestVotes2 {
       interest_votes_;
     };
 
-    public func getOpinionVotes(): OpinionVotes {
+    public func getOpinionVotes(): OpinionVotes2 {
       opinion_votes_;
     };
 
-    public func getCategorizationVotes(): CategorizationVotes {
+    public func getCategorizationVotes(): CategorizationVotes2 {
       categorization_votes_;
-    };
-
-    public func getInterestSubaccounts(): SubaccountMap {
-      interest_subaccounts_;
-    };
-
-    public func getCategorizationSubaccounts(): SubaccountMap {
-      categorization_subaccounts_;
-    };
-
-    public func getSubaccountGenerator(): SubaccountGenerator {
-      subaccount_generator_;
     };
 
   };

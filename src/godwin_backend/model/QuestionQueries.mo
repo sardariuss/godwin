@@ -26,6 +26,7 @@ module {
   type Questions = Questions.Questions;
   type Status = Types.Status;
   type Interests = Interests.Interests;
+  type Appeal = Types.Appeal;
 
   public type OrderBy = {
     #AUTHOR;
@@ -62,7 +63,7 @@ module {
     Queries.addOrderBy(register, orderByHash, order_by);
   };
 
-  public func build(register: Register, questions: Questions, interests: Interests) : QuestionQueries {
+  public func build(register: Register) : QuestionQueries {
 
     // @todo: only the status and interest score are plugged so far
     addOrderBy(register, #STATUS(#CANDIDATE));
@@ -221,10 +222,10 @@ module {
     });
   };
 
-  public func toAppealScore(vote: InterestVote) : Key {
+  public func toAppealScore(question_id: Nat, appeal: Appeal) : Key {
     #INTEREST_SCORE({
-      question_id = vote.question_id;
-      score = vote.aggregate.score;
+      question_id;
+      score = appeal.score;
     });
   };
 

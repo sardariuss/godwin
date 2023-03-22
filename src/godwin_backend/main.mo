@@ -5,6 +5,7 @@ import Factory "model/Factory";
 import Controller "model/controller/Controller";
 //import Scenario "../../test/motoko/Scenario"; // @todo
 import Duration "utils/Duration";
+import StatusManager "model/StatusManager";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
@@ -31,15 +32,13 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type ReopenQuestionError = Types.ReopenQuestionError;
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type GetUserError = Types.GetUserError;
+  type PrincipalError = Types.PrincipalError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
   type GetAggregateError = Types.GetAggregateError;
   type GetBallotError = Types.GetBallotError;
-  type RevealBallotError = Types.RevealBallotError;
   type PutBallotError = Types.PutBallotError;
-  type PutFreshBallotError = Types.PutFreshBallotError;
   type Ballot<T> = Types.Ballot<T>;
   type PublicVote<T, A> = Types.PublicVote<T, A>;
   type Interest = Types.Interest;
@@ -54,6 +53,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryArray = Types.CategoryArray;
   type UserHistory = Types.UserHistory;
   type VoteId = Types.VoteId;
+  type StatusInfo2 = Types.StatusInfo2;
+  type GetVoteError = Types.GetVoteError;
 
   stable var state_ = State.initState(caller, Time.now(), parameters);
 
@@ -113,43 +114,43 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await controller_.reopenQuestion(caller, question_id, Time.now());
   };
 
-//  public query({caller}) func getInterestBallot(question_id: Nat) : async Result<?Ballot<Interest>, GetBallotError> {
-//    controller_.getInterestBallot(caller, question_id);
-//  };
-//
-//  public shared({caller}) func putInterestBallot(question_id: Nat, interest: Interest) : async Result<(), PutFreshBallotError> {
-//    controller_.putInterestBallot(caller, question_id, Time.now(), interest);
-//  };
-//
-//  public query({caller}) func getOpinionBallot(question_id: Nat) : async Result<?Ballot<Cursor>, GetBallotError> {
-//    controller_.getOpinionBallot(caller, question_id);
-//  };
-//
-//  public shared({caller}) func putOpinionBallot(question_id: Nat, cursor: Cursor) : async Result<(), PutBallotError> {
-//    controller_.putOpinionBallot(caller, question_id, Time.now(), cursor);
-//  };
-//
-//  public query({caller}) func getCategorizationBallot(question_id: Nat) : async Result<?Ballot<CursorArray>, GetBallotError> {
-//    controller_.getCategorizationBallot(caller, question_id);
-//  };
-//
-//  public shared({caller}) func putCategorizationBallot(question_id: Nat, answer: CursorArray) : async Result<(), PutFreshBallotError> {
-//    controller_.putCategorizationBallot(caller, question_id, Time.now(), answer);
-//  };
+  public query({caller}) func getInterestBallot(question_id: Nat) : async Result<Ballot<Interest>, GetBallotError> {
+    controller_.getInterestBallot(caller, question_id);
+  };
+
+  public shared({caller}) func putInterestBallot(question_id: Nat, interest: Interest) : async Result<(), PutBallotError> {
+    await controller_.putInterestBallot(caller, question_id, Time.now(), interest);
+  };
+
+  public query({caller}) func getOpinionBallot(question_id: Nat) : async Result<Ballot<Cursor>, GetBallotError> {
+    controller_.getOpinionBallot(caller, question_id);
+  };
+
+  public shared({caller}) func putOpinionBallot(question_id: Nat, cursor: Cursor) : async Result<(), PutBallotError> {
+    controller_.putOpinionBallot(caller, question_id, Time.now(), cursor);
+  };
+
+  public query({caller}) func getCategorizationBallot(question_id: Nat) : async Result<Ballot<CursorArray>, GetBallotError> {
+    controller_.getCategorizationBallot(caller, question_id);
+  };
+
+  public shared({caller}) func putCategorizationBallot(question_id: Nat, answer: CursorArray) : async Result<(), PutBallotError> {
+    await controller_.putCategorizationBallot(caller, question_id, Time.now(), answer);
+  };
 
   public query func getStatusHistory(question_id: Nat) : async ?[(Status, [Time])] {
     controller_.getStatusHistory(question_id);
   };
 
-  public query func getInterestVote(question_id: Nat, iteration: Nat) : async ?PublicVote<Interest, Appeal> {
+  public query func getInterestVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, GetVoteError>{
     controller_.getInterestVote(question_id, iteration);
   };
 
-  public query func getOpinionVote(question_id: Nat, iteration: Nat) : async ?PublicVote<Cursor, Polarization> {
+  public query func getOpinionVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, GetVoteError>{
     controller_.getOpinionVote(question_id, iteration);
   };
 
-  public query func getCategorizationVote(question_id: Nat, iteration: Nat) : async ?PublicVote<CursorArray, PolarizationArray> {
+  public query func getCategorizationVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<CursorArray, PolarizationArray>, GetVoteError>{
     controller_.getCategorizationVote(question_id, iteration);
   };
 

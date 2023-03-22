@@ -5,6 +5,9 @@ import Ref "../utils/Ref";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
+import Categorization2 "votes/Categorizations2";
+import Interests2 "votes/Interests2";
+import Opinion2 "votes/Opinions2";
 import Categories "Categories";
 import Duration "../utils/Duration";
 import History "History";
@@ -44,6 +47,7 @@ module {
   type StatusHistory = Types.StatusHistory;
   type UserHistory = Types.UserHistory;
   type Interest = Types.Interest;
+  type StatusData3 = Types.StatusData3;
 
   public type State = {
     admin             : Ref<Principal>;
@@ -52,6 +56,9 @@ module {
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;
+    };
+    status            : {
+      register           : Map<Nat, StatusData3>;
     };
     queries           : {
       register           : QuestionQueries.Register;
@@ -68,6 +75,16 @@ module {
       opinion            : Opinion.Register;
       categorization     : Categorization.Register;
     };
+    subaccounts       : {
+      interest_votes        : Map<Nat, Blob>;
+      categorization_votes  : Map<Nat, Blob>;
+      index                 : Ref<Nat>;
+    };
+    votes2          : {
+      interest                : Interests2.VoteRegister;
+      opinion                 : Opinion2.VoteRegister;
+      categorization          : Categorization2.VoteRegister;
+    };
     history           : {
       status_history          : Map<Nat, StatusHistory>;
       interests_history       : Map2D<Nat, Nat, Vote<Interest, Appeal>>;
@@ -76,11 +93,6 @@ module {
       user_history            : Map<Principal, UserHistory>;
       convictions_half_life   : ?Duration;
     };
-    subaccounts      : {
-      interest_subaccounts        : Map2D<Nat, Nat, Blob>;
-      categorization_subaccounts  : Map2D<Nat, Nat, Blob>;
-      index                       : Ref<Nat>;
-    };
   };
 
   public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
@@ -88,6 +100,9 @@ module {
       admin          = Ref.initRef<Principal>(admin);
       creation_date  = creation_date;
       categories     = Categories.initRegister(parameters.categories);
+      status         = {
+        register              = Map.new<Nat, StatusData3>();
+      };
       questions      = {
         register              = Map.new<Nat, Question>();
         index                 = Ref.initRef<Nat>(0);
@@ -102,10 +117,20 @@ module {
           params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
         };
       };
+      subaccounts = {
+        interest_votes        = Map.new<Nat, Blob>();
+        categorization_votes  = Map.new<Nat, Blob>();
+        index                 = Ref.initRef<Nat>(0);
+      };
       votes          = {
         interest              = Interests.initRegister();
         opinion               = Opinion.initRegister();
         categorization        = Categorization.initRegister();
+      };
+      votes2          = {
+        interest              = Interests2.initVoteRegister();
+        opinion               = Opinion2.initVoteRegister();
+        categorization        = Categorization2.initVoteRegister();
       };
       history        = {
         status_history            = Map.new<Nat, StatusHistory>();
@@ -114,11 +139,6 @@ module {
         categorizations_history   = Map.new<Nat, Map<Nat, Vote<CursorMap, PolarizationMap>>>();
         user_history              = Map.new<Principal, UserHistory>();
         convictions_half_life     = parameters.history.convictions_half_life;
-      };
-      subaccounts      = {
-        interest_subaccounts        = Map.new<Nat, Map<Nat, Blob>>();
-        categorization_subaccounts  = Map.new<Nat, Map<Nat, Blob>>();
-        index                       = Ref.initRef<Nat>(0);
       };
     };
   };

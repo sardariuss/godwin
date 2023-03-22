@@ -4,7 +4,6 @@ import Categorizations "../votes/Categorizations";
 import Model "../controller/Model";
 import Questions "../Questions";
 import Votes "../votes/Votes";
-import Poll "../votes/Poll";
 import Categories "../Categories";
 import Duration "../../utils/Duration";
 import Utils "../../utils/Utils";
@@ -15,6 +14,7 @@ import Event "Event";
 import Schema "Schema";
 
 import Set "mo:map/Set";
+import Map "mo:map/Map";
 
 import StateMachine "../../utils/StateMachine";
 
@@ -24,7 +24,6 @@ import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
-
 
 module {
 
@@ -45,6 +44,7 @@ module {
   type Time = Int;
   type Set<K> = Set.Set<K>;
   type Iter<T> = Iter.Iter<T>;
+  type Map<K, V> = Map.Map<K, V>;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -62,15 +62,14 @@ module {
   type Polarization = Types.Polarization;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type InterestPoll = Poll.Poll<Interest, Appeal>;
-  type OpinionPoll = Poll.Poll<Cursor, Polarization>;
-  type CategorizationPoll = Poll.Poll<CursorMap, PolarizationMap>;
   type CursorArray = Types.CursorArray;
   type CategoryInfo = Types.CategoryInfo;
   type CategoryArray = Types.CategoryArray;
   type StatusHistory = Types.StatusHistory;
   type UserHistory = Types.UserHistory;
   type VoteId = Types.VoteId;
+  type StatusInfo2 = Types.StatusInfo2;
+  type StatusHistory2 = Types.StatusHistory2;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -79,16 +78,15 @@ module {
   type ReopenQuestionError = Types.ReopenQuestionError;
   type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type GetUserError = Types.GetUserError;
+  type PrincipalError = Types.PrincipalError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
   type GetAggregateError = Types.GetAggregateError;
   type GetBallotError = Types.GetBallotError;
-  type RevealBallotError = Types.RevealBallotError;
   type PutBallotError = Types.PutBallotError;
-  type PutFreshBallotError = Types.PutFreshBallotError;
   type GetUserVotesError = Types.GetUserVotesError;
+  type GetVoteError = Types.GetVoteError;
 
   public func build(model: Model) : Controller {
     Controller(Schema.SchemaBuilder(model).build(), model);
@@ -160,100 +158,100 @@ module {
     // we need to create a new question with the status #START and then update it with the status #CANDIDATE.
     // Same thing for the #END status (instead of #TRASH)
     public func openQuestion(caller: Principal, text: Text, date: Time) : async Result<Question, OpenQuestionError> {
-      let precondition = Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous);
-      switch(precondition){
-        case(#err(err)) { #err(err); }; 
-        case(#ok(_)){
-          let voting_price = 1321321;
-          let subaccount = model_.getSubaccountGenerator().generateSubaccount();
-          switch(await model_.getMaster().transferToSubGodwin(caller, voting_price, subaccount)){
-            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
-            case(#ok){
-              let question = model_.getQuestions().createQuestion(caller, date, text);
-              model_.getInterestSubaccounts().linkSubaccount(question.id, 0, subaccount);
-              onStatusUpdate(null, ?question);
-              #ok(question);
-            };
-          };
-        };
+      // Verify that the caller is not anonymous
+      if (Principal.isAnonymous(caller)){
+        return #err(#PrincipalIsAnonymous);
+      };
+      
+      switch(await model_.getInterestVotes().openVote(caller, func() : Question {
+        let question = model_.getQuestions().createQuestion(caller, date, text);
+        model_.getStatusManager().setCurrent(question.id, #CANDIDATE, date); // @todo
+        question;
+      })){
+        case(#err(_)) { return #err(#PrincipalIsAnonymous); }; // @todo
+        case(#ok(question)) { return #ok(question); };
       };
     };
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async Result<(), ReopenQuestionError> {
-      let precondition = Result.chain<(), (), ReopenQuestionError>(Utils.toResult(not Principal.isAnonymous(caller), #PrincipalIsAnonymous), func(_) {
-        Result.chain<Question, (), ReopenQuestionError>(Result.fromOption(model_.getQuestions().findQuestion(question_id), #QuestionNotFound), func(question) {
-          Utils.toResult(question.status_info.status == #CLOSED, #InvalidStatus)
-        })
-      });
-
-      switch(precondition){
-        case(#err(err)) { #err(err); }; 
-        case(#ok(_)){
-          let question = model_.getQuestions().getQuestion(question_id);
-          let voting_price = 1321321;
-          let subaccount = model_.getSubaccountGenerator().generateSubaccount();
-          switch(await model_.getMaster().transferToSubGodwin(caller, voting_price, subaccount)){
-            case(#err(err)) { #err(#PrincipalIsAnonymous); }; // @todo
-            case(#ok){
-              submitEvent(question, #REOPEN_QUESTION, date);
-              model_.getInterestSubaccounts().linkSubaccount(question.id, 1, subaccount); // @todo
-              #ok();
-            };
-          };
-        };
+      // Verify that the caller is not anonymous
+      if (Principal.isAnonymous(caller)){
+        return #err(#PrincipalIsAnonymous);
+      };
+      // Verify that the question exists
+      let question = switch(model_.getQuestions().findQuestion(question_id)){
+        case(null) { return #err(#QuestionNotFound); };
+        case(?question) { question; };
+      };
+      // Verify that the question is closed
+      if (question.status_info.status != #CLOSED){
+        return #err(#InvalidStatus);
+      };
+      // Reopen the question 
+      // @todo: risk of reentry, user will loose tokens if the question has already been reopened
+      switch(await model_.getInterestVotes().openVote(caller, func() : Question {
+        model_.getStatusManager().setCurrent(question.id, #CANDIDATE, date);
+        question;
+      })){
+        case(#err(_)) { return #err(#PrincipalIsAnonymous); }; // @todo
+        case(#ok(question)) { return #ok; };
       };
     };
 
-//    public func getInterestBallot(caller: Principal, question_id: Nat) : Result<?Ballot<Interest>, GetBallotError> {
-//      interest_poll_.findBallot(caller, question_id);
-//    };
-//
-//    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : Result<(), PutFreshBallotError> {
-//      interest_poll_.putFreshBallot(principal, question_id, date, interest);
-//    };
-//
-//    public func getOpinionBallot(caller: Principal, question_id: Nat) : Result<?Ballot<Cursor>, GetBallotError> {
-//      opinion_poll_.findBallot(caller, question_id);
-//    };
-//
-//    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-//      opinion_poll_.putBallot(principal, question_id, date, cursor);
-//    };
-//      
-//    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<?Ballot<CursorArray>, GetBallotError> {
-//      Result.mapOk(categorization_poll_.findBallot(caller, question_id), func(opt_ballot: ?Ballot<CursorMap>) : ?Ballot<CursorArray> {
-//        Option.map(opt_ballot, func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
-//          { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
-//        });
-//      });
-//    };
-//      
-//    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, answer: CursorArray) : Result<(), PutFreshBallotError> {
-//      categorization_poll_.putFreshBallot(principal, question_id, date, Utils.arrayToTrie(answer, Categories.key, Categories.equal));
-//    };
+    public func getInterestBallot(caller: Principal, question_id: Nat) : Result<Ballot<Interest>, GetBallotError> {
+      model_.getInterestVotes().getBallot(caller, question_id);
+    };
+
+    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async Result<(), PutBallotError> {
+      await model_.getInterestVotes().putBallot(principal, question_id, date, interest);
+    };
+
+    public func getOpinionBallot(caller: Principal, question_id: Nat) : Result<Ballot<Cursor>, GetBallotError> {
+      model_.getOpinionVotes().getBallot(caller, question_id);
+    };
+
+    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
+      model_.getOpinionVotes().putBallot(principal, question_id, date, cursor);
+    };
+      
+    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<Ballot<CursorArray>, GetBallotError> {
+      Result.mapOk(model_.getCategorizationVotes().getBallot(caller, question_id), func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
+        { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
+      });
+    };
+      
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async Result<(), PutBallotError> {
+      await model_.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
+    };
 
     public func getStatusHistory(question_id: Nat) : ?[(Status, [Time])] {
-      Option.map(model_.getHistory().getStatusHistory(question_id), func(status_history: StatusHistory) : [(Status, [Time])] {
-        Utils.mapToArray(status_history);
+      Option.map(model_.getStatusManager().getHistory(question_id), func(history: Map<Status, [Time]>) : [(Status, [Time])] {
+        Utils.mapToArray(history);
       });
     };
 
-    public func getInterestVote(question_id: Nat, iteration: Nat) : ?PublicVote<Interest, Appeal> {
-      Option.map(model_.getHistory().getInterestVote(question_id, iteration), func(vote: Vote<Interest, Appeal>) : PublicVote<Interest, Appeal> {
-        Votes.toPublicVote(vote);
-      });
+    public func getInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Interest, Appeal>, GetVoteError> {
+      // Get the vote
+      switch(model_.getInterestVotes().revealVote(question_id, iteration)){
+        case(#err(err)) { #err(err); };
+        case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
+      };
     };
 
-    public func getOpinionVote(question_id: Nat, iteration: Nat) : ?PublicVote<Cursor, Polarization> {
-      Option.map(model_.getHistory().getOpinionVote(question_id, iteration), func(vote: Vote<Cursor, Polarization>) : PublicVote<Cursor, Polarization> {
-        Votes.toPublicVote(vote);
-      });
+    public func getOpinionVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, GetVoteError> {
+      // Get the vote
+      switch(model_.getOpinionVotes().revealVote(question_id, iteration)){
+        case(#err(err)) { #err(err); };
+        case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
+      };
     };
 
-    public func getCategorizationVote(question_id: Nat, iteration: Nat) : ?PublicVote<CursorArray, PolarizationArray> {
-      Option.map(model_.getHistory().getCategorizationVote(question_id, iteration), func(vote: Vote<CursorMap, PolarizationMap>) : PublicVote<CursorArray, PolarizationArray> {
-        Categorizations.toPublicVote(vote);
-      });
+    public func getCategorizationVote(question_id: Nat, iteration: Nat) : Result<PublicVote<CursorArray, PolarizationArray>, GetVoteError> {
+      // Get the vote
+      switch(model_.getCategorizationVotes().revealVote(question_id, iteration)){
+        case(#err(err)) { #err(err); };
+        case(#ok(vote)) { #ok(Categorizations.toPublicVote(vote)); };
+      };
     };
 
     public func getUserConvictions(principal: Principal) : ?PolarizationArray {
@@ -288,57 +286,42 @@ module {
       };
       
       Option.iterate(StateMachine.submitEvent(state_machine, event), func(status: Status) {
-        let question_updated = switch(status) {
-          case(#TRASH) {
-            // @todo: the votes need to be removed too
-            // Remove the question if it is in the trash
-            model_.getQuestions().removeQuestion(question.id); 
-            null; 
-          };
-          case(_) {
-            // Update the question status
-            let iteration = model_.getHistory().getStatusIteration(question.id, status);
-            let update = { question with status_info = { status; iteration; date; } };
-            model_.getQuestions().replaceQuestion(update);
-            ?update;
-          };
-        };
-        // @todo: explain
-        onStatusUpdate(?question, question_updated);
-      });
-    };
-
-    func onStatusUpdate(old: ?Question, new: ?Question){
-      // When the question status changes, update the associated key for the #STATUS order_by
-      model_.getQueries().replace(
-        Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
-        Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
-      );
-
-      // Put the previous status in history (transferring the vote to the history if needed)
-      Option.iterate(old, func(question: Question) {       
-        let status_data = switch(question.status_info.status){
-          case(#CANDIDATE) { #CANDIDATE({ vote_interest =             model_.getInterestVotes().removeVote(question.id); }); };
-          case(#OPEN)      { #OPEN     ({ vote_opinion =               model_.getOpinionVotes().removeVote(question.id); 
-                                          vote_categorization = model_.getCategorizationVotes().removeVote(question.id); }); };
-          case(#CLOSED)    { #CLOSED   (); };
-          case(#REJECTED)  { #REJECTED (); };
-          case(#TRASH)     { #TRASH    (); };
-        };
-        model_.getHistory().add(question.id, question.status_info, status_data);
-      });
-
-      // Open a new vote if needed
-      Option.iterate(new, func(question: Question) {
+        // Close vote if any
+        // @todo: do not ignore the result
         switch(question.status_info.status){
-          case(#CANDIDATE) {       model_.getInterestVotes().newVote(question.id); };
-          case(#OPEN)      {        model_.getOpinionVotes().newVote(question.id);            
-                             model_.getCategorizationVotes().newVote(question.id); };
-          case(_)          {};
+          case(#CANDIDATE) { ignore model_.getInterestVotes().closeVote(question.id) };
+          case(#OPEN)   { ignore model_.getOpinionVotes().closeVote(question.id);
+                          ignore model_.getCategorizationVotes().closeVote(question.id); };
+          case(_) {};
         };
+
+        switch(status){
+          case(#CANDIDATE) { /*ignore await model_.getInterestVotes().openVote();*/ }; // @todo
+          case(#OPEN)   { model_.getOpinionVotes().openVote(question.id);
+                          model_.getCategorizationVotes().openVote(question.id); };
+          case(_) {};
+        };
+
+        // Set as current status
+        // @todo: temp hack to not overwrite the status if candidate
+        if (status != #CANDIDATE){
+          model_.getStatusManager().setCurrent(question.id, status, date);
+        };
+        
+        // Remove question if needed
+        if (status == #TRASH){
+          model_.getQuestions().removeQuestion(question.id);
+        };
+
+        // When the question status changes, update the associated key for the #STATUS order_by
+        // @todo
+//        model_.getQueries().replace(
+//          Option.map(old, func(question: Question) : Key { toStatusEntry(question); }),
+//          Option.map(new, func(question: Question) : Key { toStatusEntry(question); })
+//        );
       });
     };
-
+  
   };
 
 };

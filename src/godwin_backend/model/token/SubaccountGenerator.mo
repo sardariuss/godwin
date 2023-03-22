@@ -15,7 +15,7 @@ module {
     SubaccountGenerator(WRef.WRef<Nat>(index));
   };
 
-  public class SubaccountGenerator(index_ : WRef<Nat>) {
+  public class SubaccountGenerator(index_: WRef<Nat>) {
 
     public func generateSubaccount() : Blob {
       let subaccount = bytesToSubaccount(natToBytes(index_.get()));

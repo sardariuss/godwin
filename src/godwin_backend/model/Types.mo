@@ -92,16 +92,57 @@ module {
     #TRASH;
   };
 
+  public type VoteType = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
+  public type StatusHistory2 = Map<Status, [StatusInfo2]>;
+  
+  public type StatusInfo2 = {
+    #CANDIDATE: { date: Time; interests_id: Nat;                          };
+    #OPEN:      { date: Time; opinions_id: Nat;  categorizations_id: Nat; };
+    #CLOSED:    { date: Time;                                             };
+    #REJECTED:  { date: Time;                                             };
+    #TRASH;
+  };
+
+  public type StatusData2 = {
+    var current: StatusInfo2;
+    history: StatusHistory2;
+  };
+
+  public type StatusData3 = {
+    var current: {
+      status: Status;
+      date : Time;
+    };
+    history: Map<Status, [Time]>;
+  };
+
   public type VoteId = (Nat, Nat);
 
+  public type UpdateBallotAuthorization = {
+    #UPDATE_BALLOT_FORBIDDEN;
+    #UPDATE_BALLOT_AUTHORIZED;
+  };
+
+  public type VoteStatus = {
+    #OPEN;
+    #CLOSED;
+  };
+
   public type Vote<T, A> = {
-    question_id: Nat;
+    id: Nat;
+    var status: VoteStatus;
     ballots: Map<Principal, Ballot<T>>;
-    aggregate: A;
+    var aggregate: A;
   };
 
   public type PublicVote<T, A> = {
-    question_id: Nat;
+    id: Nat;
+    status: VoteStatus;
     ballots: [(Principal, Ballot<T>)];
     aggregate: A;
   };
@@ -172,7 +213,7 @@ module {
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
 
-  public type GetUserError = {
+  public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
 
@@ -192,43 +233,46 @@ module {
     #QuestionNotFound;
   };
 
-  public type OpenQuestionError = GetUserError;
+  public type OpenQuestionError = PrincipalError;
   
-  public type ReopenQuestionError = GetUserError or GetQuestionError or {
+  public type ReopenQuestionError = PrincipalError or GetQuestionError or {
     #InvalidStatus;
   };
 
-  public type SetUserNameError = GetUserError;
+  public type SetUserNameError = PrincipalError;
 
   public type SetPickRateError = VerifyCredentialsError;
 
   public type SetDurationError = VerifyCredentialsError;
 
-  public type GetUserConvictionsError = GetUserError;
+  public type GetUserConvictionsError = PrincipalError;
 
-  public type GetUserVotesError = GetUserError;
+  public type GetUserVotesError = PrincipalError;
 
-  public type GetAggregateError = GetQuestionError or {
+  public type GetVoteError = {
+    #VoteIsOpen;
+    #VoteNotFound;
+  };
+
+  public type CloseVoteError = {
+    #AlreadyClosed;
+    #VoteNotFound;
+  };
+
+  public type GetAggregateError = GetVoteError or {
     #NotAllowed;
   };
 
-  public type GetBallotError = GetQuestionError or {
+  public type GetBallotError = GetVoteError or {
     #NotAllowed;
+    #BallotNotFound;
   };
 
-  public type RevealBallotError = GetUserError or GetQuestionError or {
+  public type PutBallotError = PrincipalError or GetVoteError or {
     #InvalidPoll;
-  };
-
-  public type PutBallotError = GetUserError or GetQuestionError or {
-    #InvalidPoll;
+    #VoteClosed;
     #InvalidBallot;
-  };
-
-  public type PutFreshBallotError = GetUserError or GetQuestionError or {
-    #InvalidPoll;
     #AlreadyVoted;
-    #InvalidBallot;
   };
 
 };

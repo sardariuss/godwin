@@ -1,0 +1,80 @@
+import Types "../Types";
+
+import Map "mo:map/Map";
+
+import Principal "mo:base/Principal";
+import Option "mo:base/Option";
+import Result "mo:base/Result";
+
+module {
+
+  // For convenience: from base module
+  type Principal = Principal.Principal;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
+
+  type Map<K, V> = Map.Map<K, V>;
+
+  type Ballot<T> = Types.Ballot<T>;
+  type Vote<T, A> = Types.Vote<T, A>;
+  type PutBallotError = Types.PutBallotError;
+
+   public class BallotAggregator<T, A>(
+    is_valid_answer: (T) -> Bool,
+    add_to_aggregate_: (A, T) -> A,
+    remove_from_aggregate_: (A, T) -> A
+  ) {
+
+    public func putFreshBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), PutBallotError> {
+      // Verify the principal has not already voted
+      if (Map.has(vote.ballots, Map.phash, principal)){
+        return #err(#AlreadyVoted);
+      };
+      // Put the ballot
+      putBallot(vote, principal, ballot);
+    };
+ 
+    // Safe
+    public func putBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), PutBallotError> {
+      // Verify the principal is not anonymous
+      if (Principal.isAnonymous(principal)){
+        return #err(#PrincipalIsAnonymous);
+      };
+      // Verify the vote is open
+      if (vote.status == #CLOSED){
+        return #err(#VoteClosed);
+      };
+      // Verify the ballot is valid
+      if (not is_valid_answer(ballot.answer)){
+        return #err(#InvalidBallot);
+      };
+      // Update the vote
+      let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
+      let old_aggregate = vote.aggregate;
+      vote.aggregate := updateAggregate(vote.aggregate, ?ballot, old_ballot);
+      #ok(old_aggregate, vote.aggregate);
+    };
+
+    public func deleteBallot(vote: Vote<T, A>, principal: Principal) {
+      // Update the vote
+      let old_ballot = Map.remove(vote.ballots, Map.phash, principal);
+      Option.iterate(old_ballot, func(ballot: Ballot<T>) {
+        vote.aggregate := updateAggregate(vote.aggregate, null, ?ballot);
+      });
+    };
+ 
+    func updateAggregate(aggregate: A, new_ballot: ?Ballot<T>, old_ballot: ?Ballot<T>) : A {
+      var new_aggregate = aggregate;
+      // If there is a new ballot, add it to the aggregate
+      Option.iterate(new_ballot, func(ballot: Ballot<T>) {
+        new_aggregate := add_to_aggregate_(new_aggregate, ballot.answer);
+      });
+      // If there was an old ballot, remove it from the aggregate
+      Option.iterate(old_ballot, func(ballot: Ballot<T>) {
+        new_aggregate := remove_from_aggregate_(new_aggregate, ballot.answer);
+      });
+      new_aggregate;
+    };
+
+  };
+
+};

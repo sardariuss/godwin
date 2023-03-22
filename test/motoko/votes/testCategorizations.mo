@@ -58,7 +58,7 @@ module {
     votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Add ballot", 
-      votes.findBallot(principals[0], question_0), 
+      votes.getBallot(principals[0], question_0), 
       Matchers.equals(TestableItems.optCategorizationBallot(?ballot))
     ));
     // Update categorization
@@ -66,14 +66,14 @@ module {
     votes.putBallot(principals[0], question_0, ballot);
     tests.add(Suite.test(
       "Update ballot",
-      votes.findBallot(principals[0], 0),
+      votes.getBallot(principals[0], 0),
       Matchers.equals(TestableItems.optCategorizationBallot(?ballot))
     ));
     // Remove categorization
     votes.removeBallot(principals[0], question_0);
     tests.add(Suite.test(
       "Remove ballot",
-      votes.findBallot(principals[0], question_0),
+      votes.getBallot(principals[0], question_0),
       Matchers.equals(TestableItems.optCategorizationBallot(null))
     ));
 
