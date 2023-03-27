@@ -19,9 +19,9 @@ module {
   type PutBallotError = Types.PutBallotError;
 
    public class BallotAggregator<T, A>(
-    is_valid_answer: (T) -> Bool,
-    add_to_aggregate_: (A, T) -> A,
-    remove_from_aggregate_: (A, T) -> A
+    _is_valid_answer: (T) -> Bool,
+    _add_to_aggregate: (A, T) -> A,
+    _remove_from_aggregate: (A, T) -> A
   ) {
 
     public func putFreshBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), PutBallotError> {
@@ -44,7 +44,7 @@ module {
         return #err(#VoteClosed);
       };
       // Verify the ballot is valid
-      if (not is_valid_answer(ballot.answer)){
+      if (not _is_valid_answer(ballot.answer)){
         return #err(#InvalidBallot);
       };
       // Update the vote
@@ -66,11 +66,11 @@ module {
       var new_aggregate = aggregate;
       // If there is a new ballot, add it to the aggregate
       Option.iterate(new_ballot, func(ballot: Ballot<T>) {
-        new_aggregate := add_to_aggregate_(new_aggregate, ballot.answer);
+        new_aggregate := _add_to_aggregate(new_aggregate, ballot.answer);
       });
       // If there was an old ballot, remove it from the aggregate
       Option.iterate(old_ballot, func(ballot: Ballot<T>) {
-        new_aggregate := remove_from_aggregate_(new_aggregate, ballot.answer);
+        new_aggregate := _remove_from_aggregate(new_aggregate, ballot.answer);
       });
       new_aggregate;
     };

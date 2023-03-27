@@ -19,7 +19,6 @@ function toMap(history_array: Array<[Status, Array<Time>]>) : Map<StatusEnum, Ar
   for (let [status, dates] of history_array) {
 		historyMap.set(statusToEnum(status), dates);
   }
-	console.log("historyMap: " + historyMap);
   return historyMap;
 };
 
@@ -29,7 +28,6 @@ function toArray(history_array: Array<[Status, Array<Time>]>) : StatusInfo[] {
     let iteration = 0;
     for (let date of dates) {
       history.push({status: status, iteration: BigInt(iteration), date: date});
-      console.log("iteration: " + iteration + " date: " + date + " status: " + status + "");
       iteration++;
     }
   }
@@ -40,6 +38,7 @@ const QuestionBody = ({questionId}: Props) => {
 
 	const {actor} = useContext(ActorContext);
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
+	const [statusInfo, setStatusInfo] = useState<StatusInfo | undefined>(undefined);
 	const [statusHistoryArray, setStatusHistoryArray] = useState<StatusInfo[]>([]);
 	const [statusHistoryMap, setStatusHistoryMap] = useState<Map<StatusEnum, Array<Time>>>();
 
@@ -48,52 +47,62 @@ const QuestionBody = ({questionId}: Props) => {
 		setQuestion(question['ok']);
 	};
 
+	const getStatusInfo = async () => {
+		let statusInfo = await actor.getStatusInfo(questionId);
+		setStatusInfo(statusInfo['ok']);
+	};
+
 	const fetchStatusHistory = async () => {
     let history = await actor.getStatusHistory(questionId);
-    if (history[0] !== undefined){
-      console.log(history[0]);
-      setStatusHistoryArray(toArray(history[0]));
-			setStatusHistoryMap(toMap(history[0]));
+    if (history['ok'] !== undefined){
+      setStatusHistoryArray(toArray(history['ok']));
+			setStatusHistoryMap(toMap(history['ok']));
     };
   };
 
 	useEffect(() => {
 		getQuestion();
+		getStatusInfo();
 		fetchStatusHistory();
   }, []);
 
 	const show = true;
 
 	return (
-		<div className="flex flex-row bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white border-slate-700 border hover:dark:border-slate-400">
-			<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
-				<div className="justify-start text-lg font-normal">
-					{ question === undefined ? "n/a" : question.text }
-				</div>
-				<div className="flex items-center">
-					<StatusHistoryComponent questionId={questionId} statusHistory={statusHistoryArray}/>
-				</div>
-				<div>
-				{
-					question?.status_info.status['CLOSED'] !== undefined || question?.status_info.status['REJECTED'] !== undefined ?
-						<Aggregates questionId={questionId} statusHistory={statusHistoryMap}></Aggregates> :
-						<></>
-				}
-				</div>
-			</div>
+		<div>
 			{
-				question?.status_info.status['CANDIDATE'] !== undefined ?
-					<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
-						<VoteInterest questionId={question.id}/>
-					</div> :
-				question?.status_info.status['OPEN'] !== undefined ?
-					<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
-						<div className="flex flex-col justify-start">
-							<VoteOpinion questionId={question.id}/>
-							<VoteCategorization questionId={question.id}/>
+				question === undefined || statusInfo === undefined ? <div>{Number(questionId)}</div> :
+				<div className="flex flex-row bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white border-slate-700 border hover:dark:border-slate-400">
+					<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
+						<div className="justify-start text-lg font-normal">
+							{ question === undefined ? "n/a" : question.text }
 						</div>
-					</div> :
-					<></>
+						<div className="flex items-center">
+							<StatusHistoryComponent statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
+						</div>
+						<div>
+						{
+							statusInfo.status['CLOSED'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
+								<Aggregates questionId={questionId} statusHistory={statusHistoryMap}></Aggregates> :
+								<></>
+						}
+						</div>
+					</div>
+					{
+						statusInfo.status['CANDIDATE'] !== undefined ?
+							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
+								<VoteInterest questionId={question.id}/>
+							</div> :
+						statusInfo.status['OPEN'] !== undefined ?
+							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
+								<div className="flex flex-col justify-start">
+									<VoteOpinion questionId={question.id}/>
+									<VoteCategorization questionId={question.id}/>
+								</div>
+							</div> :
+							<></>
+					}
+				</div>
 			}
 		</div>
 	);

@@ -11,16 +11,16 @@ module {
 
   public class Observers<T, A>(equal: (T, T) -> Bool, hash: (T) -> Hash) {
 
-    let observers_ = HashMap.HashMap<T, Buffer.Buffer<Callback<A>>>(0, equal, hash);
+    let _observers = HashMap.HashMap<T, Buffer.Buffer<Callback<A>>>(0, equal, hash);
 
     public func addObs(obs_type: T, obs_func: Callback<A>) {
-      let buffer = Option.get(observers_.get(obs_type), Buffer.Buffer<Callback<A>>(0));
+      let buffer = Option.get(_observers.get(obs_type), Buffer.Buffer<Callback<A>>(0));
       buffer.add(obs_func);
-      observers_.put(obs_type, buffer);
+      _observers.put(obs_type, buffer);
     };
 
     public func callObs(obs_type: T, old: ?A, new: ?A) {
-      Option.iterate(observers_.get(obs_type), func(buffer: Buffer.Buffer<Callback<A>>) {
+      Option.iterate(_observers.get(obs_type), func(buffer: Buffer.Buffer<Callback<A>>) {
         for (obs_func in buffer.vals()){
           obs_func(old, new)
         };
@@ -31,14 +31,14 @@ module {
 
   public class Observers2<A>() {
 
-    let observers_ = Buffer.Buffer<Callback<A>>(0);
+    let _observers = Buffer.Buffer<Callback<A>>(0);
 
     public func addObs(obs_func: Callback<A>) {
-      observers_.add(obs_func);
+      _observers.add(obs_func);
     };
 
     public func callObs(old: ?A, new: ?A) {
-      for (obs_func in observers_.vals()){
+      for (obs_func in _observers.vals()){
         obs_func(old, new);
       };
     };

@@ -41,8 +41,8 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
         let vote = await actor.getInterestVote(questionId, BigInt(iteration));
-        if (vote[0] !== undefined) {
-          votes.push(vote[0]);
+        if (vote['ok'] !== undefined) {
+          votes.push(vote['ok']);
         };
       };
     };
@@ -63,12 +63,12 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
         let opVote = await actor.getOpinionVote(questionId, BigInt(iteration));
-        if (opVote[0] !== undefined) {
-          opVotes.push(opVote[0]);
+        if (opVote['ok'] !== undefined) {
+          opVotes.push(opVote['ok']);
         };
         let catVote = await actor.getCategorizationVote(questionId, BigInt(iteration));
-        if (catVote[0] !== undefined) {
-          catVotes.push(catVote[0]);
+        if (catVote['ok'] !== undefined) {
+          catVotes.push(catVote['ok']);
         }
       };
     };

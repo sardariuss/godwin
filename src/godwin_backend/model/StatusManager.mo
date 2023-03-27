@@ -23,6 +23,7 @@ import Option          "mo:base/Option";
 import Float           "mo:base/Float";
 import Principal       "mo:base/Principal";
 import Trie            "mo:base/Trie";
+import Nat             "mo:base/Nat";
 
 module {
 
@@ -48,133 +49,72 @@ module {
   // For convenience: from types module
   type Question           = Types.Question;
   type Status             = Types.Status;
-  type VoteId             = Types.VoteId;
   type Category           = Types.Category;
   type Cursor             = Types.Cursor;
   type Polarization       = Types.Polarization;
   type PolarizationMap    = Types.PolarizationMap;
   type Decay              = Types.Decay; 
-  type UserHistory        = Types.UserHistory;
+  type User        = Types.User;
+  type StatusInfo = Types.StatusInfo;
 
-  type StatusHistory2 = Types.StatusHistory2;
-  type StatusInfo2 = Types.StatusInfo2;
-  type StatusData2 = Types.StatusData2;
-  type VoteType    = Types.VoteType;
+  type StatusData = Types.StatusData;
 
-  public func unwrapStatus(status_info: StatusInfo2) : Status {
-    switch(status_info){
-      case(#CANDIDATE(_)) { #CANDIDATE; };
-      case(#OPEN(_))      { #OPEN;      };
-      case(#CLOSED(_))    { #CLOSED;    };
-      case(#REJECTED(_))  { #REJECTED;  };
-      case(#TRASH)        { #TRASH;     };
-    };
-  };
-
-  public type Register = Map<Nat, StatusData2>;
+  public type Register = Map<Nat, StatusData>;
 
   public func build(register: Register) : StatusManager {
     StatusManager(WMap.WMap(register, Map.nhash));
   };
   
-  public class StatusManager(register_: WMap.WMap<Nat, StatusData2>) {
+  public class StatusManager(_register: WMap.WMap<Nat, StatusData>) {
 
-    public func setCurrent(question_id: Nat, status_info: StatusInfo2) {
-      switch(register_.getOpt(question_id)){
+    public func setCurrent(question_id: Nat, status: Status, date: Time) {
+      switch(_register.getOpt(question_id)){
         case(null) { 
           // Create a new entry with an empty history
-          register_.set(question_id, { var current = status_info; history = Map.new<Status, [StatusInfo2]>(); }); 
+          _register.set(question_id, { var current = { status; date; iteration = 0; }; history = Map.new<Status, [Time]>(); }); 
         };
         case(?status_data) {
           // Add the (previous) current status to the history
-          var iterations = Option.get(Map.get(status_data.history, Status.status_hash, unwrapStatus(status_data.current)), []);
-          iterations := Utils.append<StatusInfo2>(iterations, [status_data.current]);
-          Map.set(status_data.history, Status.status_hash, unwrapStatus(status_data.current), iterations);
+          var iterations = Option.get(Map.get(status_data.history, Status.status_hash, status_data.current.status), []);
+          iterations := Utils.append<Time>(iterations, [status_data.current.date]);
+          Map.set(status_data.history, Status.status_hash, status_data.current.status, iterations);
           // Update the current status
-          status_data.current := status_info;
+          status_data.current := { status; date; iteration = Option.get(Map.get(status_data.history, Status.status_hash, status), []).size(); };
         };
       };
     };
 
-    public func getCurrent(question_id: Nat) : ?StatusInfo2 {
-      Option.map(register_.getOpt(question_id), func(status_data: StatusData2) : StatusInfo2 { 
-        status_data.current; 
-      });
+    public func getCurrent(question_id: Nat) : StatusInfo {
+      switch(_register.getOpt(question_id)){
+        case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
+        case(?status_data) { status_data.current; };
+      };
     };
 
-    public func getHistory(question_id: Nat) : ?StatusHistory2 {
-      Option.map(register_.getOpt(question_id), func(status_data: StatusData2) : StatusHistory2 { 
-        status_data.history; 
-      });
-    };
-
-    public func getCurrentVoteId(question_id: Nat, vote_type: VoteType) : ?Nat {
-      Option.chain(getCurrent(question_id), func(status_info: StatusInfo2) : ?Nat { 
-        getVoteId(status_info, vote_type); 
-      });
-    };
-
-    public func iterateCurrentVote(question_id: Nat, vote_type: VoteType, fn: Nat -> ()) {
-      let status_info = switch(getCurrent(question_id)){
-        case(null) { return; };
-        case(?s) { s; };
+    public func getHistory(question_id: Nat) : Map<Status, [Time]> {
+      switch(_register.getOpt(question_id)){
+        case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
+        case(?status_data) { status_data.history; };
       };
-      Option.iterate(getVoteId(status_info, vote_type), func(vote_id: Nat) { 
-        fn(vote_id); 
-      });
-    };
-
-    public func getHistoricalVoteId(question_id: Nat, vote_type: VoteType, iteration: Nat) : ?Nat {
-      // Get the history for this question
-      let history = switch(getHistory(question_id)){
-        case(null) { return null; };
-        case(?h) { h; };
-      };
-      // Get the historical array of status corresponding to this vote type
-      let array_status = switch(Map.get(history, Status.status_hash, getStatus(vote_type))){
-        case(null) { return null; };
-        case(?a) { a; };
-      };
-      // Check if the historical array has the iteration
-      if (array_status.size() < iteration) { 
-        return null; 
-      };
-      // Return the vote id
-      getVoteId(array_status[iteration], vote_type);
     };
 
     public func getStatusIteration(question_id: Nat, status: Status) : Nat {
       // Get the status data
-      let status_data = switch(register_.getOpt(question_id)){
+      let status_data = switch(_register.getOpt(question_id)){
         case(null) { return 0; };
-        case(?d) { d; };
+        case(?data) { data; };
       };
       // Get the status info
-      let status_infos = switch(Map.get(status_data.history, Status.status_hash, status)){
+      let status_history = switch(Map.get(status_data.history, Status.status_hash, status)){
         case(null) { return 0; };
-        case(?i) { i; };
+        case(?history) { history; };
       };
       // Return the size
-      status_infos.size();
+      status_history.size();
     };
 
-    func getVoteId(status_info: StatusInfo2, vote_type: VoteType) : ?Nat {
-      switch(status_info){
-        case(#CANDIDATE({interests_id}))   { if (vote_type == #INTEREST      ) { return ?interests_id;       } };
-        case(#OPEN({opinions_id; 
-                    categorizations_id;})) { if (vote_type == #OPINION       ) { return ?opinions_id;        } 
-                                        else if (vote_type == #CATEGORIZATION) { return ?categorizations_id; } };
-        case(_) { };
-      };
-      null;
-    };
-
-    func getStatus(vote_type: VoteType) : Status {
-      switch(vote_type){
-        case(#INTEREST)       { #CANDIDATE; };
-        case(#OPINION)        { #OPEN;      };
-        case(#CATEGORIZATION) { #OPEN;      };
-      };
+    public func deleteStatus(question_id: Nat) {
+      _register.delete(question_id);
     };
 
   };

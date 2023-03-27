@@ -4,14 +4,11 @@ import Categorizations "../votes/Categorizations";
 import Questions "../Questions";
 import Votes "../votes/Votes";
 import Categories "../Categories";
-import History "../History";
+import Users "../Users";
 import SubaccountGenerator "../token/SubaccountGenerator";
-import SubaccountMap "../token/SubaccountMap";
-import StatusManager "../StatusManager2";
-
-import Interests2 "../votes/Interests2";
-import Opinions2 "../votes/Opinions2";
-import Categorizations2 "../votes/Categorizations2";
+import StatusManager "../StatusManager";
+import Interests "../votes/Interests";
+import Opinions "../votes/Opinions";
 
 import Ref "../../utils/Ref";
 import WRef "../../utils/wrappers/WRef";
@@ -28,21 +25,16 @@ module {
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
-  type Master = Types.Master;
+  //type Master = Types.Master;
   type Categories = Categories.Categories;
   type Questions = Questions.Questions;
-  type History = History.History;
+  type Users = Users.Users;
   type QuestionQueries = QuestionQueries.QuestionQueries;
-  type InterestVotes = Votes.Votes<Types.Interest, Types.Appeal>;
-  type OpinionVotes = Votes.Votes<Types.Cursor, Types.Polarization>;
-  type CategorizationVotes = Votes.Votes<Types.CursorMap, Types.PolarizationMap>;
-  type SubaccountMap = SubaccountMap.SubaccountMap;
   type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type StatusManager = StatusManager.StatusManager;
-
-  type InterestVotes2 = Interests2.Interests;
-  type OpinionVotes2 = Opinions2.Opinions;
-  type CategorizationVotes2 = Categorizations2.Categorizations;
+  type InterestVotes = Interests.Interests;
+  type OpinionVotes = Opinions.Opinions;
+  type CategorizationVotes = Categorizations.Categorizations;
 
   public func build(
     admin: Ref<Principal>,
@@ -52,11 +44,11 @@ module {
     categories: Categories,
     questions: Questions,
     status_manager: StatusManager,
-    history: History,
+    users: Users,
     queries: QuestionQueries,
-    interest_votes: InterestVotes2,
-    opinion_votes: OpinionVotes2,
-    categorization_votes: CategorizationVotes2
+    interest_votes: InterestVotes,
+    opinion_votes: OpinionVotes,
+    categorization_votes: CategorizationVotes
   ) : Model {
     Model(
       WRef.WRef(admin),
@@ -66,7 +58,7 @@ module {
       categories,
       questions,
       status_manager,
-      history,
+      users,
       queries,
       interest_votes,
       opinion_votes,
@@ -75,104 +67,104 @@ module {
   };
 
   public class Model(
-    admin_: WRef<Principal>,
-    time_: WRef<Time>,
-    last_pick_date_: WRef<Time>,
-    params_: WRef<SchedulerParameters>,
-    categories_: Categories,
-    questions_: Questions,
-    status_manager_: StatusManager,
-    history_: History,
-    queries_: QuestionQueries,
-    interest_votes_: InterestVotes2,
-    opinion_votes_: OpinionVotes2,
-    categorization_votes_: CategorizationVotes2
+    _admin: WRef<Principal>,
+    _time: WRef<Time>,
+    _last_pick_date: WRef<Time>,
+    _params: WRef<SchedulerParameters>,
+    _categories: Categories,
+    _questions: Questions,
+    _status_manager: StatusManager,
+    _users: Users,
+    _queries: QuestionQueries,
+    _interest_votes: InterestVotes,
+    _opinion_votes: OpinionVotes,
+    _categorization_votes: CategorizationVotes
   ) = {
 
-    public func getMaster() : Master {
-      actor(Principal.toText(admin_.get())); // @todo: shall the admin and the master be different?
-    };
+//    public func getMaster() : Master {
+//      actor(Principal.toText(_admin.get())); // @todo: shall the admin and the master be different?
+//    };
 
     public func getAdmin(): Principal {
-      admin_.get();
+      _admin.get();
     };
 
     public func setAdmin(admin: Principal) {
-      admin_.set(admin);
+      _admin.set(admin);
     };
 
     public func getTime() : Time {
-      time_.get();
+      _time.get();
     };
 
     public func setTime(time: Time) {
-      time_.set(time);
+      _time.set(time);
     };
 
     public func getLastPickDate() : Time {
-      last_pick_date_.get();
+      _last_pick_date.get();
     };
 
     public func setLastPickDate(last_pick_date: Time) {
-      last_pick_date_.set(last_pick_date);
+      _last_pick_date.set(last_pick_date);
     };
 
     public func getStatusDuration(status: Status) : Duration {
       switch(status){
-        case(#CANDIDATE) { params_.get().interest_duration; };
-        case(#OPEN) { params_.get().opinion_duration; };
-        case(#REJECTED) { params_.get().rejected_duration; };
+        case(#CANDIDATE) { _params.get().interest_duration; };
+        case(#OPEN) { _params.get().opinion_duration; };
+        case(#REJECTED) { _params.get().rejected_duration; };
         case(_) { Debug.trap("There is no duration for this status"); };
       };
     };
 
     public func setStatusDuration(status: Status, duration: Duration) {
       switch(status){
-        case(#CANDIDATE) {       params_.set({ params_.get() with interest_duration       = duration; }) };
-        case(#OPEN) {        params_.set({ params_.get() with opinion_duration        = duration; }) };
-        case(#REJECTED) {                params_.set({ params_.get() with rejected_duration       = duration; }) };
+        case(#CANDIDATE) {       _params.set({ _params.get() with interest_duration       = duration; }) };
+        case(#OPEN) {        _params.set({ _params.get() with opinion_duration        = duration; }) };
+        case(#REJECTED) {                _params.set({ _params.get() with rejected_duration       = duration; }) };
         case(_) { Debug.trap("Cannot set a duration for this status"); };
       };
     };
 
     public func getInterestPickRate() : Duration {
-      params_.get().interest_pick_rate;
+      _params.get().interest_pick_rate;
     };
 
     public func setInterestPickRate(rate: Duration) {
-      params_.set({ params_.get() with interest_pick_rate = rate });
+      _params.set({ _params.get() with interest_pick_rate = rate });
     };
 
     public func getCategories(): Categories {
-      categories_;
+      _categories;
     };
 
     public func getQuestions(): Questions {
-      questions_;
+      _questions;
     };
 
     public func getStatusManager(): StatusManager {
-      status_manager_;
+      _status_manager;
     };
 
-    public func getHistory(): History {
-      history_;
+    public func getUsers(): Users {
+      _users;
     };
 
     public func getQueries(): QuestionQueries {
-      queries_;
+      _queries;
     };
 
-    public func getInterestVotes(): InterestVotes2 {
-      interest_votes_;
+    public func getInterestVotes(): InterestVotes {
+      _interest_votes;
     };
 
-    public func getOpinionVotes(): OpinionVotes2 {
-      opinion_votes_;
+    public func getOpinionVotes(): OpinionVotes {
+      _opinion_votes;
     };
 
-    public func getCategorizationVotes(): CategorizationVotes2 {
-      categorization_votes_;
+    public func getCategorizationVotes(): CategorizationVotes {
+      _categorization_votes;
     };
 
   };

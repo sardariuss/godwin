@@ -3,19 +3,19 @@ import Controller "controller/Controller";
 import Model "controller/Model";
 import Questions "Questions";
 import Interests "votes/Interests";
-import Opinions "votes/Opinions";
 import Categorizations "votes/Categorizations";
-import Interests2 "votes/Interests2";
-import Opinions2 "votes/Opinions2";
-import Categorizations2 "votes/Categorizations2";
+import Appeal "votes/representation/Appeal";
+import Polarization "votes/representation/Polarization";
+import PolarizationMap "votes/representation/PolarizationMap";
+import Opinions "votes/Opinions";
 import SubaccountGenerator "token/SubaccountGenerator";
-import SubaccountMap "token/SubaccountMap";
 import State "State";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
-import History "History";
-import StatusManager "StatusManager2";
+import Users "Users";
+import StatusManager "StatusManager";
 import QuestionVoteHistory "QuestionVoteHistory";
+import Votes "votes/Votes";
 
 import Map "mo:map/Map";
 
@@ -29,31 +29,36 @@ module {
   type Question = Types.Question;
   type Status = Types.Status;
   type Appeal = Types.Appeal;
+  type Interest = Types.Interest;
+  type Cursor = Types.Cursor;
+  type Polarization = Types.Polarization;
+  type CursorMap = Types.CursorMap;
+  type PolarizationMap = Types.PolarizationMap;
   type InterestVote = Interests.Vote;
   type Time = Int;
   type Controller = Controller.Controller;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
-  
+
   type Key = QuestionQueries.Key;
-  let { toAppealScore; toStatusEntry } = QuestionQueries;
+  let { toAppealScore; } = QuestionQueries;
 
   type State = State.State;
 
-  public func build(state_: State) : Controller {
+  public func build(_state: State) : Controller {
 
-    let admin = state_.admin;
+    let admin = _state.admin;
     
-    let categories = Categories.build(state_.categories);
+    let categories = Categories.build(_state.categories);
     
     let questions = Questions.build(
-      state_.questions.register,
-      state_.questions.index
+      _state.questions.register,
+      _state.questions.index
     );
 
-    let status_manager = StatusManager.build(state_.status.register);
+    let status_manager = StatusManager.build(_state.status.register);
 
-    let subaccount_generator = SubaccountGenerator.build(state_.subaccounts.index);
-    let payin : (Principal, Blob) -> async Result<(), ()> = func(principal: Principal, subaccount: Blob) : async Result<(), ()> {
+    let subaccount_generator = SubaccountGenerator.build(_state.subaccounts.index);
+    let payin : (Principal, Blob) -> async* Result<(), ()> = func(principal: Principal, subaccount: Blob) : async* Result<(), ()> {
       #ok; // @todo
     };
     let interest_payout : (Interests.Vote, Blob) -> () = func(vote: Interests.Vote, subaccount: Blob) : () {
@@ -63,64 +68,65 @@ module {
       // @todo
     };
 
-    let queries = QuestionQueries.build(state_.queries.register);
+    let queries = QuestionQueries.build(_state.queries.register);
 
-    // When the interest votes changes, update the associated key for the #INTEREST_SCORE order_by
-    let update_appeal_callback = func(question_id: Nat, old: ?Appeal, new: ?Appeal){
-      queries.replace(
-        Option.map(old, func(appeal: Appeal) : Key { toAppealScore(question_id, appeal); }),
-        Option.map(new, func(appeal: Appeal) : Key { toAppealScore(question_id, appeal); })
-      );
-    };
-
-    let interest_votes = Interests2.build(
-      state_.votes2.interest,
-      QuestionVoteHistory.build(Map.new<Nat, QuestionVoteHistory.VoteLink>()), // @todo
-      state_.subaccounts.interest_votes,
+    let interest_votes = Votes.Votes<Interest, Appeal>(_state.votes.interest, Appeal.init());
+    let interest_history = QuestionVoteHistory.build(_state.votes.interest_history);
+    
+    let interests = Interests.build(
+      interest_votes,
+      interest_history,
+      queries,
+      _state.subaccounts.interest_votes,
       subaccount_generator,
       payin,
-      interest_payout,
-      [update_appeal_callback]
+      interest_payout
     );
     
-    let opinion_votes = Opinions2.build(
-      state_.votes2.opinion,
-      QuestionVoteHistory.build(Map.new<Nat, QuestionVoteHistory.VoteLink>()) // @todo
+    let opinion_votes = Votes.Votes<Cursor, Polarization>(_state.votes.opinion, Polarization.nil());
+    let opinion_history = QuestionVoteHistory.build(_state.votes.opinion_history);
+    
+    let opinions = Opinions.build(
+      opinion_votes,
+      opinion_history,
     );
     
-    let categorization_votes = Categorizations2.build(
+    let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(_state.votes.categorization, PolarizationMap.nil(categories));
+    let categorization_history = QuestionVoteHistory.build(_state.votes.categorization_history);
+    
+    let categorizations = Categorizations.build(
       categories,
-      state_.votes2.categorization,
-      QuestionVoteHistory.build(Map.new<Nat, QuestionVoteHistory.VoteLink>()), // @todo
-      state_.subaccounts.categorization_votes,
+      categorization_votes,
+      categorization_history,
+      _state.subaccounts.categorization_votes,
       subaccount_generator,
       payin,
       categorization_payout
     );
 
-    let history = History.build(
-      state_.history.status_history,
-      state_.history.interests_history,
-      state_.history.opinons_history,
-      state_.history.categorizations_history,
-      state_.history.user_history,
-      state_.history.convictions_half_life,
-      state_.creation_date,
+    let users = Users.build(
+      _state.users.register,
+      opinion_history,
+      opinion_votes,
+      categorization_history,
+      categorization_votes,
+      _state.users.convictions_half_life,
+      _state.creation_date,
       categories);
 
     let model = Model.build(
-      state_.admin,
-      state_.controller.model.time,
-      state_.controller.model.last_pick_date,
-      state_.controller.model.params,
+      _state.admin,
+      _state.controller.model.time,
+      _state.controller.model.last_pick_date,
+      _state.controller.model.params,
       categories,
       questions,
       status_manager,
-      history,
+      users,
       queries,
-      interest_votes,
-      opinion_votes,
-      categorization_votes
+      interests,
+      opinions,
+      categorizations
     );
 
     let controller = Controller.build(model);

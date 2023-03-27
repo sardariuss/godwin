@@ -47,9 +47,9 @@ const VoteCategorization = ({questionId}: Props) => {
   const getBallot = async () => {
     if (isAuthenticated){
       let categorization_vote = await actor.getCategorizationBallot(questionId);
-      if (categorization_vote['ok'] !== undefined && categorization_vote['ok'].length > 0) {
-        setCategorization(categorization_vote['ok'][0].answer);
-        setVoteDate(categorization_vote['ok'][0].date);
+      if (categorization_vote['ok'] !== undefined) {
+        setCategorization(categorization_vote['ok'].answer);
+        setVoteDate(categorization_vote['ok'].date);
       } else {
         setCategorization(initCategorization(categories));
         setVoteDate(null);
@@ -62,7 +62,7 @@ const VoteCategorization = ({questionId}: Props) => {
   }, []);
 
 	return (
-    <div className="flex flex-col items-center space-y-2">
+    <div className="flex flex-col items-center space-y-2 mb-2">
       <ul className="list-none">
       {
         categorization.map(([category, cursor], index) => (
@@ -71,8 +71,6 @@ const VoteCategorization = ({questionId}: Props) => {
             id={ category + questionId.toString() }
             cursor={ cursor }
             setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
-            leftLabel= { categories.get(category).left.name }
-            rightLabel= { categories.get(category).right.name }
             leftColor={ categories.get(category).left.color }
             rightColor={ categories.get(category).right.color }
             thumbLeft={ categories.get(category).left.symbol }

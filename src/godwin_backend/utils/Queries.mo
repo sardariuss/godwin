@@ -45,40 +45,40 @@ module {
     register: Register<OrderBy, Key>,
     hash: Map.HashUtils<OrderBy>,
     compare_keys: (Key, Key) -> Order,
-    to_order_by_ : (Key) -> OrderBy,
+    to_order_by : (Key) -> OrderBy,
     get_identifier: (Key) -> Nat
   ) : Queries<OrderBy, Key> {
-    Queries(WMap.WMap(register, hash), compare_keys, to_order_by_, get_identifier);
+    Queries(WMap.WMap(register, hash), compare_keys, to_order_by, get_identifier);
   };
 
   type WRegister<OrderBy, Key> = WMap<OrderBy, Inner<Key>>;
 
   public class Queries<OrderBy, Key>(
-    register_: WRegister<OrderBy, Key>, 
-    compare_keys_: (Key, Key) -> Order,
-    to_order_by_ : (Key) -> OrderBy,
-    get_identifier_: (Key) -> Nat
+    _register: WRegister<OrderBy, Key>, 
+    _compare_keys: (Key, Key) -> Order,
+    _to_order_by : (Key) -> OrderBy,
+    _get_identifier: (Key) -> Nat
   ) {
 
     public func add(key: Key) {
-      Option.iterate(register_.getOpt(to_order_by_(key)), func(inner: Inner<Key>){
-        let id = get_identifier_(key);
+      Option.iterate(_register.getOpt(_to_order_by(key)), func(inner: Inner<Key>){
+        let id = _get_identifier(key);
         if (Map.has(inner.key_map, Map.nhash, id)) {
           Debug.trap("Cannot add new element with id '" # Nat.toText(id) # "' because it already exists for this order_by");
         };
         Map.set(inner.key_map, Map.nhash, id, key);
-        inner.ordered_set := OrderedSet.put(inner.ordered_set, compare_keys_, key);
+        inner.ordered_set := OrderedSet.put(inner.ordered_set, _compare_keys, key);
       });
     };
 
     public func remove(key: Key) {
-      Option.iterate(register_.getOpt(to_order_by_(key)), func(inner: Inner<Key>){
-        let id = get_identifier_(key);
+      Option.iterate(_register.getOpt(_to_order_by(key)), func(inner: Inner<Key>){
+        let id = _get_identifier(key);
         if (not Map.has(inner.key_map, Map.nhash, id)) {
           Debug.trap("Cannot remove element with id '" # Nat.toText(id) # "' because it does not exist for this order_by");
         };
         Map.delete(inner.key_map, Map.nhash, id);
-        inner.ordered_set := OrderedSet.delete(inner.ordered_set, compare_keys_, key);
+        inner.ordered_set := OrderedSet.delete(inner.ordered_set, _compare_keys, key);
       });
     };
 
@@ -94,7 +94,7 @@ module {
       direction: Direction,
       limit: Nat
     ) : ScanLimitResult {
-      switch(register_.getOpt(order_by)){
+      switch(_register.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find ordered_set for this order_by"); };
         case(?inner){
           switch(OrderedSet.keys(inner.ordered_set).next()){
@@ -105,10 +105,10 @@ module {
                 case(?last){
                   let lower = Option.getMapped(lower_bound, func(id: Nat) : Key { unwrapKey(id, order_by); }, first);
                   let upper = Option.getMapped(upper_bound, func(id: Nat) : Key { unwrapKey(id, order_by); }, last);
-                  let scan = OrderedSet.scanLimit(inner.ordered_set, compare_keys_, lower, upper, direction, limit);
+                  let scan = OrderedSet.scanLimit(inner.ordered_set, _compare_keys, lower, upper, direction, limit);
                   {
-                    keys = Array.map(scan.keys, func(key: Key) : Nat { get_identifier_(key); });
-                    next = Option.map(scan.next, func(key: Key) : Nat { get_identifier_(key); });
+                    keys = Array.map(scan.keys, func(key: Key) : Nat { _get_identifier(key); });
+                    next = Option.map(scan.next, func(key: Key) : Nat { _get_identifier(key); });
                   };
                 };
               };
@@ -131,16 +131,16 @@ module {
     };
 
     public func iter(order_by: OrderBy, direction: Direction) : Iter<Nat> {
-      switch(register_.getOpt(order_by)){
+      switch(_register.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find rbt for this order_by"); };
         case(?inner){ 
-          Iter.map(OrderedSet.iter(inner.ordered_set, direction), func(key: Key) : Nat { get_identifier_(key); });
+          Iter.map(OrderedSet.iter(inner.ordered_set, direction), func(key: Key) : Nat { _get_identifier(key); });
         };
       };
     };
 
     func unwrapKey(id: Nat, order_by: OrderBy) : Key {
-      switch(register_.getOpt(order_by)){
+      switch(_register.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find ordered_set for this order_by"); };
         case(?inner){
           switch(Map.get(inner.key_map, Map.nhash, id)){

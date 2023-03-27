@@ -35,9 +35,9 @@ const VoteOpinion = ({questionId}: Props) => {
   const getBallot = async () => {
     if (isAuthenticated){
       let opinion_vote = await actor.getOpinionBallot(questionId);
-      if (opinion_vote['ok'] !== undefined && opinion_vote['ok'].length > 0) {
-        setOpinion(opinion_vote['ok'][0].answer);
-        setVoteDate(opinion_vote['ok'][0].date);
+      if (opinion_vote['ok'] !== undefined) {
+        setOpinion(opinion_vote['ok'].answer);
+        setVoteDate(opinion_vote['ok'].date);
       } else {
         setOpinion(0.0);
         setVoteDate(null);
@@ -321,9 +321,10 @@ const VoteOpinion = ({questionId}: Props) => {
       <div className="w-[100px] h-[50px] bg-gray-400">
         <ScatterChart chartData={chartData}/>
       </div>
+      */}
       <ReactApexChart options={options} series={series} type="heatmap" height={350} />
       <ReactApexChart options={stacked_bar_options} series={stacked_bar_series} type="bar" height={50} />
-      */}
+      
     </div>
 	);
 };

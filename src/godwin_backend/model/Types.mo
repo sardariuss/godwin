@@ -2,7 +2,7 @@ import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
-import ICRC1 "mo:icrc1/ICRC1";
+//import ICRC1 "mo:icrc1/ICRC1";
 
 import Map "mo:map/Map";
 import Set "mo:map/Set";
@@ -37,11 +37,11 @@ module {
     #NotAllowed;
   };
 
-  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
+//  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
 
-  public type Master = actor {
-    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async Result<(), TransferFromUserError>;
-  };
+//  public type Master = actor {
+//    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async Result<(), TransferFromUserError>;
+//  };
 
   public type Parameters = {
     categories: CategoryArray;
@@ -59,7 +59,20 @@ module {
     author: Principal;
     text: Text;
     date: Time;
-    status_info: StatusInfo;
+  };
+
+  public type StatusHistory = Map<Status, [Time]>;
+
+  public type User = {
+    convictions: PolarizationMap;
+    opinions: Set<Nat>;
+  };
+
+  public type Status = {
+    #CANDIDATE;
+    #OPEN;
+    #CLOSED;
+    #REJECTED;
   };
 
   public type StatusInfo = {
@@ -69,63 +82,8 @@ module {
   };
 
   public type StatusData = {
-    #CANDIDATE: { vote_interest:       Vote<Interest, Appeal>;              };
-    #OPEN:      { vote_opinion:        Vote<Cursor, Polarization>;
-                  vote_categorization: Vote<CursorMap, PolarizationMap>;    };
-    #CLOSED:    ();
-    #REJECTED:  ();
-    #TRASH:     ();
-  };
-
-  public type StatusHistory = Map<Status, [Time]>;
-
-  public type UserHistory = {
-    convictions: PolarizationMap;
-    votes: Set<VoteId>;
-  };
-
-  public type Status = {
-    #CANDIDATE;
-    #OPEN;
-    #CLOSED;
-    #REJECTED;
-    #TRASH;
-  };
-
-  public type VoteType = {
-    #INTEREST;
-    #OPINION;
-    #CATEGORIZATION;
-  };
-
-  public type StatusHistory2 = Map<Status, [StatusInfo2]>;
-  
-  public type StatusInfo2 = {
-    #CANDIDATE: { date: Time; interests_id: Nat;                          };
-    #OPEN:      { date: Time; opinions_id: Nat;  categorizations_id: Nat; };
-    #CLOSED:    { date: Time;                                             };
-    #REJECTED:  { date: Time;                                             };
-    #TRASH;
-  };
-
-  public type StatusData2 = {
-    var current: StatusInfo2;
-    history: StatusHistory2;
-  };
-
-  public type StatusData3 = {
-    var current: {
-      status: Status;
-      date : Time;
-    };
+    var current: StatusInfo;
     history: Map<Status, [Time]>;
-  };
-
-  public type VoteId = (Nat, Nat);
-
-  public type UpdateBallotAuthorization = {
-    #UPDATE_BALLOT_FORBIDDEN;
-    #UPDATE_BALLOT_AUTHORIZED;
   };
 
   public type VoteStatus = {
@@ -150,6 +108,11 @@ module {
   public type Ballot<T> = {
     date: Int;
     answer: T;
+  };
+
+  public type VoteHistory = {
+    current: ?Nat;
+    history: [Nat];
   };
 
   public type Category = Text;
@@ -252,6 +215,8 @@ module {
   public type GetVoteError = {
     #VoteIsOpen;
     #VoteNotFound;
+    #QuestionVoteLinkNotFound;
+    #QuestionVoteLinkNotFound2;
   };
 
   public type CloseVoteError = {

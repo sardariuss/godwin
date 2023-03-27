@@ -1,31 +1,51 @@
-import Votes "Votes";
-import BallotAggregator "BallotAggregator";
-import CursorMap "representation/CursorMap";
-import PolarizationMap "representation/PolarizationMap";
+import Types               "../Types";
+import Utils               "../../utils/Utils";
+import SubaccountGenerator "../token/SubaccountGenerator";
 import Categories "../Categories";
-import Types "../Types";
-import WMap "../../utils/wrappers/WMap";
-import Utils "../../utils/Utils";
+import Votes               "Votes"; 
+import BallotAggregator    "BallotAggregator";
+import PolarizationMap              "representation/PolarizationMap";
+import CursorMap            "representation/CursorMap";
+import OpenVote            "interfaces/OpenVote";
+import PutBallot           "interfaces/PutBallot";
+import ReadVote            "interfaces/ReadVote";
+import CloseVote           "interfaces/CloseVote";
 
-import Map "mo:map/Map";
+import QuestionVoteHistory "../QuestionVoteHistory";
 
-import Buffer "mo:base/Buffer";
+import Map                 "mo:map/Map";
+
+import Result              "mo:base/Result";
+import Buffer             "mo:base/Buffer";
 
 module {
 
+  type Result<Ok, Err>     = Result.Result<Ok, Err>;
+  type Map<K, V>           = Map.Map<K, V>;
+  type Time                = Int;
+
   type Categories = Categories.Categories;
-  type CursorMap = Types.CursorMap;
-  type PolarizationMap = Types.PolarizationMap;  
-  type Votes<T, A> = Votes.Votes<T, A>;
-  type BallotAggregator<T, A> = BallotAggregator.BallotAggregator<T, A>;
-  type Map<K, V> = Map.Map<K, V>;
+  type CursorMap            = Types.CursorMap;
+  type PolarizationMap              = Types.PolarizationMap;
+  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
+  type BallotAggregator    = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
+  type OpenVoteWithSubaccount       = OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>;
+  type PutBallotPayin      = PutBallot.PutBallotPayin<CursorMap, PolarizationMap>;
+  type CloseVotePayout     = CloseVote.CloseVotePayout<CursorMap, PolarizationMap>;
+  type ReadVote            = ReadVote.ReadVote<CursorMap, PolarizationMap>;
+
+  type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
+  
+  public type VoteRegister = Votes.VoteRegister<CursorMap, PolarizationMap>;
+  public type Vote         = Types.Vote<CursorMap, PolarizationMap>;
+  public type Ballot       = Types.Ballot<CursorMap>;
+
+  type PutBallotError      = Types.PutBallotError;
+  type CloseVoteError      = Types.CloseVoteError;
+  type GetVoteError        = Types.GetVoteError;
+  type GetBallotError = Types.GetBallotError;
   type CursorArray = Types.CursorArray;
   type PolarizationArray = Types.PolarizationArray;
-
-  public type Vote = Types.Vote<CursorMap, PolarizationMap>;
-  public type Register = Map<Nat, Vote>;
-  public type Categorizations = Votes<CursorMap, PolarizationMap>;
-  public type Ballot = Types.Ballot<CursorMap>;
 
   public type PublicVote = {
     id: Nat;
@@ -49,20 +69,77 @@ module {
     };
   };
 
-  public func initRegister() : Register {
-    Map.new<Nat, Vote>();
+  public func initVoteRegister() : VoteRegister {
+    Votes.initRegister<CursorMap, PolarizationMap>();
   };
 
-  public func build(register: Register, categories: Categories) : Categorizations {
-    Votes.Votes(
-      WMap.WMap<Nat, Vote>(register, Map.nhash),
-      BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(
-        func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
-        PolarizationMap.addCursorMap,
-        PolarizationMap.subCursorMap
-      ),
-      PolarizationMap.nil(categories),
+  public func build(
+    categories: Categories,
+    votes: Votes.Votes<CursorMap, PolarizationMap>,
+    history: QuestionVoteHistory,
+    subaccounts: Map<Nat, Blob>,
+    generator: SubaccountGenerator,
+    payin: (Principal, Blob) -> async* Result<(), ()>,
+    payout: (Vote, Blob) -> ()
+  ) : Categorizations {
+    let ballot_aggregator = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(
+      func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
+      PolarizationMap.addCursorMap,
+      PolarizationMap.subCursorMap
     );
+    Categorizations(
+      history,
+      OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>(votes, subaccounts, generator),
+      PutBallot.PutBallotPayin<CursorMap, PolarizationMap>(votes, ballot_aggregator, subaccounts, payin),
+      CloseVote.CloseVotePayout<CursorMap, PolarizationMap>(votes, subaccounts, payout),
+      ReadVote.ReadVote<CursorMap, PolarizationMap>(votes)
+    );
+  };
+
+  public class Categorizations(
+    _history: QuestionVoteHistory,
+    _open_vote_interface: OpenVoteWithSubaccount,
+    _put_ballot_interface: PutBallotPayin,
+    _close_vote_interface: CloseVotePayout,
+    _read_vote_interface: ReadVote
+  ) {
+    
+    public func openVote(question_id: Nat) {
+      let vote_id = _open_vote_interface.openVote();
+      _history.addVote(question_id, vote_id);
+    };
+
+    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
+      switch(_history.findCurrentVote(question_id)) {
+        case (null) { #err(#VoteNotFound); }; // @todo
+        case (?vote_id) {
+          _read_vote_interface.getBallot(principal, vote_id);
+        };
+      };
+    };
+
+    public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor_map: CursorMap) : async* Result<(), PutBallotError> {
+      switch(_history.findCurrentVote(question_id)) {
+        case (null) { #err(#VoteClosed); }; // @todo
+        case (?vote_id) {
+          await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = cursor_map;});
+        };
+      };
+    };
+
+    public func closeVote(question_id: Nat) : Result<Vote, CloseVoteError> {
+      _close_vote_interface.closeVote(_history.closeCurrentVote(question_id));
+    };
+
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, GetVoteError> {
+      switch(_history.findHistoricalVote(question_id, iteration)) {
+        case (null) { #err(#VoteNotFound); };
+        case (?vote_id) {
+          _read_vote_interface.revealVote(vote_id);
+        };
+      };
+    };
+  
   };
 
 };

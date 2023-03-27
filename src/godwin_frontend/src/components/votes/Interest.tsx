@@ -58,9 +58,9 @@ const VoteInterest = ({questionId}: Props) => {
   const getBallot = async () => {
     if (isAuthenticated){
       let interest_vote = await actor.getInterestBallot(questionId);
-      if (interest_vote['ok'] !== undefined && interest_vote['ok'].length > 0) {
-        setVoteBallot(toEnum(interest_vote['ok'][0].answer));
-        setVoteDate(interest_vote['ok'][0].date);
+      if (interest_vote['ok']) {
+        setVoteBallot(toEnum(interest_vote['ok'].answer));
+        setVoteDate(interest_vote['ok'].date);
       } else {
         setVoteBallot(null);
         setVoteDate(null);

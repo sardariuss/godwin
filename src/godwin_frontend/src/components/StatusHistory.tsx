@@ -5,28 +5,13 @@ import StatusComponent from "./Status";
 import { useEffect, useState, useContext } from "react";
 
 type Props = {
-  questionId: bigint,
+  statusInfo: StatusInfo,
   statusHistory: StatusInfo[]
 };
 
-const StatusHistoryComponent = ({questionId, statusHistory}: Props) => {
+const StatusHistoryComponent = ({statusInfo, statusHistory}: Props) => {
 
-	const {actor} = useContext(ActorContext);
-  const [statusInfo, setStatusInfo] = useState<StatusInfo | undefined>(undefined);
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
-
-	const fetchStatusInfo = async () => {
-		let question = await actor.getQuestion(questionId);
-    if (question['ok'] !== undefined) {
-      setStatusInfo(question['ok'].status_info);
-    } else {
-      setStatusInfo(undefined);
-    }
-	}
-
-	useEffect(() => {
-		fetchStatusInfo();
-  }, []);
 
 	return (
 		<div className="relative text-gray-500 border-gray-200 dark:border-gray-700 dark:text-gray-400">

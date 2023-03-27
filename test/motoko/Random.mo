@@ -1,36 +1,16 @@
 import Types "../../src/godwin_backend/model/Types";
-import Interests "../../src/godwin_backend/model/votes/Interests";
-import Game "../../src/godwin_backend/model/Game";
-import Factory "../../src/godwin_backend/model/Factory";
-import State "../../src/godwin_backend/model/State";
-import Duration "../../src/godwin_backend/utils/Duration";
-
-import WSet "../../src/godwin_backend/utils/wrappers/WSet";
-
-import TestableItems "testableItems";
-import Principals "Principals";
-
-import Matchers "mo:matchers/Matchers";
-import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
-import Debug "mo:base/Debug";
-import Nat32 "mo:base/Nat32";
-import Nat "mo:base/Nat";
 
 import Fuzz "mo:fuzz";
-import Blob "mo:base/Blob";
-import Bool "mo:base/Bool";
 import Array "mo:base/Array";
 
 module {
 
-  // For convenience: from base module
   type Principal = Principal.Principal;
   type Fuzzer = Fuzz.Fuzzer;
-  type Duration = Duration.Duration;
   type Interest = Types.Interest;
   type Cursor = Types.Cursor;
   type Category = Types.Category;

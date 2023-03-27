@@ -1,6 +1,5 @@
 import Types "Types";
 import Questions "Questions";
-import Interests "votes/Interests";
 import Queries "../utils/Queries";
 import OrderedSet "../utils/OrderedSet";
 
@@ -18,16 +17,15 @@ module {
 
   type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
-  type InterestVote = Interests.Vote;
   type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
   type Questions = Questions.Questions;
   type Status = Types.Status;
-  type Interests = Interests.Interests;
   type Appeal = Types.Appeal;
 
+  // @todo: AUTHOR, TEXT and DATE are not used
   public type OrderBy = {
     #AUTHOR;
     #TEXT;
@@ -65,7 +63,6 @@ module {
 
   public func build(register: Register) : QuestionQueries {
 
-    // @todo: only the status and interest score are plugged so far
     addOrderBy(register, #STATUS(#CANDIDATE));
     addOrderBy(register, #STATUS(#OPEN));
     addOrderBy(register, #STATUS(#CLOSED));
@@ -85,16 +82,15 @@ module {
 
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
-      case(#AUTHOR){ "AUTHOR"; };
-      case(#TEXT){ "TEXT"; };
-      case(#DATE){ "DATE"; };
-      case(#STATUS(status)) { 
+      case(#AUTHOR)         { "AUTHOR"; };
+      case(#TEXT)           { "TEXT"; };
+      case(#DATE)           { "DATE"; };
+      case(#STATUS(status)){ 
         switch(status){
-          case(#CANDIDATE) { "VOTING_INTEREST"; };
-          case(#OPEN) { "VOTING_OPINION"; };
-          case(#CLOSED) { "CLOSED"; };
-          case(#REJECTED) { "REJECTED"; };
-          case(#TRASH) { "TRASH"; };
+          case(#CANDIDATE)  { "CANDIDATE"; };
+          case(#OPEN)       { "OPEN"; };
+          case(#CLOSED)     { "CLOSED"; };
+          case(#REJECTED)   { "REJECTED"; };
         };
       };
       case(#INTEREST_SCORE) { "INTEREST_SCORE"; };
@@ -138,31 +134,31 @@ module {
   func unwrapAuthor(key: Key) : AuthorEntry {
     switch(key){
       case(#AUTHOR(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
+      case(_) { Debug.trap("Failed to unwrap author"); };
     };
   };
   func unwrapText(key: Key) : TextEntry {
     switch(key){
       case(#TEXT(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
+      case(_) { Debug.trap("Failed to unwrap text"); };
     };
   };
   func unwrapDateEntry(key: Key) : DateEntry {
     switch(key){
       case(#DATE(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
+      case(_) { Debug.trap("Failed to unwrap date entry"); };
     };
   };
   func unwrapStatusEntry(key: Key) : StatusEntry {
     switch(key){
       case(#STATUS(entry)) { entry; };
-      case(_) { Debug.trap("@todo"); };
+      case(_) { Debug.trap("Failed to unwrap status entry"); };
     };
   };
   func unwrapAppealScore(key: Key) : AppealScore {
     switch(key){
       case(#INTEREST_SCORE(interest_score)) { interest_score; };
-      case(_) { Debug.trap("@todo"); };
+      case(_) { Debug.trap("Failed to unwrap appeal score"); };
     };
   };
   public func unwrapQuestionId(key: Key) : Nat {
@@ -214,12 +210,8 @@ module {
       date = question.date;
     });
   };
-  public func toStatusEntry(question: Question) : Key {
-    #STATUS({
-      question_id = question.id;
-      status = question.status_info.status;
-      date = question.status_info.date;
-    });
+  public func toStatusEntry(question_id: Nat, status: Status, date: Time) : Key {
+    #STATUS({question_id; status; date;});
   };
 
   public func toAppealScore(question_id: Nat, appeal: Appeal) : Key {

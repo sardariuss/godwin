@@ -2,13 +2,14 @@ import Types           "Types";
 import Status          "Status";
 import Categories      "Categories";
 import Decay           "Decay";
-import Votes2          "votes/Votes2";
+import Votes           "votes/Votes";
 import Opinions        "votes/Opinions";
 import Categorizations "votes/Categorizations";
 import Interests       "votes/Interests";
 import Polarization    "votes/representation/Polarization";
 import Cursor          "votes/representation/Cursor";
 import PolarizationMap "votes/representation/PolarizationMap";
+import QuestionVoteHistory "QuestionVoteHistory";
 
 import Utils           "../utils/Utils";
 import WMap            "../utils/wrappers/WMap";
@@ -23,6 +24,7 @@ import Option          "mo:base/Option";
 import Float           "mo:base/Float";
 import Principal       "mo:base/Principal";
 import Trie            "mo:base/Trie";
+import Array           "mo:base/Array";
 
 module {
 
@@ -44,91 +46,125 @@ module {
   type OpinionVote        = Opinions.Vote;
   type CategorizationVote = Categorizations.Vote;
   type OpinionBallot      = Opinions.Ballot;
+  type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
+  type Votes<T, A>        = Votes.Votes<T, A>;
+  type Vote<T, A>        = Types.Vote<T, A>;
 
   // For convenience: from types module
   type Question           = Types.Question;
   type Status             = Types.Status;
-  type VoteId             = Types.VoteId;
   type Category           = Types.Category;
   type Cursor             = Types.Cursor;
-  type CursorMap          = Types.CursorMap;
   type Polarization       = Types.Polarization;
+  type CursorMap          = Types.CursorMap;
   type PolarizationMap    = Types.PolarizationMap;
   type Decay              = Types.Decay; 
-  type UserHistory        = Types.UserHistory;
+  type User               = Types.User;
   type StatusInfo         = Types.StatusInfo;
   type StatusHistory      = Types.StatusHistory;
   type StatusData         = Types.StatusData;
-  type Vote<T, A>         = Types.Vote<T, A>;
 
-  type User = {
-    convictions: PolarizationMap;
-    interest_votes: Set<Nat>;
-    opinion_votes: Set<Nat>;
-    categorization_votes: Set<Nat>;
-  };
 
   public func build(
-    register: Map.Map<Principal, User>,
-    opinion_votes: Votes2.Votes2<Cursor, Polarization>,
-    categorization_votes: Votes2.Votes2<CursorMap, PolarizationMap>,
-    categories: Categories,
+    users: Map<Principal, User>,
+    opinion_history: QuestionVoteHistory,
+    opinion_votes: Votes<Cursor, Polarization>,
+    categorization_history: QuestionVoteHistory,
+    categorization_votes: Votes<CursorMap, PolarizationMap>,
     half_life: ?Duration,
     date_init: Time,
+    categories: Categories
   ) : Users {
     Users(
-      WMap.WMap(register, Map.phash),
+      WMap.WMap(users, Map.phash),
+      opinion_history,
       opinion_votes,
+      categorization_history,
       categorization_votes,
       categories,
       Decay.computeOptDecay(date_init, half_life)
     );
   };
-
+  
   public class Users(
-    register_: WMap.WMap<Principal, User>,
-    opinion_votes_: Votes2.Votes2<Cursor, Polarization>,
-    categorization_votes_: Votes2.Votes2<CursorMap, PolarizationMap>,
-    categories_: Categories,
-    decay_params_: ?Decay
+    _users: WMap.WMap<Principal, User>,
+    _opinion_history: QuestionVoteHistory,
+    _opinion_votes: Votes<Cursor, Polarization>,
+    _categorization_history: QuestionVoteHistory,
+    _categorization_votes: Votes<CursorMap, PolarizationMap>,
+    _categories: Categories,
+    _decay_params: ?Decay
   ) {
 
     public func getDecay() : ?Decay {
-      decay_params_;
+      _decay_params;
     };
 
-    public func update(question_id: Nat, vote_opinion_id: Nat, vote_categorization_id: Nat) {
-      let vote_opinion = switch(opinion_votes_.findVote(vote_opinion_id)){
-        case (null) { Debug.trap("Opinion vote not found"); };
-        case (?vote) { vote };
-      };
-      let vote_categorization = switch(categorization_votes_.findVote(vote_categorization_id)){
-        case (null) { Debug.trap("Categorization vote not found"); };
-        case (?vote) { vote };
-      };
-      // Update the user convictions: add the new opinion vote
+    public func getUserConvictions(principal: Principal) : ?PolarizationMap {
+      Option.map(_users.getOpt(principal), func(history: User) : PolarizationMap { history.convictions; });
+    };
+    
+    public func getUserOpinions(principal: Principal) : ?Set<Nat> {
+      Option.map(_users.getOpt(principal), func(history: User) : Set<Nat> { history.opinions; });
+    };
+
+    public func removeCategory(category: Category) {
+      _users.forEach(func(principal, user) {
+        _users.set(principal, { user with convictions = Trie.remove(user.convictions, Categories.key(category), Categories.equal).0 });
+      });
+    };
+
+    public func addCategory(category: Category) {
+      _users.forEach(func(principal, user) {
+        _users.set(principal, { user with convictions = Trie.put(user.convictions, Categories.key(category), Categories.equal, Polarization.nil()).0 });
+      });
+    };
+
+    public func onClosingQuestion(question_id: Nat) {
+      // Get the last votes
+      let vote_opinion = _opinion_votes.getVote(
+        switch(_opinion_history.getCurrentVote(question_id)){
+          case(?vote_id) { vote_id };
+          case(null) { Debug.trap("@todo"); };
+        });
+      let vote_categorization = _categorization_votes.getVote(
+        switch(_categorization_history.getCurrentVote(question_id)){
+          case(?vote_id) { vote_id };
+          case(null) { Debug.trap("@todo"); };
+        });
+      // Add the ballots to the user history
+      addUserBallots(question_id, vote_opinion.ballots);
+      // Update the user convictions: add the last opinion vote
       updateUserConvictions(question_id, vote_opinion.ballots, vote_categorization.aggregate, null);
-      // Update the user convictions: update the old opinion votes
-      if (current_iteration > 0){
-        let previous_vote_categorization = categorizations_history_.get(question_id, current_iteration - 1);
-        for (iteration in Iter.range(0, current_iteration - 1)) {
-          let old_vote_opinion = opinons_history_.get(question_id, iteration);
-          updateUserConvictions(question_id, old_vote_opinion.ballots, vote_categorization.aggregate, ?previous_vote_categorization.aggregate);
+
+      let previous_categorization = Option.map(_categorization_history.findPreviousVote(question_id), func(vote_id: Nat) : Vote<CursorMap, PolarizationMap> {
+        _categorization_votes.getVote(vote_id);
+      });
+
+      switch(previous_categorization) {
+        case (null) {};
+        case (?old_categorization) {
+          // Update the old opinion votes
+          let opinion_history = _opinion_history.getHistoricalVotes(question_id);
+          for (vote_id in Array.vals(opinion_history)) {
+            let old_vote_opinion = _opinion_votes.getVote(vote_id);
+            updateUserConvictions(question_id, old_vote_opinion.ballots, vote_categorization.aggregate, ?old_categorization.aggregate);
+          };
         };
       };
     };
 
-    func getUserHistory(principal: Principal) : UserHistory {
-      Option.get(user_history_.getOpt(principal), {
-        votes = Set.new<VoteId>();
-        convictions = PolarizationMap.nil(categories_);
+    func getUser(principal: Principal) : User {
+      Option.get(_users.getOpt(principal), {
+        opinions = Set.new<Nat>();
+        convictions = PolarizationMap.nil(_categories);
       });
     };
 
-    func addUserBallots(question_id: Nat, index: Nat, opinion_ballots: Map<Principal, OpinionBallot>) {
+    func addUserBallots(vote_id: Nat, opinion_ballots: Map<Principal, OpinionBallot>) {
       for ((principal, {answer; date;}) in Map.entries(opinion_ballots)){
-        var user_history = getUserHistory(principal);
-        Set.add(user_history.votes, Votes.votehash, (question_id, index));
+        var user = getUser(principal);
+        Set.add(user.opinions, Map.nhash, vote_id);
       };
     };
 
@@ -141,9 +177,9 @@ module {
       // Process old votes by removing removing the contribution of the previous categorization 
       // and adding the contribution of the new categorization
       for ((principal, {answer; date;}) in Map.entries(opinion_ballots)){
-        var user_history = getUserHistory(principal);
-        user_history := { user_history with convictions = updateBallotContribution(user_history.convictions, answer, date, new_categorization, previous_categorization); };
-        user_history_.set(principal, user_history);
+        var user = getUser(principal);
+        user := { user with convictions = updateBallotContribution(user.convictions, answer, date, new_categorization, previous_categorization); };
+        _users.set(principal, user);
       };
     };
 
@@ -161,10 +197,10 @@ module {
     : PolarizationMap 
     {
       // Create a Polarization trie from the cursor, based on given categories.
-      let opinion_trie = Utils.make(categories_.keys(), Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
+      let opinion_trie = Utils.make(_categories.keys(), Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
 
       // Compute the decay coefficient
-      let decay_coef = Option.getMapped(decay_params_, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
+      let decay_coef = Option.getMapped(_decay_params, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
 
       // Add the opinion times new categorization.
       var contribution = PolarizationMap.mul(

@@ -12,8 +12,8 @@ import { useNavigate } from "react-router-dom";
 const UserComponent = () => {
 
   const [convictions, setConvictions] = useState<PolarizationArray>([]);
-  const [votes, setVotes] = useState<[bigint, bigint][]>([]);
-  const [votes2, setVotes2] = useState<[Ballot | undefined][]>([]);
+  //const [votes, setVotes] = useState<[bigint, bigint][]>([]);
+  //const [votes2, setVotes] = useState<[Ballot | undefined][]>([]);
 	const {actor, isAuthenticated, logout} = useContext(ActorContext);
 
   const navigate = useNavigate();
@@ -34,9 +34,9 @@ const UserComponent = () => {
 //        for (let i = 0; i < votes.length; i++) {
 //          let ballot = await actor.getOpinionBallot(principal, votes[i][0], votes[i][1]);
 //          if (ballot['ok'] !== undefined) {
-//            setVotes2([...votes2, ballot['ok']]);
+//            setVotes([...votes2, ballot['ok']]);
 //          } else {
-//            setVotes2([]);
+//            setVotes([]);
 //          }
 //        };
 //      }
@@ -69,6 +69,7 @@ const UserComponent = () => {
         }
         </ul>
       </div>
+      { /*
       <div>Votes:
         <ul className="list-none">
         {
@@ -80,6 +81,7 @@ const UserComponent = () => {
         }
         </ul>
       </div>
+      */ }
       <div>
         { isAuthenticated ? 
           <button type="button" onClick={logout} className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2">

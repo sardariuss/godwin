@@ -2,7 +2,6 @@ import Types "Types";
 import WMap "../utils/wrappers/WMap";
 import Ref "../utils/Ref";
 import WRef "../utils/wrappers/WRef";
-import Status "Status";
 
 import Map "mo:map/Map";
 
@@ -36,7 +35,6 @@ module {
 
   // For convenience: from types module
   type Question = Types.Question;
-  type Status = Types.Status;
   type GetQuestionError = Types.GetQuestionError;
 
   public func toText(question: Question) : Text {
@@ -45,7 +43,6 @@ module {
     buffer.add("author: " # Principal.toText(question.author) # ", ");
     buffer.add("text: " # question.text # ", ");
     buffer.add("date: " # Int.toText(question.date) # ", ");
-    buffer.add("status: " # Status.statusToText(question.status_info.status)); // @todo: put the whole status_info
     Text.join("", buffer.vals());
   };
   
@@ -54,14 +51,13 @@ module {
        and Principal.equal(q1.author, q2.author)
        and Text.equal(q1.text, q2.text)
        and Int.equal(q1.date, q2.date)
-       and Status.equalStatus(q1.status_info.status, q2.status_info.status); // @todo: put the whole status_info
   };
 
   public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
     Questions(WMap.WMap(register, Map.nhash), WRef.WRef(index));
   };
 
-  public class Questions(register_: WMap<Nat, Question>, index_: WRef<Nat>) {
+  public class Questions(_register: WMap<Nat, Question>, _index: WRef<Nat>) {
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
@@ -71,46 +67,41 @@ module {
     };
 
     public func findQuestion(question_id: Nat) : ?Question {
-      register_.getOpt(question_id);
+      _register.getOpt(question_id);
     };
 
     public func createQuestion(author: Principal, date: Int, text: Text) : Question {
       let question = {
-        id = index_.get();
+        id = _index.get();
         author;
         text;
         date;
-        status_info = {
-          status = #CANDIDATE;
-          iteration = 0;
-          date;
-        };
       };
-      register_.set(question.id, question);
-      index_.set(index_.get() + 1);
+      _register.set(question.id, question);
+      _index.set(_index.get() + 1);
       question;
     };
 
     public func removeQuestion(question_id: Nat) {
-      switch(register_.getOpt(question_id)){
+      switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("The question does not exist"); };
         case(?question) { 
-          ignore register_.remove(question.id);
+          ignore _register.remove(question.id);
         };
       };
     };
 
     public func replaceQuestion(question: Question) {
-      switch(register_.getOpt(question.id)){
+      switch(_register.getOpt(question.id)){
         case(null) { Debug.trap("The question does not exist"); };
         case(_) { 
-          ignore register_.put(question.id, question);
+          ignore _register.put(question.id, question);
         };
       };
     };
 
     public func iter() : Iter<Question> {
-      register_.vals();
+      _register.vals();
     };
 
     type MatchCount = { count: Nat; id: Nat; };

@@ -1,5 +1,5 @@
 import Types "../../Types";
-import Votes2 "../Votes2";
+import Votes "../Votes";
 import BallotAggregator "../BallotAggregator";
 
 import Map "mo:map/Map";
@@ -24,30 +24,31 @@ module {
   type GetBallotError = Types.GetBallotError;
   type CloseVoteError = Types.CloseVoteError;
   
-  public class CloseVote<T, A>(votes_: Votes2.Votes2<T, A>) {
+  public class CloseVote<T, A>(_votes_: Votes.Votes<T, A>) {
 
-    public func closeVote(id: Nat) : Result<(), CloseVoteError> {
-      Result.mapOk<Vote<T, A>, (), CloseVoteError>(votes_.closeVote(id), func(_) {});
+    public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
+      _votes_.closeVote(id);
     };
 
   };
 
   public class CloseVotePayout<T, A>(
-    votes_: Votes2.Votes2<T, A>,
-    subaccounts_: Map<Nat, Blob>,
-    payout_: (Vote<T, A>, Blob) -> ()
+    _votes_: Votes.Votes<T, A>,
+    _subaccounts: Map<Nat, Blob>,
+    _payout: (Vote<T, A>, Blob) -> ()
   ) {
 
-    public func closeVote(id: Nat) : Result<(), CloseVoteError> {
+    public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
       // Get the subaccount
-      let subaccount = switch(Map.get(subaccounts_, Map.nhash, id)){
+      let subaccount = switch(Map.get(_subaccounts, Map.nhash, id)){
         case(null) { return #err(#VoteNotFound); }; // @todo
         case(?s) { s; };
       };
       // Close the vote
-      Result.mapOk<Vote<T, A>, (), CloseVoteError>(votes_.closeVote(id), func(vote) {
+      Result.mapOk<Vote<T, A>, Vote<T, A>, CloseVoteError>(_votes_.closeVote(id), func(vote) {
         // Payout
-        payout_(vote, subaccount);
+        _payout(vote, subaccount);
+        vote;
       });
     };
 

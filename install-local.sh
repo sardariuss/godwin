@@ -24,13 +24,15 @@ dfx deploy godwin_backend --argument '(record {
     convictions_half_life = null;
   };
   scheduler = record {
-    interest_pick_rate = variant { SECONDS = 0 };
-    interest_duration = variant { DAYS = 1 };
-    opinion_duration = variant { SECONDS = 0 };
-    categorization_duration = variant { SECONDS = 0 };
-    rejected_duration = variant { DAYS = 1 };
+    interest_pick_rate = variant { HOURS = 1 };
+    interest_duration = variant { HOURS = 4 };
+    opinion_duration = variant { HOURS = 1 };
+    rejected_duration = variant { HOURS = 6 };
   };
 })'
+
+# Run the scenario @temp
+dfx canister call godwin_backend runScenario '()'
 
 # Deploy the internet identity
 dfx deploy internet_identity
@@ -39,4 +41,4 @@ dfx deploy internet_identity
 dfx canister create godwin_frontend
 
 # Generate the candid files
-dfx generate
+dfx generate godwin_backend

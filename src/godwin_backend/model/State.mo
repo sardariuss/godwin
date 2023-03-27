@@ -5,12 +5,10 @@ import Ref "../utils/Ref";
 import Categorization "votes/Categorizations";
 import Interests "votes/Interests";
 import Opinion "votes/Opinions";
-import Categorization2 "votes/Categorizations2";
-import Interests2 "votes/Interests2";
-import Opinion2 "votes/Opinions2";
+import Categorizations "votes/Categorizations";
+import Opinions "votes/Opinions";
 import Categories "Categories";
 import Duration "../utils/Duration";
-import History "History";
 
 import Set "mo:map/Set";
 import Map "mo:map/Map";
@@ -45,9 +43,10 @@ module {
   type Appeal = Types.Appeal;
   type Status = Types.Status;
   type StatusHistory = Types.StatusHistory;
-  type UserHistory = Types.UserHistory;
+  type User = Types.User;
   type Interest = Types.Interest;
-  type StatusData3 = Types.StatusData3;
+  type StatusData = Types.StatusData;
+  type VoteHistory = Types.VoteHistory;
 
   public type State = {
     admin             : Ref<Principal>;
@@ -58,7 +57,7 @@ module {
       index              : Ref<Nat>;
     };
     status            : {
-      register           : Map<Nat, StatusData3>;
+      register           : Map<Nat, StatusData>;
     };
     queries           : {
       register           : QuestionQueries.Register;
@@ -70,27 +69,21 @@ module {
         params           : Ref<SchedulerParameters>;
       };
     };
-    votes             : {
-      interest           : Interests.Register;
-      opinion            : Opinion.Register;
-      categorization     : Categorization.Register;
-    };
     subaccounts       : {
       interest_votes        : Map<Nat, Blob>;
       categorization_votes  : Map<Nat, Blob>;
       index                 : Ref<Nat>;
     };
-    votes2          : {
-      interest                : Interests2.VoteRegister;
-      opinion                 : Opinion2.VoteRegister;
-      categorization          : Categorization2.VoteRegister;
+    votes          : {
+      interest                : Interests.VoteRegister;
+      interest_history        : Map<Nat, VoteHistory>;
+      opinion                 : Opinions.VoteRegister;
+      opinion_history        : Map<Nat, VoteHistory>;
+      categorization          : Categorizations.VoteRegister;
+      categorization_history        : Map<Nat, VoteHistory>;
     };
-    history           : {
-      status_history          : Map<Nat, StatusHistory>;
-      interests_history       : Map2D<Nat, Nat, Vote<Interest, Appeal>>;
-      opinons_history         : Map2D<Nat, Nat, Vote<Cursor, Polarization>>;
-      categorizations_history : Map2D<Nat, Nat, Vote<CursorMap, PolarizationMap>>;
-      user_history            : Map<Principal, UserHistory>;
+    users          : {
+      register                : Map<Principal, User>;
       convictions_half_life   : ?Duration;
     };
   };
@@ -101,7 +94,7 @@ module {
       creation_date  = creation_date;
       categories     = Categories.initRegister(parameters.categories);
       status         = {
-        register              = Map.new<Nat, StatusData3>();
+        register              = Map.new<Nat, StatusData>();
       };
       questions      = {
         register              = Map.new<Nat, Question>();
@@ -123,21 +116,15 @@ module {
         index                 = Ref.initRef<Nat>(0);
       };
       votes          = {
-        interest              = Interests.initRegister();
-        opinion               = Opinion.initRegister();
-        categorization        = Categorization.initRegister();
+        interest              = Interests.initVoteRegister();
+        interest_history      = Map.new<Nat, VoteHistory>();
+        opinion               = Opinions.initVoteRegister();
+        opinion_history      = Map.new<Nat, VoteHistory>();
+        categorization        = Categorizations.initVoteRegister();
+        categorization_history      = Map.new<Nat, VoteHistory>();
       };
-      votes2          = {
-        interest              = Interests2.initVoteRegister();
-        opinion               = Opinion2.initVoteRegister();
-        categorization        = Categorization2.initVoteRegister();
-      };
-      history        = {
-        status_history            = Map.new<Nat, StatusHistory>();
-        interests_history         = Map.new<Nat, Map<Nat, Vote<Interest, Appeal>>>();
-        opinons_history           = Map.new<Nat, Map<Nat, Vote<Cursor, Polarization>>>();
-        categorizations_history   = Map.new<Nat, Map<Nat, Vote<CursorMap, PolarizationMap>>>();
-        user_history              = Map.new<Principal, UserHistory>();
+      users        = {
+        register                  = Map.new<Principal, User>();
         convictions_half_life     = parameters.history.convictions_half_life;
       };
     };

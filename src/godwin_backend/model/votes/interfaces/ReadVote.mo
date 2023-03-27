@@ -1,5 +1,5 @@
 import Types "../../Types";
-import Votes2 "../Votes2";
+import Votes "../Votes";
 
 import Map "mo:map/Map";
 
@@ -18,12 +18,12 @@ module {
   type GetVoteError = Types.GetVoteError;
   type GetBallotError = Types.GetBallotError;
   
-  public class ReadVote<T, A>(votes_: Votes2.Votes2<T, A>) {
+  public class ReadVote<T, A>(_votes: Votes.Votes<T, A>) {
 
     // @todo: should return a public vote
     public func revealVote(id: Nat) : Result<Vote<T, A>, GetVoteError> {
-      let vote = switch(votes_.findVote(id)){
-        case(null) { return #err(#VoteNotFound); };
+      let vote = switch(_votes.findVote(id)){
+        case(null) { return #err(#QuestionVoteLinkNotFound2); };
         case(?v) { v; };
       };
       if (vote.status == #OPEN){
@@ -33,7 +33,7 @@ module {
     }; 
 
     public func getBallot(principal: Principal, id: Nat) : Result<Ballot<T>, GetBallotError> {
-      let vote = switch(votes_.findVote(id)){
+      let vote = switch(_votes.findVote(id)){
         case(null) { return #err(#VoteNotFound); };
         case(?v) { v; };
       };
