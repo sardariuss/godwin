@@ -1,23 +1,95 @@
-import { Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, CategoryInfo, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-type Props = {
-  polarization: Polarization,
+import { Bar }            from 'react-chartjs-2'
+
+const options = {
+  indexAxis: 'y' as const,
+  responsive: true,
+  plugins: {
+    tooltip: {
+      enabled: true
+    },
+    legend: {
+      display: false
+    }
+  },
+  animation:{
+    duration: 0
+  },
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      stacked: true,
+      display: false,
+    },
+    y: {
+      stacked: true,
+      display: false,
+    }
+  },
 };
 
-const PolarizationComponent = ({polarization}: Props) => {
+type Props = {
+  category: Category;
+  categoryInfo: CategoryInfo;
+  showCategory: boolean;
+  polarization: Polarization;
+  centerSymbol: string;
+};
 
-  const total = polarization.left + polarization.center + polarization.right; 
+const PolarizationComponent = ({category, categoryInfo, showCategory, polarization, centerSymbol}: Props) => {
 
-  function getPercentage(side_aggregate){
-    return Math.round(side_aggregate / total * 100.0);
+  const labels = [category];
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: categoryInfo.left.symbol,
+        data: labels.map(() => polarization.left),
+        backgroundColor: categoryInfo.left.color,
+      },
+      {
+        label: centerSymbol,
+        data: labels.map(() => polarization.center),
+        backgroundColor: '#ffffff',
+      },
+      {
+        label: categoryInfo.right.symbol,
+        data: labels.map(() => polarization.right),
+        backgroundColor: categoryInfo.right.color,
+      },
+    ],
   };
-  
+   
 	return (
     <>
-      <div className="flex flex-row w-20">
-        <div className={`h-2.5 bg-red-600 dark:bg-red-600`} style={{width: `${getPercentage(polarization.left)}%`}}></div>
-        <div className={`h-2.5 bg-gray-600 dark:bg-gray-600`} style={{width: `${getPercentage(polarization.center)}%`}}></div>
-        <div className={`h-2.5 bg-green-600 dark:bg-green-600`} style={{width: `${getPercentage(polarization.right)}%`}}></div>
+      <div className="grid grid-cols-5">
+        <div className="flex flex-col items-center">
+          <div className="text-3xl">{categoryInfo.left.symbol}</div>
+          <div className="text-xs">{categoryInfo.left.name}</div>
+        </div>
+        { /* Negative left margin -mr-12 is required to compensate the right gap produced by the bar chart...*/}
+        <div className="-mr-12 col-span-3"> 
+          <Bar
+            data={data}
+            options={options}
+            height="50px"
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="text-3xl">{categoryInfo.right.symbol}</div>
+          <div className="text-xs">{categoryInfo.right.name}</div>
+        </div>
+        {
+          showCategory ? 
+          <div className="col-start-1 col-end-6 text-center">
+            <div>
+              {category}
+            </div>
+          </div> :
+          <> </>
+        }
       </div>
     </>
 	);

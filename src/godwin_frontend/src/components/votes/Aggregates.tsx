@@ -1,11 +1,14 @@
-import { _SERVICE, Status, Polarization, Time, PublicVote, PublicVote_1, PublicVote_2 } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Status, Polarization, Time, Appeal, CategoryInfo, Category } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 import { ActorContext } from "../../ActorContext"
 import { CategoriesContext } from "../../CategoriesContext"
 
 import { useContext, useEffect, useState } from "react";
 
-import { StatusEnum, statusToEnum } from "../../utils";
+import { StatusEnum, statusToEnum, toMap } from "../../utils";
+
+import PolarizationComponent from "./Polarization";
+import AppealComponent from "./Appeal";
 
 type Props = {
   questionId: bigint,
@@ -17,95 +20,99 @@ enum SideEnum {
   RIGHT
 };
 
+enum AggregateType {
+  INTEREST,
+  OPINION,
+  CATEGORIZATION
+};
+
 const Aggregates = ({ questionId, statusHistory }: Props) => {
 
   const {actor} = useContext(ActorContext);
   const {categories} = useContext(CategoriesContext);
+
+  const [currentAggregate, setCurrentAggregate] = useState<AggregateType>(AggregateType.OPINION);
   
-  const [interestVotes, setInterestVotes] = useState<PublicVote_1[]>([]);
+  const [interestAggregates, setInterestAggregates] = useState<Appeal[]>([]);
   const [interestPoints, setInterestPoints] = useState<bigint | undefined>(undefined);
   const [interestWinnerSymbol, setInterestWinnerSymbol] = useState<string | undefined>(undefined);
 
-  const [opinionVotes, setOpinionVotes] = useState<PublicVote[]>([]);
+  const [opinionAggregates, setOpinionAggregates] = useState<Polarization[]>([]);
   const [opinionWinningRatio, setOpinionWinningRatio] = useState<number | undefined>(undefined);
   const [opinionWinnerSymbol, setOpinionWinnerSymbol] = useState<string | undefined>(undefined);
 
-  const [categorizationVotes, setCategorizationVotes] = useState<PublicVote_2[]>([]);
+  const [categorizationAggregates, setCategorizationAggregates] = useState<Map<Category, Polarization>[]>([]);
   const [categorizationWinningRatio, setCategorizationWinningRatio] = useState<number | undefined>(undefined);
   const [categorizationWinnerSymbol, setCategorizationWinnerSymbol] = useState<string | undefined>(undefined);
 
   const fetchCandidateStatusVotes = async () => {
-    let votes : PublicVote_1[] = [];
+    let appeals : Appeal[] = [];
     if (statusHistory !== undefined) {
       let history_dates = statusHistory.get(StatusEnum.CANDIDATE);
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
         let vote = await actor.getInterestVote(questionId, BigInt(iteration));
         if (vote['ok'] !== undefined) {
-          votes.push(vote['ok']);
+          appeals.push(vote['ok'].aggregate);
         };
       };
     };
-    setInterestVotes(votes);
+    setInterestAggregates(appeals);
 
-    if (votes.length > 0) {
-      let last_interest = votes[votes.length - 1];
-      setInterestPoints(last_interest.aggregate.score);
-      setInterestWinnerSymbol(last_interest.aggregate.ups > last_interest.aggregate.downs ? "🤓" : "🤡");
+    if (appeals.length > 0) {
+      let last_interest = appeals[appeals.length - 1];
+      setInterestPoints(last_interest.score);
+      setInterestWinnerSymbol(last_interest.ups > last_interest.downs ? "🤓" : "🤡");
     }
   };
 
   const fetchOpenStatusVotes = async () => {
-    let opVotes : PublicVote[] = [];
-    let catVotes : PublicVote_2[] = [];
+    let opAggregates : Polarization[] = [];
+    let catAggregates : Map<Category, Polarization>[] = [];
     if (statusHistory !== undefined) {
       let history_dates = statusHistory.get(StatusEnum.OPEN);
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
         let opVote = await actor.getOpinionVote(questionId, BigInt(iteration));
         if (opVote['ok'] !== undefined) {
-          opVotes.push(opVote['ok']);
+          opAggregates.push(opVote['ok'].aggregate);
         };
         let catVote = await actor.getCategorizationVote(questionId, BigInt(iteration));
         if (catVote['ok'] !== undefined) {
-          catVotes.push(catVote['ok']);
+          catAggregates.push(toMap(catVote['ok'].aggregate));
         }
-      };
-    };
-    setOpinionVotes(opVotes);
-    setCategorizationVotes(catVotes);
+      }
+    }
+    setOpinionAggregates(opAggregates);
+    setCategorizationAggregates(catAggregates);
 
-    if (opVotes.length > 0) {
-      let last_opinion = opVotes[opVotes.length - 1];
-      let opinion_aggregate = last_opinion.aggregate;
-      let total = opinion_aggregate.left + opinion_aggregate.center + opinion_aggregate.right;
-      if (opinion_aggregate.left > opinion_aggregate.center && opinion_aggregate.left > opinion_aggregate.right) {
-        setOpinionWinningRatio(opinion_aggregate.left / total);
+    if (opAggregates.length > 0) {
+      let last_opinion = opAggregates[opAggregates.length - 1];
+      let total = last_opinion.left + last_opinion.center + last_opinion.right;
+      if (last_opinion.left > last_opinion.center && last_opinion.left > last_opinion.right) {
+        setOpinionWinningRatio(last_opinion.left / total);
         setOpinionWinnerSymbol("👎");
-      } else if (opinion_aggregate.right > opinion_aggregate.center && opinion_aggregate.right > opinion_aggregate.left) {
-        setOpinionWinningRatio(opinion_aggregate.right / total);
+      } else if (last_opinion.right > last_opinion.center && last_opinion.right > last_opinion.left) {
+        setOpinionWinningRatio(last_opinion.right / total);
         setOpinionWinnerSymbol("👍");
       } else {
-        setOpinionWinningRatio(opinion_aggregate.center / total);
+        setOpinionWinningRatio(last_opinion.center / total);
         setOpinionWinnerSymbol("🤷");
       }
     }
 
-    if (catVotes.length > 0) {
-      let last_categorization = catVotes[catVotes.length - 1];
-      let cat_aggregate = last_categorization.aggregate;
+    if (catAggregates.length > 0) {
+      let last_categorization = catAggregates[catAggregates.length - 1];
       let max_ratio = 0;
       let winning_dimension: [string, Polarization] | undefined = undefined;
       let winning_side = SideEnum.LEFT;
-      for (let i = 0; i < cat_aggregate.length; i++) {
-        let dim_aggregate = cat_aggregate[i];
-        let polarization = dim_aggregate[1];
+      last_categorization.forEach((polarization, dimension) => {
         let num_votes = polarization.left + polarization.center + polarization.right;
         let ratio_left = polarization.left / num_votes;
         let ratio_right = polarization.right / num_votes;
 
         if (ratio_left >= max_ratio || ratio_right > max_ratio) {
-          winning_dimension = dim_aggregate;
+          winning_dimension = [dimension, polarization];
           if (ratio_left >= ratio_right) {
             winning_side = SideEnum.LEFT;
             max_ratio = ratio_left;
@@ -114,7 +121,7 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
             max_ratio = ratio_right;
           }
         }
-      }
+      });
 
       if (winning_dimension !== undefined) {
         if (max_ratio > 0.33) {
@@ -143,56 +150,74 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
     fetchOpenStatusVotes();
   }, [statusHistory]);
 
+  const opinion_info : CategoryInfo = {
+    left: {
+      symbol: "👎",
+      name: "DISAGREE",
+      color: "#0F9D58"
+    },
+    right: {
+      symbol: "👍",
+      name: "AGREE",
+      color: "#DB4437"
+    }
+  }
+
 	return (
     <div>
-    <div>
-      <ul className="hidden text-sm font-medium text-center text-gray-500 rounded-lg shadow sm:flex divide-x divide-gray-200 dark:divide-gray-700 dark:text-gray-400">
-        <li className="w-full">
-        <div className={"inline-block w-full p-4 bg-white rounded-l-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (interestWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
-            <div>{ interestWinnerSymbol !== undefined ? interestWinnerSymbol : "." }</div>
-            <div className={ interestPoints !== undefined ? "" : "text-transparent"}>{ interestPoints !== undefined ? interestPoints + " points" : "n/a" } </div>
-          </div>
-        </li>
-        <li className="w-full">
-          <div className={"inline-block w-full p-4 bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (opinionWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
-            <div>{ opinionWinnerSymbol !== undefined ? opinionWinnerSymbol : "." }</div>
-            <div className={ opinionWinningRatio !== undefined ? "" : "text-transparent"}>{ opinionWinningRatio !== undefined ? Math.round(opinionWinningRatio * 100) + "%" : "n/a" } </div>
-          </div>
-        </li>
-        <li className="w-full">
-          <div className={"inline-block w-full p-4 bg-white rounded-r-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (categorizationWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
-          <div>{ categorizationWinnerSymbol !== undefined ? categorizationWinnerSymbol : "." }</div>
-            <div className={ categorizationWinningRatio !== undefined ? "" : "text-transparent"}>{ categorizationWinningRatio !== undefined ? Math.round(categorizationWinningRatio * 100) + "%" : "n/a" } </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-    {/*
-    <div>
-      <ol className="flex items-center w-full space-y-5">
-            <li className="text-sm font-light whitespace-nowrap">
-              Opinion:
-            </li>
-            <ol className="flex w-full justify-end">
-              <li className="flex w-[70px] h-4 bg-google-red justify-center overflow-visible text-black/100 hover:z-0">
-                <div className="text-xs font-extralight whitespace-nowrap">
-                  35% 👎
-                </div>
-              </li>
-              <li className="flex w-[80px] h-4 bg-white justify-center overflow-visible text-black/100 hover:z-0">
-                <div className="text-xs font-extralight whitespace-nowrap">
-                  40% 🤷
-                </div>
-              </li>
-              <li className="flex w-[50px] h-4 bg-google-green justify-center overflow-visible text-black/100 hover:z-0">
-                <div className="text-xs font-extralight whitespace-nowrap">
-                  25% 👍
-                </div>
-              </li>
-            </ol>
-          </ol>
+      <div>
+        <ul className="hidden text-sm font-medium text-center text-gray-500 rounded-lg shadow sm:flex divide-x divide-gray-200 dark:divide-gray-700 dark:text-gray-400">
+          <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.INTEREST)}>
+            <div className={"inline-block w-full p-4 bg-white rounded-l-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (interestWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
+              <div className="text-xl">{ interestWinnerSymbol !== undefined ? interestWinnerSymbol : "." }</div>
+              <div className={ interestPoints !== undefined ? "" : "text-transparent"}>{ interestPoints !== undefined ? interestPoints + " points" : "n/a" } </div>
+            </div>
+          </li>
+          <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.OPINION)}>
+            <div className={"inline-block w-full p-4 bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (opinionWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
+              <div className="text-xl">{ opinionWinnerSymbol !== undefined ? opinionWinnerSymbol : "." }</div>
+              <div className={ opinionWinningRatio !== undefined ? "" : "text-transparent"}>{ opinionWinningRatio !== undefined ? Math.round(opinionWinningRatio * 100) + "%" : "n/a" } </div>
+            </div>
+          </li>
+          <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.CATEGORIZATION)}>
+            <div className={"inline-block w-full p-4 bg-white rounded-r-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (categorizationWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
+              <div className="text-xl">{ categorizationWinnerSymbol !== undefined ? categorizationWinnerSymbol : "." }</div>
+              <div className={ categorizationWinningRatio !== undefined ? "" : "text-transparent"}>{ categorizationWinningRatio !== undefined ? Math.round(categorizationWinningRatio * 100) + "%" : "n/a" } </div>
+            </div>
+          </li>
+        </ul>
       </div>
-     */}
+      <div>
+        <div>
+        {
+          // @todo: take the last iteration
+          currentAggregate === AggregateType.INTEREST && interestAggregates[0] !== undefined ?
+            <AppealComponent appeal={interestAggregates[0]}></AppealComponent> : <></>
+        }
+        </div>
+        <div>
+        {
+          // @todo: take the last iteration
+          currentAggregate === AggregateType.OPINION && opinionAggregates[0] !== undefined ?
+            <PolarizationComponent category={"OPINION"} categoryInfo={opinion_info} showCategory={false} polarization={opinionAggregates[0]} centerSymbol={"🤷"}></PolarizationComponent>
+          : <></>
+        }
+        </div>
+        <ol>
+        {
+          // @todo: take the last iteration
+          currentAggregate === AggregateType.CATEGORIZATION && categorizationAggregates[0] !== undefined ? (
+          [...Array.from(categories.entries())].map((elem) => (
+            <li key={elem[0]}>
+              <PolarizationComponent category = {elem[0]} categoryInfo={elem[1]} showCategory={true} polarization={categorizationAggregates[0].get(elem[0])} centerSymbol={"🙏"}></PolarizationComponent>
+            </li>
+          ))
+          ) : (
+            <></>
+          )
+        }
+        </ol>
+      </div>
     </div>
 	);
 };

@@ -4,10 +4,6 @@ import { RangeSlider } from "./RangeSlider";
 
 import { nsToStrDate } from "../../utils";
 
-import ReactApexChart from 'react-apexcharts';
-
-import { ScatterChart } from "../ScatterChart";
-
 import { Chart, registerables } from 'chart.js';
 
 import React, { useContext, useState, useEffect } from "react";
@@ -317,14 +313,6 @@ const VoteOpinion = ({questionId}: Props) => {
           <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :
           <></>
       }
-      {/*
-      <div className="w-[100px] h-[50px] bg-gray-400">
-        <ScatterChart chartData={chartData}/>
-      </div>
-      */}
-      <ReactApexChart options={options} series={series} type="heatmap" height={350} />
-      <ReactApexChart options={stacked_bar_options} series={stacked_bar_series} type="bar" height={50} />
-      
     </div>
 	);
 };

@@ -58,5 +58,14 @@ export const nsToStrDate = (ns: bigint) => {
       ampm = hour < 12 ? "am" : "pm";
 
   return hourFormatted + ":" + minuteFormatted + " " + ampm + " · " + getMonthStr(month) + " " + day + ", " + year;
-
 };
+
+export const toMap = (arr: any[]) => {
+  let map = new Map<any, any>();
+  arr.forEach((elem) => {
+    map.set(elem[0], elem[1]);
+  });
+  return map;
+};
+
+

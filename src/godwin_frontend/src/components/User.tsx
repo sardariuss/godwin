@@ -1,7 +1,6 @@
 import { _SERVICE, PolarizationArray, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext } from "../ActorContext"
 import { Principal } from "@dfinity/principal";
-import PolarizationComponent from "./votes/Polarization";
 
 import { useEffect, useState, useContext } from "react";
 
@@ -63,7 +62,6 @@ const UserComponent = () => {
           convictions.map(([category, polarization]) => (
             <li className="list-none" key={category}>
               <div>{category}</div>
-              <PolarizationComponent polarization={polarization}/>
             </li>
           ))
         }
