@@ -1,13 +1,10 @@
 import Types "../../Types";
 import Votes "../Votes";
-import BallotAggregator "../BallotAggregator";
 
 import Map "mo:map/Map";
 
 import Principal "mo:base/Principal";
-import Option "mo:base/Option";
 import Result "mo:base/Result";
-import Debug "mo:base/Debug";
 
 module {
 
@@ -17,11 +14,7 @@ module {
 
   type Map<K, V> = Map.Map<K, V>;
 
-  type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
-  type BallotAggregator<T, A> = BallotAggregator.BallotAggregator<T, A>;
-  type GetVoteError = Types.GetVoteError;
-  type GetBallotError = Types.GetBallotError;
   type CloseVoteError = Types.CloseVoteError;
   
   public class CloseVote<T, A>(_votes_: Votes.Votes<T, A>) {
@@ -41,7 +34,7 @@ module {
     public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
       // Get the subaccount
       let subaccount = switch(Map.get(_subaccounts, Map.nhash, id)){
-        case(null) { return #err(#VoteNotFound); }; // @todo
+        case(null) { return #err(#NoSubacountLinked); };
         case(?s) { s; };
       };
       // Close the vote

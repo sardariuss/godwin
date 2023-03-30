@@ -24,15 +24,15 @@ module {
   type Map<K, V>           = Map.Map<K, V>;
   type Time                = Int;
 
-  type Categories = Categories.Categories;
-  type CursorMap            = Types.CursorMap;
-  type PolarizationMap              = Types.PolarizationMap;
-  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
-  type BallotAggregator    = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
-  type OpenVoteWithSubaccount       = OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>;
-  type PutBallotPayin      = PutBallot.PutBallotPayin<CursorMap, PolarizationMap>;
-  type CloseVotePayout     = CloseVote.CloseVotePayout<CursorMap, PolarizationMap>;
-  type ReadVote            = ReadVote.ReadVote<CursorMap, PolarizationMap>;
+  type Categories             = Categories.Categories;
+  type CursorMap              = Types.CursorMap;
+  type PolarizationMap        = Types.PolarizationMap;
+  type SubaccountGenerator    = SubaccountGenerator.SubaccountGenerator;
+  type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
+  type OpenVoteWithSubaccount = OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>;
+  type PutBallotPayin         = PutBallot.PutBallotPayin<CursorMap, PolarizationMap>;
+  type CloseVotePayout        = CloseVote.CloseVotePayout<CursorMap, PolarizationMap>;
+  type ReadVote               = ReadVote.ReadVote<CursorMap, PolarizationMap>;
 
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   
@@ -43,9 +43,10 @@ module {
   type PutBallotError      = Types.PutBallotError;
   type CloseVoteError      = Types.CloseVoteError;
   type GetVoteError        = Types.GetVoteError;
-  type GetBallotError = Types.GetBallotError;
-  type CursorArray = Types.CursorArray;
-  type PolarizationArray = Types.PolarizationArray;
+  type GetBallotError      = Types.GetBallotError;
+  type CursorArray         = Types.CursorArray;
+  type PolarizationArray   = Types.PolarizationArray;
+  type RevealVoteError     = Types.RevealVoteError;
 
   public type PublicVote = {
     id: Nat;
@@ -110,18 +111,15 @@ module {
     };
 
     public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      switch(_history.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteNotFound); }; // @todo
-        case (?vote_id) {
-          _read_vote_interface.getBallot(principal, vote_id);
-        };
-      };
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
+        _read_vote_interface.getBallot(principal, vote_id);
+      });
     };
 
     public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor_map: CursorMap) : async* Result<(), PutBallotError> {
       switch(_history.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteClosed); }; // @todo
-        case (?vote_id) {
+        case (#err(err)) { #err(err); };
+        case (#ok(vote_id)) {
           await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = cursor_map;});
         };
       };
@@ -131,13 +129,10 @@ module {
       _close_vote_interface.closeVote(_history.closeCurrentVote(question_id));
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, GetVoteError> {
-      switch(_history.findHistoricalVote(question_id, iteration)) {
-        case (null) { #err(#VoteNotFound); };
-        case (?vote_id) {
-          _read_vote_interface.revealVote(vote_id);
-        };
-      };
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.chain(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Result<Vote, RevealVoteError> {
+        _read_vote_interface.getVote(vote_id);
+      });
     };
   
   };

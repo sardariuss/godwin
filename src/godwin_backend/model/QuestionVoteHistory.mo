@@ -15,6 +15,7 @@ import Duration        "../utils/Duration";
 import Map             "mo:map/Map";
 import Set             "mo:map/Set";
 
+import Result          "mo:base/Result";
 import Debug           "mo:base/Debug";
 import Iter            "mo:base/Iter";
 import Option          "mo:base/Option";
@@ -29,6 +30,7 @@ module {
   // For convenience: from base module
   type Time               = Int;
   type Iter<T>            = Iter.Iter<T>;
+  type Result<Ok, Err>       = Result.Result<Ok, Err>;
 
   // For convenience: from map module
   type Map<K, V>          = Map.Map<K, V>;
@@ -53,6 +55,8 @@ module {
   type User               = Types.User;
   type VoteHistory        = Types.VoteHistory;
   type StatusData         = Types.StatusData;
+  type FindCurrentVoteError = Types.FindCurrentVoteError;
+  type FindHistoricalVoteError = Types.FindHistoricalVoteError;
 
   public type Register = Map<Nat, VoteHistory>;
 
@@ -101,8 +105,26 @@ module {
       };
     };
 
-    public func findCurrentVote(question_id: Nat) : ?Nat {
-      Option.chain(_register.getOpt(question_id), func(vote_link: VoteHistory) : ?Nat { vote_link.current; });
+    public func findCurrentVote(question_id: Nat) : Result<Nat, FindCurrentVoteError> {
+      let {current} = switch(_register.getOpt(question_id)){
+        case(null) { return #err(#VoteLinkNotFound); };
+        case(?vote_link) { vote_link; };
+      };
+      switch(current){
+        case(null) { #err(#VoteClosed); };
+        case(?vote) { #ok(vote); };
+      };
+    };
+
+    public func findHistoricalVote(question_id: Nat, iteration: Nat) : Result<Nat, FindHistoricalVoteError> {
+      let {history} = switch(_register.getOpt(question_id)){
+        case(null) { return #err(#VoteLinkNotFound); };
+        case(?vote_link) { vote_link };
+      };
+      if (iteration >= history.size()) {
+        return #err(#IterationOutOfBounds);
+      };
+      return #ok(history[iteration]);
     };
 
     public func findPreviousVote(question_id: Nat) : ?Nat {
@@ -114,17 +136,6 @@ module {
         return null;
       };
       return ?history[history.size() - 1];
-    };
-
-    public func findHistoricalVote(question_id: Nat, iteration: Nat) : ?Nat {
-      let {current; history;} = switch(_register.getOpt(question_id)){
-        case(null) { return null; };
-        case(?vote_link) { vote_link };
-      };
-      if (iteration >= history.size()) {
-        return null;
-      };
-      return ?history[iteration];
     };
 
     public func getCurrentVote(question_id: Nat) : ?Nat {

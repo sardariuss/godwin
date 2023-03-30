@@ -29,6 +29,9 @@ dfx deploy godwin_backend --argument '(record {
     opinion_duration = variant { HOURS = 1 };
     rejected_duration = variant { HOURS = 6 };
   };
+  questions = record {
+    character_limit = 240;
+  };
 })'
 
 # Run the scenario @temp

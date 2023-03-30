@@ -16,31 +16,23 @@ module {
 
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
-  type PutBallotError = Types.PutBallotError;
 
-   public class BallotAggregator<T, A>(
+  type AddBallotError = Types.AddBallotError;
+
+  public class BallotAggregator<T, A>(
     _is_valid_answer: (T) -> Bool,
     _add_to_aggregate: (A, T) -> A,
     _remove_from_aggregate: (A, T) -> A
   ) {
 
-    public func putFreshBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), PutBallotError> {
-      // Verify the principal has not already voted
-      if (Map.has(vote.ballots, Map.phash, principal)){
-        return #err(#AlreadyVoted);
-      };
-      // Put the ballot
-      putBallot(vote, principal, ballot);
-    };
- 
     // Safe
-    public func putBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), PutBallotError> {
+    public func addBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), AddBallotError> {
       // Verify the principal is not anonymous
       if (Principal.isAnonymous(principal)){
         return #err(#PrincipalIsAnonymous);
       };
       // Verify the vote is open
-      if (vote.status == #CLOSED){
+      if (vote.status == #CLOSED){ // @todo: remove, redondant with previous checks
         return #err(#VoteClosed);
       };
       // Verify the ballot is valid

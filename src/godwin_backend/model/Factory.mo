@@ -44,20 +44,21 @@ module {
 
   type State = State.State;
 
-  public func build(_state: State) : Controller {
+  public func build(state: State) : Controller {
 
-    let admin = _state.admin;
+    let admin = state.admin;
     
-    let categories = Categories.build(_state.categories);
+    let categories = Categories.build(state.categories);
     
     let questions = Questions.build(
-      _state.questions.register,
-      _state.questions.index
+      state.questions.register,
+      state.questions.index,
+      state.questions.character_limit
     );
 
-    let status_manager = StatusManager.build(_state.status.register);
+    let status_manager = StatusManager.build(state.status.register);
 
-    let subaccount_generator = SubaccountGenerator.build(_state.subaccounts.index);
+    let subaccount_generator = SubaccountGenerator.build(state.subaccounts.index);
     let payin : (Principal, Blob) -> async* Result<(), ()> = func(principal: Principal, subaccount: Blob) : async* Result<(), ()> {
       #ok; // @todo
     };
@@ -68,57 +69,57 @@ module {
       // @todo
     };
 
-    let queries = QuestionQueries.build(_state.queries.register);
+    let queries = QuestionQueries.build(state.queries.register);
 
-    let interest_votes = Votes.Votes<Interest, Appeal>(_state.votes.interest, Appeal.init());
-    let interest_history = QuestionVoteHistory.build(_state.votes.interest_history);
+    let interest_votes = Votes.Votes<Interest, Appeal>(state.votes.interest, Appeal.init());
+    let interest_history = QuestionVoteHistory.build(state.votes.interest_history);
     
     let interests = Interests.build(
       interest_votes,
       interest_history,
       queries,
-      _state.subaccounts.interest_votes,
+      state.subaccounts.interest_votes,
       subaccount_generator,
       payin,
       interest_payout
     );
     
-    let opinion_votes = Votes.Votes<Cursor, Polarization>(_state.votes.opinion, Polarization.nil());
-    let opinion_history = QuestionVoteHistory.build(_state.votes.opinion_history);
+    let opinion_votes = Votes.Votes<Cursor, Polarization>(state.votes.opinion, Polarization.nil());
+    let opinion_history = QuestionVoteHistory.build(state.votes.opinion_history);
     
     let opinions = Opinions.build(
       opinion_votes,
       opinion_history,
     );
     
-    let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(_state.votes.categorization, PolarizationMap.nil(categories));
-    let categorization_history = QuestionVoteHistory.build(_state.votes.categorization_history);
+    let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(state.votes.categorization, PolarizationMap.nil(categories));
+    let categorization_history = QuestionVoteHistory.build(state.votes.categorization_history);
     
     let categorizations = Categorizations.build(
       categories,
       categorization_votes,
       categorization_history,
-      _state.subaccounts.categorization_votes,
+      state.subaccounts.categorization_votes,
       subaccount_generator,
       payin,
       categorization_payout
     );
 
     let users = Users.build(
-      _state.users.register,
+      state.users.register,
       opinion_history,
       opinion_votes,
       categorization_history,
       categorization_votes,
-      _state.users.convictions_half_life,
-      _state.creation_date,
+      state.users.convictions_half_life,
+      state.creation_date,
       categories);
 
     let model = Model.build(
-      _state.admin,
-      _state.controller.model.time,
-      _state.controller.model.last_pick_date,
-      _state.controller.model.params,
+      state.admin,
+      state.controller.model.time,
+      state.controller.model.last_pick_date,
+      state.controller.model.params,
       categories,
       questions,
       status_manager,

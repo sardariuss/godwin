@@ -33,6 +33,10 @@ module {
     rejected_duration: Duration;
   };
 
+  public type QuestionsParameters = {
+    character_limit: Nat;
+  };
+
   type CredentialErrors = {
     #NotAllowed;
   };
@@ -47,6 +51,7 @@ module {
     categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;
+    questions: QuestionsParameters;
   };
 
   public type Decay = {
@@ -196,13 +201,15 @@ module {
     #QuestionNotFound;
   };
 
-  public type OpenQuestionError = PrincipalError;
+  public type OpenQuestionError = PrincipalError or {
+    #TextTooLong;
+    #OpenInterestVoteFailed: OpenVoteError;
+  };
   
   public type ReopenQuestionError = PrincipalError or GetQuestionError or {
     #InvalidStatus;
+    #OpenInterestVoteFailed: OpenVoteError;
   };
-
-  public type SetUserNameError = PrincipalError;
 
   public type SetPickRateError = VerifyCredentialsError;
 
@@ -212,32 +219,48 @@ module {
 
   public type GetUserVotesError = PrincipalError;
 
-  public type GetVoteError = {
-    #VoteIsOpen;
-    #VoteNotFound;
-    #QuestionVoteLinkNotFound;
-    #QuestionVoteLinkNotFound2;
+  public type FindCurrentVoteError = {
+    #VoteLinkNotFound;
+    #VoteClosed;
   };
+
+  public type FindHistoricalVoteError = {
+    #VoteLinkNotFound;
+    #IterationOutOfBounds;
+  };
+
+  public type OpenVoteError = {
+    #PayinError;
+  };
+
+  public type GetVoteError = {
+    #VoteNotFound;
+  };
+
+  public type RevealVoteError = FindHistoricalVoteError or GetVoteError;
 
   public type CloseVoteError = {
     #AlreadyClosed;
     #VoteNotFound;
+    #NoSubacountLinked;
   };
 
-  public type GetAggregateError = GetVoteError or {
-    #NotAllowed;
-  };
-
-  public type GetBallotError = GetVoteError or {
-    #NotAllowed;
+  public type GetBallotError = FindCurrentVoteError or {
     #BallotNotFound;
+    #VoteNotFound;
   };
 
-  public type PutBallotError = PrincipalError or GetVoteError or {
-    #InvalidPoll;
+  public type AddBallotError = {
+    #PrincipalIsAnonymous;
     #VoteClosed;
     #InvalidBallot;
+  };
+
+  public type PutBallotError = PrincipalError or FindCurrentVoteError or AddBallotError or {
+    #VoteNotFound;
     #AlreadyVoted;
+    #NoSubacountLinked;
+    #PayinError;
   };
 
 };

@@ -51,7 +51,7 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
       let history_dates = statusHistory.get(StatusEnum.CANDIDATE);
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
-        let vote = await actor.getInterestVote(questionId, BigInt(iteration));
+        let vote = await actor.revealInterestVote(questionId, BigInt(iteration));
         if (vote['ok'] !== undefined) {
           appeals.push(vote['ok'].aggregate);
         };
@@ -73,11 +73,11 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
       let history_dates = statusHistory.get(StatusEnum.OPEN);
       let num_iterations = history_dates !== undefined ? history_dates.length : 0;
       for (let iteration = 0; iteration < num_iterations; iteration++) {
-        let opVote = await actor.getOpinionVote(questionId, BigInt(iteration));
+        let opVote = await actor.revealOpinionVote(questionId, BigInt(iteration));
         if (opVote['ok'] !== undefined) {
           opAggregates.push(opVote['ok'].aggregate);
         };
-        let catVote = await actor.getCategorizationVote(questionId, BigInt(iteration));
+        let catVote = await actor.revealCategorizationVote(questionId, BigInt(iteration));
         if (catVote['ok'] !== undefined) {
           catAggregates.push(toMap(catVote['ok'].aggregate));
         }

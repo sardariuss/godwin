@@ -33,6 +33,8 @@ module {
   type Iter<T> = Iter.Iter<T>;
   type Order = Order.Order;
 
+  type OpenQuestionError = Types.OpenQuestionError;
+
   // For convenience: from types module
   type Question = Types.Question;
   type GetQuestionError = Types.GetQuestionError;
@@ -53,11 +55,14 @@ module {
        and Int.equal(q1.date, q2.date)
   };
 
-  public func build(register: Map<Nat, Question>, index: Ref<Nat>) : Questions {
-    Questions(WMap.WMap(register, Map.nhash), WRef.WRef(index));
+  public func build(register: Map<Nat, Question>, index: Ref<Nat>, character_limit: Ref<Nat>) : Questions {
+    Questions(WMap.WMap(register, Map.nhash), WRef.WRef(index), WRef.WRef(character_limit));
   };
 
-  public class Questions(_register: WMap<Nat, Question>, _index: WRef<Nat>) {
+  public class Questions(
+    _register: WMap<Nat, Question>,
+    _index: WRef<Nat>, 
+    _character_limit: WRef<Nat>) {
 
     public func getQuestion(question_id: Nat) : Question {
       switch(findQuestion(question_id)){
@@ -68,6 +73,16 @@ module {
 
     public func findQuestion(question_id: Nat) : ?Question {
       _register.getOpt(question_id);
+    };
+
+    public func canCreateQuestion(author: Principal, date: Int, text: Text) : ?OpenQuestionError {
+      if (Principal.isAnonymous(author)){
+        ?#PrincipalIsAnonymous;
+      } else if (text.size() > _character_limit.get()){
+        ?#TextTooLong;
+      } else {
+        null;
+      };
     };
 
     public func createQuestion(author: Principal, date: Int, text: Text) : Question {

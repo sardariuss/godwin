@@ -12,18 +12,14 @@ import Event "Event";
 import Schema "Schema";
 
 import Set "mo:map/Set";
-import Map "mo:map/Map";
 
 import StateMachine "../../utils/StateMachine";
 
-import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
-import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Debug "mo:base/Debug";
-import Nat "mo:base/Nat";
 
 module {
 
@@ -34,15 +30,13 @@ module {
   type Schema = Schema.Schema;
   type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type Key = QuestionQueries.Key;
-  let { toAppealScore; toStatusEntry } = QuestionQueries;
+  let { toStatusEntry } = QuestionQueries;
 
   // For convenience: from base module
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   type Time = Int;
   type Set<K> = Set.Set<K>;
-  type Iter<T> = Iter.Iter<T>;
-  type Map<K, V> = Map.Map<K, V>;
 
   // For convenience: from types module
   type Question = Types.Question;
@@ -64,7 +58,6 @@ module {
   type CategoryInfo = Types.CategoryInfo;
   type CategoryArray = Types.CategoryArray;
   type StatusHistory = Types.StatusHistory;
-  type User = Types.User;
   type StatusInfo = Types.StatusInfo;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
@@ -72,17 +65,14 @@ module {
   type GetQuestionError = Types.GetQuestionError;
   type OpenQuestionError = Types.OpenQuestionError;
   type ReopenQuestionError = Types.ReopenQuestionError;
-  type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type PrincipalError = Types.PrincipalError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
-  type GetUserConvictionsError = Types.GetUserConvictionsError;
-  type GetAggregateError = Types.GetAggregateError;
   type GetBallotError = Types.GetBallotError;
   type PutBallotError = Types.PutBallotError;
-  type GetUserVotesError = Types.GetUserVotesError;
   type GetVoteError = Types.GetVoteError;
+  type OpenVoteError = Types.OpenVoteError;
+  type RevealVoteError = Types.RevealVoteError;
 
   public func build(model: Model) : Controller {
     Controller(Schema.SchemaBuilder(model).build(), model);
@@ -149,20 +139,23 @@ module {
     };
 
     public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<Question, OpenQuestionError> {
-      // Verify that the caller is not anonymous
-      if (Principal.isAnonymous(caller)){
-        return #err(#PrincipalIsAnonymous);
+      // Verify if the arguments are valid
+      switch(_model.getQuestions().canCreateQuestion(caller, date, text)){
+        case(?err) { return #err(err); };
+        case(null) {};
       };
-      
-      switch(await* _model.getInterestVotes().openVote(caller, func() : Question {
+      // Callback on create question if opening the interest vote succeeds
+      let open_question = func() : Question {
         let question = _model.getQuestions().createQuestion(caller, date, text);
         _model.getQueries().add(toStatusEntry(question.id, #CANDIDATE, date));
         _model.getStatusManager().setCurrent(question.id, #CANDIDATE, date);
         question;
-      })){
-        case(#err(_)) { return #err(#PrincipalIsAnonymous); }; // @todo
-        case(#ok(question)) { return #ok(question); };
       };
+      // Open the interest vote
+      Result.mapErr<Question, OpenVoteError, OpenQuestionError>(
+        await* _model.getInterestVotes().openVote(caller, open_question),
+        func(err: OpenVoteError) : OpenQuestionError { #OpenInterestVoteFailed(err); }
+      );
     };
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), ReopenQuestionError> {
@@ -184,8 +177,9 @@ module {
       switch(await* _model.getInterestVotes().openVote(caller, func() : Question {
         question;
       })){
-        case(#err(_)) { #err(#PrincipalIsAnonymous); }; // @todo
+        case(#err(err)) { #err(#OpenInterestVoteFailed(err)); };
         case(#ok(question)) {
+          // @todo: here we don't have any guarentee that the question will actually be reopened
           submitEvent(question, #REOPEN_QUESTION, date);
           return #ok; 
         };
@@ -232,21 +226,21 @@ module {
       };
     };
 
-    public func getInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Interest, Appeal>, GetVoteError> {
+    public func revealInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Interest, Appeal>, RevealVoteError> {
       switch(_model.getInterestVotes().revealVote(question_id, iteration)){
         case(#err(err)) { #err(err); };
         case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
       };
     };
 
-    public func getOpinionVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, GetVoteError> {
+    public func revealOpinionVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, RevealVoteError> {
       switch(_model.getOpinionVotes().revealVote(question_id, iteration)){
         case(#err(err)) { #err(err); };
         case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
       };
     };
 
-    public func getCategorizationVote(question_id: Nat, iteration: Nat) : Result<PublicVote<CursorArray, PolarizationArray>, GetVoteError> {
+    public func revealCategorizationVote(question_id: Nat, iteration: Nat) : Result<PublicVote<CursorArray, PolarizationArray>, RevealVoteError> {
       switch(_model.getCategorizationVotes().revealVote(question_id, iteration)){
         case(#err(err)) { #err(err); };
         case(#ok(vote)) { #ok(Categorizations.toPublicVote(vote)); };

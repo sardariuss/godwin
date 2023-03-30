@@ -30,13 +30,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetQuestionError = Types.GetQuestionError;
   type OpenQuestionError = Types.OpenQuestionError;
   type ReopenQuestionError = Types.ReopenQuestionError;
-  type SetUserNameError = Types.SetUserNameError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type PrincipalError = Types.PrincipalError;
   type SetPickRateError = Types.SetPickRateError;
   type SetDurationError = Types.SetDurationError;
   type GetUserConvictionsError = Types.GetUserConvictionsError;
-  type GetAggregateError = Types.GetAggregateError;
   type GetBallotError = Types.GetBallotError;
   type PutBallotError = Types.PutBallotError;
   type Ballot<T> = Types.Ballot<T>;
@@ -51,8 +49,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetUserVotesError = Types.GetUserVotesError;
   type CategoryInfo = Types.CategoryInfo;
   type CategoryArray = Types.CategoryArray;
-  type User = Types.User;
-  type GetVoteError = Types.GetVoteError;
+  type RevealVoteError = Types.RevealVoteError;
   type StatusInfo = Types.StatusInfo;
 
   let _start_date = Time.now() - Duration.toTime(#HOURS(6));  // @temp
@@ -149,16 +146,16 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getStatusHistory(question_id);
   };
 
-  public query func getInterestVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, GetVoteError>{
-    _controller.getInterestVote(question_id, iteration);
+  public query func revealInterestVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, RevealVoteError>{
+    _controller.revealInterestVote(question_id, iteration);
   };
 
-  public query func getOpinionVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, GetVoteError>{
-    _controller.getOpinionVote(question_id, iteration);
+  public query func revealOpinionVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, RevealVoteError>{
+    _controller.revealOpinionVote(question_id, iteration);
   };
 
-  public query func getCategorizationVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<CursorArray, PolarizationArray>, GetVoteError>{
-    _controller.getCategorizationVote(question_id, iteration);
+  public query func revealCategorizationVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<CursorArray, PolarizationArray>, RevealVoteError>{
+    _controller.revealCategorizationVote(question_id, iteration);
   };
 
   public query func getUserConvictions(principal: Principal) : async ?PolarizationArray {

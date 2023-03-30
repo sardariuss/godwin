@@ -36,6 +36,8 @@ module {
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   type Question            = Types.Question;
   type QuestionQueries     = QuestionQueries.QuestionQueries;
+  type OpenVoteError       = Types.OpenVoteError;
+  type RevealVoteError     = Types.RevealVoteError;
   
   public type VoteRegister = Votes.VoteRegister<Interest, Appeal>;
   public type HistoryRegister = QuestionVoteHistory.Register;
@@ -76,7 +78,7 @@ module {
 
   public class Interests(
     votes_: Votes.Votes<Interest, Appeal>,
-    history_: QuestionVoteHistory,
+    _history: QuestionVoteHistory,
     queries_: QuestionQueries,
     _open_vote_interface: OpenVotePayin,
     _put_ballot_interface: PutBallotPayin,
@@ -84,10 +86,10 @@ module {
     _read_vote_interface: ReadVote
   ) {
     
-    public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, ()> {
+    public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, OpenVoteError> {
       Result.mapOk(await* _open_vote_interface.openVote(principal), func(vote_id: Nat) : Question {
         let question = on_success();
-        history_.addVote(question.id, vote_id);
+        _history.addVote(question.id, vote_id);
         // Update the associated key for the #INTEREST_SCORE order_by
         queries_.add(toAppealScore(question.id, votes_.getVote(vote_id).aggregate));
         question;
@@ -95,34 +97,30 @@ module {
     };
 
     public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      switch(history_.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteNotFound); }; // @todo
-        case (?vote_id) {
-          _read_vote_interface.getBallot(principal, vote_id);
-        };
-      };
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
+        _read_vote_interface.getBallot(principal, vote_id);
+      });
     };
 
     public func putBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
-      switch(history_.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteClosed); }; // @todo
-        case (?vote_id) {
-          let old_appeal = votes_.getVote(vote_id).aggregate;
-          let result = await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = interest;});
-          switch(result) {
-            case (#err(err)) { #err(err); };
-            case (#ok) {
-              let new_appeal = votes_.getVote(vote_id).aggregate;
-              queries_.replace(?toAppealScore(question_id, old_appeal), ?toAppealScore(question_id, new_appeal));
-              #ok;
-            };
-          };
-        };
+      let vote_id = switch(_history.findCurrentVote(question_id)) {
+        case (#err(err)) { return #err(err); };
+        case (#ok(id)) { id; };
       };
+      
+      let old_appeal = votes_.getVote(vote_id).aggregate;
+
+      Result.mapOk<(), (), PutBallotError>(await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = interest;}), func(){
+        let new_appeal = votes_.getVote(vote_id).aggregate;
+        queries_.replace(
+          ?toAppealScore(question_id, old_appeal),
+          ?toAppealScore(question_id, new_appeal)
+        );
+      });
     };
 
     public func closeVote(question_id: Nat) : Result<Vote, CloseVoteError> {
-      switch(_close_vote_interface.closeVote(history_.closeCurrentVote(question_id))){
+      switch(_close_vote_interface.closeVote(_history.closeCurrentVote(question_id))){
         case (#err(err)) { #err(err); };
         case (#ok(vote)) {
           queries_.remove(toAppealScore(question_id, vote.aggregate));
@@ -131,13 +129,10 @@ module {
       };
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, GetVoteError> {
-      switch(history_.findHistoricalVote(question_id, iteration)) {
-        case (null) { #err(#QuestionVoteLinkNotFound); };
-        case (?vote_id) {
-          _read_vote_interface.revealVote(vote_id);
-        };
-      };
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.chain(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Result<Vote, RevealVoteError> {
+        _read_vote_interface.getVote(vote_id);
+      });
     };
 
   };

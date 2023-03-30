@@ -38,6 +38,7 @@ module {
   type Duration = Duration.Duration;
   type Polarization = Types.Polarization;
   type SchedulerParameters = Types.SchedulerParameters;
+  type QuestionsParameters = Types.QuestionsParameters;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type Appeal = Types.Appeal;
@@ -55,6 +56,7 @@ module {
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;
+      character_limit    : Ref<Nat>;
     };
     status            : {
       register           : Map<Nat, StatusData>;
@@ -99,6 +101,7 @@ module {
       questions      = {
         register              = Map.new<Nat, Question>();
         index                 = Ref.initRef<Nat>(0);
+        character_limit       = Ref.initRef<Nat>(parameters.questions.character_limit);
       };
       queries        = {
         register              = QuestionQueries.initRegister();

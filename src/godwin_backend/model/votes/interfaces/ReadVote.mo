@@ -21,13 +21,10 @@ module {
   public class ReadVote<T, A>(_votes: Votes.Votes<T, A>) {
 
     // @todo: should return a public vote
-    public func revealVote(id: Nat) : Result<Vote<T, A>, GetVoteError> {
+    public func getVote(id: Nat) : Result<Vote<T, A>, GetVoteError> {
       let vote = switch(_votes.findVote(id)){
-        case(null) { return #err(#QuestionVoteLinkNotFound2); };
+        case(null) { return #err(#VoteNotFound); };
         case(?v) { v; };
-      };
-      if (vote.status == #OPEN){
-        return #err(#VoteIsOpen);
       };
       #ok(vote);
     }; 

@@ -5,9 +5,7 @@ import BallotAggregator "../BallotAggregator";
 import Map "mo:map/Map";
 
 import Principal "mo:base/Principal";
-import Option "mo:base/Option";
 import Result "mo:base/Result";
-import Debug "mo:base/Debug";
 
 module {
 
@@ -20,8 +18,6 @@ module {
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type BallotAggregator<T, A> = BallotAggregator.BallotAggregator<T, A>;
-  type GetVoteError = Types.GetVoteError;
-  type GetBallotError = Types.GetBallotError;
   type PutBallotError = Types.PutBallotError;
   
   public class PutBallot<T, A>(
@@ -29,14 +25,14 @@ module {
     _ballot_aggregator: BallotAggregator<T, A>
   ) {
 
-     public func putBallot(principal: Principal, id: Nat, ballot: Ballot<T>) : Result<(), PutBallotError> {
+     public func putBallot(principal: Principal, vote_id: Nat, ballot: Ballot<T>) : Result<(), PutBallotError> {
       // Get the vote
-      let vote = switch(_votes.findVote(id)){
+      let vote = switch(_votes.findVote(vote_id)){
         case(null) { return #err(#VoteNotFound); };
         case(?vote) { vote; };
       };
       // Put the ballot
-      Result.mapOk<(A, A), (), PutBallotError>(_ballot_aggregator.putBallot(vote, principal, ballot), func((old_aggregate, new_aggregate)) {
+      Result.mapOk<(A, A), (), PutBallotError>(_ballot_aggregator.addBallot(vote, principal, ballot), func((old_aggregate, new_aggregate)) {
         _votes.notifyObs(vote.id, ?old_aggregate, ?vote.aggregate);
       });
     };
@@ -50,23 +46,27 @@ module {
     _payin: (Principal, Blob) -> async* Result<(), ()>
   ) {
 
-    public func putBallot(principal: Principal, id: Nat, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+    public func putBallot(principal: Principal, vote_id: Nat, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
       // Get the vote
-      let vote = switch(_votes.findVote(id)){
+      let vote = switch(_votes.findVote(vote_id)){
         case(null) { return #err(#VoteNotFound); };
         case(?vote) { vote; };
       };
-      // Put a FRESH ballot before paying (required to protect from reentry attack)
-      let (old_aggregate, new_aggregate) = switch(_ballot_aggregator.putFreshBallot(vote, principal, ballot)){
+      // Check if the principal has already voted (required to protect from reentry attack)
+      if (Map.has(vote.ballots, Map.phash, principal)){
+        return #err(#AlreadyVoted);
+      };
+      // Put the ballot
+      let (old_aggregate, new_aggregate) = switch(_ballot_aggregator.addBallot(vote, principal, ballot)){
         case(#err(err)) { return #err(err); };
         case(#ok((old, new))) { (old, new); };
       };
       // Pay
-      let result = switch(Map.get(_subaccounts, Map.nhash, id)) {
-        case(null) { #err(#VoteNotFound); }; // @todo
+      let result = switch(Map.get(_subaccounts, Map.nhash, vote_id)) {
+        case(null) { #err(#NoSubacountLinked); };
         case(?subaccount) {
           switch(await* _payin(principal, subaccount)){
-            case(#err(_)) { #err(#VoteNotFound); }; // @todo
+            case(#err(_)) { #err(#PayinError); };
             case(#ok(_)) { #ok; };
           };
         };

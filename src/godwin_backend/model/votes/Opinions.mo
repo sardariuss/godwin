@@ -17,16 +17,15 @@ module {
 
   type Result<Ok, Err>     = Result.Result<Ok, Err>;
   type Map<K, V>           = Map.Map<K, V>;
-    type Time                = Int;
+  type Time                = Int;
 
-  type Cursor            = Types.Cursor;
-  type Polarization              = Types.Polarization;
+  type Cursor              = Types.Cursor;
+  type Polarization        = Types.Polarization;
   type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type OpenVote       = OpenVote.OpenVote<Cursor, Polarization>;
-  type PutBallot      = PutBallot.PutBallot<Cursor, Polarization>;
-  type CloseVote     = CloseVote.CloseVote<Cursor, Polarization>;
+  type OpenVote            = OpenVote.OpenVote<Cursor, Polarization>;
+  type PutBallot           = PutBallot.PutBallot<Cursor, Polarization>;
+  type CloseVote           = CloseVote.CloseVote<Cursor, Polarization>;
   type ReadVote            = ReadVote.ReadVote<Cursor, Polarization>;
-
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   
   public type VoteRegister = Votes.VoteRegister<Cursor, Polarization>;
@@ -36,7 +35,8 @@ module {
   type PutBallotError      = Types.PutBallotError;
   type CloseVoteError      = Types.CloseVoteError;
   type GetVoteError        = Types.GetVoteError;
-  type GetBallotError = Types.GetBallotError;
+  type GetBallotError      = Types.GetBallotError;
+  type RevealVoteError     = Types.RevealVoteError;
 
   public func initVoteRegister() : VoteRegister {
     Votes.initRegister<Cursor, Polarization>();
@@ -61,7 +61,7 @@ module {
   };
 
   public class Opinions(
-    history_: QuestionVoteHistory,
+    _history: QuestionVoteHistory,
     _open_vote_interface: OpenVote,
     _put_ballot_interface: PutBallot,
     _close_vote_interface: CloseVote,
@@ -70,38 +70,29 @@ module {
     
     public func openVote(question_id: Nat) {
       let vote_id = _open_vote_interface.openVote();
-      history_.addVote(question_id, vote_id);
+      _history.addVote(question_id, vote_id);
     };
 
     public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      switch(history_.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteNotFound); }; // @todo
-        case (?vote_id) {
-          _read_vote_interface.getBallot(principal, vote_id);
-        };
-      };
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
+        _read_vote_interface.getBallot(principal, vote_id);
+      });
     };
 
     public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      switch(history_.findCurrentVote(question_id)) {
-        case (null) { #err(#VoteClosed); }; // @todo
-        case (?vote_id) {
-          _put_ballot_interface.putBallot(principal, vote_id, {date; answer = cursor;});
-        };
-      };
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<(), PutBallotError> {
+        _put_ballot_interface.putBallot(principal, vote_id, {date; answer = cursor;});
+      });
     };
 
      public func closeVote(question_id: Nat) : Result<Vote, CloseVoteError> {
-      _close_vote_interface.closeVote(history_.closeCurrentVote(question_id));
+      _close_vote_interface.closeVote(_history.closeCurrentVote(question_id));
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, GetVoteError> {
-      switch(history_.findHistoricalVote(question_id, iteration)) {
-        case (null) { #err(#VoteNotFound); };
-        case (?vote_id) {
-          _read_vote_interface.revealVote(vote_id);
-        };
-      };
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.chain(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Result<Vote, RevealVoteError> {
+        _read_vote_interface.getVote(vote_id);
+      });
     };
 
   };
