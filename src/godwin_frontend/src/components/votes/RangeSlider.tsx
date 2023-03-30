@@ -1,33 +1,35 @@
 import Color from 'colorjs.io';
 
+import { CategorySide } from "./../../../declarations/godwin_backend/godwin_backend.did";
+
 import React, { useState, useEffect } from "react";
 
 type Props = {
   id: string;
   cursor: number;
   setCursor: (cursor: number) => (void);
-  leftColor: string;
-  rightColor: string;
-  thumbLeft: string;
-  thumbCenter: string;
-  thumbRight: string;
+  polarizationInfo: {
+    left: CategorySide;
+    center: CategorySide;
+    right: CategorySide;
+  };
   onMouseUp: () => (void);
 };
 
-export const RangeSlider = ({id, cursor, setCursor, leftColor, rightColor, thumbLeft, thumbCenter, thumbRight, onMouseUp}: Props) => {
+export const RangeSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
   const marginWidth = thumbSize / 2;
   const marginRatio = marginWidth / sliderWidth;
 
-  const [sliderLeftColor, setSliderLeftColor] = useState<string>(leftColor);
-  const [sliderRightColor, setSliderRightColor] = useState<string>(rightColor);
+  const [sliderLeftColor, setSliderLeftColor] = useState<string>(polarizationInfo.left.color);
+  const [sliderRightColor, setSliderRightColor] = useState<string>(polarizationInfo.right.color);
   const [sliderValue, setSliderValue] = useState<number>(cursor);
 
   const white = new Color("white");
-  const leftColorRange = white.range(leftColor, { space: "lch", outputSpace: "lch"});
-  const rightColorRange = white.range(rightColor, { space: "lch", outputSpace: "lch"});
+  const leftColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
+  const rightColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
 
   const refreshValue = (value: number) => {
     setSliderValue(value);
@@ -43,9 +45,11 @@ export const RangeSlider = ({id, cursor, setCursor, leftColor, rightColor, thumb
   }, [cursor]);
 
 	return (
-    <div id={"cursor_" + id} className="flex flex-col items-center space-y-2">
-      <div className="text-xs font-extralight">
-        { sliderValue }
+    <div id={"cursor_" + id} className="flex flex-col items-center">
+      <div className="text-xs mb-2">
+        {
+          sliderValue > 0.33 ? polarizationInfo.right.name : sliderValue < -0.33 ? polarizationInfo.left.name : polarizationInfo.center.name
+        }
       </div>
       <input id={"cursor_input_" + id} min="-1" max="1" step="0.02" value={sliderValue} type="range" onChange={(e) => refreshValue(Number(e.target.value))} onMouseUp={(e) => onMouseUp()} className={"input appearance-none " + (sliderValue > 0.33 ? "right" : sliderValue < -0.33 ? "left" : "center") } 
       style={{
@@ -55,11 +59,14 @@ export const RangeSlider = ({id, cursor, setCursor, leftColor, rightColor, thumb
         "--margin-left": `${(marginRatio * 100).toString() + "%"}`,
         "--margin-right": `${((1 - marginRatio) * 100).toString() + "%"}`,
         "--slider-width": `${sliderWidth + "px"}`,
-        "--thumb-left": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${thumbLeft}` + `</text></svg>")`,
-        "--thumb-center": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${thumbCenter}` + `</text></svg>")`,
-        "--thumb-right": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${thumbRight}` + `</text></svg>")`,
+        "--thumb-left": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.left.symbol}` + `</text></svg>")`,
+        "--thumb-center": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.center.symbol}` + `</text></svg>")`,
+        "--thumb-right": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.right.symbol}` + `</text></svg>")`,
         "--thumb-size": `${thumbSize + "px"}`} as React.CSSProperties
       }/>
+      <div className="text-xs font-extralight mt-1">
+        { sliderValue }
+      </div>
     </div>
 	);
 };

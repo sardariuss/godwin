@@ -1,4 +1,16 @@
-import { Status } from "./../declarations/godwin_backend/godwin_backend.did";
+import { Status, Polarization, CategorySide, CategoryInfo } from "./../declarations/godwin_backend/godwin_backend.did";
+import CONSTANTS from "./Constants";
+
+export type PolarizationInfo = {
+  left: CategorySide;
+  center: CategorySide;
+  right: CategorySide;
+};
+
+export type CursorInfo = {
+  name: string;
+  symbol: string;
+}
 
 export const statusToString = (status: Status) => {
   if (status['CANDIDATE'] !== undefined) return 'Candidate';
@@ -68,4 +80,24 @@ export const toMap = (arr: any[]) => {
   return map;
 };
 
+export const polarizationToCursor = (polarization: Polarization) : number => {
+  return (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
+};
 
+export const getCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
+  if (cursor < (-1 * CONSTANTS.CURSOR_SIDE_THRESHOLD)) {
+    return { name: polarizationInfo.left.name, symbol: polarizationInfo.left.symbol };
+  } else if (cursor > CONSTANTS.CURSOR_SIDE_THRESHOLD) {
+    return { name: polarizationInfo.right.name, symbol: polarizationInfo.right.symbol };
+  } else {
+    return { name: polarizationInfo.center.name, symbol: polarizationInfo.center.symbol };
+  }
+}
+
+export const toPolarizationInfo = (category_info: CategoryInfo, center: CategorySide) : PolarizationInfo => {
+  return {
+    left: category_info.left,
+    center: center,
+    right: category_info.right,
+  };
+}

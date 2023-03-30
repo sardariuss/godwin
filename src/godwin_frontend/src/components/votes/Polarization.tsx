@@ -1,4 +1,4 @@
-import { Category, CategoryInfo, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, CategorySide, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 import { Bar }            from 'react-chartjs-2'
 
@@ -30,34 +30,37 @@ const options = {
 };
 
 type Props = {
-  category: Category;
-  categoryInfo: CategoryInfo;
-  showCategory: boolean;
-  polarization: Polarization;
-  centerSymbol: string;
+  name: string;
+  showName: boolean;
+  polarizationInfo: {
+    left: CategorySide;
+    center: CategorySide;
+    right: CategorySide;
+  };
+  polarizationValue: Polarization;
 };
 
-const PolarizationComponent = ({category, categoryInfo, showCategory, polarization, centerSymbol}: Props) => {
+const PolarizationComponent = ({name, showName, polarizationInfo, polarizationValue}: Props) => {
 
-  const labels = [category];
+  const labels = [name];
 
   const data = {
     labels,
     datasets: [
       {
-        label: categoryInfo.left.symbol,
-        data: labels.map(() => polarization.left),
-        backgroundColor: categoryInfo.left.color,
+        label: polarizationInfo.left.symbol,
+        data: labels.map(() => polarizationValue.left),
+        backgroundColor: polarizationInfo.left.color,
       },
       {
-        label: centerSymbol,
-        data: labels.map(() => polarization.center),
+        label: polarizationInfo.center.symbol,
+        data: labels.map(() => polarizationValue.center),
         backgroundColor: '#ffffff',
       },
       {
-        label: categoryInfo.right.symbol,
-        data: labels.map(() => polarization.right),
-        backgroundColor: categoryInfo.right.color,
+        label: polarizationInfo.right.symbol,
+        data: labels.map(() => polarizationValue.right),
+        backgroundColor: polarizationInfo.right.color,
       },
     ],
   };
@@ -65,8 +68,8 @@ const PolarizationComponent = ({category, categoryInfo, showCategory, polarizati
 	return (
       <div className="grid grid-cols-5">
         <div className="flex flex-col items-center">
-          <div className="text-3xl">{categoryInfo.left.symbol}</div>
-          <div className="text-xs">{categoryInfo.left.name}</div>
+          <div className="text-3xl">{polarizationInfo.left.symbol}</div>
+          <div className="text-xs">{polarizationInfo.left.name}</div>
         </div>
         { 
         /* 
@@ -82,14 +85,14 @@ const PolarizationComponent = ({category, categoryInfo, showCategory, polarizati
           />
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-3xl">{categoryInfo.right.symbol}</div>
-          <div className="text-xs">{categoryInfo.right.name}</div>
+          <div className="text-3xl">{polarizationInfo.right.symbol}</div>
+          <div className="text-xs">{polarizationInfo.right.name}</div>
         </div>
         {
-          showCategory ? 
+          showName ? 
           <div className="col-start-1 col-end-6 text-center">
             <div>
-              {category}
+              {name}
             </div>
           </div> :
           <> </>

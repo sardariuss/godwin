@@ -3,9 +3,11 @@ import { _SERVICE, Status, Polarization, Time, Appeal, CategoryInfo, Category } 
 import { ActorContext } from "../../ActorContext"
 import { CategoriesContext } from "../../CategoriesContext"
 
+import CONSTANTS from "../../Constants";
+
 import { useContext, useEffect, useState } from "react";
 
-import { StatusEnum, statusToEnum, toMap } from "../../utils";
+import { StatusEnum, polarizationToCursor, getCursorInfo, toMap, toPolarizationInfo } from "../../utils";
 
 import PolarizationComponent from "./Polarization";
 import AppealComponent from "./Appeal";
@@ -33,15 +35,11 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
 
   const [currentAggregate, setCurrentAggregate] = useState<AggregateType>(AggregateType.OPINION);
   
-  const [interestAggregates, setInterestAggregates] = useState<Appeal[]>([]);
-  const [interestPoints, setInterestPoints] = useState<bigint | undefined>(undefined);
-  const [interestWinnerSymbol, setInterestWinnerSymbol] = useState<string | undefined>(undefined);
+  const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>();
 
-  const [opinionAggregates, setOpinionAggregates] = useState<Polarization[]>([]);
-  const [opinionWinningRatio, setOpinionWinningRatio] = useState<number | undefined>(undefined);
-  const [opinionWinnerSymbol, setOpinionWinnerSymbol] = useState<string | undefined>(undefined);
+  const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>();
 
-  const [categorizationAggregates, setCategorizationAggregates] = useState<Map<Category, Polarization>[]>([]);
+  const [categorizationAggregate, setCategorizationAggregate] = useState<Map<Category, Polarization> | undefined>();
   const [categorizationWinningRatio, setCategorizationWinningRatio] = useState<number | undefined>(undefined);
   const [categorizationWinnerSymbol, setCategorizationWinnerSymbol] = useState<string | undefined>(undefined);
 
@@ -57,13 +55,7 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
         };
       };
     };
-    setInterestAggregates(appeals);
-
-    if (appeals.length > 0) {
-      let last_interest = appeals[appeals.length - 1];
-      setInterestPoints(last_interest.score);
-      setInterestWinnerSymbol(last_interest.ups > last_interest.downs ? "🤓" : "🤡");
-    }
+    setInterestAggregate(appeals[appeals.length - 1]);
   };
 
   const fetchOpenStatusVotes = async () => {
@@ -83,23 +75,8 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
         }
       }
     }
-    setOpinionAggregates(opAggregates);
-    setCategorizationAggregates(catAggregates);
-
-    if (opAggregates.length > 0) {
-      let last_opinion = opAggregates[opAggregates.length - 1];
-      let total = last_opinion.left + last_opinion.center + last_opinion.right;
-      if (last_opinion.left > last_opinion.center && last_opinion.left > last_opinion.right) {
-        setOpinionWinningRatio(last_opinion.left / total);
-        setOpinionWinnerSymbol("👎");
-      } else if (last_opinion.right > last_opinion.center && last_opinion.right > last_opinion.left) {
-        setOpinionWinningRatio(last_opinion.right / total);
-        setOpinionWinnerSymbol("👍");
-      } else {
-        setOpinionWinningRatio(last_opinion.center / total);
-        setOpinionWinnerSymbol("🤷");
-      }
-    }
+    setOpinionAggregate(opAggregates[opAggregates.length - 1]);
+    setCategorizationAggregate(catAggregates[catAggregates.length - 1]);
 
     if (catAggregates.length > 0) {
       let last_categorization = catAggregates[catAggregates.length - 1];
@@ -150,33 +127,20 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
     fetchOpenStatusVotes();
   }, [statusHistory]);
 
-  const opinion_info : CategoryInfo = {
-    left: {
-      symbol: "👎",
-      name: "DISAGREE",
-      color: "#0F9D58"
-    },
-    right: {
-      symbol: "👍",
-      name: "AGREE",
-      color: "#DB4437"
-    }
-  }
-
 	return (
     <div>
       <div>
         <ul className="hidden text-sm font-medium text-center text-gray-500 rounded-lg shadow sm:flex divide-x divide-gray-200 dark:divide-gray-700 dark:text-gray-400">
           <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.INTEREST)}>
-            <div className={"inline-block w-full p-4 bg-white rounded-l-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (interestWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
-              <div className="text-xl">{ interestWinnerSymbol !== undefined ? interestWinnerSymbol : "." }</div>
-              <div className={ interestPoints !== undefined ? "" : "text-transparent"}>{ interestPoints !== undefined ? interestPoints + " points" : "n/a" } </div>
+            <div className={"inline-block w-full p-4 bg-white rounded-l-lg focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (interestAggregate !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
+              <div className="text-xl">{ interestAggregate !== undefined ? interestAggregate.ups > interestAggregate.downs ? "🤓" : "🤡" : "." }</div>
+              <div className={ interestAggregate !== undefined ? "" : "text-transparent"}>{ interestAggregate !== undefined ? interestAggregate.score + " points" : "n/a" } </div>
             </div>
           </li>
           <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.OPINION)}>
-            <div className={"inline-block w-full p-4 bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (opinionWinnerSymbol !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
-              <div className="text-xl">{ opinionWinnerSymbol !== undefined ? opinionWinnerSymbol : "." }</div>
-              <div className={ opinionWinningRatio !== undefined ? "" : "text-transparent"}>{ opinionWinningRatio !== undefined ? Math.round(opinionWinningRatio * 100) + "%" : "n/a" } </div>
+            <div className={"inline-block w-full p-4 bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none dark:bg-gray-800 " + (opinionAggregate !== undefined ? "hover:cursor-pointer hover:text-gray-700 hover:bg-gray-50 dark:hover:text-white dark:hover:bg-gray-700" : "")}>
+              <div className="text-xl">{ opinionAggregate !== undefined ? getCursorInfo(polarizationToCursor(opinionAggregate), CONSTANTS.OPINION_INFO).symbol : "." }</div>
+              <div className={ opinionAggregate !== undefined ? "" : "text-transparent"}>{ opinionAggregate !== undefined ? polarizationToCursor(opinionAggregate).toFixed(CONSTANTS.CURSOR_DECIMALS) : "n/a" } </div>
             </div>
           </li>
           <li className="w-full" onClick={()=> setCurrentAggregate(AggregateType.CATEGORIZATION)}>
@@ -191,25 +155,25 @@ const Aggregates = ({ questionId, statusHistory }: Props) => {
         <div>
         {
           // @todo: take the last iteration
-          currentAggregate === AggregateType.INTEREST && interestAggregates[0] !== undefined ?
-            <AppealComponent appeal={interestAggregates[0]}></AppealComponent> : <></>
+          currentAggregate === AggregateType.INTEREST && interestAggregate !== undefined ?
+            <AppealComponent appeal={interestAggregate}></AppealComponent> : <></>
         }
         </div>
         <div>
         {
           // @todo: take the last iteration
-          currentAggregate === AggregateType.OPINION && opinionAggregates[0] !== undefined ?
-            <PolarizationComponent category={"OPINION"} categoryInfo={opinion_info} showCategory={false} polarization={opinionAggregates[0]} centerSymbol={"🤷"}></PolarizationComponent>
+          currentAggregate === AggregateType.OPINION && opinionAggregate !== undefined ?
+            <PolarizationComponent name={"OPINION"} showName={false} polarizationInfo={CONSTANTS.OPINION_INFO} polarizationValue={opinionAggregate}></PolarizationComponent>
           : <></>
         }
         </div>
         <ol>
         {
           // @todo: take the last iteration
-          currentAggregate === AggregateType.CATEGORIZATION && categorizationAggregates[0] !== undefined ? (
+          currentAggregate === AggregateType.CATEGORIZATION && categorizationAggregate !== undefined ? (
           [...Array.from(categories.entries())].map((elem) => (
             <li key={elem[0]}>
-              <PolarizationComponent category = {elem[0]} categoryInfo={elem[1]} showCategory={true} polarization={categorizationAggregates[0].get(elem[0])} centerSymbol={"🙏"}></PolarizationComponent>
+              <PolarizationComponent name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(elem[1], CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={categorizationAggregate.get(elem[0])}></PolarizationComponent>
             </li>
           ))
           ) : (

@@ -7,6 +7,8 @@ import { RangeSlider } from "./RangeSlider";
 
 import { nsToStrDate } from "../../utils";
 
+import CONSTANTS from "../../Constants";
+
 import React, { useContext, useState, useEffect } from "react";
 
 type Props = {
@@ -63,7 +65,7 @@ const VoteCategorization = ({questionId}: Props) => {
 
 	return (
     <div className="flex flex-col items-center space-y-2 mb-2">
-      <ul className="list-none">
+      <ul className="list-none divide-y-4 divide-slate-400/25">
       {
         categorization.map(([category, cursor], index) => (
           <li key={category}>
@@ -71,11 +73,7 @@ const VoteCategorization = ({questionId}: Props) => {
             id={ category + questionId.toString() }
             cursor={ cursor }
             setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
-            leftColor={ categories.get(category).left.color }
-            rightColor={ categories.get(category).right.color }
-            thumbLeft={ categories.get(category).left.symbol }
-            thumbCenter={ "🙏" }
-            thumbRight={ categories.get(category).right.symbol }
+            polarizationInfo = {{ left: categories.get(category).left, center: CONSTANTS.CATEGORIZATION_INFO.center, right: categories.get(category).right}}
             onMouseUp={ () => { updateCategorization() } }
           ></RangeSlider>
           </li>
