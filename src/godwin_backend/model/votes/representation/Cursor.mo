@@ -21,6 +21,12 @@ module {
     else                 { null;    };
   };
 
+  public func mul(cursor1: Cursor, cursor2: Cursor) : Cursor {
+    assert(isValid(cursor1));
+    assert(isValid(cursor2));
+    cursor1 * cursor2;
+  };
+
   public func equal(cursor_1: Cursor, cursor_2: Cursor) : Bool {
     Float.equal(cursor_1, cursor_2);
   };

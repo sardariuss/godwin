@@ -38,6 +38,7 @@ module {
   };
 
   public func sub(polarization_1: Polarization, polarization_2: Polarization) : Polarization {
+    // @todo: Should assert that the result is valid, i.e. polarization2 < polarization1
     {
       left    = polarization_1.left - polarization_2.left;
       center  = polarization_1.center - polarization_2.center;

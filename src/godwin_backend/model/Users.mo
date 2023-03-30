@@ -8,6 +8,7 @@ import Categorizations "votes/Categorizations";
 import Interests       "votes/Interests";
 import Polarization    "votes/representation/Polarization";
 import Cursor          "votes/representation/Cursor";
+import CursorMap       "votes/representation/CursorMap";
 import PolarizationMap "votes/representation/PolarizationMap";
 import QuestionVoteHistory "QuestionVoteHistory";
 
@@ -25,6 +26,7 @@ import Float           "mo:base/Float";
 import Principal       "mo:base/Principal";
 import Trie            "mo:base/Trie";
 import Array           "mo:base/Array";
+import Buffer          "mo:base/Buffer";
 
 module {
 
@@ -101,11 +103,20 @@ module {
     };
 
     public func getUserConvictions(principal: Principal) : ?PolarizationMap {
-      Option.map(_users.getOpt(principal), func(history: User) : PolarizationMap { history.convictions; });
+      Option.map(_users.getOpt(principal), func(user: User) : PolarizationMap { user.convictions; });
     };
     
-    public func getUserOpinions(principal: Principal) : ?Set<Nat> {
-      Option.map(_users.getOpt(principal), func(history: User) : Set<Nat> { history.opinions; });
+    public func getUserOpinions(principal: Principal) : ?[Opinions.Ballot] {
+      Option.map(_users.getOpt(principal), func(user: User) : [Opinions.Ballot] {
+        let ballots = Buffer.Buffer<Opinions.Ballot>(Set.size(user.opinions));
+        for(vote_id in Set.keys(user.opinions)) {
+          switch(Map.get(_opinion_votes.getVote(vote_id).ballots, Map.phash, principal)){
+            case(?ballot) { ballots.add(ballot); };
+            case(null) { Debug.trap("Ballot not found"); };
+          };
+        };
+        Buffer.toArray(ballots);
+      });
     };
 
     public func removeCategory(category: Category) {
@@ -133,7 +144,7 @@ module {
           case(null) { Debug.trap("@todo"); };
         });
       // Add the ballots to the user history
-      addUserBallots(question_id, vote_opinion.ballots);
+      addUserBallots(vote_opinion.id, vote_opinion.ballots);
       // Update the user convictions: add the last opinion vote
       updateUserConvictions(question_id, vote_opinion.ballots, vote_categorization.aggregate, null);
 
@@ -194,28 +205,69 @@ module {
       date: Int,
       new_categorization: PolarizationMap,
       old_categorization: ?PolarizationMap)
-    : PolarizationMap 
-    {
-      // Create a Polarization trie from the cursor, based on given categories.
-      let opinion_trie = Utils.make(_categories.keys(), Categories.key, Categories.equal, Cursor.toPolarization(user_opinion));
+    : PolarizationMap {
+      
+      // Compute the decay coefficient.
+      let decay_coef = switch(_decay_params){
+        case(null) { 1.0; };
+        case(?params) { Float.exp(Float.fromInt(date) * params.lambda - params.shift); };
+      };
 
-      // Compute the decay coefficient
-      let decay_coef = Option.getMapped(_decay_params, func(params: Decay) : Float { Float.exp(Float.fromInt(date) * params.lambda - params.shift); }, 1.0);
+      // Add the contribution of the current categorization.
+      var contribution = PolarizationMap.mul(computeContribution(user_opinion, new_categorization, date), decay_coef);
 
-      // Add the opinion times new categorization.
-      var contribution = PolarizationMap.mul(
-        PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(new_categorization)),
-        decay_coef);
-
-      // Remove the opinion times old categorization if any.
+      // Remove the contribution of the previous categorization if any.
       Option.iterate(old_categorization, func(old_cat: PolarizationMap) {
-        let old_contribution = PolarizationMap.mul(
-          PolarizationMap.mulCursorMap(opinion_trie, PolarizationMap.toCursorMap(old_cat)),
-          decay_coef);
+        let old_contribution = PolarizationMap.mul(computeContribution(user_opinion, old_cat, date), decay_coef);
         contribution := PolarizationMap.sub(contribution, old_contribution);
       });
 
+      // Add the resulting contribution to the user's convictions.
       PolarizationMap.add(convictions, contribution);
+    };
+  
+    func computeContribution(
+      user_opinion: Cursor,
+      categorization: PolarizationMap,
+      date: Int  
+    ) : PolarizationMap {
+
+      // Example to compute the shift in convictions
+      //   cursor: 0.5
+      //   categorization:
+      //     identity: [left: 100, center:0,   right:0 ]
+      //     economy:  [left: 10,  center:30,  right:60]
+      //     culture:  [left: 0,   center:100, right:0 ]
+
+      // 1. Transform the opinion cursor into a vector of cursors
+      // 0.5 -> [0.5]
+      //        [0.5]
+      //        [0.5]
+
+      let opinion_cursors = Utils.make(_categories.keys(), Categories.key, Categories.equal, user_opinion);
+
+      // 2. Transform the categorization into a vector of cursors
+      // 
+      // [left: 100, center:0,   right:0 ]    [-1.0]
+      // [left: 10,  center:30,  right:60] -> [0.5 ]
+      // [left: 0,   center:100, right:0 ]    [0   ]
+
+      let categorization_cursors = PolarizationMap.toCursorMap(categorization);
+
+      // 3. Multiply the cursors together
+      // 
+      // [-1.0]   [0.5]   [-0.5]
+      // [0.5 ] * [0.5] = [0.25]
+      // [0   ]   [0.5]   [0   ]
+      let cursor_shift = CursorMap.leftMultiply(categorization_cursors, opinion_cursors);
+      
+      // 4. Transform back the resulting cursors into polarizations
+      //   
+      //   [-0.5] -> [left: 0.5, center:0.5,  right:0.0 ]
+      //   [0.25]    [left: 0,   center:0.25, right:0.25]
+      //   [0   ]    [left: 0,   center:0,    right:0   ]
+      //
+      CursorMap.toPolarizationMap(cursor_shift);
     };
 
   };

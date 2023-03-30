@@ -17,16 +17,16 @@ module {
   type Vote<T, A> = Types.Vote<T, A>;
   type CloseVoteError = Types.CloseVoteError;
   
-  public class CloseVote<T, A>(_votes_: Votes.Votes<T, A>) {
+  public class CloseVote<T, A>(_votes: Votes.Votes<T, A>) {
 
     public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
-      _votes_.closeVote(id);
+      _votes.closeVote(id);
     };
 
   };
 
   public class CloseVotePayout<T, A>(
-    _votes_: Votes.Votes<T, A>,
+    _votes: Votes.Votes<T, A>,
     _subaccounts: Map<Nat, Blob>,
     _payout: (Vote<T, A>, Blob) -> ()
   ) {
@@ -38,7 +38,7 @@ module {
         case(?s) { s; };
       };
       // Close the vote
-      Result.mapOk<Vote<T, A>, Vote<T, A>, CloseVoteError>(_votes_.closeVote(id), func(vote) {
+      Result.mapOk<Vote<T, A>, Vote<T, A>, CloseVoteError>(_votes.closeVote(id), func(vote) {
         // Payout
         _payout(vote, subaccount);
         vote;

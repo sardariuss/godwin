@@ -77,9 +77,9 @@ module {
   };
 
   public class Interests(
-    votes_: Votes.Votes<Interest, Appeal>,
+    _votes: Votes.Votes<Interest, Appeal>,
     _history: QuestionVoteHistory,
-    queries_: QuestionQueries,
+    _queries: QuestionQueries,
     _open_vote_interface: OpenVotePayin,
     _put_ballot_interface: PutBallotPayin,
     _close_vote_interface: CloseVotePayout,
@@ -91,7 +91,7 @@ module {
         let question = on_success();
         _history.addVote(question.id, vote_id);
         // Update the associated key for the #INTEREST_SCORE order_by
-        queries_.add(toAppealScore(question.id, votes_.getVote(vote_id).aggregate));
+        _queries.add(toAppealScore(question.id, _votes.getVote(vote_id).aggregate));
         question;
       });
     };
@@ -108,11 +108,11 @@ module {
         case (#ok(id)) { id; };
       };
       
-      let old_appeal = votes_.getVote(vote_id).aggregate;
+      let old_appeal = _votes.getVote(vote_id).aggregate;
 
       Result.mapOk<(), (), PutBallotError>(await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = interest;}), func(){
-        let new_appeal = votes_.getVote(vote_id).aggregate;
-        queries_.replace(
+        let new_appeal = _votes.getVote(vote_id).aggregate;
+        _queries.replace(
           ?toAppealScore(question_id, old_appeal),
           ?toAppealScore(question_id, new_appeal)
         );
@@ -123,7 +123,7 @@ module {
       switch(_close_vote_interface.closeVote(_history.closeCurrentVote(question_id))){
         case (#err(err)) { #err(err); };
         case (#ok(vote)) {
-          queries_.remove(toAppealScore(question_id, vote.aggregate));
+          _queries.remove(toAppealScore(question_id, vote.aggregate));
           #ok(vote);
         };
       };

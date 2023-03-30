@@ -253,10 +253,8 @@ module {
       });
     };
 
-    public func getUserOpinions(principal: Principal) : ?[Nat] {
-      Option.map(_model.getUsers().getUserOpinions(principal), func(votes: Set<Nat>) : [Nat] {
-        Iter.toArray(Set.keys(votes));
-      });
+    public func getUserOpinions(principal: Principal) : ?[Ballot<Cursor>] {
+      _model.getUsers().getUserOpinions(principal);
     };
 
     func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {

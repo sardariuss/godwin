@@ -162,7 +162,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getUserConvictions(principal);
   };
 
-  public query func getUserOpinions(principal: Principal) : async ?[Nat] {
+  public query func getUserOpinions(principal: Principal) : async ?[Ballot<Cursor>] {
     _controller.getUserOpinions(principal);
   };
 

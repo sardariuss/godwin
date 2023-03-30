@@ -18,6 +18,8 @@ module {
   type Category = Types.Category; 
   type CursorMap = Types.CursorMap;
   type Categories = Categories.Categories;
+  type PolarizationMap = Types.PolarizationMap;
+  type Polarization = Types.Polarization;
 
   public func identity(categories: Categories) : CursorMap {
     var trie = Trie.empty<Category, Cursor>();
@@ -40,6 +42,18 @@ module {
       };
     };
     true;
+  };
+
+  public func toPolarizationMap(map: CursorMap) : PolarizationMap {
+    Trie.mapFilter(map, func(_: Text, cursor: Cursor) : ?Polarization { ?Cursor.toPolarization(cursor); });
+  };
+
+  // The resulting cursorMap has the size of map1
+  // If a category from map1 is not in map2, the cursor is set to 0.0
+  public func leftMultiply(map1: CursorMap, map2: CursorMap) : CursorMap {
+    Utils.leftJoin(map1, map2, Categories.key, Categories.equal, func(cursor1: Cursor, cursor2: ?Cursor) : Cursor {
+      Cursor.mul(cursor1, Option.get(cursor2, 0.0));
+    });
   };
 
   public func equal(a: CursorMap, b: CursorMap) : Bool {

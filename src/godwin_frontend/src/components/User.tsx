@@ -1,31 +1,34 @@
-import { _SERVICE, PolarizationArray, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Category, Polarization } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext } from "../ActorContext"
+import { CategoriesContext } from "../CategoriesContext"
 import { Principal } from "@dfinity/principal";
 
 import { useEffect, useState, useContext } from "react";
 
+import { toMap } from "../utils";
+
+import PolarizationComponent from "./votes/Polarization";
+
 import { useNavigate } from "react-router-dom";
 
-// @todo: change the state of the buttons based on the interest for the logged user for this question
-// @todo: fix
 const UserComponent = () => {
 
-  const [convictions, setConvictions] = useState<PolarizationArray>([]);
-  //const [votes, setVotes] = useState<[bigint, bigint][]>([]);
-  //const [votes2, setVotes] = useState<[Ballot | undefined][]>([]);
-	const {actor, isAuthenticated, logout} = useContext(ActorContext);
+  const {actor, isAuthenticated, logout} = useContext(ActorContext);
+  const {categories} = useContext(CategoriesContext);
 
-  const navigate = useNavigate();
+  const [convictions, setConvictions] = useState<Map<Category, Polarization>>(new Map<Category, Polarization>());
 
-//	const refreshUser = async () => {
-//    //let principal = await Actor.agentOf(actor)?.getPrincipal();
-//    // @todo
-//    let principal = Principal.fromText("crxri-e7kai-wzyt5-uqxrb-kqy");
-//    if (principal !== undefined){
-//      let queryConvictions = await actor.getUserConvictions(principal);
-//      if (queryConvictions['ok'] !== undefined) {
-//        setConvictions(queryConvictions['ok']);
-//      };
+  // @todo: what's that for ?
+	const navigate = useNavigate();
+
+	const refreshUser = async () => {
+    //let principal = await Actor.agentOf(actor)?.getPrincipal();
+    let principal = Principal.fromText("yemm7-ghigm-an6n6-oph44-tpi");
+    if (principal !== undefined){
+      let queryConvictions = await actor.getUserConvictions(principal);
+      if (queryConvictions[0] !== undefined) {
+        setConvictions(toMap(queryConvictions[0]));
+      }
 //      let queryVotes = await actor.getUserVotes(principal);
 //      let votes = queryVotes['ok'];
 //      if (votes !== undefined) {
@@ -39,33 +42,33 @@ const UserComponent = () => {
 //          }
 //        };
 //      }
-//    }
-//	}
-
-  const getVote = () => {
-    return "@todo";
-  };
+    }
+	}
 
 	useEffect(() => {
-		//refreshUser();
+		refreshUser();
   }, []);
 
   useEffect(() => {
-		//refreshUser();
+		refreshUser();
   }, [isAuthenticated]);
 
 	return (
 		<div className="border border-none mx-96 my-16 justify-center text-gray-900 dark:text-white">
       <div>Convictions:
-        <ul className="list-none">
+        <ol>
         {
-          convictions.map(([category, polarization]) => (
-            <li className="list-none" key={category}>
-              <div>{category}</div>
-            </li>
+          [...Array.from(categories.entries())].map((elem) => (
+            convictions.get(elem[0]) !== undefined ? (
+              <li key={elem[0]}>
+                <PolarizationComponent category = {elem[0]} categoryInfo={elem[1]} showCategory={true} polarization={convictions.get(elem[0])} centerSymbol={"🙏"}></PolarizationComponent>
+              </li>
+            ) : (
+              <li key={elem[0]}>Error: missing category</li>
+            )
           ))
         }
-        </ul>
+        </ol>
       </div>
       { /*
       <div>Votes:
