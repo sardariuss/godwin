@@ -50,6 +50,7 @@ module {
   type VoteHistory = Types.VoteHistory;
 
   public type State = {
+    name              : Ref<Text>;
     admin             : Ref<Principal>;
     creation_date     : Time;
     categories        : Categories.Register;
@@ -92,6 +93,7 @@ module {
 
   public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
     {
+      name           = Ref.initRef<Text>(parameters.name);
       admin          = Ref.initRef<Principal>(admin);
       creation_date  = creation_date;
       categories     = Categories.initRegister(parameters.categories);

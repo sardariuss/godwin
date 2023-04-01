@@ -37,6 +37,7 @@ module {
   type CategorizationVotes = Categorizations.Categorizations;
 
   public func build(
+    name: Ref<Text>,
     admin: Ref<Principal>,
     time: Ref<Time>,
     last_pick_date: Ref<Time>,
@@ -51,6 +52,7 @@ module {
     categorization_votes: CategorizationVotes
   ) : Model {
     Model(
+      WRef.WRef(name),
       WRef.WRef(admin),
       WRef.WRef(time),
       WRef.WRef(last_pick_date),
@@ -67,6 +69,7 @@ module {
   };
 
   public class Model(
+    _name: WRef<Text>,
     _admin: WRef<Principal>,
     _time: WRef<Time>,
     _last_pick_date: WRef<Time>,
@@ -84,6 +87,14 @@ module {
 //    public func getMaster() : Master {
 //      actor(Principal.toText(_admin.get())); // @todo: shall the admin and the master be different?
 //    };
+
+    public func getName() : Text {
+      _name.get();
+    };
+
+    public func setName(name: Text) {
+      _name.set(name);
+    };
 
     public func getAdmin(): Principal {
       _admin.get();

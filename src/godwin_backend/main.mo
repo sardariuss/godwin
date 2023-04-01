@@ -62,6 +62,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* Scenario.run(_controller, _start_date, Time.now(), #MINUTES(5), 20);
   };
 
+  public query func getName() : async Text {
+    _controller.getName();
+  };
+
   public query func getDecay() : async ?Decay {
     _controller.getDecay();
   };

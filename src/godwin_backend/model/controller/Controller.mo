@@ -80,6 +80,10 @@ module {
 
   public class Controller(_schema: Schema, _model: Model) = {
 
+    public func getName() : Text {
+      _model.getName();
+    };
+
     public func getDecay() : ?Decay {
       _model.getUsers().getDecay();
     };

@@ -116,6 +116,7 @@ module {
       categories);
 
     let model = Model.build(
+      state.name,
       state.admin,
       state.controller.model.time,
       state.controller.model.last_pick_date,

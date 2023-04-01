@@ -48,6 +48,7 @@ module {
 //  };
 
   public type Parameters = {
+    name: Text;
     categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;

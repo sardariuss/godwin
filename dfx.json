@@ -15,16 +15,16 @@
       "type": "motoko",
       "dependencies": [
         "godwin_token"
-      ]
+      ],
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_master"
+      }
     },
     "godwin_token":{
       "main": "src/godwin_token/main.mo",
       "type": "motoko"
     },
     "godwin_frontend": {
-      "dependencies": [
-        "godwin_backend"
-      ],
       "frontend": {
         "entrypoint": "index.html"
       },
