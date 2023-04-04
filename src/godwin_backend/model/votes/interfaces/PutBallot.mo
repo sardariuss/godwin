@@ -43,7 +43,7 @@ module {
     _votes: Votes.Votes<T, A>,
     _ballot_aggregator: BallotAggregator<T, A>,
     _subaccounts: Map<Nat, Blob>,
-    _payin: (Principal, Blob) -> async* Result<(), ()>
+    _payin: (Principal, Blob) -> async* Result<(), Text>
   ) {
 
     public func putBallot(principal: Principal, vote_id: Nat, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
@@ -66,7 +66,7 @@ module {
         case(null) { #err(#NoSubacountLinked); };
         case(?subaccount) {
           switch(await* _payin(principal, subaccount)){
-            case(#err(_)) { #err(#PayinError); };
+            case(#err(err)) { #err(#PayinError(err)); };
             case(#ok(_)) { #ok; };
           };
         };

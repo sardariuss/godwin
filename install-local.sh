@@ -1,16 +1,20 @@
 dfx stop
 dfx start --background --clean
 
+# It is required to create the master first to be able to set it as the token owner
+dfx canister create godwin_master
+
 dfx deploy godwin_token
 
 dfx deploy godwin_master
+dfx canister call godwin_master runScenario
 
 # The backend needs to be created and built to be able to generate the types later
 dfx canister create godwin_backend
 dfx build godwin_backend
 
 # Create first sub godwin
-dfx canister call godwin_master createSubGodwin '(record {
+dfx canister call godwin_master createSubGodwin '("classic6", record {
   name = "Classic 6 values ⚖️";
   categories = vec {
     record {
@@ -42,9 +46,12 @@ dfx canister call godwin_master createSubGodwin '(record {
     character_limit = 240;
   };
 })'
+# Run the scenario @todo for some reason this does not work, one shall use ic-repl instead
+#export SUB_6_VALUES_PRINCIPAL=${SUB_6_VALUES_ID:1:29}
+#dfx canister call ${SUB_6_VALUES_PRINCIPAL} runScenario
 
 # Create second sub godwin
-dfx canister call godwin_master createSubGodwin '(record {
+dfx canister call godwin_master createSubGodwin '("uspolitics", record {
   name = "US politics 🇺🇸";
   categories = vec {
     record {
@@ -66,9 +73,6 @@ dfx canister call godwin_master createSubGodwin '(record {
     character_limit = 240;
   };
 })'
-
-# Run the scenario @temp
-#dfx canister call godwin_backend runScenario '()'
 
 # Deploy the internet identity
 dfx deploy internet_identity

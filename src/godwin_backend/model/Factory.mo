@@ -9,6 +9,7 @@ import Polarization "votes/representation/Polarization";
 import PolarizationMap "votes/representation/PolarizationMap";
 import Opinions "votes/Opinions";
 import SubaccountGenerator "token/SubaccountGenerator";
+import PayInterface "token/PayInterface";
 import State "State";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
@@ -23,6 +24,9 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Result "mo:base/Result";
+import Principal "mo:base/Principal";
+
+import MasterTypes "../../godwin_master/Types";
 
 module {
 
@@ -37,6 +41,7 @@ module {
   type InterestVote = Interests.Vote;
   type Time = Int;
   type Controller = Controller.Controller;
+  type PayInterface = PayInterface.PayInterface;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
 
   type Key = QuestionQueries.Key;
@@ -46,9 +51,15 @@ module {
 
   public func build(state: State) : Controller {
 
-    let admin = state.admin;
+    let master = state.master;
     
     let categories = Categories.build(state.categories);
+
+    let pay_interface = PayInterface.build(
+      state.master.v,
+      state.pay_interface.pending_payouts,
+      state.pay_interface.failed_payouts
+    );
     
     let questions = Questions.build(
       state.questions.register,
@@ -59,8 +70,16 @@ module {
     let status_manager = StatusManager.build(state.status.register);
 
     let subaccount_generator = SubaccountGenerator.build(state.subaccounts.index);
-    let payin : (Principal, Blob) -> async* Result<(), ()> = func(principal: Principal, subaccount: Blob) : async* Result<(), ()> {
-      #ok; // @todo
+
+    let master_actor : MasterTypes.MasterInterface = actor(Principal.toText(master.v));
+
+    let payin = func(principal: Principal, subaccount: Blob) : async* Result<(), Text> {
+      switch(await master_actor.transferToSubGodwin(principal, 1_000, subaccount)){
+        case(#ok(_)) { #ok; };
+        case(#err(err)) { 
+          #err(MasterTypes.transferErrorToText(err));
+        };
+      };
     };
     let interest_payout : (Interests.Vote, Blob) -> () = func(vote: Interests.Vote, subaccount: Blob) : () {
       // @todo
@@ -117,7 +136,7 @@ module {
 
     let model = Model.build(
       state.name,
-      state.admin,
+      state.master,
       state.controller.model.time,
       state.controller.model.last_pick_date,
       state.controller.model.params,

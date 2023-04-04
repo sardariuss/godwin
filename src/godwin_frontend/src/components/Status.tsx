@@ -23,16 +23,20 @@ type Props = {
 const StatusComponent = ({status, date, iteration, isHistory, showBorder, borderDashed}: Props) => {
 
 	return (
-    <div className={(showBorder? ( borderDashed ? "border-l-2 border-dashed" : "border-l-2 border-solid") : "") + " relative text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-500 pl-2 ml-4"}>
-      <div className={"text-gray-900 dark:text-white " + (borderDashed ? "ml-6 pb-2" : "ml-6 pb-5")}>
-        <span className={"absolute flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 " + ( isHistory ? "bg-gray-100 dark:bg-gray-700" : "bg-blue-200 dark:bg-blue-900" )} >
-          <svg xmlns="http://www.w3.org/2000/svg" className={"w-5 h-5 " + ( isHistory ? "text-gray-500 dark:text-gray-400" : "text-blue-500 dark:text-blue-400" )} fill="currentColor" viewBox="0 96 960 960" width="48"><path d={statusToPath(status)}/></svg>
-        </span>
-        <div>
-          <span className="font-light text-sm">{ statusToString(status) } </span>
-          <span className="text-xs font-extralight"> { (iteration > 0 ? "(" + (Number(iteration) + 1).toString() + ")" : "") }</span>
+    <div className={(showBorder? ( borderDashed ? "border-l-2 border-dashed" : "border-l-2 border-solid") : "") + " text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-500 pl-2 ml-4"}>
+      <div className={"text-gray-900 dark:text-white -ml-6 " + (borderDashed ? "pb-2" : "pb-5")}>
+        <div className="flex flex-row gap-x-3">
+          <span className={"flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 " + ( isHistory ? "bg-gray-100 dark:bg-gray-700" : "bg-blue-200 dark:bg-blue-900" )} >
+            <svg xmlns="http://www.w3.org/2000/svg" className={"w-5 h-5 " + ( isHistory ? "text-gray-500 dark:text-gray-400" : "text-blue-500 dark:text-blue-400" )} fill="currentColor" viewBox="0 96 960 960" width="48"><path d={statusToPath(status)}/></svg>
+          </span>
+          <div>
+            <div>
+              <span className="font-light text-sm">{ statusToString(status) } </span>
+              <span className="text-xs font-extralight"> { (iteration > 0 ? "(" + (Number(iteration) + 1).toString() + ")" : "") }</span>
+            </div>
+            <div className="text-xs font-extralight">{ nsToStrDate(date)}</div>
+          </div>
         </div>
-        <div className="text-xs font-extralight">{ nsToStrDate(date)}</div>
       </div>
     </div>
 	);

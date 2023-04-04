@@ -1,4 +1,6 @@
-import { Interest } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Interest, _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
+
+import { ActorSubclass } from "@dfinity/agent";
 
 import { ActorContext } from "../../ActorContext"
 
@@ -7,6 +9,7 @@ import { nsToStrDate } from "../../utils";
 import { useContext, useEffect, useState } from "react";
 
 type Props = {
+  actor: ActorSubclass<_SERVICE>;
   questionId: bigint;
 };
 
@@ -41,9 +44,9 @@ function toEnum(interest: Interest) : InterestEnum {
 
 // @todo: change the state of the buttons based on the interest for the logged user for this question
 // @todo: putInterestBallot on click
-const VoteInterest = ({questionId}: Props) => {
+const VoteInterest = ({actor, questionId}: Props) => {
 
-  const {actor, isAuthenticated} = useContext(ActorContext);
+  const {isAuthenticated} = useContext(ActorContext);
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
   const [voteBallot, setVoteBallot] = useState<InterestEnum | null>(null);
 

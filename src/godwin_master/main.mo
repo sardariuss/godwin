@@ -1,7 +1,13 @@
+import Types "Types";
+
 import Godwin "../godwin_backend/main";
-import Types "../godwin_backend/model/Types";
+import SubTypes "../godwin_backend/model/Types";
+import TextUtils "../godwin_backend/utils/Text"; // @todo
 
 import Map "mo:map/Map";
+import Set "mo:map/Set";
+
+import Scenario "../../test/motoko/Scenario"; // @todo
 
 import ICRC1 "mo:icrc1/ICRC1";
 
@@ -12,23 +18,53 @@ import Nat64 "mo:base/Nat64";
 import Int "mo:base/Int";
 import Nat "mo:base/Nat";
 import Iter "mo:base/Iter";
+import Array "mo:base/Array";
+import Debug "mo:base/Debug";
+import Prim "mo:prim";
+import Nat32 "mo:base/Nat32";
+import Option "mo:base/Option";
 
 import Token "canister:godwin_token";
 
-actor Master = {
+actor Master {
 
-  type Parameters = Types.Parameters;
+  type Parameters = SubTypes.Parameters;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Map<K, V> = Map.Map<K, V>;
   type Godwin = Godwin.Godwin;
   type Balance = ICRC1.Balance;
+  type TransferResult = Types.TransferResult;
+  type AirdropResult = Types.AirdropResult;
+  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
+  let { toSubaccount } = Types;
 
-  stable let _sub_godwins = Map.new<Principal, Godwin>();
+  let pthash: Map.HashUtils<(Principal, Text)> = (
+    // +% is the same as addWrap, meaning it wraps on overflow
+    func(key: (Principal, Text)) : Nat = Nat32.toNat((Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff), // @todo: remove cast to Nat with map v8.0.0
+    func(a: (Principal, Text), b: (Principal, Text)) : Bool = a.0 == b.0 and a.1 == b.1,
+  );
 
-  public shared func createSubGodwin(parameters: Parameters) : async Principal {
+  stable let _sub_godwins = Map.new<(Principal, Text), Godwin>();
+
+  stable let _airdropped_users = Set.new<Principal>();
+
+  stable var _airdrop_supply = 1_000_000_000;
+
+  stable let _airdrop_user_amount = 1_000_000;
+
+  public shared func createSubGodwin(identifier: Text, parameters: Parameters) : async CreateSubGodwinResult  {
+    
+    // The identifier shall be alphanumeric because it will be used in the url.
+    if (not TextUtils.isAlphaNumeric(identifier)){
+      return #err(#InvalidIdentifier);
+    };
+
+    if (Option.isSome(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.1 == identifier; }))){
+      return #err(#IdentifierAlreadyTaken);
+    };
 
     let new_sub = await (system Godwin.Godwin)(#new {settings = ?{ 
-      controllers = null; // @todo: let's try that
+      controllers = null; // @todo: verify the sub godwin controller is the master
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
@@ -36,9 +72,9 @@ actor Master = {
 
     let principal = Principal.fromActor(new_sub);
 
-    Map.set(_sub_godwins, Map.phash, principal, new_sub);
+    Map.set(_sub_godwins, pthash, (principal, identifier), new_sub);
 
-    principal;
+    #ok(principal);
   };
 
   // @todo: deal with the fucking parameters
@@ -49,44 +85,98 @@ actor Master = {
     };
   };
 
-  public query func listSubGodwins() : async [Principal] {
+  public query func listSubGodwins() : async [(Principal, Text)] {
     Iter.toArray(Map.keys(_sub_godwins));
   };
 
-  type CredentialErrors = {
-    #NotAllowed;
+  public shared func runScenario() : async () {
+    let time_now = Nat64.fromNat(Int.abs(Time.now()));
+
+    Debug.print("Run scenario!");
+
+    for (principal in Array.vals(Scenario.getPrincipals())){
+
+      Debug.print("Loop for principal: " # Principal.toText(principal));
+       
+       let mint_result = toBaseResult(await Token.mint({
+        to = {
+          owner = Principal.fromActor(Master);
+          subaccount = ?toSubaccount(principal);
+        };
+        amount = _airdrop_user_amount;
+        memo = null;
+        created_at_time = ?time_now;
+      }));
+
+      switch(mint_result){
+        case(#err(err)) { Debug.print(Types.transferErrorToText(err)); };
+        case(#ok(tx_index)) { ignore Set.put(_airdropped_users, Map.phash, principal); };
+      };
+    };
   };
 
-  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
+  public shared({caller}) func airdrop() : async AirdropResult {
+    if (_airdrop_supply == 0) {
+      return #err(#AirdropOver);
+    };
 
-  public shared({caller}) func transferToSubGodwin(user: Principal, amount: Balance, subaccount: Blob) : async Result<(), TransferFromUserError> {
+    if (Set.has(_airdropped_users, Map.phash, caller)) {
+      return #err(#AlreadySupplied);
+    };
 
-    let godwin_fee = 1_000;
-
-    switch(Map.get(_sub_godwins, Map.phash, caller)){
-      case null {
-        #err(#NotAllowed);
+    let mint_result = toBaseResult(await Token.mint({
+      to = {
+        owner = Principal.fromActor(Master);
+        subaccount = ?toSubaccount(caller);
       };
-      case (?sub_godwin) {
-        let transfer_result = await Token.icrc1_transfer({
-          amount;
-          created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-          fee = ?godwin_fee;
-          from_subaccount = ?Principal.toBlob(user);
-          memo = null;
-          to = {
-            owner = caller;
-            subaccount = ?subaccount;
-          };
-        });
-        switch(transfer_result){
-          case(#Err(err)) {
-            #err(err);
-          };
-          case(#Ok(_)) {
-            #ok();
-          };
-        };
+      amount = _airdrop_user_amount;
+      memo = null;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+    }));
+
+    Result.iterate(mint_result, func(tx_index: ICRC1.TxIndex){
+      ignore Set.put(_airdropped_users, Map.phash, caller);
+    });
+
+    mint_result;
+  };
+
+  public shared({caller}) func transferToSubGodwin(user: Principal, amount: Balance, subaccount: Blob) : async TransferResult {
+
+    let master_fee = 666; // @todo: get it from the token, or try with null ?
+
+    let sub_godwin = switch(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; })){
+      case null { return #err(#NotAllowed); };
+      case (?sub) { sub; };
+    };
+
+    let transfer_result = await Token.icrc1_transfer({
+      amount;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+      fee = ?master_fee;
+      from_subaccount = ?toSubaccount(user);
+      memo = null;
+      to = {
+        owner = caller;
+        subaccount = ?subaccount;
+      };
+    });
+
+    toBaseResult(transfer_result);
+  };
+
+  type ICRC1Result<Ok, Err> = {
+    #Ok: Ok;
+    #Err: Err;
+  };
+
+  func toBaseResult<Ok, Err>(icrc1_result: ICRC1Result<Ok, Err>) : Result<Ok, Err> {
+    switch(icrc1_result){
+      case(#Ok(ok)) {
+        #ok(ok);
+      };
+      case(#Err(err)) {
+        #err(err);
       };
     };
   };

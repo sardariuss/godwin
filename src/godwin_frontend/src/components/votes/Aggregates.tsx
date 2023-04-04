@@ -1,11 +1,10 @@
-import { _SERVICE, Status, Polarization, Time, Appeal, CategoryInfo, Category } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Polarization, Time, Appeal, Category, CategoryInfo } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-import { ActorContext } from "../../ActorContext"
-import { CategoriesContext } from "../../CategoriesContext"
+import { ActorSubclass } from "@dfinity/agent";
 
 import CONSTANTS from "../../Constants";
 
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { StatusEnum, polarizationToCursor, getCursorInfo, toMap, toPolarizationInfo } from "../../utils";
 
@@ -13,6 +12,8 @@ import PolarizationComponent from "./Polarization";
 import AppealComponent from "./Appeal";
 
 type Props = {
+  actor: ActorSubclass<_SERVICE>,
+  categories: Map<Category, CategoryInfo>,
   questionId: bigint,
   statusHistory: Map<StatusEnum, Array<Time>> | undefined
 };
@@ -28,10 +29,7 @@ enum AggregateType {
   CATEGORIZATION
 };
 
-const Aggregates = ({ questionId, statusHistory }: Props) => {
-
-  const {actor} = useContext(ActorContext);
-  const {categories} = useContext(CategoriesContext);
+const Aggregates = ({ actor, categories, questionId, statusHistory }: Props) => {
 
   const [currentAggregate, setCurrentAggregate] = useState<AggregateType>(AggregateType.OPINION);
   

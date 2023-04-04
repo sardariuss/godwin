@@ -25,7 +25,6 @@ module {
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
-  //type Master = Types.Master;
   type Categories = Categories.Categories;
   type Questions = Questions.Questions;
   type Users = Users.Users;
@@ -38,7 +37,7 @@ module {
 
   public func build(
     name: Ref<Text>,
-    admin: Ref<Principal>,
+    master: Ref<Principal>,
     time: Ref<Time>,
     last_pick_date: Ref<Time>,
     params: Ref<SchedulerParameters>,
@@ -53,7 +52,7 @@ module {
   ) : Model {
     Model(
       WRef.WRef(name),
-      WRef.WRef(admin),
+      WRef.WRef(master),
       WRef.WRef(time),
       WRef.WRef(last_pick_date),
       WRef.WRef(params),
@@ -70,7 +69,7 @@ module {
 
   public class Model(
     _name: WRef<Text>,
-    _admin: WRef<Principal>,
+    _master: WRef<Principal>,
     _time: WRef<Time>,
     _last_pick_date: WRef<Time>,
     _params: WRef<SchedulerParameters>,
@@ -84,10 +83,6 @@ module {
     _categorization_votes: CategorizationVotes
   ) = {
 
-//    public func getMaster() : Master {
-//      actor(Principal.toText(_admin.get())); // @todo: shall the admin and the master be different?
-//    };
-
     public func getName() : Text {
       _name.get();
     };
@@ -96,12 +91,12 @@ module {
       _name.set(name);
     };
 
-    public func getAdmin(): Principal {
-      _admin.get();
+    public func getMaster(): Principal {
+      _master.get();
     };
 
-    public func setAdmin(admin: Principal) {
-      _admin.set(admin);
+    public func setMaster(master: Principal) {
+      _master.set(master);
     };
 
     public func getTime() : Time {

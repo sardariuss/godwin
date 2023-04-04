@@ -80,7 +80,7 @@ module {
     history: QuestionVoteHistory,
     subaccounts: Map<Nat, Blob>,
     generator: SubaccountGenerator,
-    payin: (Principal, Blob) -> async* Result<(), ()>,
+    payin: (Principal, Blob) -> async* Result<(), Text>,
     payout: (Vote, Blob) -> ()
   ) : Categorizations {
     let ballot_aggregator = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(

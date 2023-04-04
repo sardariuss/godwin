@@ -26,12 +26,10 @@ module {
   };
 
   func bytesToSubaccount(bytes : [Nat8]) : Blob {
+    assert(bytes.size() <= 32);
     let buffer = Buffer.fromArray<Nat8>(bytes);
     while (buffer.size() < 32) {
       buffer.add(0);
-    };
-    while (buffer.size() > 32) {
-      ignore buffer.removeLast();
     };
     Blob.fromArray(Buffer.toArray(buffer));
   };

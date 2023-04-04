@@ -107,6 +107,13 @@ module {
 
   type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
 
+  public func has2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2) : Bool {
+    switch(Map.get(map2D, k1_hash, k1)){
+      case(null) { false };
+      case(?map1D) { Map.has(map1D, k2_hash, k2) };
+    };
+  };
+
   public func put2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, v: V) : ?V {
     let map1D = Option.get(Map.get(map2D, k1_hash, k1), Map.new<K2, V>());
     let old_v = Map.put(map1D, k2_hash, k2, v);

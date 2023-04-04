@@ -1,17 +1,11 @@
 import Header from "./Header";
 import Footer from "./Footer";
-import ListQuestions from "./ListQuestions";
 import UserComponent from "./User";
-import OpenQuestion from "./OpenQuestion";
+import MainQuestionsWrapper from "./MainQuestionsWrapper";
 import { ActorContext, useAuthClient } from "../ActorContext";
-import { CategoriesContext, useCategories } from "../CategoriesContext";
-
-import { _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import ListSubs from "./ListSubs";
 
 import { Route, Routes } from "react-router-dom";
-
-import { useState } from "react";
-
 
 function App() {
   
@@ -20,17 +14,14 @@ function App() {
     setAuthClient,
     isAuthenticated,
     setIsAuthenticated,
+    subsFetched,
+    setSubsFetched,
     login,
     logout,
-    actor,
+    master,
+    subs,
     hasLoggedIn,
   } = useAuthClient();
-
-  const {
-    categories
-  } = useCategories();
-
-  const [showAskQuestion, setShowAskQuestion] = useState<boolean>(false);
 
   if (!authClient) return null;
 
@@ -42,50 +33,46 @@ function App() {
           setAuthClient,
           isAuthenticated,
           setIsAuthenticated,
+          subsFetched,
+          setSubsFetched,
           login,
           logout,
-          actor,
+          master,
+          subs,
           hasLoggedIn,
         }}>
-          <CategoriesContext.Provider value={{categories}}>
-            <div className="flex flex-col">
-              <Header login={login} setShowAskQuestion={setShowAskQuestion}/>
-              <div className="border border-none">
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ListQuestions key={"list_interest"} order_by={{ 'INTEREST_SCORE' : null }} query_direction={{ 'BWD' : null }}/>
-                  }
-                />
-                <Route
-                  path="/open"
-                  element={
-                    <ListQuestions key={"list_opinion"} order_by={{ 'STATUS' : { 'OPEN' : null } }} query_direction={{ 'FWD' : null }}/>
-                  }
-                />
-                <Route
-                  path="/archives"
-                  element={
-                    <ListQuestions key={"list_archive"} order_by={{ 'STATUS' : { 'CLOSED' : null } }} query_direction={{ 'FWD' : null }}/>
-                  }
-                />
-                <Route
-                  path="/rejected"
-                  element={
-                    <ListQuestions key={"list_rejected"} order_by={{ 'STATUS' : { 'REJECTED' : null } }} query_direction={{ 'FWD' : null }}/>
-                  }
-                />
-                <Route
-                  path="/user"
-                  element={
-                    <UserComponent/>
-                  }
-                />
-                </Routes>
-              </div>
-            </div>
-            <Footer/>
+          <div className="flex flex-col">
+            <Header login={login} setShowAskQuestion={() => {}}/>
+            <Routes>
+              <Route
+                path="/g/:subgodwin"
+                element={
+                  <MainQuestionsWrapper/>
+                }
+              />
+                {
+                  /*
+                  // @todo: fix user page
+                  <Route
+                    path="/user"
+                    element={
+                      <UserComponent/>
+                    }
+                  />
+                  */
+                }
+              <Route
+                path="/"
+                element={
+                  <ListSubs></ListSubs>
+                }
+              />      
+            </Routes>
+          </div>
+          <Footer/>
+          {
+            // @todo: add OpenQuestion to the subgodwin page
+            /*
             <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" hidden={!showAskQuestion}>
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
               <div className="fixed inset-0 z-10 overflow-y-auto">
@@ -99,7 +86,8 @@ function App() {
                 </div>
               </div>
             </div>
-          </CategoriesContext.Provider>
+          */
+          }
         </ActorContext.Provider>
       </div>
     </>

@@ -1,7 +1,8 @@
 import { ActorContext } from "../../ActorContext"
 import { CategoriesContext } from "../../CategoriesContext"
 
-import { CursorArray, Category, CategoryInfo } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { CursorArray, Category, CategoryInfo, _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { ActorSubclass } from "@dfinity/agent";
 
 import { RangeSlider } from "./RangeSlider";
 
@@ -12,7 +13,9 @@ import CONSTANTS from "../../Constants";
 import React, { useContext, useState, useEffect } from "react";
 
 type Props = {
-  questionId: bigint;
+  actor: ActorSubclass<_SERVICE>,
+  categories: Map<Category, CategoryInfo>,
+  questionId: bigint
 };
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
@@ -24,10 +27,9 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
 }
 
 // @todo: add a button to perform the vote
-const VoteCategorization = ({questionId}: Props) => {
+const VoteCategorization = ({actor, categories, questionId}: Props) => {
 
-	const {actor, isAuthenticated} = useContext(ActorContext);
-  const {categories} = useContext(CategoriesContext);
+	const {isAuthenticated} = useContext(ActorContext);
   const [categorization, setCategorization] = useState<CursorArray>(initCategorization(categories));
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
 

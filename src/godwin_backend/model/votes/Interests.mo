@@ -57,7 +57,7 @@ module {
     queries: QuestionQueries,
     subaccounts: Map<Nat, Blob>,
     generator: SubaccountGenerator,
-    payin: (Principal, Blob) -> async* Result<(), ()>,
+    payin: (Principal, Blob) -> async* Result<(), Text>,
     payout: (Vote, Blob) -> ()
   ) : Interests {
     let ballot_aggregator = BallotAggregator.BallotAggregator<Interest, Appeal>(

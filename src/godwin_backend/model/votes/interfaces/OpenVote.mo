@@ -49,14 +49,14 @@ module {
     _votes: Votes.Votes<T, A>,
     _subaccounts: Map<Nat, Blob>,
     _generator: SubaccountGenerator,
-    _payin: (Principal, Blob) -> async* Result<(), ()>
+    _payin: (Principal, Blob) -> async* Result<(), Text>
   ) {
 
     public func openVote(principal: Principal) : async* Result<Nat, OpenVoteError> {
       let subaccount = _generator.generateSubaccount();
       let pay_result = await* _payin(principal, subaccount);
       switch(pay_result){
-        case(#err(_)) { #err(#PayinError); };
+        case(#err(err)) { #err(#PayinError(err)); };
         case(#ok(_)) {
           let id = _votes.newVote();
           Map.set(_subaccounts, Map.nhash, id, subaccount);

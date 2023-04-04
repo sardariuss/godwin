@@ -1,9 +1,10 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, Direction, ScanLimitResult } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { ActorContext } from "../ActorContext"
+import { OrderBy, Direction, ScanLimitResult, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
-import { useEffect, useState, useContext } from "react";
+import { ActorSubclass } from "@dfinity/agent";
+
+import { useEffect, useState } from "react";
 
 type Results = {
   ids: bigint[],
@@ -16,26 +17,21 @@ const fromQuery = (query_result: ScanLimitResult) => {
   return { ids, next };
 }
 
-type ListQuestionsInput = {
+export type ListQuestionsInput = {
+  actor: ActorSubclass<_SERVICE>,
+  categories: Map<Category, CategoryInfo>,
   order_by: OrderBy,
   query_direction: Direction
 }
 
-const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
+const ListQuestions = ({actor, categories, order_by, query_direction}: ListQuestionsInput) => {
 
-  const {actor} = useContext(ActorContext);
   const [results, setResults] = useState<Results>({ ids : [], next: undefined});
-  const [categories, setCategories] = useState<string[]>([]);
   const [trigger_next, setTriggerNext] = useState<boolean>(false);
 	
   const refreshQuestions = async () => {
     let query_result : ScanLimitResult = await actor.getQuestions(order_by, query_direction, BigInt(10), []);
     setResults(fromQuery(query_result));
-  };
-
-  const refreshCategories = async () => {
-    let query_categories : Array<string> = await actor.getCategories();
-    setCategories(Array.from(query_categories));
   };
 
   const getNextQuestions = async () => {
@@ -59,7 +55,6 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
   }
 
   useEffect(() => {
-    refreshCategories();
     refreshQuestions();
     window.addEventListener('scroll', scrolling, {passive: true});
     return () => {
@@ -74,11 +69,15 @@ const ListQuestions = ({order_by, query_direction}: ListQuestionsInput) => {
     };
   }, [trigger_next]);
 
+  useEffect(() => {
+    refreshQuestions();
+  }, [order_by, query_direction]);
+
 	return (
-		<div className="border border-none mx-96 my-16 justify-center">
+    <div className="w-full">
       {[...results.ids].map(id => (
         <li className="list-none" key={Number(id)}> 
-          <QuestionComponent questionId={id} categories={categories}> </QuestionComponent>
+          <QuestionComponent actor={actor} categories={categories} questionId={id}> </QuestionComponent>
         </li>
       ))}
     </div>

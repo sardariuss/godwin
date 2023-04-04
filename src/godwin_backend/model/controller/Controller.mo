@@ -262,7 +262,7 @@ module {
     };
 
     func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getAdmin(), #InsufficientCredentials), (func(){}));
+      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getMaster(), #InsufficientCredentials), (func(){}));
     };
 
     public func run(date: Time) {

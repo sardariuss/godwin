@@ -2,12 +2,12 @@ import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
-//import ICRC1 "mo:icrc1/ICRC1";
-
 import Map "mo:map/Map";
 import Set "mo:map/Set";
 
 import Duration "../utils/Duration";
+
+import Token "canister:godwin_token";
 
 module {
 
@@ -40,12 +40,6 @@ module {
   type CredentialErrors = {
     #NotAllowed;
   };
-
-//  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
-
-//  public type Master = actor {
-//    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async Result<(), TransferFromUserError>;
-//  };
 
   public type Parameters = {
     name: Text;
@@ -182,6 +176,17 @@ module {
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
 
+  public type SubTransferArgs = {
+    principal: Principal;
+    sub_subaccount: Blob;
+    amount: Nat;
+  };
+
+  public type FailedPayout = SubTransferArgs and {
+    time: Nat64;
+    error: Token.TransferError or { #Trapped; };
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
@@ -231,7 +236,7 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayinError;
+    #PayinError: Text;
   };
 
   public type GetVoteError = {
@@ -261,7 +266,7 @@ module {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;
-    #PayinError;
+    #PayinError: Text;
   };
 
 };

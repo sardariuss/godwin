@@ -1,7 +1,6 @@
 import ReactDOM from "react-dom/client";
 import "./index.css";
-//import App from "./components/App";
-import App from "./components/App2";
+import App from "./components/App";
 import { HashRouter } from "react-router-dom";
 
 // to fix decoder of agent-js
@@ -12,4 +11,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </HashRouter>
 );
-// root.render(<Image/>);

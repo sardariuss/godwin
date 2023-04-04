@@ -1,8 +1,8 @@
 import { StatusInfo } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { ActorContext } from "../ActorContext"
+
 import StatusComponent from "./Status";
 
-import { useEffect, useState, useContext } from "react";
+import { useState } from "react";
 
 type Props = {
   statusInfo: StatusInfo,
@@ -14,7 +14,7 @@ const StatusHistoryComponent = ({statusInfo, statusHistory}: Props) => {
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
 	return (
-		<div className="relative text-gray-500 border-gray-200 dark:border-gray-700 dark:text-gray-400">
+    <div className="text-gray-500 border-gray-200 dark:border-gray-700 dark:text-gray-400">
       {
         statusInfo !== undefined ? (
           <div className={statusHistory.length > 0 ? "hover:cursor-pointer" : ""} onClick={(e) => { if (statusHistory.length > 0) setHistoryVisible(!historyVisible)}}>

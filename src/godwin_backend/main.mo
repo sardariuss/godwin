@@ -59,7 +59,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   let _controller = Factory.build(_state);
 
   public shared func runScenario() : async () {
-    await* Scenario.run(_controller, _start_date, Time.now(), #MINUTES(5), 20);
+    await* Scenario.run(_controller, _start_date, Time.now(), #MINUTES(5));
   };
 
   public query func getName() : async Text {

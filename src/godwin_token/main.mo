@@ -12,11 +12,11 @@ actor Token {
     name = "Godwin";
     symbol = "GDW";
     decimals = 6;
-    fee = 1_000_000;
+    fee = 666;
     max_supply = 1_000_000_000_000_000;
     initial_balances = [({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 100_000_000_000_000)];
     min_burn_amount = 1_000_000_000;
-    minting_account = { owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null; };
+    minting_account = { owner = Principal.fromText("rrkah-fqaaa-aaaaa-aaaaq-cai"); subaccount = null; };
     advanced_settings = null;
   };
 

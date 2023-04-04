@@ -2,16 +2,20 @@ import { ActorContext } from "../../ActorContext"
 import { nsToStrDate } from "../../utils";
 import { RangeSlider } from "./RangeSlider";
 
+import { _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { ActorSubclass } from "@dfinity/agent";
+
 import React, { useContext, useState, useEffect } from "react";
 import CONSTANTS from "../../Constants";
 
 type Props = {
+  actor: ActorSubclass<_SERVICE>;
   questionId: bigint;
 };
 
-const VoteOpinion = ({questionId}: Props) => {
+const VoteOpinion = ({actor, questionId}: Props) => {
 
-	const {actor, isAuthenticated} = useContext(ActorContext);
+	const {isAuthenticated} = useContext(ActorContext);
   const [opinion, setOpinion] = useState<number>(0.0);
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
 
