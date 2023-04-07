@@ -33,9 +33,11 @@ actor Master {
   type Map<K, V> = Map.Map<K, V>;
   type Godwin = Godwin.Godwin;
   type Balance = ICRC1.Balance;
+  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
   type TransferResult = Types.TransferResult;
   type AirdropResult = Types.AirdropResult;
-  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
+  type MintBatchArgs = Types.MintBatchArgs;
+  type MintBatchResult = Types.MintBatchResult;
   let { toSubaccount } = Types;
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
@@ -163,6 +165,18 @@ actor Master {
     });
 
     toBaseResult(transfer_result);
+  };
+
+  public shared({caller}) func mintBatch(args: MintBatchArgs) : async MintBatchResult {
+
+    let sub_godwin = switch(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; })){
+      case null { return #err(#NotAllowed); };
+      case (?sub) { sub; };
+    };
+
+    let mint_result = Token.mintBatch(args);
+
+    toBaseResult(mint_result);
   };
 
   type ICRC1Result<Ok, Err> = {

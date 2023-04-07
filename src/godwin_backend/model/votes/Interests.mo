@@ -9,6 +9,8 @@ import ReadVote            "interfaces/ReadVote";
 import CloseVote           "interfaces/CloseVote";
 import QuestionVoteHistory "../QuestionVoteHistory";
 import QuestionQueries     "../QuestionQueries";
+import WRef                "../../utils/wrappers/WRef";
+import Ref                 "../../utils/Ref";
 
 import Map                 "mo:map/Map";
 
@@ -20,6 +22,8 @@ module {
   type Result<Ok, Err>     = Result.Result<Ok, Err>;
   type Map<K, V>           = Map.Map<K, V>;
   type Time                = Int;
+  type Ref<T>              = Ref.Ref<T>;
+  type WRef<T>             = WRef.WRef<T>;
 
   type Interest            = Types.Interest;
   type PutBallotError      = Types.PutBallotError;
@@ -29,9 +33,9 @@ module {
   type Appeal              = Types.Appeal;
   type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type BallotAggregator    = BallotAggregator.BallotAggregator<Interest, Appeal>;
-  type OpenVotePayin       = OpenVote.OpenVotePayin<Interest, Appeal>;
+  type OpenPayableVote       = OpenVote.OpenPayableVote<Interest, Appeal>;
   type PutBallotPayin      = PutBallot.PutBallotPayin<Interest, Appeal>;
-  type CloseVotePayout     = CloseVote.CloseVotePayout<Interest, Appeal>;
+  type ClosePayableVote     = CloseVote.ClosePayableVote<Interest, Appeal>;
   type ReadVote            = ReadVote.ReadVote<Interest, Appeal>;
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   type Question            = Types.Question;
@@ -56,7 +60,7 @@ module {
     history: QuestionVoteHistory,
     queries: QuestionQueries,
     subaccounts: Map<Nat, Blob>,
-    generator: SubaccountGenerator,
+    subaccount_index: Ref<Nat>,
     payin: (Principal, Blob) -> async* Result<(), Text>,
     payout: (Vote, Blob) -> ()
   ) : Interests {
@@ -69,9 +73,9 @@ module {
       votes,
       history,
       queries,
-      OpenVote.OpenVotePayin<Interest, Appeal>(votes, subaccounts, generator, payin),
-      PutBallot.PutBallotPayin<Interest, Appeal>(votes, ballot_aggregator, subaccounts, payin),
-      CloseVote.CloseVotePayout<Interest, Appeal>(votes, subaccounts, payout),
+      OpenVote.OpenPayableVote<Interest, Appeal>(votes, subaccounts, WRef.WRef(subaccount_index), payin),
+      PutBallot.PutBallotPayin<Interest, Appeal>(votes, ballot_aggregator, #PUT_INTEREST_BALLOT, payin),
+      CloseVote.ClosePayableVote<Interest, Appeal>(votes, subaccounts, #PUT_INTEREST_BALLOT, payout),
       ReadVote.ReadVote<Interest, Appeal>(votes)
     );
   };
@@ -80,9 +84,9 @@ module {
     _votes: Votes.Votes<Interest, Appeal>,
     _history: QuestionVoteHistory,
     _queries: QuestionQueries,
-    _open_vote_interface: OpenVotePayin,
+    _open_vote_interface: OpenPayableVote,
     _put_ballot_interface: PutBallotPayin,
-    _close_vote_interface: CloseVotePayout,
+    _close_vote_interface: ClosePayableVote,
     _read_vote_interface: ReadVote
   ) {
     

@@ -1,8 +1,8 @@
-import Types "../../Types";
-import Votes "../Votes";
-import BallotAggregator "../BallotAggregator";
+import Types "../Types";
+import Votes "Votes";
+import BallotAggregator "BallotAggregator";
 
-import SubaccountGenerator "../../token/SubaccountGenerator";
+import SubaccountGenerator "../token/SubaccountGenerator";
 
 import Map "mo:map/Map";
 
@@ -14,6 +14,9 @@ module {
   // For convenience: from base module
   type Principal = Principal.Principal;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
+
+
+  
 
   type Map<K, V> = Map.Map<K, V>;
 

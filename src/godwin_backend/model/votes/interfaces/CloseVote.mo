@@ -3,6 +3,8 @@ import Votes "../Votes";
 
 import Map "mo:map/Map";
 
+import SubaccountGenerator "../../token/SubaccountGenerator";
+
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
@@ -16,6 +18,7 @@ module {
 
   type Vote<T, A> = Types.Vote<T, A>;
   type CloseVoteError = Types.CloseVoteError;
+  type SubaccountType = SubaccountGenerator.SubaccountType;
   
   public class CloseVote<T, A>(_votes: Votes.Votes<T, A>) {
 
@@ -25,9 +28,10 @@ module {
 
   };
 
-  public class CloseVotePayout<T, A>(
+  public class ClosePayableVote<T, A>(
     _votes: Votes.Votes<T, A>,
     _subaccounts: Map<Nat, Blob>,
+    _subaccount_type: SubaccountType,
     _payout: (Vote<T, A>, Blob) -> ()
   ) {
 
@@ -40,7 +44,25 @@ module {
       // Close the vote
       Result.mapOk<Vote<T, A>, Vote<T, A>, CloseVoteError>(_votes.closeVote(id), func(vote) {
         // Payout
-        _payout(vote, subaccount);
+        _payout(vote, subaccount); // @todo: for opening up the question
+        _payout(vote, SubaccountGenerator.getSubaccount(_subaccount_type, id)); // @todo: for the votes
+        vote;
+      });
+    };
+
+  };
+
+  public class CloseRedistributeVote<T, A>(
+    _votes: Votes.Votes<T, A>,
+    _subaccount_type: SubaccountType,
+    _payout: (Vote<T, A>, Blob) -> ()
+  ) {
+
+    public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
+      // Close the vote
+      Result.mapOk<Vote<T, A>, Vote<T, A>, CloseVoteError>(_votes.closeVote(id), func(vote) {
+        // Payout
+        _payout(vote, SubaccountGenerator.getSubaccount(_subaccount_type, id)); // @todo: for the votes
         vote;
       });
     };

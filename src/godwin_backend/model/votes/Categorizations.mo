@@ -29,9 +29,9 @@ module {
   type PolarizationMap        = Types.PolarizationMap;
   type SubaccountGenerator    = SubaccountGenerator.SubaccountGenerator;
   type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
-  type OpenVoteWithSubaccount = OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>;
+  type OpenVote               = OpenVote.OpenVote<CursorMap, PolarizationMap>;
   type PutBallotPayin         = PutBallot.PutBallotPayin<CursorMap, PolarizationMap>;
-  type CloseVotePayout        = CloseVote.CloseVotePayout<CursorMap, PolarizationMap>;
+  type CloseRedistributeVote        = CloseVote.CloseRedistributeVote<CursorMap, PolarizationMap>;
   type ReadVote               = ReadVote.ReadVote<CursorMap, PolarizationMap>;
 
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
@@ -90,18 +90,18 @@ module {
     );
     Categorizations(
       history,
-      OpenVote.OpenVoteWithSubaccount<CursorMap, PolarizationMap>(votes, subaccounts, generator),
-      PutBallot.PutBallotPayin<CursorMap, PolarizationMap>(votes, ballot_aggregator, subaccounts, payin),
-      CloseVote.CloseVotePayout<CursorMap, PolarizationMap>(votes, subaccounts, payout),
+      OpenVote.OpenVote<CursorMap, PolarizationMap>(votes),
+      PutBallot.PutBallotPayin<CursorMap, PolarizationMap>(votes, ballot_aggregator, #PUT_CATEGORIZATION_BALLOT, payin),
+      CloseVote.CloseRedistributeVote<CursorMap, PolarizationMap>(votes, #PUT_CATEGORIZATION_BALLOT, payout),
       ReadVote.ReadVote<CursorMap, PolarizationMap>(votes)
     );
   };
 
   public class Categorizations(
     _history: QuestionVoteHistory,
-    _open_vote_interface: OpenVoteWithSubaccount,
+    _open_vote_interface: OpenVote,
     _put_ballot_interface: PutBallotPayin,
-    _close_vote_interface: CloseVotePayout,
+    _close_vote_interface: CloseRedistributeVote,
     _read_vote_interface: ReadVote
   ) {
     

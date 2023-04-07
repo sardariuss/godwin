@@ -34,11 +34,19 @@ module {
     #AirdropOver;
   };
 
+  public type MintBatchResult = Result<[ ICRC1.TransferResult ], TransferError>;
+
+  public type MintBatchArgs = {
+    to : [{ account : ICRC1.Account; amount : ICRC1.Balance; }];
+    memo : ?Blob;
+  };
+
   public type MasterInterface = actor {
     createSubGodwin: shared(SubTypes.Parameters) -> async Principal;
     updateSubGodwins: shared(SubTypes.Parameters) -> async ();
     listSubGodwins: query() -> async [Principal];
     airdrop: shared() -> async AirdropResult;
+    mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
     transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async TransferResult;
   };
 
