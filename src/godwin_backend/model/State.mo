@@ -59,8 +59,7 @@ module {
     creation_date     : Time;
     categories        : Categories.Register;
     pay_interface     : {
-      pending_payouts    : Ref<Deque<SubTransferArgs>>;
-      failed_payouts     : Set<FailedPayout>;
+      failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
     };
     questions         : {
       register           : Map<Nat, Question>;
@@ -75,15 +74,13 @@ module {
     };
     controller        : {
       model              : {
-        time             : Ref<Time>; 
         last_pick_date   : Ref<Time>;
         params           : Ref<SchedulerParameters>;
       };
     };
-    subaccounts       : {
-      interest_votes        : Map<Nat, Blob>;
-      categorization_votes  : Map<Nat, Blob>;
-      index                 : Ref<Nat>;
+    opened_questions  : {
+      register           : Map<Nat, (Principal, Blob)>;
+      index              : Ref<Nat>;
     };
     votes          : {
       interest                : Interests.VoteRegister;
@@ -106,7 +103,6 @@ module {
       creation_date                 = creation_date;
       categories                    = Categories.initRegister(parameters.categories);
       pay_interface = {
-        pending_payouts             = Ref.initRef<Deque<SubTransferArgs>>(Deque.empty<SubTransferArgs>());
         failed_payouts              = Set.new<FailedPayout>();
       };
       status        = {
@@ -122,14 +118,12 @@ module {
       };
       controller    = {
         model = {
-          time                      = Ref.initRef<Time>(creation_date);
           last_pick_date            = Ref.initRef<Time>(creation_date);
           params                    = Ref.initRef<SchedulerParameters>(parameters.scheduler);
         };
       };
-      subaccounts   = {
-        interest_votes              = Map.new<Nat, Blob>();
-        categorization_votes        = Map.new<Nat, Blob>();
+      opened_questions = {
+        register                    = Map.new<Nat, (Principal, Blob)>();
         index                       = Ref.initRef<Nat>(0);
       };
       votes         = {

@@ -21,16 +21,16 @@ module {
   type Map<K, V> = Map.Map<K, V>;
   type WMap<K, V> = WMap.WMap<K, V>;
 
-  type VoteStatus = Types.VoteStatus;
   type Ballot<T> = Types.Ballot<T>;
   type Vote<T, A> = Types.Vote<T, A>;
   type PublicVote<T, A> = Types.PublicVote<T, A>;
   type CloseVoteError = Types.CloseVoteError;
+  type GetVoteError = Types.GetVoteError;
+  type GetBallotError = Types.GetBallotError;
 
   public func toPublicVote<T, A>(vote: Vote<T, A>) : PublicVote<T, A> {
     {
       id = vote.id;
-      status = vote.status;
       ballots = Utils.mapToArray(vote.ballots);
       aggregate = vote.aggregate;
     }
@@ -64,59 +64,66 @@ module {
     _empty_aggregate: A
   ) {
 
-    let observers_ = Buffer.Buffer<Callback<A>>(0);
+    //let observers_ = Buffer.Buffer<Callback<A>>(0);
 
     public func newVote() : Nat {
       let index = _register.index;
       let vote : Vote<T, A> = {
         id = index;
-        var status = #OPEN;
         ballots = Map.new<Principal, Ballot<T>>();
         var aggregate = _empty_aggregate; 
       };
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
-      notifyObs(index, null, ?vote.aggregate);
+      //notifyObs(index, null, ?vote.aggregate);
       index;
     };
 
-    public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
-      // Get the vote
-      let vote = switch(findVote(id)){
-        case(null) { return #err(#VoteNotFound); };
-        case(?vote) { vote; };
-      };
-      // Check if not already closed
-      if (vote.status == #CLOSED) {
-        return #err(#AlreadyClosed);
-      };
-      // Close the vote
-      vote.status := #CLOSED;
-      // Notify the observers
-      notifyObs(id, ?vote.aggregate, null);
-      #ok(vote);
-    };
+//    public func closeVote(id: Nat) : Result<Vote<T, A>, CloseVoteError> {
+//      // Get the vote
+//      let vote = switch(findVote(id)){
+//        case(#err(err)) { return #err(err); };
+//        case(#ok(v)) { v; };
+//      };
+//      // Check if not already closed
+//      if (vote.status == #CLOSED) {
+//        return #err(#AlreadyClosed);
+//      };
+//      // Close the vote
+//      vote.status := #CLOSED;
+//      // Notify the observers
+//      //notifyObs(id, ?vote.aggregate, null);
+//      #ok(vote);
+//    };
 
-    public func findVote(id: Nat) : ?Vote<T, A> {
-      Map.get(_register.votes, Map.nhash, id);
-    };
+    public func findVote(id: Nat) : Result<Vote<T, A>, GetVoteError> {
+      Result.fromOption(Map.get(_register.votes, Map.nhash, id), #VoteNotFound);
+    }; 
 
     public func getVote(id: Nat) : Vote<T, A> {
-      switch(findVote(id)){
+      switch(Map.get(_register.votes, Map.nhash, id)){
         case(null) { Debug.trap("Could not find a vote with ID '" # Nat.toText(id) # "'"); };
         case(?vote) { vote; };
       };
     };
 
-    public func addObs(callback: (Nat, ?A, ?A) -> ()) {
-      observers_.add(callback);
+    public func getBallot(principal: Principal, id: Nat) : Result<Ballot<T>, GetBallotError> {
+      let vote = switch(findVote(id)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(v)) { v; };
+      };
+      Result.fromOption(Map.get(vote.ballots, Map.phash, principal), #BallotNotFound);
     };
 
-    public func notifyObs(id: Nat, old: ?A, new: ?A) {
-      for (obs_func in observers_.vals()){
-        obs_func(id, old, new);
-      };
-    };
+//    public func addObs(callback: (Nat, ?A, ?A) -> ()) {
+//      observers_.add(callback);
+//    };
+//
+//    public func notifyObs(id: Nat, old: ?A, new: ?A) {
+//      for (obs_func in observers_.vals()){
+//        obs_func(id, old, new);
+//      };
+//    };
 
   };
 

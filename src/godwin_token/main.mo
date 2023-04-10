@@ -122,7 +122,7 @@ actor Token {
 
   public shared ({ caller }) func reap_account(args : ReapAccountArgs) : async ReapAccountResult {
     
-    let subaccount_balance = ICRC1.balance_of(token, { owner = caller; subaccount = args.subaccount; });
+    let account_balance = ICRC1.balance_of(token, { owner = caller; subaccount = args.subaccount; });
 
     let num_recipients = args.to.size();
 
@@ -130,10 +130,10 @@ actor Token {
       return #Err(#NoRecipients);
     };
 
-    let amount_without_fees : Int = subaccount_balance - token._fee * num_recipients;
+    let amount_without_fees : Int = account_balance - token._fee * num_recipients;
 
     if (amount_without_fees <= 0) {
-      return #Err(#InsufficientFunds({balance = subaccount_balance;}));
+      return #Err(#InsufficientFunds({balance = account_balance;}));
     };
 
     var sum_shares = 0.0;
@@ -180,14 +180,7 @@ actor Token {
 
   public type MintBatchResult = {
     #Ok : [ ICRC1.TransferResult ];
-    #Err : MintBatchError;
-  };
-
-  public type MintBatchError = {
-    #GenericError : {
-      error_code : Int;
-      message : Text;
-    };
+    #Err : ICRC1.TransferError;
   };
 
   public shared({caller}) func mint_batch(args : MintBatchArgs) : async MintBatchResult {

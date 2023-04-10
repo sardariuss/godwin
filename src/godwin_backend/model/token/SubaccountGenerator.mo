@@ -1,7 +1,3 @@
-import WRef "../../utils/wrappers/WRef";
-import Ref "../../utils/Ref";
-
-import List "mo:base/List";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Blob "mo:base/Blob";
@@ -10,20 +6,19 @@ import Array "mo:base/Array";
 
 module {
 
-  type Ref<T> = Ref.Ref<T>;
-  type WRef<T> = WRef.WRef<T>;
-
   let GENERATOR_VERSION : Nat8 = 0;
 
+  // @todo: SubaccountType shall be called prefix and put somewhere else
+
   public type SubaccountType = {
-    #OPEN_VOTE;
+    #OPEN_QUESTION;
     #PUT_INTEREST_BALLOT;
     #PUT_CATEGORIZATION_BALLOT;
   };
 
   func typeToNat8(t : SubaccountType) : Nat8 {
     switch t {
-      case (#OPEN_VOTE)                    { 0; };
+      case (#OPEN_QUESTION)                { 0; };
       case (#PUT_INTEREST_BALLOT)          { 1; };
       case (#PUT_CATEGORIZATION_BALLOT)    { 2; };
     };
@@ -43,20 +38,6 @@ module {
     assert(buffer.size() == 32);
     // Return the subaccount as a blob
     Blob.fromArray(Buffer.toArray(buffer));
-  };
-
-  public func build(index: Ref<Nat>) : SubaccountGenerator {
-    SubaccountGenerator(WRef.WRef<Nat>(index));
-  };
-
-  public class SubaccountGenerator(_index: WRef<Nat>) {
-
-    public func getNext() : Nat {
-      let nat = _index.get();
-      _index.set(nat + 1);
-      nat;
-    };
-
   };
 
   func nat64ToBytes(x : Nat64) : [Nat8] {

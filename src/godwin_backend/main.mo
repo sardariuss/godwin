@@ -51,6 +51,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryArray = Types.CategoryArray;
   type RevealVoteError = Types.RevealVoteError;
   type StatusInfo = Types.StatusInfo;
+  type TransitionError = Types.TransitionError;
 
   let _start_date = Time.now() - Duration.toTime(#HOURS(6));  // @temp
 
@@ -114,7 +115,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* _controller.openQuestion(caller, text, Time.now());
   };
 
-  public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), ReopenQuestionError> {
+  public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), [(?Status, TransitionError)]> {
     await* _controller.reopenQuestion(caller, question_id, Time.now());
   };
 
@@ -170,8 +171,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getUserOpinions(principal);
   };
 
-  public shared func run() {
-    _controller.run(Time.now());
+  public shared func run() : async() {
+    await* _controller.run(Time.now());
   };
 
 };

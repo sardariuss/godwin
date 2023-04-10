@@ -9,8 +9,6 @@ import Set "mo:map/Set";
 
 import Scenario "../../test/motoko/Scenario"; // @todo
 
-import ICRC1 "mo:icrc1/ICRC1";
-
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
@@ -32,11 +30,10 @@ actor Master {
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Map<K, V> = Map.Map<K, V>;
   type Godwin = Godwin.Godwin;
-  type Balance = ICRC1.Balance;
+  type Balance = Types.Balance;
   type CreateSubGodwinResult = Types.CreateSubGodwinResult;
   type TransferResult = Types.TransferResult;
   type AirdropResult = Types.AirdropResult;
-  type MintBatchArgs = Types.MintBatchArgs;
   type MintBatchResult = Types.MintBatchResult;
   let { toSubaccount } = Types;
 
@@ -79,7 +76,7 @@ actor Master {
     #ok(principal);
   };
 
-  // @todo: deal with the fucking parameters
+  // @todo: deal with the parameters
   // @todo: what happens if there is a breaking change ?
   public shared func updateSubGodwins(parameters: Parameters) : async () {
     for (sub in Map.vals(_sub_godwins)){
@@ -91,6 +88,7 @@ actor Master {
     Iter.toArray(Map.keys(_sub_godwins));
   };
 
+  // @todo: remove
   public shared func runScenario() : async () {
     let time_now = Nat64.fromNat(Int.abs(Time.now()));
 
@@ -118,6 +116,7 @@ actor Master {
   };
 
   public shared({caller}) func airdrop() : async AirdropResult {
+    
     if (_airdrop_supply == 0) {
       return #err(#AirdropOver);
     };
@@ -136,55 +135,49 @@ actor Master {
       created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
     }));
 
-    Result.iterate(mint_result, func(tx_index: ICRC1.TxIndex){
+    Result.iterate(mint_result, func(tx_index: Token.TxIndex){
       ignore Set.put(_airdropped_users, Map.phash, caller);
     });
 
     mint_result;
   };
 
-  public shared({caller}) func transferToSubGodwin(user: Principal, amount: Balance, subaccount: Blob) : async TransferResult {
+  public shared({caller}) func pullTokens(user: Principal, amount: Balance, subaccount: ?Blob) : async TransferResult {
 
-    let master_fee = 666; // @todo: get it from the token, or try with null ?
-
-    let sub_godwin = switch(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; })){
-      case null { return #err(#NotAllowed); };
-      case (?sub) { sub; };
+    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; }))){
+      return #err(#NotAllowed);
     };
 
-    let transfer_result = await Token.icrc1_transfer({
-      amount;
-      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-      fee = ?master_fee;
-      from_subaccount = ?toSubaccount(user);
-      memo = null;
-      to = {
-        owner = caller;
-        subaccount = ?subaccount;
-      };
-    });
-
-    toBaseResult(transfer_result);
+    toBaseResult(
+      await Token.icrc1_transfer({
+        amount;
+        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+        fee = ?666; // @todo: null is supposed to work according to the Token standard, but it doesn't...
+        from_subaccount = ?toSubaccount(user);
+        memo = null;
+        to = {
+          owner = caller;
+          subaccount;
+        };
+      })
+    );
   };
 
-  public shared({caller}) func mintBatch(args: MintBatchArgs) : async MintBatchResult {
+  public shared({caller}) func mintBatch(args: Token.MintBatchArgs) : async MintBatchResult {
 
-    let sub_godwin = switch(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; })){
-      case null { return #err(#NotAllowed); };
-      case (?sub) { sub; };
+    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: Godwin) : Bool { key.0 == caller; }))){
+      return #err(#NotAllowed);
     };
 
-    let mint_result = Token.mintBatch(args);
-
-    toBaseResult(mint_result);
+    toBaseResult(await Token.mint_batch(args));
   };
 
-  type ICRC1Result<Ok, Err> = {
+  type TokenResult<Ok, Err> = {
     #Ok: Ok;
     #Err: Err;
   };
 
-  func toBaseResult<Ok, Err>(icrc1_result: ICRC1Result<Ok, Err>) : Result<Ok, Err> {
+  func toBaseResult<Ok, Err>(icrc1_result: TokenResult<Ok, Err>) : Result<Ok, Err> {
     switch(icrc1_result){
       case(#Ok(ok)) {
         #ok(ok);

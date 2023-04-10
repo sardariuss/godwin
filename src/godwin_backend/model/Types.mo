@@ -1,3 +1,5 @@
+import MasterTypes "../../godwin_master/Types";
+
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
@@ -86,21 +88,14 @@ module {
     history: Map<Status, [Time]>;
   };
 
-  public type VoteStatus = {
-    #OPEN;
-    #CLOSED;
-  };
-
   public type Vote<T, A> = {
     id: Nat;
-    var status: VoteStatus;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
   };
 
   public type PublicVote<T, A> = {
     id: Nat;
-    status: VoteStatus;
     ballots: [(Principal, Ballot<T>)];
     aggregate: A;
   };
@@ -236,14 +231,14 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayinError: Text;
+    #PayinError: MasterTypes.TransferError;
   };
 
   public type GetVoteError = {
     #VoteNotFound;
   };
 
-  public type RevealVoteError = FindHistoricalVoteError or GetVoteError;
+  public type RevealVoteError = FindHistoricalVoteError;
 
   public type CloseVoteError = {
     #AlreadyClosed;
@@ -266,7 +261,16 @@ module {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;
-    #PayinError: Text;
+    #PayinError: MasterTypes.TransferError;
+  };
+
+  public type TransitionError = OpenVoteError or {
+    #WrongStatusIteration;
+    #EmptyQueryInterestScore;
+    #NotMostInteresting;
+    #TooSoon;
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
   };
 
 };

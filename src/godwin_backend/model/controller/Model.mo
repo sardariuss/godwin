@@ -29,7 +29,6 @@ module {
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type QuestionQueries = QuestionQueries.QuestionQueries;
-  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type StatusManager = StatusManager.StatusManager;
   type InterestVotes = Interests.Interests;
   type OpinionVotes = Opinions.Opinions;
@@ -38,7 +37,6 @@ module {
   public func build(
     name: Ref<Text>,
     master: Ref<Principal>,
-    time: Ref<Time>,
     last_pick_date: Ref<Time>,
     params: Ref<SchedulerParameters>,
     categories: Categories,
@@ -53,7 +51,6 @@ module {
     Model(
       WRef.WRef(name),
       WRef.WRef(master),
-      WRef.WRef(time),
       WRef.WRef(last_pick_date),
       WRef.WRef(params),
       categories,
@@ -70,7 +67,6 @@ module {
   public class Model(
     _name: WRef<Text>,
     _master: WRef<Principal>,
-    _time: WRef<Time>,
     _last_pick_date: WRef<Time>,
     _params: WRef<SchedulerParameters>,
     _categories: Categories,
@@ -97,14 +93,6 @@ module {
 
     public func setMaster(master: Principal) {
       _master.set(master);
-    };
-
-    public func getTime() : Time {
-      _time.get();
-    };
-
-    public func setTime(time: Time) {
-      _time.set(time);
     };
 
     public func getLastPickDate() : Time {

@@ -1,7 +1,3 @@
-import SubTypes "../godwin_backend/model/Types";
-
-import ICRC1 "mo:icrc1/ICRC1";
-
 import Result "mo:base/Result";
 import Nat64 "mo:base/Nat64";
 import Nat "mo:base/Nat";
@@ -9,6 +5,8 @@ import Buffer "mo:base/Buffer";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
+
+import Token "canister:godwin_token";
 
 module {
 
@@ -19,35 +17,31 @@ module {
     #IdentifierAlreadyTaken;
   };
 
-  public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError>;
-
-  public type TransferResult = Result<ICRC1.TxIndex, TransferError>;
-
-  public type TransferError = ICRC1.TransferError or {
-    #NotAllowed;
-  };
-
-  public type AirdropResult = Result<ICRC1.TxIndex, AirdropError>;
-
-  public type AirdropError = ICRC1.TransferError or {
+  public type AirdropError = Token.TransferError or {
     #AlreadySupplied;
     #AirdropOver;
   };
 
-  public type MintBatchResult = Result<[ ICRC1.TransferResult ], TransferError>;
-
-  public type MintBatchArgs = {
-    to : [{ account : ICRC1.Account; amount : ICRC1.Balance; }];
-    memo : ?Blob;
+  public type TransferError = Token.TransferError or {
+    #NotAllowed;
   };
 
+  public type MintBatchArgs = Token.MintBatchArgs;
+
+  public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError>;
+
+  public type TransferResult = Result<Token.TxIndex, TransferError>;
+
+  public type AirdropResult = Result<Token.TxIndex, AirdropError>;
+
+  public type MintBatchResult = Result<[ Token.TransferResult ], TransferError>;
+
+  public type Balance = Token.Balance;
+
   public type MasterInterface = actor {
-    createSubGodwin: shared(SubTypes.Parameters) -> async Principal;
-    updateSubGodwins: shared(SubTypes.Parameters) -> async ();
-    listSubGodwins: query() -> async [Principal];
+    pullTokens: shared(Principal, Token.Balance, ?Blob) -> async TransferResult;
     airdrop: shared() -> async AirdropResult;
     mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
-    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async TransferResult;
   };
 
   public func transferErrorToText(error: TransferError) : Text {
@@ -64,6 +58,7 @@ module {
     };
   };
 
+  // @todo: this should be part of a specific module
   // Subaccount shall be a blob of 32 bytes
   public func toSubaccount(principal: Principal) : Blob {
     let blob_principal = Blob.toArray(Principal.toBlob(principal));

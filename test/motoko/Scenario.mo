@@ -77,7 +77,7 @@ module {
         };
       };
 
-      controller.run(time);
+      await* controller.run(time);
 
     };
   };

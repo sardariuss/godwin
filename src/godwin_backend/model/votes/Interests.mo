@@ -1,12 +1,11 @@
 import Types               "../Types";
 import SubaccountGenerator "../token/SubaccountGenerator";
-import Votes               "Votes"; 
+import PayForNew           "../token/PayForNew";
+import PayInterface        "../token/PayInterface";
+import Votes               "Votes";
+import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
 import Appeal              "representation/Appeal";
-import OpenVote            "interfaces/OpenVote";
-import PutBallot           "interfaces/PutBallot";
-import ReadVote            "interfaces/ReadVote";
-import CloseVote           "interfaces/CloseVote";
 import QuestionVoteHistory "../QuestionVoteHistory";
 import QuestionQueries     "../QuestionQueries";
 import WRef                "../../utils/wrappers/WRef";
@@ -26,22 +25,18 @@ module {
   type WRef<T>             = WRef.WRef<T>;
 
   type Interest            = Types.Interest;
-  type PutBallotError      = Types.PutBallotError;
-  type CloseVoteError      = Types.CloseVoteError;
-  type GetVoteError        = Types.GetVoteError;
-  type GetBallotError = Types.GetBallotError;
   type Appeal              = Types.Appeal;
-  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
+  type PutBallotError      = Types.PutBallotError;
+  type GetBallotError      = Types.GetBallotError;
+  type RevealVoteError     = Types.RevealVoteError;
+  type OpenVoteError       = Types.OpenVoteError;
+  
   type BallotAggregator    = BallotAggregator.BallotAggregator<Interest, Appeal>;
-  type OpenPayableVote       = OpenVote.OpenPayableVote<Interest, Appeal>;
-  type PutBallotPayin      = PutBallot.PutBallotPayin<Interest, Appeal>;
-  type ClosePayableVote     = CloseVote.ClosePayableVote<Interest, Appeal>;
-  type ReadVote            = ReadVote.ReadVote<Interest, Appeal>;
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   type Question            = Types.Question;
   type QuestionQueries     = QuestionQueries.QuestionQueries;
-  type OpenVoteError       = Types.OpenVoteError;
-  type RevealVoteError     = Types.RevealVoteError;
+  type PayInterface        = PayInterface.PayInterface;
+  type PayForNew           = PayForNew.PayForNew;
   
   public type VoteRegister = Votes.VoteRegister<Interest, Appeal>;
   public type HistoryRegister = QuestionVoteHistory.Register;
@@ -59,10 +54,8 @@ module {
     votes: Votes.Votes<Interest, Appeal>,
     history: QuestionVoteHistory,
     queries: QuestionQueries,
-    subaccounts: Map<Nat, Blob>,
-    subaccount_index: Ref<Nat>,
-    payin: (Principal, Blob) -> async* Result<(), Text>,
-    payout: (Vote, Blob) -> ()
+    pay_interface: PayInterface,
+    pay_for_new: PayForNew
   ) : Interests {
     let ballot_aggregator = BallotAggregator.BallotAggregator<Interest, Appeal>(
       func(interest: Interest) : Bool { true; }, // enum type cannot be invalid
@@ -70,40 +63,42 @@ module {
       Appeal.remove
     );
     Interests(
-      votes,
+      PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_INTEREST_BALLOT),
+      pay_for_new,
       history,
-      queries,
-      OpenVote.OpenPayableVote<Interest, Appeal>(votes, subaccounts, WRef.WRef(subaccount_index), payin),
-      PutBallot.PutBallotPayin<Interest, Appeal>(votes, ballot_aggregator, #PUT_INTEREST_BALLOT, payin),
-      CloseVote.ClosePayableVote<Interest, Appeal>(votes, subaccounts, #PUT_INTEREST_BALLOT, payout),
-      ReadVote.ReadVote<Interest, Appeal>(votes)
+      queries
     );
   };
 
   public class Interests(
-    _votes: Votes.Votes<Interest, Appeal>,
+    _votes: PayToVote.PayToVote<Interest, Appeal>,
+    _pay_for_new: PayForNew,
     _history: QuestionVoteHistory,
-    _queries: QuestionQueries,
-    _open_vote_interface: OpenPayableVote,
-    _put_ballot_interface: PutBallotPayin,
-    _close_vote_interface: ClosePayableVote,
-    _read_vote_interface: ReadVote
+    _queries: QuestionQueries
   ) {
     
     public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, OpenVoteError> {
-      Result.mapOk(await* _open_vote_interface.openVote(principal), func(vote_id: Nat) : Question {
-        let question = on_success();
-        _history.addVote(question.id, vote_id);
-        // Update the associated key for the #INTEREST_SCORE order_by
-        _queries.add(toAppealScore(question.id, _votes.getVote(vote_id).aggregate));
-        question;
-      });
+      let price = 1000; // @todo
+      let vote_id = switch(await* _pay_for_new.payNew(principal, price, _votes.newVote)){
+        case (#err(err)) { return #err(#PayinError(err)); };
+        case (#ok(id)) { id; };
+      };
+      let question = on_success();
+      // Add to the question's vote history
+      _history.addVote(question.id, vote_id);
+      // Update the associated key for the #INTEREST_SCORE order_by
+      _queries.add(toAppealScore(question.id, _votes.getVote(vote_id).aggregate));
+      #ok(question);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
-        _read_vote_interface.getBallot(principal, vote_id);
-      });
+    public func closeVote(question_id: Nat) : async* () {
+      let vote_id = _history.closeCurrentVote(question_id);
+      let vote = _votes.getVote(vote_id);
+      _queries.remove(toAppealScore(question_id, vote.aggregate));
+      // 1. Pay out the buyer
+      await* _pay_for_new.refund(vote_id, 1.0); // @todo: share;
+      // 2. Pay out the voters
+      await* _votes.payout(vote_id);
     };
 
     public func putBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
@@ -114,28 +109,23 @@ module {
       
       let old_appeal = _votes.getVote(vote_id).aggregate;
 
-      Result.mapOk<(), (), PutBallotError>(await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = interest;}), func(){
+      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
         let new_appeal = _votes.getVote(vote_id).aggregate;
-        _queries.replace(
-          ?toAppealScore(question_id, old_appeal),
-          ?toAppealScore(question_id, new_appeal)
-        );
+        _queries.replace(?toAppealScore(question_id, old_appeal), ?toAppealScore(question_id, new_appeal));
       });
     };
 
-    public func closeVote(question_id: Nat) : Result<Vote, CloseVoteError> {
-      switch(_close_vote_interface.closeVote(_history.closeCurrentVote(question_id))){
-        case (#err(err)) { #err(err); };
-        case (#ok(vote)) {
-          _queries.remove(toAppealScore(question_id, vote.aggregate));
-          #ok(vote);
-        };
+    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
+      let vote_id = switch(_history.findCurrentVote(question_id)) {
+        case (#err(err)) { return #err(err); };
+        case (#ok(id)) { id; };
       };
+      _votes.getBallot(principal, vote_id);
     };
 
     public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.chain(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Result<Vote, RevealVoteError> {
-        _read_vote_interface.getVote(vote_id);
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
+        _votes.getVote(vote_id);
       });
     };
 

@@ -1,22 +1,20 @@
 import Types               "../Types";
 import Utils               "../../utils/Utils";
 import SubaccountGenerator "../token/SubaccountGenerator";
-import Categories "../Categories";
-import Votes               "Votes"; 
+import PayInterface        "../token/PayInterface";
+import Categories          "../Categories";
+import Votes               "Votes";
+import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
-import PolarizationMap              "representation/PolarizationMap";
-import CursorMap            "representation/CursorMap";
-import OpenVote            "interfaces/OpenVote";
-import PutBallot           "interfaces/PutBallot";
-import ReadVote            "interfaces/ReadVote";
-import CloseVote           "interfaces/CloseVote";
+import PolarizationMap     "representation/PolarizationMap";
+import CursorMap           "representation/CursorMap";
 
 import QuestionVoteHistory "../QuestionVoteHistory";
 
 import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
-import Buffer             "mo:base/Buffer";
+import Buffer              "mo:base/Buffer";
 
 module {
 
@@ -27,12 +25,7 @@ module {
   type Categories             = Categories.Categories;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-  type SubaccountGenerator    = SubaccountGenerator.SubaccountGenerator;
   type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
-  type OpenVote               = OpenVote.OpenVote<CursorMap, PolarizationMap>;
-  type PutBallotPayin         = PutBallot.PutBallotPayin<CursorMap, PolarizationMap>;
-  type CloseRedistributeVote        = CloseVote.CloseRedistributeVote<CursorMap, PolarizationMap>;
-  type ReadVote               = ReadVote.ReadVote<CursorMap, PolarizationMap>;
 
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   
@@ -48,9 +41,11 @@ module {
   type PolarizationArray   = Types.PolarizationArray;
   type RevealVoteError     = Types.RevealVoteError;
 
+  type PayToVote = PayToVote.PayToVote<CursorMap, PolarizationMap>;
+  type PayInterface = PayInterface.PayInterface;
+
   public type PublicVote = {
     id: Nat;
-    status: Types.VoteStatus;
     ballots: [(Principal, Types.Ballot<CursorArray>)];
     aggregate: PolarizationArray;
   };
@@ -64,7 +59,6 @@ module {
 
     {
       id = vote.id;
-      status = vote.status;
       ballots = Buffer.toArray(ballots);
       aggregate = Utils.trieToArray(vote.aggregate);
     };
@@ -78,10 +72,7 @@ module {
     categories: Categories,
     votes: Votes.Votes<CursorMap, PolarizationMap>,
     history: QuestionVoteHistory,
-    subaccounts: Map<Nat, Blob>,
-    generator: SubaccountGenerator,
-    payin: (Principal, Blob) -> async* Result<(), Text>,
-    payout: (Vote, Blob) -> ()
+    pay_interface: PayInterface
   ) : Categorizations {
     let ballot_aggregator = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(
       func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
@@ -89,49 +80,43 @@ module {
       PolarizationMap.subCursorMap
     );
     Categorizations(
-      history,
-      OpenVote.OpenVote<CursorMap, PolarizationMap>(votes),
-      PutBallot.PutBallotPayin<CursorMap, PolarizationMap>(votes, ballot_aggregator, #PUT_CATEGORIZATION_BALLOT, payin),
-      CloseVote.CloseRedistributeVote<CursorMap, PolarizationMap>(votes, #PUT_CATEGORIZATION_BALLOT, payout),
-      ReadVote.ReadVote<CursorMap, PolarizationMap>(votes)
+      PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_CATEGORIZATION_BALLOT),
+      history
     );
   };
 
   public class Categorizations(
-    _history: QuestionVoteHistory,
-    _open_vote_interface: OpenVote,
-    _put_ballot_interface: PutBallotPayin,
-    _close_vote_interface: CloseRedistributeVote,
-    _read_vote_interface: ReadVote
+    _votes: PayToVote,
+    _history: QuestionVoteHistory
   ) {
     
     public func openVote(question_id: Nat) {
-      let vote_id = _open_vote_interface.openVote();
+      let vote_id = _votes.newVote();
       _history.addVote(question_id, vote_id);
+    };
+
+    public func closeVote(question_id: Nat) : async*() {
+      let vote_id = _history.closeCurrentVote(question_id);
+      await* _votes.payout(vote_id);
+    };
+
+    public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor_map: CursorMap) : async* Result<(), PutBallotError> {
+      let vote_id = switch(_history.findCurrentVote(question_id)) {
+        case (#err(err)) { return #err(err); };
+        case (#ok(id)) { id; };
+      };
+      await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;});
     };
 
     public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
       Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
-        _read_vote_interface.getBallot(principal, vote_id);
+        _votes.getBallot(principal, vote_id);
       });
     };
 
-    public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor_map: CursorMap) : async* Result<(), PutBallotError> {
-      switch(_history.findCurrentVote(question_id)) {
-        case (#err(err)) { #err(err); };
-        case (#ok(vote_id)) {
-          await* _put_ballot_interface.putBallot(principal, vote_id, {date; answer = cursor_map;});
-        };
-      };
-    };
-
-    public func closeVote(question_id: Nat) : Result<Vote, CloseVoteError> {
-      _close_vote_interface.closeVote(_history.closeCurrentVote(question_id));
-    };
-
     public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.chain(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Result<Vote, RevealVoteError> {
-        _read_vote_interface.getVote(vote_id);
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
+        _votes.getVote(vote_id);
       });
     };
   
