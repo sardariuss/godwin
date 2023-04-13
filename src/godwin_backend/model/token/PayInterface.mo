@@ -1,4 +1,4 @@
-import MasterTypes "../../../godwin_master/Types";
+import Types "Types";
 
 import Token "canister:godwin_token";
 
@@ -6,29 +6,33 @@ import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
+import Error "mo:base/Error";
+import Array "mo:base/Array";
 
 module {
 
   type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type MasterInterface = MasterTypes.MasterInterface;
-  type Buffer<T> = Buffer.Buffer<T>;
+  type Buffer<T>       = Buffer.Buffer<T>;
 
-  let { toSubaccount } = MasterTypes;
-  
-  // Token general types
-  public type Subaccount = Blob;
-  public type Balance = Token.Balance;
-  public type Account = Token.Account;
-  // Payin types
-  public type PayInError = MasterTypes.TransferError;
-  public type PayInResult = MasterTypes.TransferResult;
-  // Payout types
-  public type PayoutRecipient = { to: Principal; share: Float; };
-  public type PayoutError = Token.ReapAccountError;
-  public type PayOutResult = Result<[Token.TransferResult], PayoutError>;
-  // Mint types
-  public type MintRecipients = [Token.MintRecipient];
-  public type MintResult = MasterTypes.MintBatchResult;
+  let { toSubaccount; toBaseResult; } = Types;
+  type MasterInterface                = Types.MasterInterface;
+  type Subaccount                     = Types.Subaccount;
+  type Balance                        = Types.Balance;
+  type Account                        = Types.Account;
+  type TxIndex                        = Types.TxIndex;
+  type CanisterCallError              = Types.CanisterCallError;
+  type PayInError                     = Types.PayInError;
+  type PayInResult                    = Types.PayInResult;
+  type PayoutRecipient                = Types.PayoutRecipient;
+  type PayoutArgs                     = Types.PayoutArgs;
+  type SinglePayoutInfo               = Types.SinglePayoutInfo;
+  type PayoutError                    = Types.PayoutError;
+  type PayOutResult                   = Types.PayOutResult;
+  type MintRecipient                  = Types.MintRecipient;
+  type MintArgs                       = Types.MintArgs;
+  type SingleMintInfo                 = Types.SingleMintInfo;
+  type MintError                      = Types.MintError;
+  type MintResult                     = Types.MintResult;
 
   public func build(principal: Principal) : PayInterface {
     let master : MasterInterface = actor(Principal.toText(principal));
@@ -38,26 +42,64 @@ module {
   public class PayInterface(_master: MasterInterface) {
 
     public func payIn(subaccount: Blob, from: Principal, amount: Balance) : async* PayInResult {
-      await _master.pullTokens(from, amount, ?subaccount)
-    };
-
-    public func payOut(subaccount: Blob, recipients: Buffer<PayoutRecipient>) : async* PayOutResult {
-
-      let to = Buffer.map<PayoutRecipient, Token.ReapAccountRecipient>(recipients, func(recipient: PayoutRecipient) : Token.ReapAccountRecipient {
-        { account = getMasterAccount(?recipient.to); share = recipient.share; };
-      });
-
-      switch(await Token.reap_account({ subaccount = ?subaccount; to = Buffer.toArray(to); memo = null; })){ // @todo: memo
-        case(#Ok(result)) { #ok(result) };
-        case(#Err(err))   { #err(err)   }; // @todo: shall be added to a history of errors
+      try {
+        await _master.pullTokens(from, amount, ?subaccount);
+      } catch(e) {
+        #err(#CanisterCallError(Error.code(e)));
       };
     };
 
-    public func mint(to: MintRecipients) : async* MintResult {
-      await _master.mintBatch({ to; memo = null; }) // @todo: memo
+    public func payOut(subaccount: Blob, recipients: Buffer<PayoutRecipient>) : async* PayOutResult {
+      // Convert each recipient's principal to the corresponding godwin_master's subaccount
+      let to = Buffer.map<PayoutRecipient, Token.ReapAccountRecipient>(recipients, func(recipient: PayoutRecipient) : Token.ReapAccountRecipient {
+        { account = getMasterAccount(?recipient.to); share = recipient.share; };
+      });
+      try {
+        // Call the token reap_account method
+        switch(await Token.reap_account({ subaccount = ?subaccount; to = Buffer.toArray(to); memo = null; })){ // @todo: memo
+          case(#Ok(payout_info)){
+            // If a single payout failed, return a batch error with all the payouts
+            for (single_payout in Array.vals(payout_info)){
+              switch(single_payout.1){
+                case(#Err(_)){ return #err(#BatchError(payout_info)); };
+                case(_) {};
+              };
+            };
+            #ok;
+          };
+          case(#Err(err)) { #err(err); };
+        };
+      } catch(e) {
+        #err(#CanisterCallError(Error.code(e)));
+      };
     };
 
-    public func getMasterAccount(principal: ?Principal) : Account {
+    public func mint(recipients: Buffer<MintRecipient>) : async* MintResult {
+      // Convert each recipient's principal to the corresponding godwin_master's subaccount
+      let to = Buffer.map<MintRecipient, Token.MintRecipient>(recipients, func(recipient: MintRecipient) : Token.MintRecipient {
+        { account = getMasterAccount(?recipient.to); amount = recipient.amount; };
+      });
+      try {
+        // Call the token reap_account method
+        switch(await _master.mintBatch({ to = Buffer.toArray(to); memo = null; })){ // @todo: memo
+          case(#ok(mint_info)){
+            // If a single payout failed, return a batch error with all the payouts
+            for (single_mint in Array.vals(mint_info)){
+              switch(single_mint.1){
+                case(#Err(_)){ return #err(#BatchError(mint_info)); };
+                case(_) {};
+              };
+            };
+            #ok;
+          };
+          case(#err(err)) { #err(err); };
+        };
+      } catch(e) {
+        #err(#CanisterCallError(Error.code(e)));
+      };
+    };
+
+    func getMasterAccount(principal: ?Principal) : Account {
       { owner = Principal.fromActor(_master); subaccount = Option.map(principal, func(p: Principal) : Blob { toSubaccount(p); }); };
     };
 

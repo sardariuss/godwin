@@ -1,33 +1,21 @@
-import Nat8 "mo:base/Nat8";
-import Nat64 "mo:base/Nat64";
-import Blob "mo:base/Blob";
+import Types "Types";
+
+import Nat8   "mo:base/Nat8";
+import Nat64  "mo:base/Nat64";
+import Blob   "mo:base/Blob";
 import Buffer "mo:base/Buffer";
-import Array "mo:base/Array";
+import Array  "mo:base/Array";
 
 module {
 
-  let GENERATOR_VERSION : Nat8 = 0;
+  public let MODULE_VERSION : Nat8 = 0;
 
-  // @todo: SubaccountType shall be called prefix and put somewhere else
+  type SubaccountPrefix = Types.SubaccountPrefix;
 
-  public type SubaccountType = {
-    #OPEN_QUESTION;
-    #PUT_INTEREST_BALLOT;
-    #PUT_CATEGORIZATION_BALLOT;
-  };
-
-  func typeToNat8(t : SubaccountType) : Nat8 {
-    switch t {
-      case (#OPEN_QUESTION)                { 0; };
-      case (#PUT_INTEREST_BALLOT)          { 1; };
-      case (#PUT_CATEGORIZATION_BALLOT)    { 2; };
-    };
-  };
-
-  public func getSubaccount(t: SubaccountType, id: Nat) : Blob {
+  public func getSubaccount(t: SubaccountPrefix, id: Nat) : Blob {
     let buffer = Buffer.Buffer<Nat8>(32);
     // Add the version (1 byte)
-    buffer.add(GENERATOR_VERSION);
+    buffer.add(MODULE_VERSION);
     // Add the type    (1 byte)
     buffer.add(typeToNat8(t));
     // Add the id      (8 bytes)
@@ -38,6 +26,14 @@ module {
     assert(buffer.size() == 32);
     // Return the subaccount as a blob
     Blob.fromArray(Buffer.toArray(buffer));
+  };
+
+  func typeToNat8(t : SubaccountPrefix) : Nat8 {
+    switch t {
+      case (#OPEN_QUESTION)                { 0; };
+      case (#PUT_INTEREST_BALLOT)          { 1; };
+      case (#PUT_CATEGORIZATION_BALLOT)    { 2; };
+    };
   };
 
   func nat64ToBytes(x : Nat64) : [Nat8] {

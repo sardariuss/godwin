@@ -34,7 +34,7 @@ module {
 
   public type AirdropResult = Result<Token.TxIndex, AirdropError>;
 
-  public type MintBatchResult = Result<[ Token.TransferResult ], TransferError>;
+  public type MintBatchResult = Result<[(Token.Mint, Token.TransferResult)], TransferError>;
 
   public type Balance = Token.Balance;
 
@@ -58,7 +58,7 @@ module {
     };
   };
 
-  // @todo: this should be part of a specific module
+  // @todo: this should be part of another module
   // Subaccount shall be a blob of 32 bytes
   public func toSubaccount(principal: Principal) : Blob {
     let blob_principal = Blob.toArray(Principal.toBlob(principal));
@@ -75,6 +75,23 @@ module {
     };
     // Return the buffer as a blob
     Blob.fromArray(Buffer.toArray(buffer));
+  };
+
+  public type TokenResult<Ok, Err> = {
+    #Ok: Ok;
+    #Err: Err;
+  };
+
+  // @todo: this should be part of another module
+  public func toBaseResult<Ok, Err>(icrc1_result: TokenResult<Ok, Err>) : Result<Ok, Err> {
+    switch(icrc1_result){
+      case(#Ok(ok)) {
+        #ok(ok);
+      };
+      case(#Err(err)) {
+        #err(err);
+      };
+    };
   };
 
 };

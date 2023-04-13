@@ -105,7 +105,7 @@ actor Token {
   };
 
   public type ReapAccountResult = {
-    #Ok : [ ICRC1.TransferResult ];
+    #Ok : [ (ICRC1.TransferArgs, ICRC1.TransferResult)];
     #Err : ReapAccountError;
   };
 
@@ -120,6 +120,8 @@ actor Token {
     memo : ?Blob;
   };
 
+  // Kind of an equivalent to icrc4_transfer_batch function, with pre_validate = false and batch_fee = null
+  // but where only one account can be specified
   public shared ({ caller }) func reap_account(args : ReapAccountArgs) : async ReapAccountResult {
     
     let account_balance = ICRC1.balance_of(token, { owner = caller; subaccount = args.subaccount; });
@@ -149,7 +151,7 @@ actor Token {
       return #Err(#DivisionByZero({sum_shares}));
     };
 
-    let results = Buffer.Buffer<ICRC1.TransferResult>(num_recipients);
+    let results = Buffer.Buffer<(ICRC1.TransferArgs, ICRC1.TransferResult)>(num_recipients);
 
     for ({account; share;} in args.to.vals()) {
       let tranfer_args : ICRC1.TransferArgs = {
@@ -160,7 +162,7 @@ actor Token {
         memo = args.memo;
         created_at_time = null; // Has to be null because two transfers can't have the same timestamp
       };
-      results.add(await* ICRC1.transfer(token, tranfer_args, caller));
+      results.add(tranfer_args, (await* ICRC1.transfer(token, tranfer_args, caller)));
     };
 
     // @todo: burn the remaining balance if any?
@@ -179,7 +181,7 @@ actor Token {
   };
 
   public type MintBatchResult = {
-    #Ok : [ ICRC1.TransferResult ];
+    #Ok : [(ICRC1.Mint, ICRC1.TransferResult)];
     #Err : ICRC1.TransferError;
   };
 
@@ -194,7 +196,7 @@ actor Token {
       );
     };
 
-    let results = Buffer.Buffer<ICRC1.TransferResult>(args.to.size());
+    let results = Buffer.Buffer<(ICRC1.Mint, ICRC1.TransferResult)>(args.to.size());
 
     for ({account; amount;} in Array.vals(args.to)) {
       let mint_args : ICRC1.Mint = {
@@ -206,7 +208,7 @@ actor Token {
         created_at_time = null; // Has to be null because two transfers can't have the same timestamp
       };
 
-      results.add(await* ICRC1.mint(token, mint_args, caller));
+      results.add(mint_args, (await* ICRC1.mint(token, mint_args, caller)));
     };
 
     return #Ok(Buffer.toArray(results));

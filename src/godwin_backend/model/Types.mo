@@ -1,4 +1,5 @@
 import MasterTypes "../../godwin_master/Types";
+import PayTypes "/token/Types";
 
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
@@ -237,7 +238,7 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayinError: MasterTypes.TransferError;
+    #PayInError: PayTypes.PayInError;
   };
 
   public type GetVoteError = {
@@ -267,7 +268,7 @@ module {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;
-    #PayinError: MasterTypes.TransferError;
+    #PayInError: PayTypes.PayInError;
   };
 
   public type TransitionError = OpenVoteError or {

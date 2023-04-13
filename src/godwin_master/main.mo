@@ -35,7 +35,7 @@ actor Master {
   type TransferResult = Types.TransferResult;
   type AirdropResult = Types.AirdropResult;
   type MintBatchResult = Types.MintBatchResult;
-  let { toSubaccount } = Types;
+  let { toSubaccount; toBaseResult; } = Types;
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
     // +% is the same as addWrap, meaning it wraps on overflow
@@ -178,22 +178,6 @@ actor Master {
 
   public query func getUserAccount(user: Principal) : async Token.Account {
     { owner = Principal.fromActor(Master); subaccount = ?toSubaccount(user) };
-  };
-
-  type TokenResult<Ok, Err> = {
-    #Ok: Ok;
-    #Err: Err;
-  };
-
-  func toBaseResult<Ok, Err>(icrc1_result: TokenResult<Ok, Err>) : Result<Ok, Err> {
-    switch(icrc1_result){
-      case(#Ok(ok)) {
-        #ok(ok);
-      };
-      case(#Err(err)) {
-        #err(err);
-      };
-    };
   };
 
 };

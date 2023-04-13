@@ -1,13 +1,19 @@
 import Types               "../Types";
-import SubaccountGenerator "../token/SubaccountGenerator";
-import PayForNew           "../token/PayForNew";
-import PayInterface        "../token/PayInterface";
+
 import Votes               "Votes";
 import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
+
 import Appeal              "representation/Appeal";
+
+import SubaccountGenerator "../token/SubaccountGenerator";
+import PayForNew           "../token/PayForNew";
+import PayInterface        "../token/PayInterface";
+import PayTypes            "../token/Types";
+
 import QuestionVoteHistory "../QuestionVoteHistory";
 import QuestionQueries     "../QuestionQueries";
+
 import WRef                "../../utils/wrappers/WRef";
 import Ref                 "../../utils/Ref";
 
@@ -24,6 +30,7 @@ module {
   type Ref<T>              = Ref.Ref<T>;
   type WRef<T>             = WRef.WRef<T>;
 
+  type VoteId              = Types.VoteId;
   type Interest            = Types.Interest;
   type Appeal              = Types.Appeal;
   type PutBallotError      = Types.PutBallotError;
@@ -37,11 +44,12 @@ module {
   type QuestionQueries     = QuestionQueries.QuestionQueries;
   type PayInterface        = PayInterface.PayInterface;
   type PayForNew           = PayForNew.PayForNew;
+  type PayoutError         = PayTypes.PayoutError;
   
-  public type VoteRegister = Votes.VoteRegister<Interest, Appeal>;
+  public type VoteRegister    = Votes.VoteRegister<Interest, Appeal>;
   public type HistoryRegister = QuestionVoteHistory.Register;
-  public type Vote         = Types.Vote<Interest, Appeal>;
-  public type Ballot       = Types.Ballot<Interest>;
+  public type Vote            = Types.Vote<Interest, Appeal>;
+  public type Ballot          = Types.Ballot<Interest>;
 
   type Key = QuestionQueries.Key;
   let { toAppealScore; } = QuestionQueries;
@@ -82,7 +90,7 @@ module {
     
     public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, OpenVoteError> {
       let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
-        case (#err(err)) { return #err(#PayinError(err)); };
+        case (#err(err)) { return #err(#PayInError(err)); };
         case (#ok(id)) { id; };
       };
       let question = on_success();
@@ -130,6 +138,11 @@ module {
         _votes.getVote(vote_id);
       });
     };
+
+  // @todo
+//    public func getFailedRefunds() : [(VoteId, PayoutError)] {
+//      _pay_for_new.getFailedRefunds();
+//    };
 
   };
 
