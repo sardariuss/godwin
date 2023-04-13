@@ -8,6 +8,7 @@ export type PolarizationInfo = {
 };
 
 export type CursorInfo = {
+  value: number;
   name: string;
   symbol: string;
 }
@@ -84,13 +85,29 @@ export const polarizationToCursor = (polarization: Polarization) : number => {
   return (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
 };
 
-export const getCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
+export const getNormalizedPolarization = (polarization: Polarization) : Polarization => {
+  let sum = polarization.left + polarization.center + polarization.right;
+  if (sum === 0.0) {
+    return {
+      left: 0.0,
+      center: 0.0,
+      right: 0.0,
+    }
+  }
+  return {
+    left: polarization.left / sum,
+    center: polarization.center / sum,
+    right: polarization.right / sum,
+  };
+};
+
+export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
   if (cursor < (-1 * CONSTANTS.CURSOR_SIDE_THRESHOLD)) {
-    return { name: polarizationInfo.left.name, symbol: polarizationInfo.left.symbol };
+    return { name: polarizationInfo.left.name, symbol: polarizationInfo.left.symbol, value: cursor };
   } else if (cursor > CONSTANTS.CURSOR_SIDE_THRESHOLD) {
-    return { name: polarizationInfo.right.name, symbol: polarizationInfo.right.symbol };
+    return { name: polarizationInfo.right.name, symbol: polarizationInfo.right.symbol, value: cursor };
   } else {
-    return { name: polarizationInfo.center.name, symbol: polarizationInfo.center.symbol };
+    return { name: polarizationInfo.center.name, symbol: polarizationInfo.center.symbol, value: cursor };
   }
 }
 

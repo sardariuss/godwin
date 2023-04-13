@@ -172,6 +172,14 @@ actor Master {
     toBaseResult(await Token.mint_batch(args));
   };
 
+  public query func getAirdropSupply() : async Balance {
+    _airdrop_supply;
+  };
+
+  public query func getUserAccount(user: Principal) : async Token.Account {
+    { owner = Principal.fromActor(Master); subaccount = ?toSubaccount(user) };
+  };
+
   type TokenResult<Ok, Err> = {
     #Ok: Ok;
     #Err: Err;

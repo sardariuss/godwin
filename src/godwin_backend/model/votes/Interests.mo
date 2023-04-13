@@ -46,6 +46,9 @@ module {
   type Key = QuestionQueries.Key;
   let { toAppealScore; } = QuestionQueries;
 
+  let PRICE_OPENING_VOTE = 1000; // @todo
+  let PRICE_PUT_BALLOT = 1000; // @todo
+
   public func initVoteRegister() : VoteRegister {
     Votes.initRegister<Interest, Appeal>();
   };
@@ -78,8 +81,7 @@ module {
   ) {
     
     public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, OpenVoteError> {
-      let price = 1000; // @todo
-      let vote_id = switch(await* _pay_for_new.payNew(principal, price, _votes.newVote)){
+      let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
         case (#err(err)) { return #err(#PayinError(err)); };
         case (#ok(id)) { id; };
       };
@@ -109,7 +111,7 @@ module {
       
       let old_appeal = _votes.getVote(vote_id).aggregate;
 
-      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
+      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}, PRICE_PUT_BALLOT), func(){
         let new_appeal = _votes.getVote(vote_id).aggregate;
         _queries.replace(?toAppealScore(question_id, old_appeal), ?toAppealScore(question_id, new_appeal));
       });

@@ -32,6 +32,7 @@ module {
   type Vote<T, A> = Types.Vote<T, A>;
   type OpenVoteError = Types.OpenVoteError;
   type PayInterface = PayInterface.PayInterface;
+  type Balance = PayInterface.Balance;
   type PayForNew = PayForNew.PayForNew;
   type PayInError = PayInterface.PayInError;
   type PayoutRecipient = PayInterface.PayoutRecipient;
@@ -57,7 +58,7 @@ module {
       ignore (await* _pay_interface.payOut(SubaccountGenerator.getSubaccount(_put_ballot_subaccount_type, vote_id), recipients));
     };
 
-    public func putBallot(principal: Principal, vote_id: Nat, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+    public func putBallot(principal: Principal, vote_id: Nat, ballot: Ballot<T>, price: Balance) : async* Result<(), PutBallotError> {
       
       let vote = _votes.getVote(vote_id);
 
@@ -73,7 +74,7 @@ module {
       };
 
       // Pay
-      switch(await* _pay_interface.payIn(SubaccountGenerator.getSubaccount(_put_ballot_subaccount_type, vote_id), principal, 1000)){ // @todo: price
+      switch(await* _pay_interface.payIn(SubaccountGenerator.getSubaccount(_put_ballot_subaccount_type, vote_id), principal, price)){ // @todo: price
         case(#err(err)) {
           // Rollback put ballot on failure
           _ballot_aggregator.deleteBallot(vote, principal);

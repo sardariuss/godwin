@@ -7,7 +7,6 @@ import VoteCategorization from "./votes/Categorization";
 import StatusHistoryComponent from "./StatusHistory";
 
 import { useEffect, useState } from "react";
-import Aggregates from "./votes/Aggregates";
 import { StatusEnum, statusToEnum } from "../utils";
 
 type Props = {
@@ -78,15 +77,8 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 						<div className="justify-start text-lg font-normal">
 							{ question === undefined ? "n/a" : question.text }
 						</div>
-						<div className="flex items-center">
-							<StatusHistoryComponent statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
-						</div>
-						<div>
-						{
-							statusInfo.status['CLOSED'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
-								<Aggregates actor={actor} categories={categories} questionId={questionId} statusHistory={statusHistoryMap}></Aggregates> :
-								<></>
-						}
+						<div className="grow items-center">
+							<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
 						</div>
 					</div>
 					{

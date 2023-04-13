@@ -44,6 +44,8 @@ module {
   type PayToVote = PayToVote.PayToVote<CursorMap, PolarizationMap>;
   type PayInterface = PayInterface.PayInterface;
 
+  let PRICE_PUT_BALLOT = 1000; // @todo
+
   public type PublicVote = {
     id: Nat;
     ballots: [(Principal, Types.Ballot<CursorArray>)];
@@ -105,7 +107,7 @@ module {
         case (#err(err)) { return #err(err); };
         case (#ok(id)) { id; };
       };
-      await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;});
+      await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;}, PRICE_PUT_BALLOT);
     };
 
     public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {

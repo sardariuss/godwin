@@ -1,6 +1,6 @@
 import { ActorContext } from "../../ActorContext"
 import { nsToStrDate } from "../../utils";
-import { RangeSlider } from "./RangeSlider";
+import { CursorSlider } from "../base//CursorSlider";
 
 import { _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
 import { ActorSubclass } from "@dfinity/agent";
@@ -44,13 +44,13 @@ const VoteOpinion = ({actor, questionId}: Props) => {
 
 	return (
     <div className="flex flex-col items-center space-y-2">
-      <RangeSlider 
+      <CursorSlider 
         id={ "slider_opinion_" + questionId }
         cursor={ opinion }
         setCursor={ setOpinion }
         polarizationInfo = { CONSTANTS.OPINION_INFO }
         onMouseUp={ () => updateOpinion() }
-      ></RangeSlider>
+      ></CursorSlider>
       {
         voteDate !== null ?
           <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :

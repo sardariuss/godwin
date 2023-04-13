@@ -1,4 +1,4 @@
-import { Category, CategorySide, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { CategorySide, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 import { Bar }            from 'react-chartjs-2'
 
@@ -40,7 +40,7 @@ type Props = {
   polarizationValue: Polarization;
 };
 
-const PolarizationComponent = ({name, showName, polarizationInfo, polarizationValue}: Props) => {
+const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue}: Props) => {
 
   const labels = [name];
 
@@ -67,26 +67,27 @@ const PolarizationComponent = ({name, showName, polarizationInfo, polarizationVa
    
 	return (
       <div className="grid grid-cols-5">
-        <div className="flex flex-col items-center">
-          <div className="text-3xl">{polarizationInfo.left.symbol}</div>
-          <div className="text-xs">{polarizationInfo.left.name}</div>
+        <div className="flex flex-col items-center grow">
+          <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
+          <div className="text-xs">{ polarizationInfo.left.name }</div>
         </div>
         { 
         /* 
         @todo: Find a way to fix this hack that doesn't work for the user profile.
         Negative left margin -mr-12 is required to compensate the right gap produced by the bar chart...
+        But not required anymore with normalization of polarizations ?
         */
         }
-        <div className="-mr-12 col-span-3"> 
+        <div className="col-span-3 grow"> 
           <Bar
             data={data}
             options={options}
             height="50px"
           />
         </div>
-        <div className="flex flex-col items-center">
-          <div className="text-3xl">{polarizationInfo.right.symbol}</div>
-          <div className="text-xs">{polarizationInfo.right.name}</div>
+        <div className="flex flex-col items-center grow">
+          <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
+          <div className="text-xs">{ polarizationInfo.right.name }</div>
         </div>
         {
           showName ? 
@@ -101,4 +102,4 @@ const PolarizationComponent = ({name, showName, polarizationInfo, polarizationVa
 	);
 };
 
-export default PolarizationComponent;
+export default PolarizationBar;

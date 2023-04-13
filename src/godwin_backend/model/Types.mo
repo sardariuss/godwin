@@ -56,8 +56,11 @@ module {
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
+  public type QuestionId = Nat;
+  public let questionHash = Map.nhash;
+
   public type Question = {
-    id: Nat;
+    id: QuestionId;
     author: Principal;
     text: Text;
     date: Time;
@@ -88,14 +91,17 @@ module {
     history: Map<Status, [Time]>;
   };
 
+  public type VoteId = Nat;
+  public let voteHash = Map.nhash;
+
   public type Vote<T, A> = {
-    id: Nat;
+    id: VoteId;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
   };
 
   public type PublicVote<T, A> = {
-    id: Nat;
+    id: VoteId;
     ballots: [(Principal, Ballot<T>)];
     aggregate: A;
   };
@@ -106,8 +112,8 @@ module {
   };
 
   public type VoteHistory = {
-    current: ?Nat;
-    history: [Nat];
+    current: ?VoteId;
+    history: [VoteId];
   };
 
   public type Category = Text;

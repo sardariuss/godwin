@@ -9,7 +9,7 @@ import CONSTANTS from "../Constants";
 
 import { toMap, toPolarizationInfo } from "../utils";
 
-import PolarizationComponent from "./votes/Polarization";
+import PolarizationBar from "./base/PolarizationBar";
 
 import { useNavigate } from "react-router-dom";
 
@@ -63,7 +63,7 @@ const UserComponent = () => {
           [...Array.from(categories.entries())].map((elem) => (
             convictions.get(elem[0]) !== undefined ? (
               <li key={elem[0]}>
-                <PolarizationComponent name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(elem[1], CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={convictions.get(elem[0])}></PolarizationComponent>
+                <PolarizationBar name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(elem[1], CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={convictions.get(elem[0])}></PolarizationBar>
               </li>
             ) : (
               <li key={elem[0]}>Error: missing category</li>

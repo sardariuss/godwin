@@ -1,6 +1,17 @@
-import { Status } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Status, Category, CategoryInfo, Appeal, Polarization } from "./../../declarations/godwin_backend/godwin_backend.did";
 
-import { nsToStrDate, statusToString } from "../utils";
+import { nsToStrDate, statusToString, toMap, toPolarizationInfo, getNormalizedPolarization } from "../utils";
+
+import InterestAggregate from "./aggregates/InterestAggregate";
+import OpinionAggregate from "./aggregates/OpinionAggregate";
+import CategorizationAggregate from "./aggregates/CategorizationAggregate";
+import AppealChart from "./base/AppealChart";
+import PolarizationBar from "./base/PolarizationBar";
+import CONSTANTS from "../Constants";
+
+import { ActorSubclass } from "@dfinity/agent";
+
+import { useEffect, useState } from "react";
 
 // @todo: put the SVGs into the assets directory
 const statusToPath = (status: Status) => {
@@ -12,29 +23,126 @@ const statusToPath = (status: Status) => {
 };
 
 type Props = {
+  actor: ActorSubclass<_SERVICE>,
+  questionId: bigint;
   status: Status;
   date: bigint;
   iteration: bigint;
   isHistory: boolean;
+  categories: Map<Category, CategoryInfo>
   showBorder: boolean;
   borderDashed: boolean;
 };
 
-const StatusComponent = ({status, date, iteration, isHistory, showBorder, borderDashed}: Props) => {
+enum AggregateType {
+  INTEREST,
+  OPINION,
+  CATEGORIZATION,
+  NONE
+};
+
+const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
+
+  const [selectedAggregate, setSelectedAggregate] = useState<AggregateType>(AggregateType.NONE);
+  const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>();
+  const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>();
+  const [categorizationAggregate, setCategorizationAggregate] = useState<Map<Category, Polarization> | undefined>();
+
+  const fetchRevealedVotes = async () => {
+    if (isHistory){
+      if (status['CANDIDATE'] !== undefined){
+        let interest_vote = await actor.revealInterestVote(questionId, iteration);
+        setInterestAggregate(interest_vote['ok']?.aggregate);
+      }
+      if (status['OPEN'] !== undefined){
+        let opinion_vote = await actor.revealOpinionVote(questionId, iteration);
+        let categorization_vote = await actor.revealCategorizationVote(questionId, iteration);
+        setOpinionAggregate(getNormalizedPolarization(opinion_vote['ok']?.aggregate));
+        let categorization_aggregate = toMap(categorization_vote['ok']?.aggregate);
+        categorization_aggregate.forEach((value, key) => {
+          categorization_aggregate.set(key, getNormalizedPolarization(value));
+        });
+        setCategorizationAggregate(categorization_aggregate);
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchRevealedVotes();
+  }, []);
 
 	return (
     <div className={(showBorder? ( borderDashed ? "border-l-2 border-dashed" : "border-l-2 border-solid") : "") + " text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-500 pl-2 ml-4"}>
-      <div className={"text-gray-900 dark:text-white -ml-6 " + (borderDashed ? "pb-2" : "pb-5")}>
+      <div className={"text-gray-900 dark:text-white -ml-6 " + (borderDashed ? "pb-3" : "pb-5")}>
         <div className="flex flex-row gap-x-3">
           <span className={"flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 " + ( isHistory ? "bg-gray-100 dark:bg-gray-700" : "bg-blue-200 dark:bg-blue-900" )} >
             <svg xmlns="http://www.w3.org/2000/svg" className={"w-5 h-5 " + ( isHistory ? "text-gray-500 dark:text-gray-400" : "text-blue-500 dark:text-blue-400" )} fill="currentColor" viewBox="0 96 960 960" width="48"><path d={statusToPath(status)}/></svg>
           </span>
-          <div>
-            <div>
-              <span className="font-light text-sm">{ statusToString(status) } </span>
-              <span className="text-xs font-extralight"> { (iteration > 0 ? "(" + (Number(iteration) + 1).toString() + ")" : "") }</span>
+          <div className="flex flex-col grow">
+            <div className="flex flex-row items-center gap-x-1">
+              <div className="font-light text-sm">{ statusToString(status) } </div>
+              <div className="text-xs font-extralight"> { (iteration > 0 ? "(" + (Number(iteration) + 1).toString() + ")" : "") }</div>
+              <div className="flex flex-row items-center gap-x-3">
+              {
+                isHistory ? 
+                  status['CANDIDATE'] !== undefined ?
+                    <InterestAggregate 
+                      aggregate={interestAggregate}
+                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.INTEREST : AggregateType.NONE) }}
+                      selected={ selectedAggregate === AggregateType.INTEREST}
+                    />
+                  : status['OPEN'] !== undefined ?
+                  <div className="flex flex-row items-center gap-x-1">
+                    <OpinionAggregate
+                      aggregate={opinionAggregate}
+                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.OPINION : AggregateType.NONE) }}
+                      selected={ selectedAggregate === AggregateType.OPINION}
+                    />
+                    {" · "}
+                    <CategorizationAggregate 
+                      aggregate={categorizationAggregate}
+                      categories={categories}
+                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.CATEGORIZATION : AggregateType.NONE) }}
+                      selected={ selectedAggregate === AggregateType.CATEGORIZATION}
+                    />
+                  </div>
+                  : <> </>
+                : <> </>
+              }
+              </div>
             </div>
-            <div className="text-xs font-extralight">{ nsToStrDate(date)}</div>
+            <div className="text-xs font-extralight">{ nsToStrDate(date) }</div>
+            <div className={ selectedAggregate !== AggregateType.NONE ? "mt-5" : "" }>
+              <div>
+              {
+                // @todo: take the last iteration
+                selectedAggregate === AggregateType.INTEREST && interestAggregate !== undefined ?
+                  <AppealChart appeal={interestAggregate}></AppealChart> : <></>
+              }
+              </div>
+              <div>
+              {
+                // @todo: take the last iteration
+                selectedAggregate === AggregateType.OPINION && opinionAggregate !== undefined ?
+                  <PolarizationBar name={"OPINION"} showName={false} polarizationInfo={CONSTANTS.OPINION_INFO} polarizationValue={opinionAggregate}></PolarizationBar>
+                : <></>
+              }
+              </div>
+              <ol>
+              {
+                // @todo: take the last iteration
+                selectedAggregate === AggregateType.CATEGORIZATION && categorizationAggregate !== undefined ? (
+                [...Array.from(categories.entries())].map((elem) => (
+                  <li key={elem[0]}>
+                    <PolarizationBar name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(elem[1], CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={categorizationAggregate.get(elem[0])}></PolarizationBar>
+                  </li>
+                ))
+                ) : (
+                  <></>
+                )
+              }
+              </ol>
+            </div>
           </div>
         </div>
       </div>

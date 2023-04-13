@@ -1,10 +1,9 @@
 import { ActorContext } from "../../ActorContext"
-import { CategoriesContext } from "../../CategoriesContext"
 
 import { CursorArray, Category, CategoryInfo, _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
 import { ActorSubclass } from "@dfinity/agent";
 
-import { RangeSlider } from "./RangeSlider";
+import { CursorSlider } from "../base/CursorSlider";
 
 import { nsToStrDate } from "../../utils";
 
@@ -71,13 +70,13 @@ const VoteCategorization = ({actor, categories, questionId}: Props) => {
       {
         categorization.map(([category, cursor], index) => (
           <li key={category}>
-          <RangeSlider
+          <CursorSlider
             id={ category + questionId.toString() }
             cursor={ cursor }
             setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
             polarizationInfo = {{ left: categories.get(category).left, center: CONSTANTS.CATEGORIZATION_INFO.center, right: categories.get(category).right}}
             onMouseUp={ () => { updateCategorization() } }
-          ></RangeSlider>
+          ></CursorSlider>
           </li>
         ))
       }
