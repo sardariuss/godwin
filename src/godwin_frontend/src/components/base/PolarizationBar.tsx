@@ -1,4 +1,8 @@
-import { CategorySide, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Principal } from "@dfinity/principal";
+import { CategorySide, Polarization, Ballot } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { ScatterChart } from "../ScatterChart";
+
+import { PolarizationInfo, cursorToColor } from "../../utils";
 
 import { Bar }            from 'react-chartjs-2'
 
@@ -7,7 +11,7 @@ const options = {
   responsive: true,
   plugins: {
     tooltip: {
-      enabled: true
+      enabled: false
     },
     legend: {
       display: false
@@ -38,9 +42,31 @@ type Props = {
     right: CategorySide;
   };
   polarizationValue: Polarization;
+  ballots: [Principal, Ballot][];
 };
 
-const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue}: Props) => {
+const getDataSets = (input_ballots: [Principal, Ballot][], polarizationInfo: PolarizationInfo) => {
+  let points : { x : number, y: number }[]= [];
+  let colors : string[] = [];
+  for (let i = 0; i < input_ballots.length; i++){
+    
+    let cursor = input_ballots[i][1].answer;
+    let date = input_ballots[i][1].date;
+    points.push({ x: cursor, y: Number(date) });
+    colors.push(cursorToColor(cursor, polarizationInfo));
+  }
+  return {
+    datasets: [{
+      label: 'Scatter Dataset',
+      data: points,
+      backgroundColor: colors,
+      pointRadius: 4,
+      pointHoverRadius: 3,
+    }]
+  }
+}
+
+const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots}: Props) => {
 
   const labels = [name];
 
@@ -55,7 +81,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue}: 
       {
         label: polarizationInfo.center.symbol,
         data: labels.map(() => polarizationValue.center),
-        backgroundColor: '#ffffff',
+        backgroundColor: polarizationInfo.center.color,
       },
       {
         label: polarizationInfo.right.symbol,
@@ -67,25 +93,25 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue}: 
    
 	return (
       <div className="grid grid-cols-5">
-        <div className="flex flex-col items-center grow">
+        <div className="flex flex-col items-center z-10 grow">
           <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
           <div className="text-xs">{ polarizationInfo.left.name }</div>
         </div>
-        { 
-        /* 
-        @todo: Find a way to fix this hack that doesn't work for the user profile.
-        Negative left margin -mr-12 is required to compensate the right gap produced by the bar chart...
-        But not required anymore with normalization of polarizations ?
-        */
-        }
-        <div className="col-span-3 grow"> 
-          <Bar
-            data={data}
-            options={options}
-            height="50px"
-          />
+        <div className="col-span-3 z-0 grow">
+          { 
+          /* 
+            @todo: Somehow the scatter chart is not aligned with the bar chart.
+            Here fix is to put the height of bar at 50px, but the height of scatter at 38px and a margin of 1.5 (=6px).
+          */
+          }
+          <div className="absolute mt-1.5">
+            <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart>
+          </div>
+          <div className="absolute transition ease-out hover:opacity-10">
+            <Bar data={data} options={options} height="50px"/>
+          </div>
         </div>
-        <div className="flex flex-col items-center grow">
+        <div className="flex flex-col items-center z-10 grow">
           <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
           <div className="text-xs">{ polarizationInfo.right.name }</div>
         </div>

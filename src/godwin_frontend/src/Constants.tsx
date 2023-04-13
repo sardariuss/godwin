@@ -15,7 +15,7 @@ const CONSTANTS = {
     },
     duplicate: {
       symbol: '👀',
-      color: '#FFFFFF',
+      color: '#EEEEEE',
       name: 'DUPLICATE',
     }
   },
@@ -27,7 +27,7 @@ const CONSTANTS = {
     },
     center: {
       symbol: '🤷',
-      color: '#FFFFFF',
+      color: '#EEEEEE',
       name: 'UNDECIDED'
     },
     right: {
@@ -39,7 +39,7 @@ const CONSTANTS = {
   CATEGORIZATION_INFO: {
     center: {
       symbol: '🎯',
-      color: '#FFFFFF',
+      color: '#EEEEEE',
       name: 'N/A'
     }
   }

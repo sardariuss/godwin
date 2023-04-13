@@ -1,5 +1,5 @@
-import { _SERVICE, Status, Category, CategoryInfo, Appeal, Polarization } from "./../../declarations/godwin_backend/godwin_backend.did";
-
+import { _SERVICE, Status, Category, CategoryInfo, Appeal, Polarization, PublicVote, PublicVote_1, PublicVote_2, Ballot, Ballot_2 } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Principal } from "@dfinity/principal";
 import { nsToStrDate, statusToString, toMap, toPolarizationInfo, getNormalizedPolarization } from "../utils";
 
 import InterestAggregate from "./aggregates/InterestAggregate";
@@ -34,37 +34,50 @@ type Props = {
   borderDashed: boolean;
 };
 
-enum AggregateType {
+enum VoteType {
   INTEREST,
   OPINION,
   CATEGORIZATION,
   NONE
 };
 
+// @todo: the normalized polarization and toMap shall be done only once, not every call
 const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
-  const [selectedAggregate, setSelectedAggregate] = useState<AggregateType>(AggregateType.NONE);
-  const [interestAggregate, setInterestAggregate] = useState<Appeal | undefined>();
-  const [opinionAggregate, setOpinionAggregate] = useState<Polarization | undefined>();
-  const [categorizationAggregate, setCategorizationAggregate] = useState<Map<Category, Polarization> | undefined>();
+  const [selectedVote, setSelectedVote] = useState<VoteType>(VoteType.NONE);
+  const [interestVote, setInterestVote] = useState<PublicVote_1 | undefined>();
+  const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>();
+  const [categorizationVote, setCategorizationVote] = useState<PublicVote_2 | undefined>();
 
   const fetchRevealedVotes = async () => {
     if (isHistory){
       if (status['CANDIDATE'] !== undefined){
-        let interest_vote = await actor.revealInterestVote(questionId, iteration);
-        setInterestAggregate(interest_vote['ok']?.aggregate);
+        setInterestVote((await actor.revealInterestVote(questionId, iteration))['ok']);
       }
       if (status['OPEN'] !== undefined){
-        let opinion_vote = await actor.revealOpinionVote(questionId, iteration);
-        let categorization_vote = await actor.revealCategorizationVote(questionId, iteration);
-        setOpinionAggregate(getNormalizedPolarization(opinion_vote['ok']?.aggregate));
-        let categorization_aggregate = toMap(categorization_vote['ok']?.aggregate);
-        categorization_aggregate.forEach((value, key) => {
-          categorization_aggregate.set(key, getNormalizedPolarization(value));
-        });
-        setCategorizationAggregate(categorization_aggregate);
+        setOpinionVote((await actor.revealOpinionVote(questionId, iteration))['ok']);
+        setCategorizationVote((await actor.revealCategorizationVote(questionId, iteration))['ok']);
       }
     }
+  }
+
+  const toNormalizedMap = (array: [Category, Polarization][]) => {
+    let map = new Map<Category, Polarization>();
+    for (let [category, polarization] of array){
+      map.set(category, getNormalizedPolarization(polarization));
+    }
+    return map;
+  };
+
+  // @todo: do not use the index
+  const getBallotsFromCategory = (categorizationVote: PublicVote_2, cat_index: number) : [Principal, Ballot][] => {
+    let ballots : [Principal, Ballot][] = [];
+    for (let [principal, ballot] of categorizationVote.ballots){
+      if (ballot.answer[cat_index] !== undefined){
+        ballots.push([principal, {date : ballot.date, answer: ballot.answer[cat_index][1]}]);
+      }
+    }
+    return ballots;
   }
 
   useEffect(() => {
@@ -87,23 +100,23 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
                 isHistory ? 
                   status['CANDIDATE'] !== undefined ?
                     <InterestAggregate 
-                      aggregate={interestAggregate}
-                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.INTEREST : AggregateType.NONE) }}
-                      selected={ selectedAggregate === AggregateType.INTEREST}
+                      aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.INTEREST : VoteType.NONE) }}
+                      selected={ selectedVote === VoteType.INTEREST}
                     />
                   : status['OPEN'] !== undefined ?
                   <div className="flex flex-row items-center gap-x-1">
                     <OpinionAggregate
-                      aggregate={opinionAggregate}
-                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.OPINION : AggregateType.NONE) }}
-                      selected={ selectedAggregate === AggregateType.OPINION}
+                      aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.OPINION : VoteType.NONE) }}
+                      selected={ selectedVote === VoteType.OPINION}
                     />
                     {" · "}
                     <CategorizationAggregate 
-                      aggregate={categorizationAggregate}
+                      aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
                       categories={categories}
-                      setSelected={(selected: boolean) => { setSelectedAggregate(selected ? AggregateType.CATEGORIZATION : AggregateType.NONE) }}
-                      selected={ selectedAggregate === AggregateType.CATEGORIZATION}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.CATEGORIZATION : VoteType.NONE) }}
+                      selected={ selectedVote === VoteType.CATEGORIZATION}
                     />
                   </div>
                   : <> </>
@@ -112,29 +125,29 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               </div>
             </div>
             <div className="text-xs font-extralight">{ nsToStrDate(date) }</div>
-            <div className={ selectedAggregate !== AggregateType.NONE ? "mt-5" : "" }>
+            <div className={ selectedVote !== VoteType.NONE ? "mt-5" : "" }>
               <div>
               {
                 // @todo: take the last iteration
-                selectedAggregate === AggregateType.INTEREST && interestAggregate !== undefined ?
-                  <AppealChart appeal={interestAggregate}></AppealChart> : <></>
+                selectedVote === VoteType.INTEREST && interestVote !== undefined ?
+                  <AppealChart appeal={interestVote.aggregate}></AppealChart> : <></>
               }
               </div>
               <div>
               {
                 // @todo: take the last iteration
-                selectedAggregate === AggregateType.OPINION && opinionAggregate !== undefined ?
-                  <PolarizationBar name={"OPINION"} showName={false} polarizationInfo={CONSTANTS.OPINION_INFO} polarizationValue={opinionAggregate}></PolarizationBar>
+                selectedVote === VoteType.OPINION && opinionVote !== undefined ?
+                  <PolarizationBar name={"OPINION"} showName={false} polarizationInfo={CONSTANTS.OPINION_INFO} polarizationValue={getNormalizedPolarization(opinionVote.aggregate)} ballots={opinionVote.ballots}></PolarizationBar>
                 : <></>
               }
               </div>
               <ol>
               {
                 // @todo: take the last iteration
-                selectedAggregate === AggregateType.CATEGORIZATION && categorizationAggregate !== undefined ? (
-                [...Array.from(categories.entries())].map((elem) => (
-                  <li key={elem[0]}>
-                    <PolarizationBar name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(elem[1], CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={categorizationAggregate.get(elem[0])}></PolarizationBar>
+                selectedVote === VoteType.CATEGORIZATION && categorizationVote !== undefined ? (
+                [...Array.from(toNormalizedMap(categorizationVote.aggregate).entries())].map((elem, index) => (
+                  <li key={elem[0]} className="mb-2">
+                    <PolarizationBar name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(categories.get(elem[0]), CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={elem[1]} ballots={getBallotsFromCategory(categorizationVote, index)}></PolarizationBar>
                   </li>
                 ))
                 ) : (

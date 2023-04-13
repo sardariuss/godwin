@@ -1,6 +1,8 @@
 import { Status, Polarization, CategorySide, CategoryInfo } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
+import Color from 'colorjs.io';
+
 export type PolarizationInfo = {
   left: CategorySide;
   center: CategorySide;
@@ -117,4 +119,18 @@ export const toPolarizationInfo = (category_info: CategoryInfo, center: Category
     center: center,
     right: category_info.right,
   };
+}
+
+// @todo: return the ranges instead ?
+export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo) : string => {
+  
+  const white = new Color("white");
+  const leftColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
+  const rightColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
+
+  if (cursor < 0.0){
+    return new Color(leftColorRange(-cursor).toString()).to("srgb").toString({format: "hex"});
+  } else {
+    return new Color(rightColorRange(cursor).toString()).to("srgb").toString({format: "hex"});
+  }
 }
