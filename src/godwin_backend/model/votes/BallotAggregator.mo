@@ -25,15 +25,10 @@ module {
     _remove_from_aggregate: (A, T) -> A
   ) {
 
-    // Safe
-    public func addBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), AddBallotError> {
+    public func putBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), AddBallotError> {
       // Verify the principal is not anonymous
       if (Principal.isAnonymous(principal)){
         return #err(#PrincipalIsAnonymous);
-      };
-      // Verify the vote is open
-      if (vote.status == #CLOSED){ // @todo: remove, redondant with previous checks
-        return #err(#VoteClosed);
       };
       // Verify the ballot is valid
       if (not _is_valid_answer(ballot.answer)){

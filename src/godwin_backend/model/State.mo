@@ -15,6 +15,7 @@ import Map "mo:map/Map";
 
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
+import Deque "mo:base/Deque";
 
 module {
 
@@ -27,6 +28,7 @@ module {
   type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
   type OrderedSet<K> = OrderedSet.OrderedSet<K>;
   type Ref<V> = Ref.Ref<V>;
+  type Deque<V> = Deque.Deque<V>;
 
   // For convenience: from types module
   type Parameters = Types.Parameters;
@@ -48,11 +50,17 @@ module {
   type Interest = Types.Interest;
   type StatusData = Types.StatusData;
   type VoteHistory = Types.VoteHistory;
+  type SubTransferArgs = Types.SubTransferArgs;
+  type FailedPayout = Types.FailedPayout;
 
   public type State = {
-    admin             : Ref<Principal>;
+    name              : Ref<Text>; // @todo: this shouldn't be a ref
+    master            : Ref<Principal>; // @todo: this shouldn't be a ref
     creation_date     : Time;
     categories        : Categories.Register;
+    pay_interface     : {
+      failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
+    };
     questions         : {
       register           : Map<Nat, Question>;
       index              : Ref<Nat>;
@@ -66,15 +74,13 @@ module {
     };
     controller        : {
       model              : {
-        time             : Ref<Time>; 
         last_pick_date   : Ref<Time>;
         params           : Ref<SchedulerParameters>;
       };
     };
-    subaccounts       : {
-      interest_votes        : Map<Nat, Blob>;
-      categorization_votes  : Map<Nat, Blob>;
-      index                 : Ref<Nat>;
+    opened_questions  : {
+      register           : Map<Nat, (Principal, Blob)>;
+      index              : Ref<Nat>;
     };
     votes          : {
       interest                : Interests.VoteRegister;
@@ -90,45 +96,47 @@ module {
     };
   };
 
-  public func initState(admin: Principal, creation_date: Time, parameters: Parameters) : State {
+  public func initState(master: Principal, creation_date: Time, parameters: Parameters) : State {
     {
-      admin          = Ref.initRef<Principal>(admin);
-      creation_date  = creation_date;
-      categories     = Categories.initRegister(parameters.categories);
-      status         = {
-        register              = Map.new<Nat, StatusData>();
+      name                          = Ref.initRef<Text>(parameters.name);
+      master                        = Ref.initRef<Principal>(master);
+      creation_date                 = creation_date;
+      categories                    = Categories.initRegister(parameters.categories);
+      pay_interface = {
+        failed_payouts              = Set.new<FailedPayout>();
       };
-      questions      = {
-        register              = Map.new<Nat, Question>();
-        index                 = Ref.initRef<Nat>(0);
-        character_limit       = Ref.initRef<Nat>(parameters.questions.character_limit);
+      status        = {
+        register                    = Map.new<Nat, StatusData>();
       };
-      queries        = {
-        register              = QuestionQueries.initRegister();
+      questions     = {
+        register                    = Map.new<Nat, Question>();
+        index                       = Ref.initRef<Nat>(0);
+        character_limit             = Ref.initRef<Nat>(parameters.questions.character_limit);
       };
-      controller     = {
-        model                 = {
-          time                    = Ref.initRef<Time>(creation_date);
-          last_pick_date          = Ref.initRef<Time>(creation_date);
-          params                  = Ref.initRef<SchedulerParameters>(parameters.scheduler);
+      queries       = {
+        register                    = QuestionQueries.initRegister();
+      };
+      controller    = {
+        model = {
+          last_pick_date            = Ref.initRef<Time>(creation_date);
+          params                    = Ref.initRef<SchedulerParameters>(parameters.scheduler);
         };
       };
-      subaccounts = {
-        interest_votes        = Map.new<Nat, Blob>();
-        categorization_votes  = Map.new<Nat, Blob>();
-        index                 = Ref.initRef<Nat>(0);
+      opened_questions = {
+        register                    = Map.new<Nat, (Principal, Blob)>();
+        index                       = Ref.initRef<Nat>(0);
       };
-      votes          = {
-        interest              = Interests.initVoteRegister();
-        interest_history      = Map.new<Nat, VoteHistory>();
-        opinion               = Opinions.initVoteRegister();
-        opinion_history      = Map.new<Nat, VoteHistory>();
-        categorization        = Categorizations.initVoteRegister();
+      votes         = {
+        interest                    = Interests.initVoteRegister();
+        interest_history            = Map.new<Nat, VoteHistory>();
+        opinion                     = Opinions.initVoteRegister();
+        opinion_history             = Map.new<Nat, VoteHistory>();
+        categorization              = Categorizations.initVoteRegister();
         categorization_history      = Map.new<Nat, VoteHistory>();
       };
-      users        = {
-        register                  = Map.new<Principal, User>();
-        convictions_half_life     = parameters.history.convictions_half_life;
+      users         = {
+        register                    = Map.new<Principal, User>();
+        convictions_half_life       = parameters.history.convictions_half_life;
       };
     };
   };

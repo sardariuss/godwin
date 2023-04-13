@@ -11,4 +11,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </HashRouter>
 );
-// root.render(<Image/>);

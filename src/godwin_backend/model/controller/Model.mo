@@ -25,20 +25,18 @@ module {
   type Ref<T> = Ref.Ref<T>;
   type WRef<T> = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
-  //type Master = Types.Master;
   type Categories = Categories.Categories;
   type Questions = Questions.Questions;
   type Users = Users.Users;
   type QuestionQueries = QuestionQueries.QuestionQueries;
-  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type StatusManager = StatusManager.StatusManager;
   type InterestVotes = Interests.Interests;
   type OpinionVotes = Opinions.Opinions;
   type CategorizationVotes = Categorizations.Categorizations;
 
   public func build(
-    admin: Ref<Principal>,
-    time: Ref<Time>,
+    name: Ref<Text>,
+    master: Ref<Principal>,
     last_pick_date: Ref<Time>,
     params: Ref<SchedulerParameters>,
     categories: Categories,
@@ -51,8 +49,8 @@ module {
     categorization_votes: CategorizationVotes
   ) : Model {
     Model(
-      WRef.WRef(admin),
-      WRef.WRef(time),
+      WRef.WRef(name),
+      WRef.WRef(master),
       WRef.WRef(last_pick_date),
       WRef.WRef(params),
       categories,
@@ -67,8 +65,8 @@ module {
   };
 
   public class Model(
-    _admin: WRef<Principal>,
-    _time: WRef<Time>,
+    _name: WRef<Text>,
+    _master: WRef<Principal>,
     _last_pick_date: WRef<Time>,
     _params: WRef<SchedulerParameters>,
     _categories: Categories,
@@ -81,24 +79,20 @@ module {
     _categorization_votes: CategorizationVotes
   ) = {
 
-//    public func getMaster() : Master {
-//      actor(Principal.toText(_admin.get())); // @todo: shall the admin and the master be different?
-//    };
-
-    public func getAdmin(): Principal {
-      _admin.get();
+    public func getName() : Text {
+      _name.get();
     };
 
-    public func setAdmin(admin: Principal) {
-      _admin.set(admin);
+    public func setName(name: Text) {
+      _name.set(name);
     };
 
-    public func getTime() : Time {
-      _time.get();
+    public func getMaster(): Principal {
+      _master.get();
     };
 
-    public func setTime(time: Time) {
-      _time.set(time);
+    public func setMaster(master: Principal) {
+      _master.set(master);
     };
 
     public func getLastPickDate() : Time {

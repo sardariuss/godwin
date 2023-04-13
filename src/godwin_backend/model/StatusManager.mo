@@ -54,20 +54,21 @@ module {
   type Polarization       = Types.Polarization;
   type PolarizationMap    = Types.PolarizationMap;
   type Decay              = Types.Decay; 
-  type User        = Types.User;
-  type StatusInfo = Types.StatusInfo;
+  type User               = Types.User;
+  type StatusInfo         = Types.StatusInfo;
+  type QuestionId         = Types.QuestionId;
+  type StatusData         = Types.StatusData;
+  let questionHash        = Types.questionHash;
 
-  type StatusData = Types.StatusData;
-
-  public type Register = Map<Nat, StatusData>;
+  public type Register = Map<QuestionId, StatusData>;
 
   public func build(register: Register) : StatusManager {
-    StatusManager(WMap.WMap(register, Map.nhash));
+    StatusManager(WMap.WMap(register, questionHash));
   };
   
-  public class StatusManager(_register: WMap.WMap<Nat, StatusData>) {
+  public class StatusManager(_register: WMap.WMap<QuestionId, StatusData>) {
 
-    public func setCurrent(question_id: Nat, status: Status, date: Time) {
+    public func setCurrent(question_id: QuestionId, status: Status, date: Time) {
       switch(_register.getOpt(question_id)){
         case(null) { 
           // Create a new entry with an empty history
@@ -84,21 +85,21 @@ module {
       };
     };
 
-    public func getCurrent(question_id: Nat) : StatusInfo {
+    public func getCurrent(question_id: QuestionId) : StatusInfo {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
         case(?status_data) { status_data.current; };
       };
     };
 
-    public func getHistory(question_id: Nat) : Map<Status, [Time]> {
+    public func getHistory(question_id: QuestionId) : Map<Status, [Time]> {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
         case(?status_data) { status_data.history; };
       };
     };
 
-    public func getStatusIteration(question_id: Nat, status: Status) : Nat {
+    public func getStatusIteration(question_id: QuestionId, status: Status) : Nat {
       // Get the status data
       let status_data = switch(_register.getOpt(question_id)){
         case(null) { return 0; };
@@ -113,7 +114,7 @@ module {
       status_history.size();
     };
 
-    public func deleteStatus(question_id: Nat) {
+    public func deleteStatus(question_id: QuestionId) {
       _register.delete(question_id);
     };
 

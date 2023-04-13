@@ -51,6 +51,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type CategoryArray = Types.CategoryArray;
   type RevealVoteError = Types.RevealVoteError;
   type StatusInfo = Types.StatusInfo;
+  type TransitionError = Types.TransitionError;
+  type QuestionId = Types.QuestionId;
 
   let _start_date = Time.now() - Duration.toTime(#HOURS(6));  // @temp
 
@@ -59,7 +61,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   let _controller = Factory.build(_state);
 
   public shared func runScenario() : async () {
-    await* Scenario.run(_controller, _start_date, Time.now(), #MINUTES(5), 20);
+    await* Scenario.run(_controller, _start_date, Time.now(), #MINUTES(5));
+  };
+
+  public query func getName() : async Text {
+    _controller.getName();
   };
 
   public query func getDecay() : async ?Decay {
@@ -98,7 +104,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.searchQuestions(text, limit);
   };
 
-  public query func getQuestion(question_id: Nat) : async Result<Question, GetQuestionError> {
+  public query func getQuestion(question_id: QuestionId) : async Result<Question, GetQuestionError> {
     _controller.getQuestion(question_id);
   };
 
@@ -110,51 +116,51 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* _controller.openQuestion(caller, text, Time.now());
   };
 
-  public shared({caller}) func reopenQuestion(question_id: Nat) : async Result<(), ReopenQuestionError> {
+  public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, TransitionError)]> {
     await* _controller.reopenQuestion(caller, question_id, Time.now());
   };
 
-  public query({caller}) func getInterestBallot(question_id: Nat) : async Result<Ballot<Interest>, GetBallotError> {
+  public query({caller}) func getInterestBallot(question_id: QuestionId) : async Result<Ballot<Interest>, GetBallotError> {
     _controller.getInterestBallot(caller, question_id);
   };
 
-  public shared({caller}) func putInterestBallot(question_id: Nat, interest: Interest) : async Result<(), PutBallotError> {
+  public shared({caller}) func putInterestBallot(question_id: QuestionId, interest: Interest) : async Result<(), PutBallotError> {
     await* _controller.putInterestBallot(caller, question_id, Time.now(), interest);
   };
 
-  public query({caller}) func getOpinionBallot(question_id: Nat) : async Result<Ballot<Cursor>, GetBallotError> {
+  public query({caller}) func getOpinionBallot(question_id: QuestionId) : async Result<Ballot<Cursor>, GetBallotError> {
     _controller.getOpinionBallot(caller, question_id);
   };
 
-  public shared({caller}) func putOpinionBallot(question_id: Nat, cursor: Cursor) : async Result<(), PutBallotError> {
+  public shared({caller}) func putOpinionBallot(question_id: QuestionId, cursor: Cursor) : async Result<(), PutBallotError> {
     _controller.putOpinionBallot(caller, question_id, Time.now(), cursor);
   };
 
-  public query({caller}) func getCategorizationBallot(question_id: Nat) : async Result<Ballot<CursorArray>, GetBallotError> {
+  public query({caller}) func getCategorizationBallot(question_id: QuestionId) : async Result<Ballot<CursorArray>, GetBallotError> {
     _controller.getCategorizationBallot(caller, question_id);
   };
 
-  public shared({caller}) func putCategorizationBallot(question_id: Nat, answer: CursorArray) : async Result<(), PutBallotError> {
+  public shared({caller}) func putCategorizationBallot(question_id: QuestionId, answer: CursorArray) : async Result<(), PutBallotError> {
     await* _controller.putCategorizationBallot(caller, question_id, Time.now(), answer);
   };
 
-  public query func getStatusInfo(question_id: Nat) : async Result<StatusInfo, ReopenQuestionError> {
+  public query func getStatusInfo(question_id: QuestionId) : async Result<StatusInfo, ReopenQuestionError> {
     _controller.getStatusInfo(question_id);
   };
 
-  public query func getStatusHistory(question_id: Nat) : async Result<[(Status, [Time])], ReopenQuestionError> {
+  public query func getStatusHistory(question_id: QuestionId) : async Result<[(Status, [Time])], ReopenQuestionError> {
     _controller.getStatusHistory(question_id);
   };
 
-  public query func revealInterestVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, RevealVoteError>{
+  public query func revealInterestVote(question_id: QuestionId, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, RevealVoteError>{
     _controller.revealInterestVote(question_id, iteration);
   };
 
-  public query func revealOpinionVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, RevealVoteError>{
+  public query func revealOpinionVote(question_id: QuestionId, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, RevealVoteError>{
     _controller.revealOpinionVote(question_id, iteration);
   };
 
-  public query func revealCategorizationVote(question_id: Nat, iteration: Nat) : async Result<PublicVote<CursorArray, PolarizationArray>, RevealVoteError>{
+  public query func revealCategorizationVote(question_id: QuestionId, iteration: Nat) : async Result<PublicVote<CursorArray, PolarizationArray>, RevealVoteError>{
     _controller.revealCategorizationVote(question_id, iteration);
   };
 
@@ -166,8 +172,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getUserOpinions(principal);
   };
 
-  public shared func run() {
-    _controller.run(Time.now());
+  public shared func run() : async() {
+    await* _controller.run(Time.now());
   };
 
 };

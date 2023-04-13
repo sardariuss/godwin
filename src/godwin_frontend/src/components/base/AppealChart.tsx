@@ -1,4 +1,5 @@
 import { Appeal } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import CONSTANTS from "../../Constants";
 
 import React from 'react';
 import {
@@ -45,7 +46,10 @@ const options = {
       anchor: 'end',
       align: 'end',
       formatter: (value: number, context) => {
-        const prefix = context.datasetIndex === 0 ? "🤓\nUP" : context.datasetIndex === 1 ? "🤡\nDOWN" : "👀\nDUPLICATE";
+        const prefix = context.datasetIndex === 0 ? 
+          (CONSTANTS.INTEREST_INFO.up.symbol + "\n" + CONSTANTS.INTEREST_INFO.up.name) : context.datasetIndex === 1 ? 
+          (CONSTANTS.INTEREST_INFO.down.symbol + "\n" + CONSTANTS.INTEREST_INFO.down.name) : 
+          (CONSTANTS.INTEREST_INFO.duplicate.symbol + "\n" + CONSTANTS.INTEREST_INFO.duplicate.name);
         return `${prefix}`;
       },
       font:{
@@ -71,7 +75,7 @@ type Props = {
   appeal: Appeal;
 };
 
-const AppealComponent = ({appeal}: Props) => {
+const AppealChart = ({appeal}: Props) => {
 
   const labels = ['APPEAL'];
 
@@ -79,19 +83,19 @@ const AppealComponent = ({appeal}: Props) => {
     labels,
     datasets: [
       {
-        label: '🤓',
+        label: CONSTANTS.INTEREST_INFO.up.symbol,
         data: labels.map(() => Number(appeal.ups)),
-        backgroundColor: "#0F9D58",
+        backgroundColor: CONSTANTS.INTEREST_INFO.up.color,
       },
       {
-        label: '🤡',
+        label: CONSTANTS.INTEREST_INFO.down.symbol,
         data: labels.map(() => Number(appeal.downs)),
-        backgroundColor: "#DB4437",
+        backgroundColor: CONSTANTS.INTEREST_INFO.down.color,
       },
       {
-        label: '👀',
+        label: CONSTANTS.INTEREST_INFO.duplicate.symbol,
         data: labels.map(() => 0),
-        backgroundColor: "#4285F4",
+        backgroundColor: CONSTANTS.INTEREST_INFO.duplicate.color,
       },
     ],
   };
@@ -101,4 +105,4 @@ const AppealComponent = ({appeal}: Props) => {
   );
 }
 
-export default AppealComponent;
+export default AppealChart;

@@ -7,6 +7,10 @@ module {
 
   // For convenience: from base module
 
+  public func isAlphaNumeric(text: Text) : Bool {
+    not Text.contains(text, #predicate(func(c) { not(Char.isAlphabetic(c) or Char.isDigit(c)); }));
+  };
+
   public func matchCount(text_1: Text, text_2: Text) : Nat {
     var match_count = 0;
     // @todo: need to split on punctuation as well

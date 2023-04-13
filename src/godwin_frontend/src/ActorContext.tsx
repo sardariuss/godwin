@@ -1,9 +1,11 @@
 import { AuthClient, IdbStorage } from "@dfinity/auth-client";
 import { DelegationChain, isDelegationValid } from "@dfinity/identity";
 
-import { _SERVICE } from "../declarations/godwin_backend/godwin_backend.did";
-import { canisterId, createActor, godwin_backend } from "../declarations/godwin_backend";
-import { ActorSubclass, Identity, Actor } from "@dfinity/agent";
+import { _SERVICE as MasterService } from "../declarations/godwin_master/godwin_master.did";
+import { _SERVICE as SubService } from "../declarations/godwin_backend/godwin_backend.did";
+import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
+import { createActor as createSub } from "../declarations/godwin_backend";
+import { ActorSubclass } from "@dfinity/agent";
 
 import { useState, useEffect } from "react";
 
@@ -16,14 +18,18 @@ export const ActorContext = React.createContext<{
   setAuthClient?: React.Dispatch<AuthClient>;
   isAuthenticated?: boolean | null;
   setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
+  subsFetched?: boolean | null;
+  setSubsFetched?: React.Dispatch<React.SetStateAction<boolean | null>>;
   login: () => void;
   logout: () => void;
-  actor: ActorSubclass<_SERVICE>;
+  master: ActorSubclass<MasterService>;
+  subs: Map<string, ActorSubclass<SubService>>;
   hasLoggedIn: boolean;
 }>({
   login: () => {},
   logout: () => {},
-  actor: godwin_backend,
+  master: godwin_master,
+  subs: new Map(),
   hasLoggedIn: false
 });
 
@@ -38,9 +44,11 @@ export function useAuthClient() {
   const navigate = useNavigate();
 
   const [authClient, setAuthClient] = useState<AuthClient>();
-  const [actor, setActor] = useState<ActorSubclass<_SERVICE>>(godwin_backend);
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const [hasLoggedIn, setHasLoggedIn] = useState(false);
+  const [master, setMaster] = useState<ActorSubclass<MasterService>>(godwin_master);
+  const [subs, setSubs] = useState<Map<string, ActorSubclass<SubService>>>(new Map());
+  const [subsFetched, setSubsFetched] = useState<boolean | null>(true);
 
   const login = () => {
     authClient?.login({
@@ -65,19 +73,34 @@ export function useAuthClient() {
 
   const initActor = () => {
     console.log("INIT ACTOR");
-    const actor = createActor(canisterId as string, {
+    const actor = createMaster(canisterId as string, {
       agentOptions: {
         identity: authClient?.getIdentity(),
       },
     });
-    setActor(actor);
+    setMaster(actor);
   }
 
   const logout = () => {
     navigate("/");
     setIsAuthenticated(false);
-    setActor(godwin_backend);
+    setMaster(godwin_master);
     authClient?.logout().then(() => { console.log("LOGGED OUT") });
+  }
+
+  const fetchSubs = async() => {
+    let newSubs = new Map<string, ActorSubclass<SubService>>();
+    let listSubs = await master.listSubGodwins();
+    for (let [principal, id] of listSubs) {
+      let actor = createSub(principal, {
+        agentOptions: {
+          identity: authClient?.getIdentity(),
+        },
+      });
+      newSubs.set(id, actor);
+    }
+    setSubs(newSubs);
+    setSubsFetched(true);
   }
 
   useEffect(() => {
@@ -103,6 +126,17 @@ export function useAuthClient() {
   }, []);
 
   useEffect(() => {
+    if (!subsFetched) {
+      fetchSubs();
+    }
+  }, [subsFetched]);
+
+  // Need to fetch subs when master changes, so the subs are logged in/out too
+  useEffect(() => {
+    fetchSubs();
+  }, [master]);
+
+  useEffect(() => {
     if (isAuthenticated) { initActor() };
   }, [isAuthenticated]);
 
@@ -111,9 +145,12 @@ export function useAuthClient() {
     setAuthClient,
     isAuthenticated,
     setIsAuthenticated,
+    subsFetched,
+    setSubsFetched,
     login,
     logout,
-    actor,
+    master,
+    subs,
     hasLoggedIn,
   };
 }

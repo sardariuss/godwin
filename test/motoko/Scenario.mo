@@ -21,11 +21,20 @@ module {
   type Duration = Duration.Duration;
   type Fuzzer = Fuzz.Fuzzer;
 
-  public func run(controller: Controller, start_date: Time, end_date: Time, tick_duration: Duration, num_users: Nat) : async*() {
+  let SEED = 123456789;
 
-    let fuzzer = Fuzz.fromSeed(123456789);
+  let NUM_USERS = 20;
 
-    let principals = Random.generatePrincipals(fuzzer, num_users);
+  public func getPrincipals() : [Principal] {
+    let fuzzer = Fuzz.fromSeed(SEED);
+    Random.generatePrincipals(fuzzer, NUM_USERS);
+  };
+
+  public func run(controller: Controller, start_date: Time, end_date: Time, tick_duration: Duration) : async*() {
+
+    let fuzzer = Fuzz.fromSeed(SEED);
+
+    let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
 
     var time = start_date;
 
@@ -68,7 +77,7 @@ module {
         };
       };
 
-      controller.run(time);
+      await* controller.run(time);
 
     };
   };

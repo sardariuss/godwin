@@ -115,6 +115,10 @@ module {
       };
     };
 
+    public func has(key1: K1, key: K2): Bool {
+      Utils.has2D(map_, hash1_, key1, hash2_, key);
+    };
+
     public func getAll(key1: K1): ?Map<K2, V> {
       Map.get(map_, hash1_, key1);
     };

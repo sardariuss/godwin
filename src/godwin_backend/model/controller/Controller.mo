@@ -7,6 +7,7 @@ import Votes "../votes/Votes";
 import Categories "../Categories";
 import Duration "../../utils/Duration";
 import Utils "../../utils/Utils";
+import WRef "../../utils/wrappers/WRef";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import Event "Event";
 import Schema "Schema";
@@ -28,8 +29,8 @@ module {
   type Model = Model.Model;
   type Event = Event.Event;
   type Schema = Schema.Schema;
-  type SubaccountGenerator = SubaccountGenerator.SubaccountGenerator;
   type Key = QuestionQueries.Key;
+  type WRef<T> = WRef.WRef<T>;
   let { toStatusEntry } = QuestionQueries;
 
   // For convenience: from base module
@@ -73,12 +74,17 @@ module {
   type GetVoteError = Types.GetVoteError;
   type OpenVoteError = Types.OpenVoteError;
   type RevealVoteError = Types.RevealVoteError;
+  type TransitionError = Types.TransitionError;
 
   public func build(model: Model) : Controller {
     Controller(Schema.SchemaBuilder(model).build(), model);
   };
 
   public class Controller(_schema: Schema, _model: Model) = {
+
+    public func getName() : Text {
+      _model.getName();
+    };
 
     public func getDecay() : ?Decay {
       _model.getUsers().getDecay();
@@ -158,31 +164,12 @@ module {
       );
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), ReopenQuestionError> {
-      // Verify that the caller is not anonymous
-      if (Principal.isAnonymous(caller)){
-        return #err(#PrincipalIsAnonymous);
-      };
-      // Verify that the question exists
-      let question = switch(_model.getQuestions().findQuestion(question_id)){
-        case(null) { return #err(#QuestionNotFound); };
-        case(?question) { question; };
-      };
-      // Verify that the question is closed
-      if (_model.getStatusManager().getCurrent(question_id).status != #CLOSED){
-        return #err(#InvalidStatus);
-      };
-      // Reopen the question 
-      // @todo: risk of reentry, user will loose tokens if the question has already been reopened
-      switch(await* _model.getInterestVotes().openVote(caller, func() : Question {
-        question;
-      })){
-        case(#err(err)) { #err(#OpenInterestVoteFailed(err)); };
-        case(#ok(question)) {
-          // @todo: here we don't have any guarentee that the question will actually be reopened
-          submitEvent(question, #REOPEN_QUESTION, date);
-          return #ok; 
-        };
+    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, TransitionError)]> {
+      let result = StateMachine.initEventResult<Status, TransitionError>();
+      await* submitEvent(question_id, #REOPEN_QUESTION(#data({caller})), date, result);
+      switch(result.get()){
+        case(#err(err)) { return #err(err); };
+        case(#ok(_)) { return #ok; };
       };
     };
 
@@ -258,68 +245,66 @@ module {
     };
 
     func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getAdmin(), #InsufficientCredentials), (func(){}));
+      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getMaster(), #InsufficientCredentials), (func(){}));
     };
 
-    public func run(date: Time) {
-      _model.setTime(date);
+    public func run(time: Time) : async* () {
       for (question in _model.getQuestions().iter()){
-        submitEvent(question, #TIME_UPDATE, date);
+        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, TransitionError>());
       };
     };
 
-    func submitEvent(question: Question, event: Event, date: Time) {
+    func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
 
-      let state_machine = {
-        schema = _schema;
-        model = question;
+      let current = _model.getStatusManager().getCurrent(question_id);
+
+      // Submit the event
+      await* StateMachine.submitEvent(_schema, current.status, question_id, event, result);
+
+      switch(result.get()){
+        case(#err(_)) {}; // No transition
+        case(#ok(new)) {
+          // When the question status changes, update the associated key for the #STATUS order_by
+          _model.getQueries().replace(
+            ?toStatusEntry(question_id, current.status, current.date),
+            Option.map(new, func(status: Status) : Key { toStatusEntry(question_id, status, date); })
+          );
+          // Close vote(s) if any
+          switch(current.status){
+            case(#CANDIDATE) { 
+              await* _model.getInterestVotes().closeVote(question_id);
+            };
+            case(#OPEN)      { // Update the user convictions on question closed
+                               // @todo: watchout, has to be called before the votes are closed
+                               _model.getUsers().onClosingQuestion(question_id);
+                               _model.getOpinionVotes().closeVote(question_id);
+                               await* _model.getCategorizationVotes().closeVote(question_id); 
+                             };
+            case(_) {};
+          };
+          switch(new){
+            case(null) {
+              // Remove status and question
+              _model.getStatusManager().deleteStatus(question_id);
+              _model.getQuestions().removeQuestion(question_id);
+            };
+            case(?status){
+              // Open a vote if applicable
+              switch(status){
+                case(#CANDIDATE) { // @todo: the opening of the vote shall be done by the state machine transition
+                                  /*ignore await* _model.getInterestVotes().openVote();*/ }; 
+                case(#OPEN)      { _model.getOpinionVotes().openVote(question_id);
+                                  _model.getCategorizationVotes().openVote(question_id); };
+                case(_) {};
+              };
+              // Finally set the status as current
+              _model.getStatusManager().setCurrent(question_id, status, date);
+            };
+          };
+        };
       };
-
-      let current = _model.getStatusManager().getCurrent(question.id);
-      
-      Result.iterate(StateMachine.submitEvent(state_machine, current.status, event), func(new: ?Status) {
-        // When the question status changes, update the associated key for the #STATUS order_by
-        _model.getQueries().replace(
-          ?toStatusEntry(question.id, current.status, current.date),
-          Option.map(new, func(status: Status) : Key { toStatusEntry(question.id, status, date); })
-        );
-        // Close vote(s) if any
-        switch(current.status){
-          case(#CANDIDATE) { 
-            switch(_model.getInterestVotes().closeVote(question.id)) {
-              case(#err(err)) { Debug.trap("Error!"); };
-              case(#ok(_)) { };
-            };
-          };
-          case(#OPEN)      { // Update the user convictions on question closed
-                             // @todo: watchout, has to be called before the votes are closed
-                             _model.getUsers().onClosingQuestion(question.id);
-                             ignore _model.getOpinionVotes().closeVote(question.id);
-                             ignore _model.getCategorizationVotes().closeVote(question.id); };
-          case(_) {};
-        };
-        switch(new){
-          case(null) {
-            // Remove status and question
-            _model.getStatusManager().deleteStatus(question.id);
-            _model.getQuestions().removeQuestion(question.id);
-          };
-          case(?status){
-            // Open a vote if applicable
-            switch(status){
-              case(#CANDIDATE) { // @todo: the opening of the vote shall be done by the state machine transition
-                                 /*ignore await* _model.getInterestVotes().openVote();*/ }; 
-              case(#OPEN)      { _model.getOpinionVotes().openVote(question.id);
-                                 _model.getCategorizationVotes().openVote(question.id); };
-              case(_) {};
-            };
-            // Finally set the status as current
-            _model.getStatusManager().setCurrent(question.id, status, date);
-          };
-        };
-      });
     };
-  
+
   };
 
 };

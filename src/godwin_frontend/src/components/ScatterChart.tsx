@@ -1,40 +1,47 @@
-import { Scatter }            from 'react-chartjs-2'
+import React from 'react';
+import {
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Scatter } from 'react-chartjs-2';
+
+ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
+
+const options = {
+  maintainAspectRatio: false,
+  animation: {
+    duration: 0,
+  },
+  scales: {
+    x: {
+      display: false
+    },
+    y: {
+      display: false
+    }
+  },
+  plugins: {
+    legend: {
+        display: false
+    },
+    tooltip:{
+      enabled: true
+    }
+  },
+  responsive: false
+};
 
 export const ScatterChart = ({ chartData }: any) => {
   return (
     <div>
       <Scatter
         data={chartData}
-        options={{
-          animation: {
-            duration: 0,
-          },
-          elements: {
-            point:{
-              radius: 2,
-              hoverRadius: 2 // hack to disable the hover effect because hover : { animationDuration: 0 } doesn't work
-            },
-            line:{
-              borderWidth: 1
-            }
-          },
-          scales: {
-            x: {
-              display: false
-            },
-            y: {
-              display: false
-            }
-          },
-          plugins: {
-            legend: {
-                display: false
-            },
-            tooltip:{
-              enabled: false
-            }
-          }
-        }}
+        options={options}
+        height="38px"
       />
     </div>
   );

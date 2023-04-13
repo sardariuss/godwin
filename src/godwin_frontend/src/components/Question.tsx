@@ -1,16 +1,17 @@
-import { Appeal, Polarization, PolarizationArray, Question, StatusInfo, Status, Time } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { ActorContext } from "../ActorContext"
+import { Question, StatusInfo, Status, Time, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { ActorSubclass } from "@dfinity/agent";
 import VoteInterest from "./votes/Interest";
 import VoteOpinion from "./votes/Opinion";
 import VoteCategorization from "./votes/Categorization";
 
 import StatusHistoryComponent from "./StatusHistory";
 
-import { useEffect, useState, useContext } from "react";
-import Aggregates from "./votes/Aggregates";
+import { useEffect, useState } from "react";
 import { StatusEnum, statusToEnum } from "../utils";
 
 type Props = {
+	actor: ActorSubclass<_SERVICE>,
+	categories: Map<Category, CategoryInfo>,
   questionId: bigint
 };
 
@@ -34,9 +35,8 @@ function toArray(history_array: Array<[Status, Array<Time>]>) : StatusInfo[] {
   return history.sort((a, b) => Number(b.date - a.date));
 };
 
-const QuestionBody = ({questionId}: Props) => {
+const QuestionBody = ({actor, categories, questionId}: Props) => {
 
-	const {actor} = useContext(ActorContext);
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [statusInfo, setStatusInfo] = useState<StatusInfo | undefined>(undefined);
 	const [statusHistoryArray, setStatusHistoryArray] = useState<StatusInfo[]>([]);
@@ -77,27 +77,20 @@ const QuestionBody = ({questionId}: Props) => {
 						<div className="justify-start text-lg font-normal">
 							{ question === undefined ? "n/a" : question.text }
 						</div>
-						<div className="flex items-center">
-							<StatusHistoryComponent statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
-						</div>
-						<div>
-						{
-							statusInfo.status['CLOSED'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
-								<Aggregates questionId={questionId} statusHistory={statusHistoryMap}></Aggregates> :
-								<></>
-						}
+						<div className="grow items-center">
+							<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
 						</div>
 					</div>
 					{
 						statusInfo.status['CANDIDATE'] !== undefined ?
 							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
-								<VoteInterest questionId={question.id}/>
+								<VoteInterest actor={actor} questionId={question.id}/>
 							</div> :
 						statusInfo.status['OPEN'] !== undefined ?
 							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
 								<div className="flex flex-col justify-start">
-									<VoteOpinion questionId={question.id}/>
-									<VoteCategorization questionId={question.id}/>
+									<VoteOpinion actor={actor} questionId={question.id}/>
+									<VoteCategorization actor={actor} categories={categories} questionId={question.id}/>
 								</div>
 							</div> :
 							<></>

@@ -1,13 +1,15 @@
+import MasterTypes "../../godwin_master/Types";
+
 import Trie "mo:base/Trie";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
-
-//import ICRC1 "mo:icrc1/ICRC1";
 
 import Map "mo:map/Map";
 import Set "mo:map/Set";
 
 import Duration "../utils/Duration";
+
+import Token "canister:godwin_token";
 
 module {
 
@@ -41,13 +43,8 @@ module {
     #NotAllowed;
   };
 
-//  type TransferFromUserError = ICRC1.TransferError or CredentialErrors;
-
-//  public type Master = actor {
-//    transferToSubGodwin: shared(Principal, ICRC1.Balance, Blob) -> async Result<(), TransferFromUserError>;
-//  };
-
   public type Parameters = {
+    name: Text;
     categories: CategoryArray;
     history: HistoryParameters;
     scheduler: SchedulerParameters;
@@ -59,8 +56,11 @@ module {
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
+  public type QuestionId = Nat;
+  public let questionHash = Map.nhash;
+
   public type Question = {
-    id: Nat;
+    id: QuestionId;
     author: Principal;
     text: Text;
     date: Time;
@@ -91,21 +91,17 @@ module {
     history: Map<Status, [Time]>;
   };
 
-  public type VoteStatus = {
-    #OPEN;
-    #CLOSED;
-  };
+  public type VoteId = Nat;
+  public let voteHash = Map.nhash;
 
   public type Vote<T, A> = {
-    id: Nat;
-    var status: VoteStatus;
+    id: VoteId;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
   };
 
   public type PublicVote<T, A> = {
-    id: Nat;
-    status: VoteStatus;
+    id: VoteId;
     ballots: [(Principal, Ballot<T>)];
     aggregate: A;
   };
@@ -116,8 +112,8 @@ module {
   };
 
   public type VoteHistory = {
-    current: ?Nat;
-    history: [Nat];
+    current: ?VoteId;
+    history: [VoteId];
   };
 
   public type Category = Text;
@@ -181,6 +177,17 @@ module {
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
 
+  public type SubTransferArgs = {
+    principal: Principal;
+    sub_subaccount: Blob;
+    amount: Nat;
+  };
+
+  public type FailedPayout = SubTransferArgs and {
+    time: Nat64;
+    error: Token.TransferError or { #Trapped; };
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
@@ -230,14 +237,14 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayinError;
+    #PayinError: MasterTypes.TransferError;
   };
 
   public type GetVoteError = {
     #VoteNotFound;
   };
 
-  public type RevealVoteError = FindHistoricalVoteError or GetVoteError;
+  public type RevealVoteError = FindHistoricalVoteError;
 
   public type CloseVoteError = {
     #AlreadyClosed;
@@ -260,7 +267,16 @@ module {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;
-    #PayinError;
+    #PayinError: MasterTypes.TransferError;
+  };
+
+  public type TransitionError = OpenVoteError or {
+    #WrongStatusIteration;
+    #EmptyQueryInterestScore;
+    #NotMostInteresting;
+    #TooSoon;
+    #PrincipalIsAnonymous;
+    #QuestionNotFound;
   };
 
 };

@@ -9,6 +9,8 @@ import Polarization "votes/representation/Polarization";
 import PolarizationMap "votes/representation/PolarizationMap";
 import Opinions "votes/Opinions";
 import SubaccountGenerator "token/SubaccountGenerator";
+import PayInterface "token/PayInterface";
+import PayForNew "token/PayForNew";
 import State "State";
 import QuestionQueries "QuestionQueries";
 import Categories "Categories";
@@ -23,6 +25,9 @@ import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Result "mo:base/Result";
+import Principal "mo:base/Principal";
+
+import MasterTypes "../../godwin_master/Types";
 
 module {
 
@@ -46,7 +51,7 @@ module {
 
   public func build(state: State) : Controller {
 
-    let admin = state.admin;
+    let master = state.master;
     
     let categories = Categories.build(state.categories);
     
@@ -58,18 +63,15 @@ module {
 
     let status_manager = StatusManager.build(state.status.register);
 
-    let subaccount_generator = SubaccountGenerator.build(state.subaccounts.index);
-    let payin : (Principal, Blob) -> async* Result<(), ()> = func(principal: Principal, subaccount: Blob) : async* Result<(), ()> {
-      #ok; // @todo
-    };
-    let interest_payout : (Interests.Vote, Blob) -> () = func(vote: Interests.Vote, subaccount: Blob) : () {
-      // @todo
-    };
-    let categorization_payout : (Categorizations.Vote, Blob) -> () = func(vote: Categorizations.Vote, subaccount: Blob) : () {
-      // @todo
-    };
-
     let queries = QuestionQueries.build(state.queries.register);
+
+    let pay_interface = PayInterface.build(state.master.v);
+    let pay_to_open_question = PayForNew.build(
+      pay_interface,
+      #OPEN_QUESTION,
+      state.opened_questions.register,
+      state.opened_questions.index
+    );
 
     let interest_votes = Votes.Votes<Interest, Appeal>(state.votes.interest, Appeal.init());
     let interest_history = QuestionVoteHistory.build(state.votes.interest_history);
@@ -78,10 +80,8 @@ module {
       interest_votes,
       interest_history,
       queries,
-      state.subaccounts.interest_votes,
-      subaccount_generator,
-      payin,
-      interest_payout
+      pay_interface,
+      pay_to_open_question
     );
     
     let opinion_votes = Votes.Votes<Cursor, Polarization>(state.votes.opinion, Polarization.nil());
@@ -99,10 +99,7 @@ module {
       categories,
       categorization_votes,
       categorization_history,
-      state.subaccounts.categorization_votes,
-      subaccount_generator,
-      payin,
-      categorization_payout
+      pay_interface
     );
 
     let users = Users.build(
@@ -116,8 +113,8 @@ module {
       categories);
 
     let model = Model.build(
-      state.admin,
-      state.controller.model.time,
+      state.name,
+      state.master,
       state.controller.model.last_pick_date,
       state.controller.model.params,
       categories,

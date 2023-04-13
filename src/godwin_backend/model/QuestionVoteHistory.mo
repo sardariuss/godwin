@@ -23,7 +23,6 @@ import Float           "mo:base/Float";
 import Principal       "mo:base/Principal";
 import Trie            "mo:base/Trie";
 import Array           "mo:base/Array";
-import OpenVote "votes/interfaces/OpenVote";
 
 module {
 
@@ -41,32 +40,34 @@ module {
   type WSet<K>            = WSet.WSet<K>;
 
   // For convenience: from other modules
-  type Categories         = Categories.Categories;
-  type Duration           = Duration.Duration;
+  type Categories              = Categories.Categories;
+  type Duration                = Duration.Duration;
 
   // For convenience: from types module
-  type Question           = Types.Question;
-  type Status             = Types.Status;
-  type Category           = Types.Category;
-  type Cursor             = Types.Cursor;
-  type Polarization       = Types.Polarization;
-  type PolarizationMap    = Types.PolarizationMap;
-  type Decay              = Types.Decay; 
-  type User               = Types.User;
-  type VoteHistory        = Types.VoteHistory;
-  type StatusData         = Types.StatusData;
-  type FindCurrentVoteError = Types.FindCurrentVoteError;
+  type Question                = Types.Question;
+  type Status                  = Types.Status;
+  type Category                = Types.Category;
+  type Cursor                  = Types.Cursor;
+  type Polarization            = Types.Polarization;
+  type PolarizationMap         = Types.PolarizationMap;
+  type Decay                   = Types.Decay; 
+  type User                    = Types.User;
+  type VoteHistory             = Types.VoteHistory;
+  type StatusData              = Types.StatusData;
+  type FindCurrentVoteError    = Types.FindCurrentVoteError;
   type FindHistoricalVoteError = Types.FindHistoricalVoteError;
+  type QuestionId              = Types.QuestionId;
+  type VoteId                  = Types.VoteId;
 
-  public type Register = Map<Nat, VoteHistory>;
+  public type Register = Map<QuestionId, VoteHistory>;
 
   public func build(register: Register) : QuestionVoteHistory {
     QuestionVoteHistory(WMap.WMap(register, Map.nhash));
   };
   
-  public class QuestionVoteHistory(_register: WMap<Nat, VoteHistory>) {
+  public class QuestionVoteHistory(_register: WMap<QuestionId, VoteHistory>) {
 
-    public func addVote(question_id: Nat, vote_id: Nat) {
+    public func addVote(question_id: QuestionId, vote_id: VoteId) {
       switch(_register.getOpt(question_id)){
         case(null) { 
           // Create a new entry with an empty history
@@ -86,7 +87,7 @@ module {
       };
     };
 
-    public func closeCurrentVote(question_id: Nat) : Nat {
+    public func closeCurrentVote(question_id: QuestionId) : VoteId {
       switch(_register.getOpt(question_id)){
         case(null) { 
           Debug.trap("Could not find a current vote for that question");
@@ -105,7 +106,7 @@ module {
       };
     };
 
-    public func findCurrentVote(question_id: Nat) : Result<Nat, FindCurrentVoteError> {
+    public func findCurrentVote(question_id: QuestionId) : Result<VoteId, FindCurrentVoteError> {
       let {current} = switch(_register.getOpt(question_id)){
         case(null) { return #err(#VoteLinkNotFound); };
         case(?vote_link) { vote_link; };
@@ -116,7 +117,7 @@ module {
       };
     };
 
-    public func findHistoricalVote(question_id: Nat, iteration: Nat) : Result<Nat, FindHistoricalVoteError> {
+    public func findHistoricalVote(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindHistoricalVoteError> {
       let {history} = switch(_register.getOpt(question_id)){
         case(null) { return #err(#VoteLinkNotFound); };
         case(?vote_link) { vote_link };
@@ -127,7 +128,7 @@ module {
       return #ok(history[iteration]);
     };
 
-    public func findPreviousVote(question_id: Nat) : ?Nat {
+    public func findPreviousVote(question_id: QuestionId) : ?VoteId {
       let {current; history;} = switch(_register.getOpt(question_id)){
         case(null) { return null; };
         case(?vote_link) { vote_link };
@@ -138,14 +139,14 @@ module {
       return ?history[history.size() - 1];
     };
 
-    public func getCurrentVote(question_id: Nat) : ?Nat {
+    public func getCurrentVote(question_id: QuestionId) : ?VoteId {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("Could not find a current vote for that question"); };
         case(?vote_link) { return vote_link.current; };
       };
     };
 
-    public func getHistoricalVotes(question_id: Nat) : [Nat] {
+    public func getHistoricalVotes(question_id: QuestionId) : [VoteId] {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("Could not find a current vote for that question"); };
         case(?vote_link) { vote_link.history; };

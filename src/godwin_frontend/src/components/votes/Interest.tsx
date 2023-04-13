@@ -1,12 +1,16 @@
-import { Interest } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Interest, _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
+
+import { ActorSubclass } from "@dfinity/agent";
 
 import { ActorContext } from "../../ActorContext"
 
 import { nsToStrDate } from "../../utils";
+import CONSTANTS from "../../Constants";
 
 import { useContext, useEffect, useState } from "react";
 
 type Props = {
+  actor: ActorSubclass<_SERVICE>;
   questionId: bigint;
 };
 
@@ -41,9 +45,9 @@ function toEnum(interest: Interest) : InterestEnum {
 
 // @todo: change the state of the buttons based on the interest for the logged user for this question
 // @todo: putInterestBallot on click
-const VoteInterest = ({questionId}: Props) => {
+const VoteInterest = ({actor, questionId}: Props) => {
 
-  const {actor, isAuthenticated} = useContext(ActorContext);
+  const {isAuthenticated} = useContext(ActorContext);
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
   const [voteBallot, setVoteBallot] = useState<InterestEnum | null>(null);
 
@@ -85,11 +89,11 @@ const VoteInterest = ({questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                🤓
+                  { CONSTANTS.INTEREST_INFO.up.symbol }
                 </label>
                : 
                 <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                🤓
+                  { CONSTANTS.INTEREST_INFO.up.symbol }
                 </label>
             }
           </li>
@@ -98,11 +102,11 @@ const VoteInterest = ({questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                🤡
+                  { CONSTANTS.INTEREST_INFO.down.symbol }
                 </label>
                : 
                 <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                🤡
+                  { CONSTANTS.INTEREST_INFO.down.symbol }
                 </label>
             }
           </li>
@@ -111,11 +115,11 @@ const VoteInterest = ({questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                👀
+                  { CONSTANTS.INTEREST_INFO.duplicate.symbol }
                 </label>
                : 
                 <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                👀
+                  { CONSTANTS.INTEREST_INFO.duplicate.symbol }
                 </label>
             }
           </li>
