@@ -2,7 +2,7 @@ import { AuthClient, IdbStorage } from "@dfinity/auth-client";
 import { DelegationChain, isDelegationValid } from "@dfinity/identity";
 
 import { _SERVICE as MasterService } from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService } from "../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE as SubService, CategoryArray__1 } from "../declarations/godwin_backend/godwin_backend.did";
 import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
 import { createActor as createSub } from "../declarations/godwin_backend";
 import { ActorSubclass } from "@dfinity/agent";
@@ -12,6 +12,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import React from 'react'
+
+export type Sub = {
+  actor: ActorSubclass<SubService>;
+  name: string;
+  categories: CategoryArray__1;
+};
 
 export const ActorContext = React.createContext<{
   authClient?: AuthClient;
@@ -23,7 +29,7 @@ export const ActorContext = React.createContext<{
   login: () => void;
   logout: () => void;
   master: ActorSubclass<MasterService>;
-  subs: Map<string, ActorSubclass<SubService>>;
+  subs: Map<string, Sub>;
   hasLoggedIn: boolean;
 }>({
   login: () => {},
@@ -47,7 +53,7 @@ export function useAuthClient() {
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const [hasLoggedIn, setHasLoggedIn] = useState(false);
   const [master, setMaster] = useState<ActorSubclass<MasterService>>(godwin_master);
-  const [subs, setSubs] = useState<Map<string, ActorSubclass<SubService>>>(new Map());
+  const [subs, setSubs] = useState<Map<string, Sub>>(new Map());
   const [subsFetched, setSubsFetched] = useState<boolean | null>(true);
 
   const login = () => {
@@ -89,7 +95,7 @@ export function useAuthClient() {
   }
 
   const fetchSubs = async() => {
-    let newSubs = new Map<string, ActorSubclass<SubService>>();
+    let newSubs = new Map<string, Sub>();
     let listSubs = await master.listSubGodwins();
     for (let [principal, id] of listSubs) {
       let actor = createSub(principal, {
@@ -97,7 +103,9 @@ export function useAuthClient() {
           identity: authClient?.getIdentity(),
         },
       });
-      newSubs.set(id, actor);
+      let name = await actor.getName();
+      let categories = await actor.getCategories();
+      newSubs.set(id, {actor, name, categories});
     }
     setSubs(newSubs);
     setSubsFetched(true);

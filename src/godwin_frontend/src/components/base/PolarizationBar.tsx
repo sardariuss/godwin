@@ -101,14 +101,15 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
           { 
           /* 
             @todo: Somehow the scatter chart is not aligned with the bar chart.
-            Here fix is to put the height of bar at 50px, but the height of scatter at 38px and a margin of 1.5 (=6px).
+            w-full does not work because of the absolute positioning of the scatter chart.
+            Update: I gave up on trying to fix the layout for now...
           */
           }
-          <div className="absolute mt-1.5">
+          <div className="absolute mt-3 max-h-12 w-3/12">
             <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart>
           </div>
-          <div className="absolute transition ease-out hover:opacity-10">
-            <Bar data={data} options={options} height="50px"/>
+          <div className="relative transition ease-out hover:opacity-10 max-h-16">
+            <Bar data={data} options={options}/>
           </div>
         </div>
         <div className="flex flex-col items-center z-10 grow">

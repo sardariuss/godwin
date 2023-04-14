@@ -42,9 +42,8 @@ export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp
   };
 
   const refreshValue = (value: number) => {
-    let new_val = (Math.abs(value) <= CONSTANTS.CURSOR_SIDE_THRESHOLD) ? 0 : value;
-    setCursor(new_val);
-    refreshSlider(new_val);
+    setCursor(value);
+    refreshSlider(value);
   };
 
   useEffect(() => {

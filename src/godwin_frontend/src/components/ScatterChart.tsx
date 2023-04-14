@@ -29,21 +29,18 @@ const options = {
         display: false
     },
     tooltip:{
-      enabled: true
+      enabled: false
     }
   },
-  responsive: false
+  responsive: true
 };
 
 export const ScatterChart = ({ chartData }: any) => {
   return (
-    <div>
       <Scatter
         data={chartData}
         options={options}
-        height="38px"
       />
-    </div>
   );
 };
 
