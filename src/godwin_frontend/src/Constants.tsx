@@ -3,21 +3,26 @@ const CONSTANTS = {
   CURSOR_DECIMALS: 2,
   CURSOR_SIDE_THRESHOLD: 0.1,
   INTEREST_INFO: {
-    up: {
-      symbol: '🤓',
-      color: '#0F9D58',
-      name: 'UP',
-    },
-    down: {
+    left: {
       symbol: '🤡',
       color: '#DB4437',
-      name: 'DOWN',
+      name: 'TROLOLO',
     },
-    duplicate: {
-      symbol: '👀',
+    center: {
+      symbol: '😴',
       color: '#EEEEEE',
-      name: 'DUPLICATE',
+      name: 'BORING',
+    },
+    right: {
+      symbol: '🤓',
+      color: '#0F9D58',
+      name: 'INTERESTING',
     }
+  },
+  DUPLICATE: {
+    symbol: '👀',
+    color: '#EEEEEE',
+    name: 'DUPLICATE',
   },
   OPINION_INFO: {
     left: {

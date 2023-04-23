@@ -18,7 +18,9 @@ const options = {
   },
   scales: {
     x: {
-      display: false
+      display: false,
+      suggestedMin: -1,
+      suggestedMax: 1,
     },
     y: {
       display: false
@@ -29,7 +31,15 @@ const options = {
         display: false
     },
     tooltip:{
-      enabled: false
+      enabled: true,
+      callbacks: {
+        label: function(ctx) {
+            // console.log(ctx);
+            let label = ctx.dataset.labels[ctx.dataIndex];
+            //label += " (" + ctx.parsed.x + ", " + ctx.parsed.y + ")";
+            return label;
+        }
+      }
     }
   },
   responsive: true

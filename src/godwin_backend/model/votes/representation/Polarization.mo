@@ -55,11 +55,19 @@ module {
   };
 
   public func mul(polarization: Polarization, coef: Float) : Polarization {
-    {
-      left    = polarization.left * coef;
-      center  = polarization.center * coef;
-      right   = polarization.right * coef;
-    };
+    if (coef >= 0.0){
+      {
+        left    = polarization.left * coef;
+        center  = polarization.center * coef;
+        right   = polarization.right * coef;
+      };
+    } else {
+      {
+        left    = polarization.right * -coef;
+        center  = polarization.center * -coef;
+        right   = polarization.left * -coef;
+      };
+    }
   };
 
   /// Warning: the polarizations are not normalized

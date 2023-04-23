@@ -47,9 +47,9 @@ const options = {
       align: 'end',
       formatter: (value: number, context) => {
         const prefix = context.datasetIndex === 0 ? 
-          (CONSTANTS.INTEREST_INFO.up.symbol + "\n" + CONSTANTS.INTEREST_INFO.up.name) : context.datasetIndex === 1 ? 
-          (CONSTANTS.INTEREST_INFO.down.symbol + "\n" + CONSTANTS.INTEREST_INFO.down.name) : 
-          (CONSTANTS.INTEREST_INFO.duplicate.symbol + "\n" + CONSTANTS.INTEREST_INFO.duplicate.name);
+          (CONSTANTS.INTEREST_INFO.right.symbol + "\n" + CONSTANTS.INTEREST_INFO.right.name) : context.datasetIndex === 1 ? 
+          (CONSTANTS.INTEREST_INFO.left.symbol + "\n" + CONSTANTS.INTEREST_INFO.left.name) : 
+          (CONSTANTS.DUPLICATE.symbol + "\n" + CONSTANTS.DUPLICATE.name);
         return `${prefix}`;
       },
       font:{
@@ -83,19 +83,19 @@ const AppealChart = ({appeal}: Props) => {
     labels,
     datasets: [
       {
-        label: CONSTANTS.INTEREST_INFO.up.symbol,
+        label: CONSTANTS.INTEREST_INFO.right.symbol,
         data: labels.map(() => Number(appeal.ups)),
-        backgroundColor: CONSTANTS.INTEREST_INFO.up.color,
+        backgroundColor: CONSTANTS.INTEREST_INFO.right.color,
       },
       {
-        label: CONSTANTS.INTEREST_INFO.down.symbol,
+        label: CONSTANTS.INTEREST_INFO.left.symbol,
         data: labels.map(() => Number(appeal.downs)),
-        backgroundColor: CONSTANTS.INTEREST_INFO.down.color,
+        backgroundColor: CONSTANTS.INTEREST_INFO.left.color,
       },
       {
-        label: CONSTANTS.INTEREST_INFO.duplicate.symbol,
+        label: CONSTANTS.DUPLICATE.symbol,
         data: labels.map(() => 0),
-        backgroundColor: CONSTANTS.INTEREST_INFO.duplicate.color,
+        backgroundColor: CONSTANTS.DUPLICATE.color,
       },
     ],
   };

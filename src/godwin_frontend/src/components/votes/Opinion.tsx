@@ -2,11 +2,13 @@ import { ActorContext } from "../../ActorContext"
 import { nsToStrDate } from "../../utils";
 import { CursorSlider } from "../base//CursorSlider";
 
-import { _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Result_7 } from "./../../../declarations/godwin_backend/godwin_backend.did";
 import { ActorSubclass } from "@dfinity/agent";
 
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import CONSTANTS from "../../Constants";
+
+import UpdateProgress from "../UpdateProgress";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>;
@@ -15,15 +17,13 @@ type Props = {
 
 const VoteOpinion = ({actor, questionId}: Props) => {
 
+  const delay_duration = 6000; // 6 seconds
+
 	const {isAuthenticated} = useContext(ActorContext);
   const [opinion, setOpinion] = useState<number>(0.0);
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
-
-  const updateOpinion = async () => {
-    let opinion_vote = await actor.putOpinionBallot(questionId, opinion);
-    console.log(opinion_vote);
-    await getBallot();
-	};
+  
+  const [triggerVote, setTriggerVote] = useState<boolean>(false);
 
   const getBallot = async () => {
     if (isAuthenticated){
@@ -43,14 +43,22 @@ const VoteOpinion = ({actor, questionId}: Props) => {
   }, []);
 
 	return (
-    <div className="flex flex-col items-center space-y-2">
+    <div className="flex flex-row items-center">
       <CursorSlider 
         id={ "slider_opinion_" + questionId }
         cursor={ opinion }
         setCursor={ setOpinion }
         polarizationInfo = { CONSTANTS.OPINION_INFO }
-        onMouseUp={ () => updateOpinion() }
+        onMouseUp={ () => setTriggerVote(true) }
+        onMouseDown={ () => setTriggerVote(false) }
       ></CursorSlider>
+      <UpdateProgress<Result_7> 
+        delay_duration_ms={delay_duration}
+        update_function={() => actor.putOpinionBallot(questionId, opinion)}
+        callback_function={(res) => { console.log(res); return res['ok'] !== undefined; } }
+        trigger_update={triggerVote}
+        set_trigger_update={setTriggerVote}
+      />
       {
         voteDate !== null ?
           <div className="w-full p-2 items-center text-center text-xs font-extralight">{ "🗳️ " + nsToStrDate(voteDate) }</div> :

@@ -13,7 +13,7 @@ const InterestAggregate = ({ aggregate, selected, setSelected }: Props) => {
 
 	return (
     <AggregateDigest
-      symbol={ aggregate !== undefined ? aggregate.ups > aggregate.downs ? CONSTANTS.INTEREST_INFO.up.symbol : CONSTANTS.INTEREST_INFO.down.symbol : undefined }
+      symbol={ aggregate !== undefined ? aggregate.ups > aggregate.downs ? CONSTANTS.INTEREST_INFO.right.symbol : CONSTANTS.INTEREST_INFO.left.symbol : undefined }
       value={ aggregate !== undefined ? aggregate.score + " points" : undefined }
       selected={ selected }
       setSelected={ setSelected }

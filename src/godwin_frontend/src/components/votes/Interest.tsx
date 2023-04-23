@@ -8,6 +8,9 @@ import { nsToStrDate } from "../../utils";
 import CONSTANTS from "../../Constants";
 
 import { useContext, useEffect, useState } from "react";
+import { CursorSlider } from "../base/CursorSlider";
+
+import Coin from "../Coin";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>;
@@ -51,6 +54,10 @@ const VoteInterest = ({actor, questionId}: Props) => {
   const [voteDate, setVoteDate] = useState<bigint | null>(null);
   const [voteBallot, setVoteBallot] = useState<InterestEnum | null>(null);
 
+  const [interest, setInterest] = useState<number>(0.0);
+
+  const [triggerVote, setTriggerVote] = useState<boolean>(false);
+
   const putBallot = async () => {
     if (voteBallot !== null) {
       let interest_vote = await actor.putInterestBallot(questionId, fromEnum(voteBallot));
@@ -80,8 +87,38 @@ const VoteInterest = ({actor, questionId}: Props) => {
     getBallot();
   }, [isAuthenticated]);
 
-	return (
-    <div className="flex flex-col gap-y-2 w-full justify-center items-center text-lg font-semibold">
+	return (    
+    <div className="flex flex-row items-center">
+      <div className="flex h-5 w-5 hover:cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 96 960 960" ><path d="M481 898q-131 0-225.5-94.5T161 578v-45l-80 80-39-39 149-149 149 149-39 39-80-80v45q0 107 76.5 183.5T481 838q29 0 55-5t49-15l43 43q-36 20-72.5 28.5T481 898Zm289-169L621 580l40-40 79 79v-41q0-107-76.5-183.5T480 318q-29 0-55 5.5T376 337l-43-43q36-20 72.5-28t74.5-8q131 0 225.5 94.5T800 578v43l80-80 39 39-149 149Z"/></svg>
+      </div>
+      <CursorSlider 
+        id={ "slider_interest_" + questionId }
+        cursor={ interest }
+        setCursor={ setInterest }
+        polarizationInfo = { CONSTANTS.INTEREST_INFO }
+        onMouseUp={ () => {} }
+        onMouseDown={ () => {} }
+      ></CursorSlider>
+      <div className="flex flex-col mt-3">
+        <div className="h-6 w-6">
+          <Coin></Coin>
+        </div>
+        <div className="h-6 w-6 absolute -my-1">
+          <Coin></Coin>
+        </div>
+        <div className="h-6 w-6 absolute -my-2">
+          <Coin></Coin>
+        </div>
+        <div className="h-6 w-6 absolute -my-3">
+          <Coin></Coin>
+        </div>
+        <div className="h-6 w-6 absolute -my-4">
+          <Coin></Coin>
+        </div>
+      </div>
+      {/*
+      <div className="flex flex-col gap-y-2 w-full justify-center items-center text-lg font-semibold">
       <div>
         <ul className="flex flew-row w-full justify-center">
           <li className="inline-block">
@@ -89,11 +126,11 @@ const VoteInterest = ({actor, questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.up.symbol }
+                  { CONSTANTS.INTEREST_INFO.right.symbol }
                 </label>
                : 
                 <label htmlFor={ "interest-up" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.up.symbol }
+                  { CONSTANTS.INTEREST_INFO.right.symbol }
                 </label>
             }
           </li>
@@ -102,11 +139,11 @@ const VoteInterest = ({actor, questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.down.symbol }
+                  { CONSTANTS.INTEREST_INFO.left.symbol }
                 </label>
                : 
                 <label htmlFor={ "interest-down" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.down.symbol }
+                  { CONSTANTS.INTEREST_INFO.left.symbol }
                 </label>
             }
           </li>
@@ -115,11 +152,11 @@ const VoteInterest = ({actor, questionId}: Props) => {
             {
               voteDate !== null ? 
                 <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl                               peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.duplicate.symbol }
+                  { CONSTANTS.DUPLICATE.symbol }
                 </label>
                : 
                 <label htmlFor={ "duplicate" + questionId.toString() } className="grow-0 flex-0 items-center p-1 bg-white rounded-2xl cursor-pointer hover:text-2xl peer-checked:text-2xl peer-checked:bg-gray-100 dark:peer-checked:bg-gray-700 dark:bg-gray-900">
-                  { CONSTANTS.INTEREST_INFO.duplicate.symbol }
+                  { CONSTANTS.DUPLICATE.symbol }
                 </label>
             }
           </li>
@@ -133,6 +170,8 @@ const VoteInterest = ({actor, questionId}: Props) => {
         }
       </div>
     </div>
+      */}
+      </div>
 	);
 };
 

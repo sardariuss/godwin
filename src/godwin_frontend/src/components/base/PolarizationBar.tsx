@@ -6,6 +6,8 @@ import { PolarizationInfo, cursorToColor } from "../../utils";
 
 import { Bar }            from 'react-chartjs-2'
 
+import { useEffect, useState } from "react";
+
 const options = {
   indexAxis: 'y' as const,
   responsive: true,
@@ -42,22 +44,27 @@ type Props = {
     right: CategorySide;
   };
   polarizationValue: Polarization;
-  ballots: [Principal, Ballot][];
+  polarizationWeight: number;
+  ballots: [string, Ballot, number][];
 };
 
-const getDataSets = (input_ballots: [Principal, Ballot][], polarizationInfo: PolarizationInfo) => {
+const getDataSets = (input_ballots: [string, Ballot, number][], polarizationInfo: PolarizationInfo) => {
+  let labels : string[] = [];
   let points : { x : number, y: number }[]= [];
   let colors : string[] = [];
   for (let i = 0; i < input_ballots.length; i++){
-    
-    let cursor = input_ballots[i][1].answer;
+    labels.push("Vote Id: " + input_ballots[i][0] + "\nCursor: " + input_ballots[i][1].answer.toPrecision(2) + "\nCoef:" + input_ballots[i][2].toPrecision(2));
+    let coef = input_ballots[i][2];
+    let cursor = input_ballots[i][1].answer * coef;
     let date = input_ballots[i][1].date;
     points.push({ x: cursor, y: Number(date) });
-    colors.push(cursorToColor(cursor, polarizationInfo));
+    var alpha = Math.trunc(Math.abs(coef) * 255).toString(16);
+    alpha = alpha.length == 1 ? "0" + alpha : alpha;
+    colors.push(cursorToColor(cursor, polarizationInfo) + Math.trunc(Math.abs(coef) * 255).toString(16));
   }
   return {
     datasets: [{
-      label: 'Scatter Dataset',
+      labels,
       data: points,
       backgroundColor: colors,
       pointRadius: 4,
@@ -66,9 +73,15 @@ const getDataSets = (input_ballots: [Principal, Ballot][], polarizationInfo: Pol
   }
 }
 
-const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots}: Props) => {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, polarizationWeight, ballots}: Props) => {
 
   const labels = [name];
+
+  // Required to avoid the flickering effect that happen if the tailwind hover: attribute is used directly
+  const [hoverScatter, setHoverScatter] = useState<boolean>(false);
+  const [hoverBar, setHoverBar] = useState<boolean>(false);
 
   const data = {
     labels,
@@ -90,6 +103,48 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
       },
     ],
   };
+
+  const refreshHoverScatter = (hovered: boolean) => {
+    if (hovered == hoverScatter) return;
+    if (hovered) {
+      setHoverScatter(true);
+    } else {
+      sleep(1).then(() => { setHoverScatter(false); });
+    }
+  };
+
+  const refreshHoverBar = (hovered: boolean) => {
+    if (hovered == hoverBar) return;
+    if (hovered) {
+      setHoverBar(true);
+    } else {
+      sleep(1).then(() => { setHoverBar(false); });
+    }
+  };
+
+  const getBarOpacity = () => {
+    if (hoverScatter || hoverBar) {  
+      return 0;
+    } else {
+      return Math.trunc(polarizationWeight * 10) * 10;
+    }
+  }
+
+  const getScatterOpacity = () => {
+    if (hoverScatter || hoverBar) {  
+      return 100;
+    } else {
+      return 0;
+    }
+  }
+
+  const getBarZIndex = () => {
+    if (hoverScatter || hoverBar) {
+      return 0;
+    } else {
+      return 20;
+    }
+  }
    
 	return (
       <div className="grid grid-cols-5">
@@ -105,10 +160,10 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
             Update: I gave up on trying to fix the layout for now...
           */
           }
-          <div className="absolute mt-3 max-h-12 w-3/12">
+          <div className={"absolute mt-3 max-h-12 w-3/12 z-10 opacity-" + getScatterOpacity()} onMouseEnter={(e) => refreshHoverScatter(true) } onMouseLeave={(e) => { refreshHoverScatter(false) }}>
             <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart>
           </div>
-          <div className="relative transition ease-out hover:opacity-10 max-h-16">
+          <div className={"relative transition ease-out transition ease-out max-h-16 opacity-" + getBarOpacity() + " z-" + getBarZIndex()}  onMouseEnter={(e) => refreshHoverBar(true)} onMouseLeave={(e) => refreshHoverBar(false)}>
             <Bar data={data} options={options}/>
           </div>
         </div>

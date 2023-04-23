@@ -128,33 +128,60 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
             <div className={ selectedVote !== VoteType.NONE ? "mt-5" : "" }>
               <div>
               {
-                // @todo: take the last iteration
+                // @todo: ad vote id
                 selectedVote === VoteType.INTEREST && interestVote !== undefined ?
-                  <AppealChart appeal={interestVote.aggregate}></AppealChart> : <></>
+                  <div>
+                    <AppealChart 
+                      appeal={interestVote.aggregate}>
+                    </AppealChart> 
+                  </div>
+                : <></>
               }
               </div>
               <div>
               {
-                // @todo: take the last iteration
                 selectedVote === VoteType.OPINION && opinionVote !== undefined ?
-                  <PolarizationBar name={"OPINION"} showName={false} polarizationInfo={CONSTANTS.OPINION_INFO} polarizationValue={getNormalizedPolarization(opinionVote.aggregate)} ballots={opinionVote.ballots}></PolarizationBar>
+                  <div>
+                    <PolarizationBar 
+                      name={"OPINION"}
+                      showName={false}
+                      polarizationInfo={CONSTANTS.OPINION_INFO}
+                      polarizationValue={getNormalizedPolarization(opinionVote.aggregate)}
+                      polarizationWeight={1.0}
+                      ballots={opinionVote.ballots.map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}>
+                    </PolarizationBar>
+                    <div className="text-xs font-light text-gray-400">
+                      { "Opinion vote ID: " + opinionVote.id.toString() }
+                    </div>
+                  </div>
                 : <></>
               }
               </div>
-              <ol>
+              <div>
               {
-                // @todo: take the last iteration
-                selectedVote === VoteType.CATEGORIZATION && categorizationVote !== undefined ? (
-                [...Array.from(toNormalizedMap(categorizationVote.aggregate).entries())].map((elem, index) => (
-                  <li key={elem[0]} className="mb-2">
-                    <PolarizationBar name={elem[0]} showName={true} polarizationInfo={toPolarizationInfo(categories.get(elem[0]), CONSTANTS.CATEGORIZATION_INFO.center)} polarizationValue={elem[1]} ballots={getBallotsFromCategory(categorizationVote, index)}></PolarizationBar>
-                  </li>
-                ))
-                ) : (
-                  <></>
-                )
+                selectedVote === VoteType.CATEGORIZATION && categorizationVote !== undefined ?
+                  <div>
+                    <ol>
+                    {[...Array.from(toNormalizedMap(categorizationVote.aggregate).entries())].map((elem, index) => (
+                      <li key={elem[0]} className="mb-2">
+                        <PolarizationBar 
+                          name={elem[0]}
+                          showName={true}
+                          polarizationInfo={toPolarizationInfo(categories.get(elem[0]), CONSTANTS.CATEGORIZATION_INFO.center)}
+                          polarizationValue={elem[1]}
+                          polarizationWeight={1.0}
+                          ballots={getBallotsFromCategory(categorizationVote, index).map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}>
+                        </PolarizationBar>
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="text-xs font-light text-gray-400">
+                    { "Categorization vote ID: " + categorizationVote.id.toString() }
+                  </div>
+                </div>
+                : <></>
               }
-              </ol>
+              </div>
             </div>
           </div>
         </div>

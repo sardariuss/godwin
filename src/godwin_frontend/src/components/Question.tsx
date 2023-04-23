@@ -69,10 +69,10 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 	const show = true;
 
 	return (
-		<div>
+		<div className="flex flex-col text-gray-900 dark:text-white border-b border-slate-700">
 			{
-				question === undefined || statusInfo === undefined ? <div>{Number(questionId)}</div> :
-				<div className="flex flex-row bg-white dark:bg-gray-800 mb-2 text-gray-900 dark:text-white border-slate-700 border hover:dark:border-slate-400">
+				question !== undefined && statusInfo !== undefined ?
+				<div className="flex flex-row">
 					<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
 						<div className="justify-start text-lg font-normal">
 							{ question === undefined ? "n/a" : question.text }
@@ -83,11 +83,11 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 					</div>
 					{
 						statusInfo.status['CANDIDATE'] !== undefined ?
-							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
+							<div className="flex items-center w-1/3">
 								<VoteInterest actor={actor} questionId={question.id}/>
 							</div> :
 						statusInfo.status['OPEN'] !== undefined ?
-							<div className="flex items-center w-1/3 bg-white-100 dark:bg-gray-900">
+							<div className="flex items-center w-1/3">
 								<div className="flex flex-col justify-start">
 									<VoteOpinion actor={actor} questionId={question.id}/>
 									<VoteCategorization actor={actor} categories={categories} questionId={question.id}/>
@@ -95,8 +95,11 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 							</div> :
 							<></>
 					}
-				</div>
+				</div> : <></>
 			}
+			<div className="text-xs font-light text-gray-400">
+				{ "Question ID: " + questionId.toString() }
+			</div>
 		</div>
 	);
 };

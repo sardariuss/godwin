@@ -131,7 +131,7 @@ module {
     symbol: Text;
     color: Text;
   };
-  
+
   public type Interest = {
     #UP;
     #DOWN;
@@ -169,6 +169,10 @@ module {
     center: Float;
     right: Float;
   };
+
+  public type InterestBallot = Ballot<Interest>;
+  public type OpinionBallot = Ballot<Cursor>;
+  public type CategorizationBallot = Ballot<CursorArray>;
 
   // Mapping of <key=Category, value=Cursor>, used to vote to determine a question political affinity
   public type CursorMap = Trie<Category, Cursor>;

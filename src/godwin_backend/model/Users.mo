@@ -65,7 +65,8 @@ module {
   type StatusInfo         = Types.StatusInfo;
   type StatusHistory      = Types.StatusHistory;
   type StatusData         = Types.StatusData;
-
+  type VoteId             = Types.VoteId;
+  type PolarizationArray  = Types.PolarizationArray;
 
   public func build(
     users: Map<Principal, User>,
@@ -106,16 +107,19 @@ module {
       Option.map(_users.getOpt(principal), func(user: User) : PolarizationMap { user.convictions; });
     };
     
-    public func getUserOpinions(principal: Principal) : ?[Opinions.Ballot] {
-      Option.map(_users.getOpt(principal), func(user: User) : [Opinions.Ballot] {
-        let ballots = Buffer.Buffer<Opinions.Ballot>(Set.size(user.opinions));
+    public func getUserOpinions(principal: Principal) : ?[(VoteId, PolarizationArray, Opinions.Ballot)] {
+      Option.map(_users.getOpt(principal), func(user: User) : [(VoteId, PolarizationArray, Opinions.Ballot)] {
+        let buffer = Buffer.Buffer<(VoteId, PolarizationArray, Opinions.Ballot)>(Set.size(user.opinions));
         for(vote_id in Set.keys(user.opinions)) {
-          switch(Map.get(_opinion_votes.getVote(vote_id).ballots, Map.phash, principal)){
-            case(?ballot) { ballots.add(ballot); };
+          let ballot = switch(Map.get(_opinion_votes.getVote(vote_id).ballots, Map.phash, principal)){
+            case(?b) { b; };
             case(null) { Debug.trap("Ballot not found"); };
           };
+          // @todo: watchout! assumes the opinion and categorization votes have the same ids
+          let categorization = Utils.trieToArray(_categorization_votes.getVote(vote_id).aggregate);
+          buffer.add((vote_id, categorization, ballot));
         };
-        Buffer.toArray(ballots);
+        Buffer.toArray(buffer);
       });
     };
 
@@ -213,12 +217,13 @@ module {
         case(?params) { Float.exp(Float.fromInt(date) * params.lambda - params.shift); };
       };
 
+      // @todo: verify that the decay_coef cannot be < 0
       // Add the contribution of the current categorization.
-      var contribution = PolarizationMap.mul(computeContribution(user_opinion, new_categorization, date), decay_coef);
+      var contribution = PolarizationMap.mul(computeContribution(user_opinion, new_categorization), decay_coef);
 
       // Remove the contribution of the previous categorization if any.
       Option.iterate(old_categorization, func(old_cat: PolarizationMap) {
-        let old_contribution = PolarizationMap.mul(computeContribution(user_opinion, old_cat, date), decay_coef);
+        let old_contribution = PolarizationMap.mul(computeContribution(user_opinion, old_cat), decay_coef);
         contribution := PolarizationMap.sub(contribution, old_contribution);
       });
 
@@ -226,11 +231,7 @@ module {
       PolarizationMap.add(convictions, contribution);
     };
   
-    func computeContribution(
-      user_opinion: Cursor,
-      categorization: PolarizationMap,
-      date: Int  
-    ) : PolarizationMap {
+    func computeContribution(user_opinion: Cursor, categorization: PolarizationMap) : PolarizationMap {
 
       // Example to compute the shift in convictions
       //   cursor: 0.5
@@ -239,36 +240,85 @@ module {
       //     economy:  [left: 10,  center:30,  right:60]
       //     culture:  [left: 0,   center:100, right:0 ]
 
-      // 1. Transform the opinion cursor into a vector of cursors
-      // 0.5 -> [0.5]
-      //        [0.5]
-      //        [0.5]
+      // 1. Transform the opinion cursor into a polarization
+      // 0.5 -> [left: 0.0, center:0.5, right:0.5]
+      let opinion_polarization = Cursor.toPolarization(user_opinion);
 
-      let opinion_cursors = Utils.make(_categories.keys(), Categories.key, Categories.equal, user_opinion);
+      // 2. Make it a vector of polarizations
+      // [left: 0.0, center:0.5, right:0.5] -> [left: 0.0, center:0.5, right:0.5]
+      //                                       [left: 0.0, center:0.5, right:0.5]
+      //                                       [left: 0.0, center:0.5, right:0.5]
+
+      let opinion_polarizations = Utils.make(_categories.keys(), Categories.key, Categories.equal, opinion_polarization);
 
       // 2. Transform the categorization into a vector of cursors
       // 
       // [left: 100, center:0,   right:0 ]    [-1.0]
-      // [left: 10,  center:30,  right:60] -> [0.5 ]
-      // [left: 0,   center:100, right:0 ]    [0   ]
+      // [left: 10,  center:30,  right:60] -> [ 0.5]
+      // [left: 0,   center:100, right:0 ]    [  0 ]
 
       let categorization_cursors = PolarizationMap.toCursorMap(categorization);
 
-      // 3. Multiply the cursors together
+      // 3. Multiply the polarizations by the cursors
       // 
-      // [-1.0]   [0.5]   [-0.5]
-      // [0.5 ] * [0.5] = [0.25]
-      // [0   ]   [0.5]   [0   ]
-      let cursor_shift = CursorMap.leftMultiply(categorization_cursors, opinion_cursors);
-      
-      // 4. Transform back the resulting cursors into polarizations
-      //   
-      //   [-0.5] -> [left: 0.5, center:0.5,  right:0.0 ]
-      //   [0.25]    [left: 0,   center:0.25, right:0.25]
-      //   [0   ]    [left: 0,   center:0,    right:0   ]
-      //
-      CursorMap.toPolarizationMap(cursor_shift);
+      // [left: 0.0, center:0.5, right:0.5] * [-1.0] = [left: 0.5, center:0.5,  right:0.0 ]
+      // [left: 0.0, center:0.5, right:0.5] * [ 0.5] = [left: 0.0, center:0.25, right:0.25]
+      // [left: 0.0, center:0.5, right:0.5] * [ 0.0] = [left: 0.0, center:0,    right:0   ]
+
+      PolarizationMap.mulCursorMap(opinion_polarizations, categorization_cursors);
     };
+    
+    // @todo: this does not work, the cursor needs to have a length different from 1
+//    func updateBallotContribution2(
+//      convictions: PolarizationMap,
+//      user_opinion: Cursor,
+//      date: Int,
+//      new_categorization: PolarizationMap,
+//      old_categorization: ?PolarizationMap)
+//    : PolarizationMap {
+//      
+//      let decay_coef = switch(_decay_params){
+//        case(null) { 1.0; };
+//        case(?params) { Float.exp(Float.fromInt(date) * params.lambda - params.shift); };
+//      };
+//
+//      var contribution = Trie.mapFilter(new_categorization, func(category: Category, polarization: Polarization) : ?Polarization {
+//        let category_cursor = Polarization.toCursor(polarization);
+//        let user_cursor = Cursor.mul(user_opinion, category_cursor);
+//        // @todo: add to map of votes
+//        ?Polarization.mul(Cursor.toPolarization(user_cursor), Float.abs(category_cursor)); // @todo: add decay
+//      });
+//
+//      Option.iterate(old_categorization, func(old_cat: PolarizationMap) {
+//        let old_contribution = Trie.mapFilter(old_cat, func(category: Category, polarization: Polarization) : ?Polarization {
+//          // [left: 100, center:0,   right:0 ]    [-1.0]
+//          // [left: 10,  center:30,  right:60] -> [ 0.5]
+//          // [left: 0,   center:100, right:0 ]    [  0 ]
+//          let category_cursor = Polarization.toCursor(polarization);
+//      
+//          // [0.5]   [-1.0] = [-0.5]
+//          // [0.5] x [ 0.5] = [0.25]
+//          // [0.5]   [  0 ] = [0   ]
+//          let user_cursor = Cursor.mul(user_opinion, category_cursor);
+//          
+//          // @todo: add to map of votes
+//
+//          // [-0.5]    // [left: 0.5, center:0.5,    right:0 ]
+//          // [0.25] -> // [left: 0,  center:0.75,  right:0.25]
+//          // [0   ]    // [left: 0,   center:1,      right:0 ]
+//
+//          // Would need to have a weight with a cursor
+//          // So that if the weight is not 1, the method toPolarization takes it into account
+//
+//
+//
+//          ?Polarization.mul(Cursor.toPolarization(user_cursor), Float.abs(category_cursor)); // @todo: add decay
+//        });
+//        contribution := PolarizationMap.sub(contribution, old_contribution);
+//      });
+//
+//      PolarizationMap.add(convictions, contribution);
+//    };
 
   };
 

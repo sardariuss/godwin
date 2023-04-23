@@ -60,6 +60,10 @@ module {
   type CategoryArray = Types.CategoryArray;
   type StatusHistory = Types.StatusHistory;
   type StatusInfo = Types.StatusInfo;
+  type InterestBallot = Types.InterestBallot;
+  type OpinionBallot = Types.OpinionBallot;
+  type CategorizationBallot = Types.CategorizationBallot;
+  type VoteId = Types.VoteId;
   // Errors
   type AddCategoryError = Types.AddCategoryError;
   type RemoveCategoryError = Types.RemoveCategoryError;
@@ -177,16 +181,20 @@ module {
       _model.getInterestVotes().getBallot(caller, question_id);
     };
 
-    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
-      await* _model.getInterestVotes().putBallot(principal, question_id, date, interest);
+    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async* Result<InterestBallot, PutBallotError> {
+      Result.mapOk<(), InterestBallot, PutBallotError>(await* _model.getInterestVotes().putBallot(principal, question_id, date, interest), func() : InterestBallot {
+        { date = date; answer = interest; }
+      });
     };
 
     public func getOpinionBallot(caller: Principal, question_id: Nat) : Result<Ballot<Cursor>, GetBallotError> {
       _model.getOpinionVotes().getBallot(caller, question_id);
     };
 
-    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      _model.getOpinionVotes().putBallot(principal, question_id, date, cursor);
+    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<OpinionBallot, PutBallotError> {
+      Result.mapOk<(), OpinionBallot, PutBallotError>(_model.getOpinionVotes().putBallot(principal, question_id, date, cursor), func() : OpinionBallot {
+        { date = date; answer = cursor; }
+      });
     };
       
     public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<Ballot<CursorArray>, GetBallotError> {
@@ -195,8 +203,11 @@ module {
       });
     };
       
-    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async* Result<(), PutBallotError> {
-      await* _model.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async* Result<CategorizationBallot, PutBallotError> {
+      Result.mapOk<(), CategorizationBallot, PutBallotError>(
+        await* _model.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal)), func() : CategorizationBallot {
+          { date = date; answer = cursors; };
+        });
     };
 
     public func getStatusInfo(question_id: Nat) : Result<StatusInfo, ReopenQuestionError> {
@@ -240,7 +251,7 @@ module {
       });
     };
 
-    public func getUserOpinions(principal: Principal) : ?[Ballot<Cursor>] {
+    public func getUserOpinions(principal: Principal) : ?[(VoteId, PolarizationArray, Ballot<Cursor>)] {
       _model.getUsers().getUserOpinions(principal);
     };
 

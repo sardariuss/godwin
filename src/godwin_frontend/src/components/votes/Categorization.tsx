@@ -76,6 +76,7 @@ const VoteCategorization = ({actor, categories, questionId}: Props) => {
             setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
             polarizationInfo = {{ left: categories.get(category).left, center: CONSTANTS.CATEGORIZATION_INFO.center, right: categories.get(category).right}}
             onMouseUp={ () => { updateCategorization() } }
+            onMouseDown={ () => { /*@todo*/ } }
           ></CursorSlider>
           </li>
         ))

@@ -37,7 +37,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type GetUserConvictionsError = Types.GetUserConvictionsError;
   type GetBallotError = Types.GetBallotError;
   type PutBallotError = Types.PutBallotError;
-  type Ballot<T> = Types.Ballot<T>;
+  type InterestBallot = Types.InterestBallot;
+  type OpinionBallot = Types.OpinionBallot;
+  type CategorizationBallot = Types.CategorizationBallot;
   type PublicVote<T, A> = Types.PublicVote<T, A>;
   type Interest = Types.Interest;
   type Appeal = Types.Appeal;
@@ -120,27 +122,27 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* _controller.reopenQuestion(caller, question_id, Time.now());
   };
 
-  public query({caller}) func getInterestBallot(question_id: QuestionId) : async Result<Ballot<Interest>, GetBallotError> {
+  public query({caller}) func getInterestBallot(question_id: QuestionId) : async Result<InterestBallot, GetBallotError> {
     _controller.getInterestBallot(caller, question_id);
   };
 
-  public shared({caller}) func putInterestBallot(question_id: QuestionId, interest: Interest) : async Result<(), PutBallotError> {
+  public shared({caller}) func putInterestBallot(question_id: QuestionId, interest: Interest) : async Result<InterestBallot, PutBallotError> {
     await* _controller.putInterestBallot(caller, question_id, Time.now(), interest);
   };
 
-  public query({caller}) func getOpinionBallot(question_id: QuestionId) : async Result<Ballot<Cursor>, GetBallotError> {
+  public query({caller}) func getOpinionBallot(question_id: QuestionId) : async Result<OpinionBallot, GetBallotError> {
     _controller.getOpinionBallot(caller, question_id);
   };
 
-  public shared({caller}) func putOpinionBallot(question_id: QuestionId, cursor: Cursor) : async Result<(), PutBallotError> {
+  public shared({caller}) func putOpinionBallot(question_id: QuestionId, cursor: Cursor) : async Result<OpinionBallot, PutBallotError> {
     _controller.putOpinionBallot(caller, question_id, Time.now(), cursor);
   };
 
-  public query({caller}) func getCategorizationBallot(question_id: QuestionId) : async Result<Ballot<CursorArray>, GetBallotError> {
+  public query({caller}) func getCategorizationBallot(question_id: QuestionId) : async Result<CategorizationBallot, GetBallotError> {
     _controller.getCategorizationBallot(caller, question_id);
   };
 
-  public shared({caller}) func putCategorizationBallot(question_id: QuestionId, answer: CursorArray) : async Result<(), PutBallotError> {
+  public shared({caller}) func putCategorizationBallot(question_id: QuestionId, answer: CursorArray) : async Result<CategorizationBallot, PutBallotError> {
     await* _controller.putCategorizationBallot(caller, question_id, Time.now(), answer);
   };
 
@@ -168,7 +170,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getUserConvictions(principal);
   };
 
-  public query func getUserOpinions(principal: Principal) : async ?[Ballot<Cursor>] {
+  public query func getUserOpinions(principal: Principal) : async ?[(Nat, PolarizationArray, OpinionBallot)] {
     _controller.getUserOpinions(principal);
   };
 

@@ -17,9 +17,10 @@ type Props = {
     right: CategorySide;
   };
   onMouseUp: () => (void);
+  onMouseDown: () => (void);
 };
 
-export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp}: Props) => {
+export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
@@ -66,6 +67,7 @@ export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp
         type="range"
         onChange={(e) => refreshValue(Number(e.target.value))}
         onMouseUp={(e) => onMouseUp()}
+        onMouseDown={(e) => onMouseDown()}
         className={"input appearance-none " + (sliderValue > CONSTANTS.CURSOR_SIDE_THRESHOLD ? "right" : sliderValue < -CONSTANTS.CURSOR_SIDE_THRESHOLD ? "left" : "center") } 
         style={{
           "--progress-percent": `${ ((marginRatio + ((sliderValue + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
