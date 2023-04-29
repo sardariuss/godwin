@@ -3,7 +3,9 @@ import { DelegationChain, isDelegationValid } from "@dfinity/identity";
 
 import { _SERVICE as MasterService } from "../declarations/godwin_master/godwin_master.did";
 import { _SERVICE as SubService, CategoryArray__1 } from "../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE as TokenService } from "../declarations/godwin_token/godwin_token.did";
 import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
+import { godwin_token } from "../declarations/godwin_token";
 import { createActor as createSub } from "../declarations/godwin_backend";
 import { ActorSubclass } from "@dfinity/agent";
 
@@ -28,23 +30,18 @@ export const ActorContext = React.createContext<{
   setSubsFetched?: React.Dispatch<React.SetStateAction<boolean | null>>;
   login: () => void;
   logout: () => void;
+  token: ActorSubclass<TokenService>;
   master: ActorSubclass<MasterService>;
   subs: Map<string, Sub>;
   hasLoggedIn: boolean;
 }>({
   login: () => {},
   logout: () => {},
+  token: godwin_token,
   master: godwin_master,
   subs: new Map(),
   hasLoggedIn: false
 });
-
-export async function checkDelegation() {
-  const delegations = await new IdbStorage().get("ic-delegation");
-  if (!delegations) return false;
-  const chain = DelegationChain.fromJSON(delegations);
-  return isDelegationValid(chain);
-}
 
 export function useAuthClient() {
   const navigate = useNavigate();
@@ -52,6 +49,7 @@ export function useAuthClient() {
   const [authClient, setAuthClient] = useState<AuthClient>();
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const [hasLoggedIn, setHasLoggedIn] = useState(false);
+  const [token] = useState<ActorSubclass<TokenService>>(godwin_token);
   const [master, setMaster] = useState<ActorSubclass<MasterService>>(godwin_master);
   const [subs, setSubs] = useState<Map<string, Sub>>(new Map());
   const [subsFetched, setSubsFetched] = useState<boolean | null>(true);
@@ -66,9 +64,6 @@ export function useAuthClient() {
       maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
       onSuccess: () => {
         initActor();
-        // @todo
-        //let identity = authClient.getIdentity() as unknown as Identity;
-        //Actor.agentOf(actor)?.replaceIdentity?.(identity);
         setIsAuthenticated(true);
         setTimeout(() => {
           setHasLoggedIn(true);
@@ -78,7 +73,6 @@ export function useAuthClient() {
   };
 
   const initActor = () => {
-    console.log("INIT ACTOR");
     const actor = createMaster(canisterId as string, {
       agentOptions: {
         identity: authClient?.getIdentity(),
@@ -88,10 +82,11 @@ export function useAuthClient() {
   }
 
   const logout = () => {
-    navigate("/");
-    setIsAuthenticated(false);
-    setMaster(godwin_master);
-    authClient?.logout().then(() => { console.log("LOGGED OUT") });
+    authClient?.logout().then(() => {
+      navigate("/");
+      setIsAuthenticated(false);
+      setMaster(godwin_master);
+    });
   }
 
   const fetchSubs = async() => {
@@ -112,15 +107,6 @@ export function useAuthClient() {
   }
 
   useEffect(() => {
-    // @todo: what is that
-    checkDelegation().then((valid) => {
-      if (valid) {
-        console.log("DELEGATION IS VALID");
-      } else {
-        console.log("DELEGATION IS NOT VALID");
-      };
-    });
-
     AuthClient.create({
       idleOptions: {
         disableDefaultIdleCallback: true,
@@ -157,6 +143,7 @@ export function useAuthClient() {
     setSubsFetched,
     login,
     logout,
+    token,
     master,
     subs,
     hasLoggedIn,

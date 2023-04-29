@@ -1,15 +1,15 @@
 import Types               "../Types";
-import Utils               "../../utils/Utils";
-import SubaccountGenerator "../token/SubaccountGenerator";
-import PayInterface        "../token/PayInterface";
-import Categories          "../Categories";
 import Votes               "Votes";
 import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
-
+import SubaccountGenerator "../token/SubaccountGenerator";
+import PayInterface        "../token/PayInterface";
+import Categories          "../Categories";
 import QuestionVoteHistory "../QuestionVoteHistory";
+
+import Utils               "../../utils/Utils";
 
 import Map                 "mo:map/Map";
 
@@ -18,31 +18,27 @@ import Buffer              "mo:base/Buffer";
 
 module {
 
-  type Result<Ok, Err>     = Result.Result<Ok, Err>;
-  type Map<K, V>           = Map.Map<K, V>;
-  type Time                = Int;
+  type Result<Ok, Err>        = Result.Result<Ok, Err>;
+  type Time                   = Int;
 
   type Categories             = Categories.Categories;
+  type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
+  type QuestionVoteHistory    = QuestionVoteHistory.QuestionVoteHistory;
+  type PayToVote              = PayToVote.PayToVote<CursorMap, PolarizationMap>;
+  type PayInterface           = PayInterface.PayInterface;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-  type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
+  type PutBallotError         = Types.PutBallotError;
+  type CloseVoteError         = Types.CloseVoteError;
+  type GetVoteError           = Types.GetVoteError;
+  type GetBallotError         = Types.GetBallotError;
+  type CursorArray            = Types.CursorArray;
+  type PolarizationArray      = Types.PolarizationArray;
+  type RevealVoteError        = Types.RevealVoteError;
 
-  type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
-  
-  public type VoteRegister = Votes.VoteRegister<CursorMap, PolarizationMap>;
-  public type Vote         = Types.Vote<CursorMap, PolarizationMap>;
-  public type Ballot       = Types.Ballot<CursorMap>;
-
-  type PutBallotError      = Types.PutBallotError;
-  type CloseVoteError      = Types.CloseVoteError;
-  type GetVoteError        = Types.GetVoteError;
-  type GetBallotError      = Types.GetBallotError;
-  type CursorArray         = Types.CursorArray;
-  type PolarizationArray   = Types.PolarizationArray;
-  type RevealVoteError     = Types.RevealVoteError;
-
-  type PayToVote = PayToVote.PayToVote<CursorMap, PolarizationMap>;
-  type PayInterface = PayInterface.PayInterface;
+  public type VoteRegister    = Votes.VoteRegister<CursorMap, PolarizationMap>;
+  public type Vote            = Types.Vote<CursorMap, PolarizationMap>;
+  public type Ballot          = Types.Ballot<CursorMap>;
 
   let PRICE_PUT_BALLOT = 1000; // @todo
 

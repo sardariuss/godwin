@@ -1,57 +1,41 @@
-import Types "Types";
+import Types           "Types";
 import QuestionQueries "QuestionQueries";
-import OrderedSet "../utils/OrderedSet";
-import Ref "../utils/Ref";
-import Categorization "votes/Categorizations";
-import Interests "votes/Interests";
-import Opinion "votes/Opinions";
+import Categories      "Categories";
+import Interests       "votes/Interests";
 import Categorizations "votes/Categorizations";
-import Opinions "votes/Opinions";
-import Categories "Categories";
-import Duration "../utils/Duration";
+import Opinions        "votes/Opinions";
 
-import Set "mo:map/Set";
-import Map "mo:map/Map";
+import Duration        "../utils/Duration";
+import Ref             "../utils/Ref";
 
-import Principal "mo:base/Principal";
-import Array "mo:base/Array";
-import Deque "mo:base/Deque";
+import Set             "mo:map/Set";
+import Map             "mo:map/Map";
+
+import Principal       "mo:base/Principal";
 
 module {
 
-  type Time = Int;
-  type Principal = Principal.Principal;
+  type Time                = Int;
+  type Principal           = Principal.Principal;
 
-  type Set<K> = Set.Set<K>;
-  type Map<K, V> = Map.Map<K, V>;
-  type Map2D<K1, K2, V> = Map<K1, Map<K2, V>>;
-  type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
-  type OrderedSet<K> = OrderedSet.OrderedSet<K>;
-  type Ref<V> = Ref.Ref<V>;
-  type Deque<V> = Deque.Deque<V>;
+  type Set<K>              = Set.Set<K>;
+  type Map<K, V>           = Map.Map<K, V>;
+  type Ref<V>              = Ref.Ref<V>;
 
   // For convenience: from types module
-  type Parameters = Types.Parameters;
-  type Question = Types.Question;
-  type Cursor = Types.Cursor;
-  type Category = Types.Category;
-  type CursorMap = Types.CursorMap;
-  type PolarizationMap = Types.PolarizationMap;
-  type Duration = Duration.Duration;
-  type Polarization = Types.Polarization;
+  type Parameters          = Types.Parameters;
+  type Question            = Types.Question;
+  type Cursor              = Types.Cursor;
+  type Category            = Types.Category;
+  type CursorMap           = Types.CursorMap;
+  type PolarizationMap     = Types.PolarizationMap;
+  type Duration            = Duration.Duration;
+  type Polarization        = Types.Polarization;
   type SchedulerParameters = Types.SchedulerParameters;
-  type QuestionsParameters = Types.QuestionsParameters;
-  type Ballot<T> = Types.Ballot<T>;
-  type Vote<T, A> = Types.Vote<T, A>;
-  type Appeal = Types.Appeal;
-  type Status = Types.Status;
-  type StatusHistory = Types.StatusHistory;
-  type User = Types.User;
-  type Interest = Types.Interest;
-  type StatusData = Types.StatusData;
-  type VoteHistory = Types.VoteHistory;
-  type SubTransferArgs = Types.SubTransferArgs;
-  type FailedPayout = Types.FailedPayout;
+  type User                = Types.User;
+  type StatusData          = Types.StatusData;
+  type VoteHistory         = Types.VoteHistory;
+  type FailedPayout        = Types.FailedPayout;
 
   public type State = {
     name              : Ref<Text>; // @todo: this shouldn't be a ref
@@ -86,9 +70,9 @@ module {
       interest                : Interests.VoteRegister;
       interest_history        : Map<Nat, VoteHistory>;
       opinion                 : Opinions.VoteRegister;
-      opinion_history        : Map<Nat, VoteHistory>;
+      opinion_history         : Map<Nat, VoteHistory>;
       categorization          : Categorizations.VoteRegister;
-      categorization_history        : Map<Nat, VoteHistory>;
+      categorization_history  : Map<Nat, VoteHistory>;
     };
     users          : {
       register                : Map<Principal, User>;

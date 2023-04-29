@@ -6,7 +6,7 @@ const CONSTANTS = {
     left: {
       symbol: '🤡',
       color: '#DB4437',
-      name: 'TROLOLO',
+      name: 'TROLL',
     },
     center: {
       symbol: '😴',
@@ -15,7 +15,7 @@ const CONSTANTS = {
     },
     right: {
       symbol: '🤓',
-      color: '#0F9D58',
+      color: '#1D4ED8',
       name: 'INTERESTING',
     }
   },
@@ -47,7 +47,8 @@ const CONSTANTS = {
       color: '#EEEEEE',
       name: 'N/A'
     }
-  }
+  },
+  DEFAULT_USER_NAME: 'New user'
 };
 
 export default CONSTANTS;

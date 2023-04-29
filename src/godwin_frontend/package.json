@@ -8,10 +8,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dfinity/agent": "0.15.3",
-    "@dfinity/auth-client": "0.15.3",
-    "@dfinity/candid": "0.15.3",
-    "@dfinity/principal": "0.15.3",
+    "@dfinity/agent": "0.15.5",
+    "@dfinity/auth-client": "0.15.5",
+    "@dfinity/candid": "0.15.5",
+    "@dfinity/principal": "0.15.5",
+    "@dfinity/ledger": "0.0.7",
+    "@dfinity/utils": "0.0.14",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
     "@mui/icons-material": "^5.8.0",
@@ -36,7 +38,7 @@
     "autoprefixer": "^10.4.7",
     "node-fetch": "^2.6.7",
     "postcss": "^8.4.14",
-    "tailwindcss": "^3.2.7",
+    "tailwindcss": "^3.3.1",
     "tape": "^5.5.3",
     "typescript": "^4.9.3",
     "vite": "^3.2.4"

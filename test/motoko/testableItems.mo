@@ -1,8 +1,4 @@
 import Votes "../../src/godwin_backend/model/votes/Votes";
-import Interest "../../src/godwin_backend/model/votes/representation/Interest";
-import Appeal "../../src/godwin_backend/model/votes/representation/Appeal";
-import Opinion "../../src/godwin_backend/model/votes/representation/Opinion";
-import Categorization "../../src/godwin_backend/model/votes/representation/Categorization";
 import Cursor "../../src/godwin_backend/model/votes/representation/Cursor";
 import Polarization "../../src/godwin_backend/model/votes/representation/Polarization";
 import CursorMap "../../src/godwin_backend/model/votes/representation/CursorMap";
@@ -27,9 +23,9 @@ module {
   type Polarization = Types.Polarization;
   type CursorMap = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type Interest = Types.Interest;
-  type Appeal = Types.Appeal;
-  type Ballot<T> = Types.Ballot<T>;
+  type InterestBallot = Types.InterestBallot;
+  type OpinionBallot = Types.OpinionBallot;
+  type CategorizationBallot = Types.CategorizationBallot;
   
   // For convenience: from queries module
   type ScanLimitResult = Queries.ScanLimitResult;
@@ -74,21 +70,20 @@ module {
     testOptItem(cursor_trie, CursorMap.toText, CursorMap.equal);
   };
 
-  public func optInterestBallot(interest_ballot: ?Interest.Ballot) : Testable.TestableItem<?Interest.Ballot> {
-    testOptItem(interest_ballot, Interest.ballotToText, Interest.ballotsEqual);
+  public func optInterestBallot(interest_ballot: ?InterestBallot) : Testable.TestableItem<?InterestBallot> {
+    testOptItem(
+      interest_ballot,
+      func(b: InterestBallot) : Text { Votes.ballotToText(b, Cursor.toText); },
+      func(b1: InterestBallot, b2: InterestBallot) : Bool { Votes.ballotsEqual(b1, b2, Cursor.equal); }
+    );
   };
 
-  // @todo: unused
-  public func optAppeal(appeal: ?Types.Appeal) : Testable.TestableItem<?Types.Appeal> {
-    testOptItem(appeal, Appeal.toText, Appeal.equal);
-  };
-
-  public func appeal(appeal: Types.Appeal) : Testable.TestableItem<Types.Appeal> {
-    { display = Appeal.toText; equals = Appeal.equal; item = appeal; };
-  };
-
-  public func optOpinionBallot(opinion_ballot: ?Opinion.Ballot) : Testable.TestableItem<?Opinion.Ballot> {
-    testOptItem(opinion_ballot, Opinion.ballotToText, Opinion.ballotsEqual);
+  public func optOpinionBallot(opinion_ballot: ?OpinionBallot) : Testable.TestableItem<?OpinionBallot> {
+    testOptItem(
+      opinion_ballot,
+      func(b: OpinionBallot) : Text { Votes.ballotToText(b, Cursor.toText); },
+      func(b1: OpinionBallot, b2: OpinionBallot) : Bool { Votes.ballotsEqual(b1, b2, Cursor.equal); }
+    );
   };
 
   // @todo: unused
@@ -96,8 +91,12 @@ module {
     testOptItem(polarization, Polarization.toText, Polarization.equal);
   };
 
-  public func optCategorizationBallot(categorization_ballot: ?Categorization.Ballot) : Testable.TestableItem<?Categorization.Ballot> {
-    testOptItem(categorization_ballot, Categorization.ballotToText, Categorization.ballotsEqual);
+  public func optCategorizationBallot(categorization_ballot: ?CategorizationBallot) : Testable.TestableItem<?CategorizationBallot> {
+    testOptItem(
+      categorization_ballot,
+      func(b: CategorizationBallot) : Text { Votes.ballotToText(b, CursorMap.toText); },
+      func(b1: CategorizationBallot, b2: CategorizationBallot) : Bool { Votes.ballotsEqual(b1, b2, CursorMap.equal); }
+    );
   };
 
   // @todo: unused

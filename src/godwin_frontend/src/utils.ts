@@ -1,7 +1,12 @@
-import { Status, Polarization, CategorySide, CategoryInfo } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayInError, Status, Polarization, CategorySide, CategoryInfo, OrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
 import Color from 'colorjs.io';
+
+export enum ChartTypeEnum {
+  Bar,
+  Scatter,
+} 
 
 export type PolarizationInfo = {
   left: CategorySide;
@@ -15,13 +20,28 @@ export type CursorInfo = {
   symbol: string;
 }
 
+export const orderByToString = (orderBy: OrderBy) => {
+  if (orderBy['AUTHOR'] !== undefined) return 'Author';
+  if (orderBy['DATE'] !== undefined) return 'Date';
+  if (orderBy['TEXT'] !== undefined) return 'Text';
+  if (orderBy['INTEREST_SCORE'] !== undefined) return 'Interest score';
+  if (orderBy['STATUS'] !== undefined) return 'Status: ' + statusToString(orderBy['STATUS']);
+  throw new Error('Invalid orderBy');
+};
+
+export const directionToString = (direction: Direction) => {
+  if (direction['FWD'] !== undefined) return 'Forward';
+  if (direction['BWD'] !== undefined) return 'Backward';
+  throw new Error('Invalid direction');
+};
+
 export const statusToString = (status: Status) => {
   if (status['CANDIDATE'] !== undefined) return 'Candidate';
   if (status['OPEN'] !== undefined) return 'Open';
   if (status['CLOSED'] !== undefined) return 'Closed';
   if (status['REJECTED'] !== undefined) return 'Timed out';
   if (status['TRASH'] !== undefined) return 'Trash';
-  return '@todo';
+  throw new Error('Invalid status');
 };
 
 export enum StatusEnum {
@@ -38,8 +58,35 @@ export const statusToEnum = (status: Status) => {
   if (status['CLOSED'] !== undefined) return StatusEnum.CLOSED;
   if (status['REJECTED'] !== undefined) return StatusEnum.REJECTED;
   if (status['TRASH'] !== undefined) return StatusEnum.TRASH;
-  throw new Error('Unknown status');
+  throw new Error('Invalid status');
 };
+
+export const putBallotErrorToString = (error: PutBallotError) => {
+  if (error['AlreadyVoted']         !== undefined) return 'AlreadyVoted';
+  if (error['NoSubacountLinked']    !== undefined) return 'NoSubacountLinked';
+  if (error['InvalidBallot']        !== undefined) return 'InvalidBallot';
+  if (error['VoteClosed']           !== undefined) return 'VoteClosed';
+  if (error['VoteNotFound']         !== undefined) return 'VoteNotFound';
+  if (error['PrincipalIsAnonymous'] !== undefined) return 'PrincipalIsAnonymous';
+  if (error['VoteLinkNotFound']     !== undefined) return 'VoteLinkNotFound';
+  if (error['PayInError']           !== undefined) return 'PayInError: ' + payInErrorToString(error['PayInError']);
+  throw new Error('Invalid PutBallotError');
+};
+
+export const payInErrorToString = (error: PayInError) => {
+  if (error['GenericError']           !== undefined) return 'GenericError: (message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString() + ")";
+  if (error['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
+  if (error['NotAllowed']             !== undefined) return 'NotAllowed';
+  if (error['BadBurn']                !== undefined) return 'BadBurn: (min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString() + ")";
+  if (error['Duplicate']              !== undefined) return 'Duplicate: (duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString() + ")";
+  if (error['BadFee']                 !== undefined) return 'BadFee: (expected_fee=' + Number(error['BadFee']['expected_fee']).toString() + ")";
+  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: (ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString() + ")";
+  if (error['TooOld']                 !== undefined) return 'TooOld';
+  if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
+  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
+  throw new Error('Invalid PayInError');
+};
+
 
 const getMonthStr = (month: number) => {
   // months are zero indexed

@@ -11,7 +11,6 @@ module {
 
   type Principal = Principal.Principal;
   type Fuzzer = Fuzz.Fuzzer;
-  type Interest = Types.Interest;
   type Cursor = Types.Cursor;
   type Category = Types.Category;
   type CursorArray = Types.CursorArray;
@@ -141,8 +140,8 @@ module {
     fuzzer.float.randomRange(0.0, 1.0);
   };
 
-  public func randomInterest(fuzzer: Fuzzer) : Interest {
-    if (fuzzer.bool.random()) { #UP; } else { #DOWN; };
+  public func randomInterest(fuzzer: Fuzzer) : Cursor {
+    fuzzer.float.randomRange(-1.0, 1.0);
   };
 
   public func randomOpinion(fuzzer: Fuzzer) : Cursor {

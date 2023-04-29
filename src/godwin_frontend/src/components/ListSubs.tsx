@@ -16,8 +16,8 @@ function ListSubs() {
 
   return (
 		<>
-      <div className="w-full mx-10 my-24">
-        <ol className="grid grid-cols-4 gap-4">
+      <div className="w-full">
+        <ol className="grid grid-cols-4 gap-4 mx-10 my-12">
           {
             [...Array.from(subs.entries())].map((elem) => (
               <li key={elem[0]}>

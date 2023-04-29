@@ -132,17 +132,6 @@ module {
     color: Text;
   };
 
-  public type Interest = {
-    #UP;
-    #DOWN;
-  };
-
-  public type Appeal = {
-    ups: Nat;
-    downs: Nat;
-    score: Int;
-  };
-
   // Cursor used for voting, shall be between -1 and 1, where usually:
   //  -1 means voting totally for A
   //   0 means voting totally neutral
@@ -170,7 +159,7 @@ module {
     right: Float;
   };
 
-  public type InterestBallot = Ballot<Interest>;
+  public type InterestBallot = Ballot<Cursor>;
   public type OpinionBallot = Ballot<Cursor>;
   public type CategorizationBallot = Ballot<CursorArray>;
 

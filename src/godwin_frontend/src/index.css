@@ -17,6 +17,13 @@ textarea {
   outline: none;
 }
 
+input {
+  border: none;
+  background-color: transparent;
+  resize: none;
+  outline: none;
+}
+
 .blurry-text {
   color: transparent;
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
@@ -57,7 +64,7 @@ textarea {
     background-size: contain;
     background-position: center center;
     background-repeat: no-repeat;
-    cursor: pointer;
+    cursor: var(--cursor-type);
   }
 
   input[type='range'].left::-webkit-slider-thumb {
@@ -101,7 +108,7 @@ input[type="range"]::-moz-range-thumb {
   background-size: contain;
   background-position: center center;
   background-repeat: no-repeat;
-  cursor: pointer;
+  cursor: var(--cursor-type);
 }
 
 input[type="range"].left::-moz-range-thumb {
@@ -114,4 +121,25 @@ input[type="range"].center::-moz-range-thumb {
 
 input[type="range"].right::-moz-range-thumb {
   background-image: var(--thumb-right);
+}
+
+input[type="range"].categories::-moz-range-track {
+  background: transparent;
+}
+
+input[type="range"].categories{
+  cursor: move;
+  cursor: -webkit-grab;
+  cursor: grab;
+}
+
+input[type="range"].categories:active{
+  cursor: grabbing; 
+  cursor: -webkit-grabbing;
+}
+
+input[type="range"].categories::-moz-range-thumb {
+  background-color: transparent;
+  width: 15px;
+  height: 15px;
 }

@@ -1,53 +1,33 @@
-import Types "Types";
-import Controller "controller/Controller";
-import Model "controller/Model";
-import Questions "Questions";
-import Interests "votes/Interests";
-import Categorizations "votes/Categorizations";
-import Appeal "votes/representation/Appeal";
-import Polarization "votes/representation/Polarization";
-import PolarizationMap "votes/representation/PolarizationMap";
-import Opinions "votes/Opinions";
-import SubaccountGenerator "token/SubaccountGenerator";
-import PayInterface "token/PayInterface";
-import PayForNew "token/PayForNew";
-import State "State";
-import QuestionQueries "QuestionQueries";
-import Categories "Categories";
-import Users "Users";
-import StatusManager "StatusManager";
+import Types               "Types";
+import Questions           "Questions";
+import State               "State";
+import QuestionQueries     "QuestionQueries";
+import Categories          "Categories";
+import Users               "Users";
+import StatusManager       "StatusManager";
 import QuestionVoteHistory "QuestionVoteHistory";
-import Votes "votes/Votes";
-
-import Map "mo:map/Map";
-
-import Option "mo:base/Option";
-import Debug "mo:base/Debug";
-import Nat "mo:base/Nat";
-import Result "mo:base/Result";
-import Principal "mo:base/Principal";
-
-import MasterTypes "../../godwin_master/Types";
+import Controller          "controller/Controller";
+import Model               "controller/Model";
+import Votes               "votes/Votes";
+import Interests           "votes/Interests";
+import Categorizations     "votes/Categorizations";
+import Opinions            "votes/Opinions";
+import Polarization        "votes/representation/Polarization";
+import PolarizationMap     "votes/representation/PolarizationMap";
+import SubaccountGenerator "token/SubaccountGenerator";
+import PayInterface        "token/PayInterface";
+import PayForNew           "token/PayForNew";
 
 module {
 
-  type Question = Types.Question;
-  type Status = Types.Status;
-  type Appeal = Types.Appeal;
-  type Interest = Types.Interest;
-  type Cursor = Types.Cursor;
-  type Polarization = Types.Polarization;
-  type CursorMap = Types.CursorMap;
+  type Question        = Types.Question;
+  type Status          = Types.Status;
+  type Cursor          = Types.Cursor;
+  type Polarization    = Types.Polarization;
+  type CursorMap       = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type InterestVote = Interests.Vote;
-  type Time = Int;
-  type Controller = Controller.Controller;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-
-  type Key = QuestionQueries.Key;
-  let { toAppealScore; } = QuestionQueries;
-
-  type State = State.State;
+  type Controller      = Controller.Controller;
+  type State           = State.State;
 
   public func build(state: State) : Controller {
 
@@ -73,7 +53,7 @@ module {
       state.opened_questions.index
     );
 
-    let interest_votes = Votes.Votes<Interest, Appeal>(state.votes.interest, Appeal.init());
+    let interest_votes = Votes.Votes<Cursor, Polarization>(state.votes.interest, Polarization.nil());
     let interest_history = QuestionVoteHistory.build(state.votes.interest_history);
     
     let interests = Interests.build(

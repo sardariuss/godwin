@@ -1,29 +1,25 @@
-import Types "Types";
-import Questions "Questions";
-import Queries "../utils/Queries";
-import OrderedSet "../utils/OrderedSet";
+import Types      "Types";
+import Queries    "../utils/Queries";
 
-import Map "mo:map/Map";
+import Map        "mo:map/Map";
 
-import Order "mo:base/Order";
-import Int "mo:base/Int";
-import Nat "mo:base/Nat";
-import Debug "mo:base/Debug";
-import Text "mo:base/Text";
-import Principal "mo:base/Principal";
-import Option "mo:base/Option";
+import Order      "mo:base/Order";
+import Int        "mo:base/Int";
+import Nat        "mo:base/Nat";
+import Debug      "mo:base/Debug";
+import Text       "mo:base/Text";
+import Principal  "mo:base/Principal";
+import Option     "mo:base/Option";
+import Float      "mo:base/Float";
 
 module {
 
-  type OrderedSet<T> = OrderedSet.OrderedSet<T>;
   type Map<K, V> = Map.Map<K, V>;
   type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
   type Order = Order.Order;
   type Time = Int;
   type Question = Types.Question;
-  type Questions = Questions.Questions;
   type Status = Types.Status;
-  type Appeal = Types.Appeal;
 
   // @todo: AUTHOR, TEXT and DATE are not used
   public type OrderBy = {
@@ -39,14 +35,14 @@ module {
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
-    #INTEREST_SCORE: AppealScore;
+    #INTEREST_SCORE: InterestScore;
   };
 
   type DateEntry = { question_id: Nat; date: Time; };
   type TextEntry = { question_id: Nat; text: Text; date: Time; };
   type AuthorEntry = { question_id: Nat; author: Principal; date: Time; };
   type StatusEntry = { question_id: Nat; status: Status; date: Int; };
-  type AppealScore = { question_id: Nat; score: Int; };
+  type InterestScore = { question_id: Nat; score: Float; };
 
   public type Register = Queries.Register<OrderBy, Key>;
   public type QuestionQueries = Queries.Queries<OrderBy, Key>;
@@ -117,7 +113,7 @@ module {
       case(#TEXT){ compareTextEntries(unwrapText(a), unwrapText(b)); };
       case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
       case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
-      case(#INTEREST_SCORE) { compareAppealScores(unwrapAppealScore(a), unwrapAppealScore(b)); };
+      case(#INTEREST_SCORE) { compareInterestScores(unwrapInterestScore(a), unwrapInterestScore(b)); };
     };
   };
 
@@ -155,7 +151,7 @@ module {
       case(_) { Debug.trap("Failed to unwrap status entry"); };
     };
   };
-  func unwrapAppealScore(key: Key) : AppealScore {
+  func unwrapInterestScore(key: Key) : InterestScore {
     switch(key){
       case(#INTEREST_SCORE(interest_score)) { interest_score; };
       case(_) { Debug.trap("Failed to unwrap appeal score"); };
@@ -185,8 +181,8 @@ module {
     strictCompare<Int>(a.date, b.date, Int.compare, 
       Nat.compare(a.question_id, b.question_id));
   };
-  func compareAppealScores(a: AppealScore, b: AppealScore) : Order {
-    strictCompare<Int>(a.score, b.score, Int.compare, 
+  func compareInterestScores(a: InterestScore, b: InterestScore) : Order {
+    strictCompare<Float>(a.score, b.score, Float.compare, 
       Nat.compare(a.question_id, b.question_id));
   };
 
@@ -214,10 +210,10 @@ module {
     #STATUS({question_id; status; date;});
   };
 
-  public func toAppealScore(question_id: Nat, appeal: Appeal) : Key {
+  public func toInterestScore(question_id: Nat, score: Float) : Key {
     #INTEREST_SCORE({
       question_id;
-      score = appeal.score;
+      score;
     });
   };
 

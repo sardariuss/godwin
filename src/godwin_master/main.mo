@@ -1,40 +1,40 @@
-import Types "Types";
+import Types     "Types";
 
-import Godwin "../godwin_backend/main";
-import SubTypes "../godwin_backend/model/Types";
+import Godwin    "../godwin_backend/main";
+import SubTypes  "../godwin_backend/model/Types";
 import TextUtils "../godwin_backend/utils/Text"; // @todo
 
-import Map "mo:map/Map";
-import Set "mo:map/Set";
+import Map       "mo:map/Map";
+import Set       "mo:map/Set";
 
-import Scenario "../../test/motoko/Scenario"; // @todo
+import Scenario  "../../test/motoko/Scenario"; // @todo
 
-import Result "mo:base/Result";
+import Result    "mo:base/Result";
 import Principal "mo:base/Principal";
-import Time "mo:base/Time";
-import Nat64 "mo:base/Nat64";
-import Int "mo:base/Int";
-import Nat "mo:base/Nat";
-import Iter "mo:base/Iter";
-import Array "mo:base/Array";
-import Debug "mo:base/Debug";
-import Prim "mo:prim";
-import Nat32 "mo:base/Nat32";
-import Option "mo:base/Option";
+import Time      "mo:base/Time";
+import Nat64     "mo:base/Nat64";
+import Int       "mo:base/Int";
+import Nat       "mo:base/Nat";
+import Iter      "mo:base/Iter";
+import Array     "mo:base/Array";
+import Debug     "mo:base/Debug";
+import Prim      "mo:prim";
+import Nat32     "mo:base/Nat32";
+import Option    "mo:base/Option";
 
-import Token "canister:godwin_token";
+import Token     "canister:godwin_token";
 
 actor Master {
 
-  type Parameters = SubTypes.Parameters;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Map<K, V> = Map.Map<K, V>;
-  type Godwin = Godwin.Godwin;
-  type Balance = Types.Balance;
-  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
-  type TransferResult = Types.TransferResult;
-  type AirdropResult = Types.AirdropResult;
-  type MintBatchResult = Types.MintBatchResult;
+  type Parameters                     = SubTypes.Parameters;
+  type Result<Ok, Err>                = Result.Result<Ok, Err>;
+  type Map<K, V>                      = Map.Map<K, V>;
+  type Godwin                         = Godwin.Godwin;
+  type Balance                        = Types.Balance;
+  type CreateSubGodwinResult          = Types.CreateSubGodwinResult;
+  type TransferResult                 = Types.TransferResult;
+  type AirdropResult                  = Types.AirdropResult;
+  type MintBatchResult                = Types.MintBatchResult;
   let { toSubaccount; toBaseResult; } = Types;
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
@@ -46,6 +46,8 @@ actor Master {
   stable let _sub_godwins = Map.new<(Principal, Text), Godwin>();
 
   stable let _airdropped_users = Set.new<Principal>();
+
+  stable let _user_names = Map.new<Principal, Text>();
 
   stable var _airdrop_supply = 1_000_000_000;
 
@@ -178,6 +180,14 @@ actor Master {
 
   public query func getUserAccount(user: Principal) : async Token.Account {
     { owner = Principal.fromActor(Master); subaccount = ?toSubaccount(user) };
+  };
+
+  public query func getUserName(user: Principal) : async ?Text {
+    Map.get(_user_names, Map.phash, user);
+  };
+
+  public shared({caller}) func setUserName(name: Text) : async () {
+    Map.set(_user_names, Map.phash, caller, name);
   };
 
 };

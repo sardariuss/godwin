@@ -40,7 +40,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, stat
       }
       <ol>
       {
-        historyVisible ? (
+        true ? (
           statusHistory.map((status, index) => {
             return (
               <li key={index.toString()}>

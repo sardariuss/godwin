@@ -41,8 +41,6 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type OpinionBallot = Types.OpinionBallot;
   type CategorizationBallot = Types.CategorizationBallot;
   type PublicVote<T, A> = Types.PublicVote<T, A>;
-  type Interest = Types.Interest;
-  type Appeal = Types.Appeal;
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
   type CursorMap = Types.CursorMap;
@@ -126,7 +124,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getInterestBallot(caller, question_id);
   };
 
-  public shared({caller}) func putInterestBallot(question_id: QuestionId, interest: Interest) : async Result<InterestBallot, PutBallotError> {
+  public shared({caller}) func putInterestBallot(question_id: QuestionId, interest: Cursor) : async Result<InterestBallot, PutBallotError> {
     await* _controller.putInterestBallot(caller, question_id, Time.now(), interest);
   };
 
@@ -154,7 +152,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.getStatusHistory(question_id);
   };
 
-  public query func revealInterestVote(question_id: QuestionId, iteration: Nat) : async Result<PublicVote<Interest, Appeal>, RevealVoteError>{
+  public query func revealInterestVote(question_id: QuestionId, iteration: Nat) : async Result<PublicVote<Cursor, Polarization>, RevealVoteError>{
     _controller.revealInterestVote(question_id, iteration);
   };
 

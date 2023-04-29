@@ -22,7 +22,10 @@
     },
     "godwin_token":{
       "main": "src/godwin_token/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_token"
+      }
     },
     "godwin_frontend": {
       "frontend": {

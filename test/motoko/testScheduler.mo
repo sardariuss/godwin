@@ -29,7 +29,6 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type Category = Types.Category;
-  type Interest = Types.Interest;
   type User = Types.User;
   
   // @todo: This test is too complex to follow through, it needs to be simplified
@@ -77,16 +76,16 @@ module {
       };
 
       // Set a specific total of interests for each question
-      questions_.replaceQuestion({ questions_.getQuestion(0) with status = #INTEREST({ date = 493; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(1) with status = #INTEREST({ date = 243; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 2;  } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(2) with status = #INTEREST({ date = 432; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(3) with status = #INTEREST({ date = 123; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(4) with status = #INTEREST({ date = 312; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(5) with status = #INTEREST({ date = 132; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(6) with status = #INTEREST({ date = 213; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(7) with status = #INTEREST({ date = 532; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(8) with status = #INTEREST({ date = 711; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
-      questions_.replaceQuestion({ questions_.getQuestion(9) with status = #INTEREST({ date = 102; ballots = Trie.empty<Principal, Interest>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(0) with status = #INTEREST({ date = 493; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 10; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(1) with status = #INTEREST({ date = 243; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 2;  } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(2) with status = #INTEREST({ date = 432; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 75; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(3) with status = #INTEREST({ date = 123; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 93; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(4) with status = #INTEREST({ date = 312; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 12; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(5) with status = #INTEREST({ date = 132; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 38; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(6) with status = #INTEREST({ date = 213; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 91; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(7) with status = #INTEREST({ date = 532; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 73; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(8) with status = #INTEREST({ date = 711; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 61; } }) });
+      questions_.replaceQuestion({ questions_.getQuestion(9) with status = #INTEREST({ date = 102; ballots = Trie.empty<Principal, Cursor>(); aggregate = {ups = 0; downs = 0; score = 31; } }) });
 
       let selection_rate = #NS(150);
 

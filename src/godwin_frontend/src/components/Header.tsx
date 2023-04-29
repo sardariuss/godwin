@@ -15,7 +15,7 @@ function Header({login, setShowAskQuestion}: Props) {
 
   return (
 		<>
-      <nav className="bg-white fixed w-full border-gray-200 px-2 sm:px-4 py-2.5 dark:bg-gray-800">
+      <header className="bg-white sticky top-0 z-10 w-full border-gray-200 px-2 sm:px-4 py-2.5 dark:bg-gray-800">
         <div className="container flex flex-row justify-between items-center mx-auto">
           <Link to="/">
             <div className="flex flex-row items-center">
@@ -46,7 +46,7 @@ function Header({login, setShowAskQuestion}: Props) {
             </ul>
           </div>
         </div>
-      </nav>
+      </header>
     </>
   );
 }

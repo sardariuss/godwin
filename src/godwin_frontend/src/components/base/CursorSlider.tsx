@@ -10,17 +10,18 @@ import React, { useState, useEffect } from "react";
 type Props = {
   id: string;
   cursor: number;
-  setCursor: (cursor: number) => (void);
+  disabled: boolean;
   polarizationInfo: {
     left: CategorySide;
     center: CategorySide;
     right: CategorySide;
   };
+  setCursor: (cursor: number) => (void);
   onMouseUp: () => (void);
   onMouseDown: () => (void);
 };
 
-export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
+export const CursorSlider = ({id, cursor, polarizationInfo, disabled, setCursor, onMouseUp, onMouseDown}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
@@ -79,8 +80,10 @@ export const CursorSlider = ({id, cursor, polarizationInfo, setCursor, onMouseUp
           "--thumb-left": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.left.symbol}` + `</text></svg>")`,
           "--thumb-center": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.center.symbol}` + `</text></svg>")`,
           "--thumb-right": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.right.symbol}` + `</text></svg>")`,
-          "--thumb-size": `${thumbSize + "px"}`} as React.CSSProperties
-        }
+          "--thumb-size": `${thumbSize + "px"}`,
+          "--cursor-type": `${disabled ? "auto" : "grab"}`
+        } as React.CSSProperties }
+        disabled={disabled}
       />
       <div className="text-xs font-extralight mt-1">
         { sliderValue }

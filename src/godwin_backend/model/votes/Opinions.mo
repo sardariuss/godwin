@@ -5,14 +5,11 @@ import Polarization        "representation/Polarization";
 import Cursor             "representation/Cursor";
 import QuestionVoteHistory "../QuestionVoteHistory";
 
-import Map                 "mo:map/Map";
-
 import Result              "mo:base/Result";
 
 module {
 
   type Result<Ok, Err>     = Result.Result<Ok, Err>;
-  type Map<K, V>           = Map.Map<K, V>;
   type Time                = Int;
 
   type Cursor              = Types.Cursor;
@@ -20,15 +17,15 @@ module {
   type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
   type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
   
-  public type VoteRegister = Votes.VoteRegister<Cursor, Polarization>;
-  public type Vote         = Types.Vote<Cursor, Polarization>;
-  public type Ballot       = Types.Ballot<Cursor>;
-
   type PutBallotError      = Types.PutBallotError;
   type CloseVoteError      = Types.CloseVoteError;
   type GetVoteError        = Types.GetVoteError;
   type GetBallotError      = Types.GetBallotError;
   type RevealVoteError     = Types.RevealVoteError;
+
+  public type VoteRegister = Votes.VoteRegister<Cursor, Polarization>;
+  public type Vote         = Types.Vote<Cursor, Polarization>;
+  public type Ballot       = Types.Ballot<Cursor>;
 
   public func initVoteRegister() : VoteRegister {
     Votes.initRegister<Cursor, Polarization>();

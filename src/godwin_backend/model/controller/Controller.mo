@@ -1,84 +1,76 @@
-import Types "../Types";
-import QuestionQueries "../QuestionQueries";
-import Categorizations "../votes/Categorizations";
-import Model "../controller/Model";
-import Questions "../Questions";
-import Votes "../votes/Votes";
-import Categories "../Categories";
-import Duration "../../utils/Duration";
-import Utils "../../utils/Utils";
-import WRef "../../utils/wrappers/WRef";
+import Types               "../Types";
+import QuestionQueries     "../QuestionQueries";
+import Categorizations     "../votes/Categorizations";
+import Votes               "../votes/Votes";
+import Model               "../controller/Model";
+import Questions           "../Questions";
+import Categories          "../Categories";
+import Duration            "../../utils/Duration";
+import Utils               "../../utils/Utils";
 import SubaccountGenerator "../token/SubaccountGenerator";
-import Event "Event";
-import Schema "Schema";
+import Event               "Event";
+import Schema              "Schema";
 
-import Set "mo:map/Set";
+import StateMachine        "../../utils/StateMachine";
 
-import StateMachine "../../utils/StateMachine";
-
-import Result "mo:base/Result";
-import Principal "mo:base/Principal";
-import Option "mo:base/Option";
-import Iter "mo:base/Iter";
-import Debug "mo:base/Debug";
+import Result              "mo:base/Result";
+import Principal           "mo:base/Principal";
+import Option              "mo:base/Option";
+import Iter                "mo:base/Iter";
 
 module {
 
   // For convenience: from other modules
-  type Questions = Questions.Questions;
-  type Model = Model.Model;
-  type Event = Event.Event;
-  type Schema = Schema.Schema;
-  type Key = QuestionQueries.Key;
-  type WRef<T> = WRef.WRef<T>;
-  let { toStatusEntry } = QuestionQueries;
+  type Questions              = Questions.Questions;
+  type Model                  = Model.Model;
+  type Event                  = Event.Event;
+  type Schema                 = Schema.Schema;
+  type Key                    = QuestionQueries.Key;
+  let { toStatusEntry }       = QuestionQueries;
 
   // For convenience: from base module
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Principal = Principal.Principal;
-  type Time = Int;
-  type Set<K> = Set.Set<K>;
+  type Result<Ok, Err>        = Result.Result<Ok, Err>;
+  type Principal              = Principal.Principal;
+  type Time                   = Int;
 
   // For convenience: from types module
-  type Question = Types.Question;
-  type Category = Types.Category;
-  type Decay = Types.Decay;
-  type Duration = Duration.Duration;
-  type Status = Types.Status;
-  type PolarizationArray = Types.PolarizationArray;
-  type Ballot<T> = Types.Ballot<T>;
-  type Vote<T, A> = Types.Vote<T, A>;
-  type PublicVote<T, A> = Types.PublicVote<T, A>;
-  type Interest = Types.Interest;
-  type Appeal = Types.Appeal;
-  type Cursor = Types.Cursor;
-  type Polarization = Types.Polarization;
-  type CursorMap = Types.CursorMap;
-  type PolarizationMap = Types.PolarizationMap;
-  type CursorArray = Types.CursorArray;
-  type CategoryInfo = Types.CategoryInfo;
-  type CategoryArray = Types.CategoryArray;
-  type StatusHistory = Types.StatusHistory;
-  type StatusInfo = Types.StatusInfo;
-  type InterestBallot = Types.InterestBallot;
-  type OpinionBallot = Types.OpinionBallot;
-  type CategorizationBallot = Types.CategorizationBallot;
-  type VoteId = Types.VoteId;
+  type Question               = Types.Question;
+  type Category               = Types.Category;
+  type Decay                  = Types.Decay;
+  type Duration               = Duration.Duration;
+  type Status                 = Types.Status;
+  type PolarizationArray      = Types.PolarizationArray;
+  type Ballot<T>              = Types.Ballot<T>;
+  type Vote<T, A>             = Types.Vote<T, A>;
+  type PublicVote<T, A>       = Types.PublicVote<T, A>;
+  type Cursor                 = Types.Cursor;
+  type Polarization           = Types.Polarization;
+  type CursorMap              = Types.CursorMap;
+  type PolarizationMap        = Types.PolarizationMap;
+  type CursorArray            = Types.CursorArray;
+  type CategoryInfo           = Types.CategoryInfo;
+  type CategoryArray          = Types.CategoryArray;
+  type StatusHistory          = Types.StatusHistory;
+  type StatusInfo             = Types.StatusInfo;
+  type InterestBallot         = Types.InterestBallot;
+  type OpinionBallot          = Types.OpinionBallot;
+  type CategorizationBallot   = Types.CategorizationBallot;
+  type VoteId                 = Types.VoteId;
   // Errors
-  type AddCategoryError = Types.AddCategoryError;
-  type RemoveCategoryError = Types.RemoveCategoryError;
-  type GetQuestionError = Types.GetQuestionError;
-  type OpenQuestionError = Types.OpenQuestionError;
-  type ReopenQuestionError = Types.ReopenQuestionError;
+  type AddCategoryError       = Types.AddCategoryError;
+  type RemoveCategoryError    = Types.RemoveCategoryError;
+  type GetQuestionError       = Types.GetQuestionError;
+  type OpenQuestionError      = Types.OpenQuestionError;
+  type ReopenQuestionError    = Types.ReopenQuestionError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type SetPickRateError = Types.SetPickRateError;
-  type SetDurationError = Types.SetDurationError;
-  type GetBallotError = Types.GetBallotError;
-  type PutBallotError = Types.PutBallotError;
-  type GetVoteError = Types.GetVoteError;
-  type OpenVoteError = Types.OpenVoteError;
-  type RevealVoteError = Types.RevealVoteError;
-  type TransitionError = Types.TransitionError;
+  type SetPickRateError       = Types.SetPickRateError;
+  type SetDurationError       = Types.SetDurationError;
+  type GetBallotError         = Types.GetBallotError;
+  type PutBallotError         = Types.PutBallotError;
+  type GetVoteError           = Types.GetVoteError;
+  type OpenVoteError          = Types.OpenVoteError;
+  type RevealVoteError        = Types.RevealVoteError;
+  type TransitionError        = Types.TransitionError;
 
   public func build(model: Model) : Controller {
     Controller(Schema.SchemaBuilder(model).build(), model);
@@ -177,11 +169,11 @@ module {
       };
     };
 
-    public func getInterestBallot(caller: Principal, question_id: Nat) : Result<Ballot<Interest>, GetBallotError> {
+    public func getInterestBallot(caller: Principal, question_id: Nat) : Result<Ballot<Cursor>, GetBallotError> {
       _model.getInterestVotes().getBallot(caller, question_id);
     };
 
-    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Interest) : async* Result<InterestBallot, PutBallotError> {
+    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Cursor) : async* Result<InterestBallot, PutBallotError> {
       Result.mapOk<(), InterestBallot, PutBallotError>(await* _model.getInterestVotes().putBallot(principal, question_id, date, interest), func() : InterestBallot {
         { date = date; answer = interest; }
       });
@@ -224,7 +216,7 @@ module {
       };
     };
 
-    public func revealInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Interest, Appeal>, RevealVoteError> {
+    public func revealInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, RevealVoteError> {
       switch(_model.getInterestVotes().revealVote(question_id, iteration)){
         case(#err(err)) { #err(err); };
         case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };

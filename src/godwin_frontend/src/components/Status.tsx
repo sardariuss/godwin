@@ -1,16 +1,14 @@
-import { _SERVICE, Status, Category, CategoryInfo, Appeal, Polarization, PublicVote, PublicVote_1, PublicVote_2, Ballot, Ballot_2 } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { Principal } from "@dfinity/principal";
-import { nsToStrDate, statusToString, toMap, toPolarizationInfo, getNormalizedPolarization } from "../utils";
+import { _SERVICE, Status, Category, CategoryInfo, PublicVote, PublicVote_1, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { nsToStrDate, statusToString, toMap } from "../utils";
 
 import InterestAggregate from "./aggregates/InterestAggregate";
 import OpinionAggregate from "./aggregates/OpinionAggregate";
 import CategorizationAggregate from "./aggregates/CategorizationAggregate";
-import AppealChart from "./base/AppealChart";
-import PolarizationBar from "./base/PolarizationBar";
+import SinglePolarizationBar from "./base/SinglePolarizationBar";
+import CategorizationPolarizationBars from "./base/CategorizationPolarizationBars";
 import CONSTANTS from "../Constants";
 
 import { ActorSubclass } from "@dfinity/agent";
-
 import { useEffect, useState } from "react";
 
 // @todo: put the SVGs into the assets directory
@@ -41,13 +39,12 @@ enum VoteType {
   NONE
 };
 
-// @todo: the normalized polarization and toMap shall be done only once, not every call
 const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
   const [selectedVote, setSelectedVote] = useState<VoteType>(VoteType.NONE);
-  const [interestVote, setInterestVote] = useState<PublicVote_1 | undefined>();
+  const [interestVote, setInterestVote] = useState<PublicVote | undefined>();
   const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>();
-  const [categorizationVote, setCategorizationVote] = useState<PublicVote_2 | undefined>();
+  const [categorizationVote, setCategorizationVote] = useState<PublicVote_1 | undefined>();
 
   const fetchRevealedVotes = async () => {
     if (isHistory){
@@ -59,25 +56,6 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
         setCategorizationVote((await actor.revealCategorizationVote(questionId, iteration))['ok']);
       }
     }
-  }
-
-  const toNormalizedMap = (array: [Category, Polarization][]) => {
-    let map = new Map<Category, Polarization>();
-    for (let [category, polarization] of array){
-      map.set(category, getNormalizedPolarization(polarization));
-    }
-    return map;
-  };
-
-  // @todo: do not use the index
-  const getBallotsFromCategory = (categorizationVote: PublicVote_2, cat_index: number) : [Principal, Ballot][] => {
-    let ballots : [Principal, Ballot][] = [];
-    for (let [principal, ballot] of categorizationVote.ballots){
-      if (ballot.answer[cat_index] !== undefined){
-        ballots.push([principal, {date : ballot.date, answer: ballot.answer[cat_index][1]}]);
-      }
-    }
-    return ballots;
   }
 
   useEffect(() => {
@@ -130,56 +108,33 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               {
                 // @todo: ad vote id
                 selectedVote === VoteType.INTEREST && interestVote !== undefined ?
-                  <div>
-                    <AppealChart 
-                      appeal={interestVote.aggregate}>
-                    </AppealChart> 
-                  </div>
-                : <></>
+                  <SinglePolarizationBar
+                    name={"INTEREST"}
+                    showName={false}
+                    polarizationInfo={CONSTANTS.INTEREST_INFO}
+                    vote={interestVote}
+                  /> : <></>
               }
               </div>
               <div>
               {
                 selectedVote === VoteType.OPINION && opinionVote !== undefined ?
-                  <div>
-                    <PolarizationBar 
-                      name={"OPINION"}
-                      showName={false}
-                      polarizationInfo={CONSTANTS.OPINION_INFO}
-                      polarizationValue={getNormalizedPolarization(opinionVote.aggregate)}
-                      polarizationWeight={1.0}
-                      ballots={opinionVote.ballots.map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}>
-                    </PolarizationBar>
-                    <div className="text-xs font-light text-gray-400">
-                      { "Opinion vote ID: " + opinionVote.id.toString() }
-                    </div>
-                  </div>
-                : <></>
+                  <SinglePolarizationBar
+                    name={"OPINION"}
+                    showName={false}
+                    polarizationInfo={CONSTANTS.OPINION_INFO}
+                    vote={opinionVote}
+                  /> : <></>
               }
               </div>
               <div>
               {
                 selectedVote === VoteType.CATEGORIZATION && categorizationVote !== undefined ?
-                  <div>
-                    <ol>
-                    {[...Array.from(toNormalizedMap(categorizationVote.aggregate).entries())].map((elem, index) => (
-                      <li key={elem[0]} className="mb-2">
-                        <PolarizationBar 
-                          name={elem[0]}
-                          showName={true}
-                          polarizationInfo={toPolarizationInfo(categories.get(elem[0]), CONSTANTS.CATEGORIZATION_INFO.center)}
-                          polarizationValue={elem[1]}
-                          polarizationWeight={1.0}
-                          ballots={getBallotsFromCategory(categorizationVote, index).map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}>
-                        </PolarizationBar>
-                      </li>
-                    ))}
-                  </ol>
-                  <div className="text-xs font-light text-gray-400">
-                    { "Categorization vote ID: " + categorizationVote.id.toString() }
-                  </div>
-                </div>
-                : <></>
+                <CategorizationPolarizationBars
+                  showName={true}
+                  categorizationVote={categorizationVote}
+                  categories={categories}
+                /> : <></>
               }
               </div>
             </div>

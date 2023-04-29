@@ -17,6 +17,9 @@ module.exports = {
 				'google-yellow': "#F4B400",
 				'google-green': "#0F9D58",
       },
+			transitionDuration: {
+				'2000': '2000ms',
+			},
 		},
 	},
 	plugins: [],

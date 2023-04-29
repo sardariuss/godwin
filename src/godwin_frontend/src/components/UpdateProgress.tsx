@@ -1,6 +1,39 @@
 import React, { useState, useEffect, useRef } from "react";
 
-import CircularProgress from '@mui/joy/CircularProgress';
+import CircularProgress                 from '@mui/joy/CircularProgress';
+import { Tooltip }                      from "@mui/material";
+import ErrorOutlineIcon                 from '@mui/icons-material/ErrorOutline';
+import DoneIcon                         from '@mui/icons-material/Done';
+import { CssVarsProvider, extendTheme } from '@mui/joy/styles';
+
+// This part could be declared in your theme file
+declare module '@mui/joy/CircularProgress' {
+  interface CircularProgressPropsSizeOverrides {
+    custom: true;
+  }
+}
+
+const theme = extendTheme({
+  components: {
+    JoyCircularProgress: {
+      styleOverrides: {
+        root: ({ ownerState, theme }) => ({
+          ...(ownerState.size === 'custom' && {
+            '--CircularProgress-trackThickness': '2px',
+            '--CircularProgress-progressThickness': '2px',
+            '--CircularProgress-progressColor': '#FFFFFF',
+            '--CircularProgress-trackColor': 'transparent',
+            '--_root-size': 'var(--CircularProgress-size, 25px)', // use --_root-size to let other components overrides via --CircularProgress-size
+          }),
+          ...(ownerState.instanceSize === 'custom' && {
+            '--CircularProgress-size': '25px',
+          })
+        }),
+      },
+    },
+  },
+});
+
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -25,72 +58,98 @@ function useInterval(callback, delay) {
 type Props<T> = {
   delay_duration_ms: number;
   update_function: () => Promise<T>;
-  callback_function: (T) => boolean;
+  callback_function: (T) => string;
+  run_countdown: boolean;
+  set_run_countdown: (boolean) => void;
   trigger_update: boolean;
   set_trigger_update: (boolean) => void;
+  children?: React.ReactNode;
 }
 
-const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_function, trigger_update, set_trigger_update}: Props<T>) => {
+const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_function, run_countdown, set_run_countdown, trigger_update, set_trigger_update, children}: Props<T>) => {
 
   const interval_duration_ms = 50;
 
   const [interval, setInterval] = useState<number | null>(null);
-  const [countdownProgress, setCountdownProgress] = useState<number>(delay_duration_ms);
+  const [countdownProgress, setCountdownProgress] = useState<number | null>(null);
   const [updateProgress, setUpdateProgress] = useState<boolean>(false);
-  const [success, setSuccess] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (trigger_update) {
-      set_trigger_update(false);
-      refreshInterval();
+    if (run_countdown && countdownProgress === null) {
+      setCountdownProgress(delay_duration_ms);
+      setInterval(interval_duration_ms);
+      setError(null); // @todo: probably not needed
+    } else if (!run_countdown) {
+      stopCountdown();
+    }
+  }, [run_countdown]);
+
+  useEffect(() => {
+    if (countdownProgress !== null && countdownProgress <= 0) {
+      triggerUpdate();
+    }
+  }, [countdownProgress]);
+
+  useEffect(() => {
+    if (trigger_update && updateProgress === false) {
+      triggerUpdate();
     }
   }, [trigger_update]);
 
   useInterval(() => {
-    //console.log("countdownProgress: " + countdownProgress)
-    if (countdownProgress > 0) {
-      //console.log("countdownProgress: update")
-      setCountdownProgress((progress) => progress - interval_duration_ms);
-    } else {
-      //console.log("countdownProgress: stop")
-      setCountdownProgress(delay_duration_ms);
-      setInterval(null);
-      update();
-    }
+    setCountdownProgress((progress) => {
+      return progress !== null && progress > 0 ? progress - interval_duration_ms : progress;
+    });
   }, interval);
 
-  const update = () => {
+  const triggerUpdate = () => {
+    stopCountdown();
     setUpdateProgress(true);
+    set_trigger_update(true);
     update_function().then((result) => {
       setUpdateProgress(false);
-      setSuccess(callback_function(result));
+      setError(callback_function(result));
+      set_trigger_update(false);
     });
-	};
+  }
 
-  const refreshInterval = () => {
-    //console.log("refreshInterval: start")
-    setSuccess(null);
-    setCountdownProgress(delay_duration_ms);
-    setInterval(interval_duration_ms);
+  const stopCountdown = () => {
+    set_run_countdown(false);
+    setCountdownProgress(null);
+    setInterval(null);
+    setError(null);
   }
 
 	return (
-    <CircularProgress
-      color={success === null ? "primary" : (success ? "success" : "danger")} 
-      determinate={!updateProgress}
-      value={updateProgress ? 30 : (countdownProgress / delay_duration_ms) * 100 }
-      variant="plain"
-      size="sm"
-    >
-      <div className="w-3/4">
-      {
-        success === null ? <></> :
-          success ? 
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960" fill="green"><path d="M378 815.739 148.261 586l48.978-48.978L378 717.782l383.761-383.76L810.739 383 378 815.739Z"/></svg> :
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960" fill="red"><path d="M445.935 678.63V290.5h68.13v388.13h-68.13Zm0 182.87v-68.13h68.13v68.13h-68.13Z"/></svg>
-      }
+    <div className="flex relative justify-items-center w-full">
+      <div className="relative flex w-full" style={{visibility: updateProgress === false && countdownProgress === null ? "hidden" : "visible"}}>
+        <CssVarsProvider theme={theme}>
+        <CircularProgress
+          color="primary"
+          determinate={!updateProgress}
+          value={updateProgress ? 40 : countdownProgress ? (countdownProgress / delay_duration_ms) * 100 : 0}
+          variant="soft"
+          size="custom"
+        > 
+        </CircularProgress>
+        </CssVarsProvider>
       </div>
-    </CircularProgress>
+      <div className="flex flex-col absolute grow w-full z-10 items-center">
+        {
+          updateProgress ? 
+            <></> :
+          countdownProgress?
+            <div className="flex w-full items-center text-center place-content-center dark:text-gray-200 dark:hover:text-white hover:cursor-pointer" onClick={(e) => stopCountdown()}>◼</div> :
+          error === null ?
+            children : error.length !== 0 ?
+            <Tooltip title={error} arrow>
+              <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+            </Tooltip> :
+            <DoneIcon color="success"></DoneIcon>
+          }
+      </div>
+    </div>
 	);
 };
 

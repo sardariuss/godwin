@@ -5,6 +5,7 @@ import { MainTabButton } from "./MainTabButton";
 import ListQuestions from "./ListQuestions";
 import { toMap } from "../utils";
 import OpenQuestion from "./OpenQuestion";
+import SubBanner from "./SubBanner";
 
 import { useParams } from "react-router-dom";
 import { useState, useContext, useEffect } from "react";
@@ -79,57 +80,42 @@ const MainQuestions = () => {
     (
       sub === undefined ?  
         <div>Unknown subgodwin @todo</div> : 
-        <div>
-          <div className="text-center">
-            <div className="bg-gradient-to-r from-purple-700 from-10% via-indigo-800 via-30% to-sky-600 to-90% dark:text-white font-medium border-t border-gray-600 mt-14 pt-2 pb-1">
-              { sub.name }
-            </div>
-            <div className="bg-gray-100 dark:bg-gray-700 dark:text-white font-normal border-y py-1 border-gray-600">
-              { sub.categories.map((category, index) => 
-                <span key={category[0]}>
-                  <span className="text-xs font-medium">{category[1].left.name.toLocaleLowerCase()  + " " }</span>
-                  <span>{category[1].left.symbol}</span>
-                  <span className="text-xs font-light">{" vs "}</span>
-                  <span>{category[1].right.symbol}</span>
-                  <span className="text-xs font-medium">{" " + category[1].right.name.toLocaleLowerCase() }</span>
-                  {
-                    index < sub.categories.length - 1 ? 
-                    <span>{" · "}</span> : <></>
-                  }
-                </span>
-              )}
+        <div className="flex flex-col items-center w-full">
+          <div className="flex flex-col sticky top-0 z-20 bg-white dark:bg-slate-900 items-center w-full">
+            <SubBanner sub={sub}/>
+            <div className="flex flex-col border-x border-slate-700 w-1/3">
+              <div className="border-b border-gray-200 dark:border-gray-700 w-full">
+                <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
+                {
+                  mainTabs.map((tab, index) => (
+                    <li key={index} className="grow">
+                      <MainTabButton label={mainTabToText(tab)} isCurrent={tab == currentMainTab} setIsCurrent={() => setCurrentMainTab(tab)}/>
+                    </li>
+                  ))
+                }
+                </ul>
+              </div>
+              {
+                currentMainTab === MainTab.HOME ?
+                <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion> :
+                <div>
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
+                    {
+                      filters.map((filter, index) => (
+                        <li key={index} className="grow">
+                          <TabButton label={filterToText(filter)} isCurrent={filter == currentBrowseFilter} setIsCurrent={() => setCurrentBrowseFilter(filter)}/>
+                        </li>
+                      ))
+                    }
+                    </ul>
+                  </div>
+                </div>
+              }
             </div>
           </div>
-          <div className="border mt-5 border-slate-700 mx-96 justify-center">
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
-              {
-                mainTabs.map((tab, index) => (
-                  <li key={index} className="grow">
-                    <MainTabButton label={mainTabToText(tab)} isCurrent={tab == currentMainTab} setIsCurrent={() => setCurrentMainTab(tab)}/>
-                  </li>
-                ))
-              }
-              </ul>
-            </div>
-            {
-              currentMainTab === MainTab.HOME ?
-              <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion> :
-              <div>
-                <div className="border-b border-gray-200 dark:border-gray-700">
-                  <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
-                  {
-                    filters.map((filter, index) => (
-                      <li key={index} className="grow">
-                        <TabButton label={filterToText(filter)} isCurrent={filter == currentBrowseFilter} setIsCurrent={() => setCurrentBrowseFilter(filter)}/>
-                      </li>
-                    ))
-                  }
-                  </ul>
-                </div>
-                <ListQuestions actor={sub.actor} categories={toMap(sub.categories)} order_by={getQueryParams(currentBrowseFilter)[0]} query_direction={getQueryParams(currentBrowseFilter)[1]}/>
-              </div>
-            }
+          <div className="flex flex-col border mb-5 border-slate-700 w-1/3">
+            <ListQuestions actor={sub.actor} categories={toMap(sub.categories)} order_by={getQueryParams(currentBrowseFilter)[0]} query_direction={getQueryParams(currentBrowseFilter)[1]}/>
           </div>
         </div>
     )
