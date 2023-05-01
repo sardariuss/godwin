@@ -31,13 +31,13 @@ module {
     var ordered_set: OrderedSet<Key>;
   };
 
-  public func initRegister<OrderBy, Key>() : Register<OrderBy, Key> {
-    Map.new<OrderBy, Inner<Key>>();
+  public func initRegister<OrderBy, Key>(hash: Map.HashUtils<OrderBy>) : Register<OrderBy, Key> {
+    Map.new<OrderBy, Inner<Key>>(hash);
   };
 
   public func addOrderBy<OrderBy, Key>(register: Register<OrderBy, Key>, hash: Map.HashUtils<OrderBy>, order_by: OrderBy) {
     if(Option.isNull(Map.get(register, hash, order_by))){
-      Map.set(register, hash, order_by, { key_map = Map.new<Nat,Key>(); var ordered_set = OrderedSet.init<Key>(); });
+      Map.set(register, hash, order_by, { key_map = Map.new<Nat, Key>(Map.nhash); var ordered_set = OrderedSet.init<Key>(); });
     };
   };
 

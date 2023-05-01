@@ -11,7 +11,7 @@ let additions =
         },
         { name = "map"
         , repo = "https://github.com/ZhenyaUsenko/motoko-hash-map"
-        , version = "v7.0.0"
+        , version = "v8.1.0"
         , dependencies = ["base"]
         },
         {

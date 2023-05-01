@@ -72,7 +72,7 @@ module {
       switch(_register.getOpt(question_id)){
         case(null) { 
           // Create a new entry with an empty history
-          _register.set(question_id, { var current = { status; date; iteration = 0; }; history = Map.new<Status, [Time]>(); }); 
+          _register.set(question_id, { var current = { status; date; iteration = 0; }; history = Map.new<Status, [Time]>(Status.status_hash); }); 
         };
         case(?status_data) {
           // Add the (previous) current status to the history

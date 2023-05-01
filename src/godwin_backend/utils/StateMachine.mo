@@ -46,24 +46,24 @@ module {
   public func addTransition<S, E, Err, M>(schema: Schema<S, E, Err, M>, from: S, to: ?S, condition: Condition<M, E, Err>, events: [E]) {
     ignore schema.transitions.put(from, to, condition);
     for (event in Array.vals<E>(events)) {
-      let set = Option.get(schema.events.getOpt(event, from), Set.new<?S>());
+      let set = Option.get(schema.events.getOpt(event, from), Set.new<?S>(schema.state_opt_hash));
       ignore Set.put<?S>(set, schema.state_opt_hash, to);
       ignore schema.events.put(event, from, set);
     };
   };
 
   public func initEventResult<S, Err>() : EventResult<S, Err> {
-    WRef.WRef<Result<?S, [(?S, Err)]>>(Ref.initRef(#err([])));
+    WRef.WRef<Result<?S, [(?S, Err)]>>(Ref.init(#err([])));
   };
 
   public func submitEvent<S, E, Err, M>(schema: Schema<S, E, Err, M>, current: S, model: M, event: E, result: EventResult<S, Err>) : async* () {
     let { transitions; events; } = schema;
     var errors : [(?S, Err)] = [];
-    for(next in getNextStates(events, event, current)) {
+    for(next in getNextStates(events, event, current, schema.state_opt_hash)) {
       switch(transitions.getOpt(current, next)){
         case(null){ }; // no transition to that state, nothing to do
         case(?condition){
-          let transition_result = WRef.WRef<Result<(), Err>>(Ref.initRef(#ok));
+          let transition_result = WRef.WRef<Result<(), Err>>(Ref.init(#ok));
           await* condition(model, event, transition_result); 
           switch(transition_result.get()){
             case(#ok){ 
@@ -80,8 +80,8 @@ module {
     result.set(#err(errors));
   };
 
-  func getNextStates<E, S>(events: Events<E, S>, event: E, from: S) : Iter<?S> {
-    Set.keys(Option.get(events.getOpt(event, from), Set.new<?S>()));
+  func getNextStates<E, S>(events: Events<E, S>, event: E, from: S, state_opt_hash: Map.HashUtils<?S>) : Iter<?S> {
+    Set.keys(Option.get(events.getOpt(event, from), Set.new<?S>(state_opt_hash)));
   };
 
 };

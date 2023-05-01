@@ -39,15 +39,16 @@ actor Master {
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
     // +% is the same as addWrap, meaning it wraps on overflow
-    func(key: (Principal, Text)) : Nat = Nat32.toNat((Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff), // @todo: remove cast to Nat with map v8.0.0
+    func(key: (Principal, Text)) : Nat32 = (Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff, // @todo: remove cast to Nat with map v8.0.0
     func(a: (Principal, Text), b: (Principal, Text)) : Bool = a.0 == b.0 and a.1 == b.1,
+    func() = (Principal.fromText("aaaaa-aa"), "")
   );
 
-  stable let _sub_godwins = Map.new<(Principal, Text), Godwin>();
+  stable let _sub_godwins = Map.new<(Principal, Text), Godwin>(pthash);
 
-  stable let _airdropped_users = Set.new<Principal>();
+  stable let _airdropped_users = Set.new<Principal>(Map.phash);
 
-  stable let _user_names = Map.new<Principal, Text>();
+  stable let _user_names = Map.new<Principal, Text>(Map.phash);
 
   stable var _airdrop_supply = 1_000_000_000;
 

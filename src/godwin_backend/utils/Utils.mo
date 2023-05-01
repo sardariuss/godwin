@@ -115,7 +115,7 @@ module {
   };
 
   public func put2D<K1, K2, V>(map2D: Map2D<K1, K2, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, v: V) : ?V {
-    let map1D = Option.get(Map.get(map2D, k1_hash, k1), Map.new<K2, V>());
+    let map1D = Option.get(Map.get(map2D, k1_hash, k1), Map.new<K2, V>(k2_hash));
     let old_v = Map.put(map1D, k2_hash, k2, v);
     ignore Map.put(map2D, k1_hash, k1, map1D); // @todo: might be required only if the inner map is new
     old_v;
@@ -145,8 +145,8 @@ module {
   type Map3D<K1, K2, K3, V> = Map<K1, Map<K2, Map<K3, V>>>;
 
   public func put3D<K1, K2, K3, V>(map3D: Map3D<K1, K2, K3, V>, k1_hash: HashUtils<K1>, k1: K1, k2_hash: HashUtils<K2>, k2: K2, k3_hash: HashUtils<K3>, k3: K3, v: V) : ?V {
-    let map2D = Option.get(Map.get(map3D, k1_hash, k1), Map.new<K2, Map<K3, V>>());
-    let map1D = Option.get(Map.get(map2D, k2_hash, k2), Map.new<K3, V>());
+    let map2D = Option.get(Map.get(map3D, k1_hash, k1), Map.new<K2, Map<K3, V>>(k2_hash));
+    let map1D = Option.get(Map.get(map2D, k2_hash, k2), Map.new<K3, V>(k3_hash));
     let old_v = Map.put(map1D, k3_hash, k3, v);
     ignore Map.put(map2D, k2_hash, k2, map1D); // @todo: might be required only if the inner map is new
     ignore Map.put(map3D, k1_hash, k1, map2D); // @todo: might be required only if the inner map is new

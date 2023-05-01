@@ -50,7 +50,7 @@ module {
   public type ScanLimitResult = Queries.ScanLimitResult;
 
   public func initRegister() : Register {
-    Queries.initRegister<OrderBy, Key>();
+    Queries.initRegister<OrderBy, Key>(orderByHash);
   };
 
   public func addOrderBy(register: Register, order_by: OrderBy) {
@@ -93,9 +93,9 @@ module {
     };
   };
 
-  func hashOrderBy(a: OrderBy) : Nat { Map.thash.0(toTextOrderBy(a)); };
+  func hashOrderBy(a: OrderBy) : Nat32 { Map.thash.0(toTextOrderBy(a)); };
   func equalOrderBy(a: OrderBy, b: OrderBy) : Bool { Map.thash.1(toTextOrderBy(a), toTextOrderBy(b)); };
-  let orderByHash : Map.HashUtils<OrderBy> = ( func(a) = hashOrderBy(a), func(a, b) = equalOrderBy(a, b) );
+  let orderByHash : Map.HashUtils<OrderBy> = ( func(a) = hashOrderBy(a), func(a, b) = equalOrderBy(a, b), func() = #AUTHOR );
 
   func toOrderBy(key: Key) : OrderBy {
     switch(key){

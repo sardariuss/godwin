@@ -56,7 +56,7 @@ module {
 
     let tests = Buffer.Buffer<Suite.Suite>(array_originals.size() * 4);
     
-    let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
+    let questions = Questions.build(Map.new<Nat, Question>(Map.nhash), { var v : Nat = 0; });
 
     let interest_votes = Interests.build(Interests.initRegister());
     let queries = Queries.build(Queries.initRegister(), questions, interest_votes);

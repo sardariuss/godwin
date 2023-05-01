@@ -47,9 +47,9 @@ module {
       Set.add(categories, Set.thash, "ECONOMY");
       Set.add(categories, Set.thash, "CULTURE");
 
-      let users = Users.build(Map.new<Principal, User>(), null);
+      let users = Users.build(Map.new<Principal, User>(Map.phash), null);
 
-      let questions = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
+      let questions = Questions.build(Map.new<Nat, Question>(Map.nhash), { var v : Nat = 0; });
       ignore questions.createQuestion(principals[0], 0, "Sexual orientation is a social construct");
       questions.replaceQuestion(Question.openOpinionVote(questions.getQuestion(0), 0));
 

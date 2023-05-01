@@ -12,15 +12,15 @@ module {
   type HashUtils<K> = Map.HashUtils<K>;
 
   public func new<K, V>(hash: HashUtils<K>) : WMap<K, V> {
-    WMap(Map.new<K, V>(), hash);
+    WMap(Map.new<K, V>(hash), hash);
   };
 
   public func new2D<K1, K2, V>(hash1: HashUtils<K1>, hash2: HashUtils<K2>) : WMap2D<K1, K2, V> {
-    WMap2D(Map.new<K1, Map<K2, V>>(), hash1, hash2);
+    WMap2D(Map.new<K1, Map<K2, V>>(hash1), hash1, hash2);
   };
 
   public func new3D<K1, K2, K3, V>(hash1: HashUtils<K1>, hash2: HashUtils<K2>, hash3: HashUtils<K3>) : WMap3D<K1, K2, K3, V> {
-    WMap3D(Map.new<K1, Map<K2, Map<K3, V>>>(), hash1, hash2, hash3);
+    WMap3D(Map.new<K1, Map<K2, Map<K3, V>>>(hash1), hash1, hash2, hash3);
   };
 
   public class WMap<K, V>(map_: Map<K, V>, hash_: HashUtils<K>) {
@@ -57,7 +57,7 @@ module {
     };
       
     public func filter(fn: (key: K, value: V) -> Bool): Map<K, V> {
-      Map.filter(map_, fn);
+      Map.filter(map_, hash_, fn);
     };
       
     public func keys(): Iter.Iter<K> {
@@ -88,8 +88,8 @@ module {
       Map.find(map_, fn);
     };
       
-    public func findLast(fn: (key: K, value: V) -> Bool): ?(K, V) {
-      Map.findLast(map_, fn);
+    public func findDesc(fn: (key: K, value: V) -> Bool): ?(K, V) {
+      Map.findDesc(map_, fn);
     };
       
     public func clear() {

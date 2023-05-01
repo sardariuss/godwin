@@ -5,7 +5,7 @@ module {
     var v: V;
   };
 
-  public func initRef<V>(value: V) : Ref<V> {
+  public func init<V>(value: V) : Ref<V> {
     { var v = value; };
   };
 

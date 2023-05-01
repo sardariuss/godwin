@@ -171,7 +171,7 @@ module {
 
     func getUser(principal: Principal) : User {
       Option.get(_users.getOpt(principal), {
-        opinions = Set.new<Nat>();
+        opinions = Set.new<Nat>(Map.nhash);
         convictions = PolarizationMap.nil(_categories);
       });
     };

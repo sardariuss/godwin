@@ -53,7 +53,7 @@ module {
 
   public func initRegister<T, A>() : VoteRegister<T, A> {
     {
-      votes = Map.new<Nat, Vote<T, A>>();
+      votes = Map.new<Nat, Vote<T, A>>(Map.nhash);
       var index = 0;
     }
   };
@@ -70,7 +70,7 @@ module {
       let index = _register.index;
       let vote : Vote<T, A> = {
         id = index;
-        ballots = Map.new<Principal, Ballot<T>>();
+        ballots = Map.new<Principal, Ballot<T>>(Map.phash);
         var aggregate = _empty_aggregate; 
       };
       Map.set(_register.votes, Map.nhash, index, vote);

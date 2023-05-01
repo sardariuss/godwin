@@ -43,7 +43,7 @@ module {
     creation_date     : Time;
     categories        : Categories.Register;
     pay_interface     : {
-      failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
+      //failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
     };
     questions         : {
       register           : Map<Nat, Question>;
@@ -82,44 +82,44 @@ module {
 
   public func initState(master: Principal, creation_date: Time, parameters: Parameters) : State {
     {
-      name                          = Ref.initRef<Text>(parameters.name);
-      master                        = Ref.initRef<Principal>(master);
+      name                          = Ref.init<Text>(parameters.name);
+      master                        = Ref.init<Principal>(master);
       creation_date                 = creation_date;
       categories                    = Categories.initRegister(parameters.categories);
       pay_interface = {
-        failed_payouts              = Set.new<FailedPayout>();
+        //failed_payouts              = Set.new<FailedPayout>();
       };
       status        = {
-        register                    = Map.new<Nat, StatusData>();
+        register                    = Map.new<Nat, StatusData>(Map.nhash);
       };
       questions     = {
-        register                    = Map.new<Nat, Question>();
-        index                       = Ref.initRef<Nat>(0);
-        character_limit             = Ref.initRef<Nat>(parameters.questions.character_limit);
+        register                    = Map.new<Nat, Question>(Map.nhash);
+        index                       = Ref.init<Nat>(0);
+        character_limit             = Ref.init<Nat>(parameters.questions.character_limit);
       };
       queries       = {
         register                    = QuestionQueries.initRegister();
       };
       controller    = {
         model = {
-          last_pick_date            = Ref.initRef<Time>(creation_date);
-          params                    = Ref.initRef<SchedulerParameters>(parameters.scheduler);
+          last_pick_date            = Ref.init<Time>(creation_date);
+          params                    = Ref.init<SchedulerParameters>(parameters.scheduler);
         };
       };
       opened_questions = {
-        register                    = Map.new<Nat, (Principal, Blob)>();
-        index                       = Ref.initRef<Nat>(0);
+        register                    = Map.new<Nat, (Principal, Blob)>(Map.nhash);
+        index                       = Ref.init<Nat>(0);
       };
       votes         = {
         interest                    = Interests.initVoteRegister();
-        interest_history            = Map.new<Nat, VoteHistory>();
+        interest_history            = Map.new<Nat, VoteHistory>(Map.nhash);
         opinion                     = Opinions.initVoteRegister();
-        opinion_history             = Map.new<Nat, VoteHistory>();
+        opinion_history             = Map.new<Nat, VoteHistory>(Map.nhash);
         categorization              = Categorizations.initVoteRegister();
-        categorization_history      = Map.new<Nat, VoteHistory>();
+        categorization_history      = Map.new<Nat, VoteHistory>(Map.nhash);
       };
       users         = {
-        register                    = Map.new<Principal, User>();
+        register                    = Map.new<Principal, User>(Map.phash);
         convictions_half_life       = parameters.history.convictions_half_life;
       };
     };

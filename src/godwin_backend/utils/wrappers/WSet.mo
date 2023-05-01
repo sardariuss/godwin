@@ -31,7 +31,7 @@ module {
     };
       
     public func filter(fn: (key: K) -> Bool): Set<K> {
-      Set.filter(map_, fn);
+      Set.filter(map_, hash_, fn);
     };
       
     public func keys(): Iter.Iter<K> {
@@ -54,8 +54,8 @@ module {
       Set.find(map_, fn);
     };
       
-    public func findLast(fn: (key: K) -> Bool): ?K {
-      Set.findLast(map_, fn);
+    public func findDesc(fn: (key: K) -> Bool): ?K {
+      Set.findDesc(map_, fn);
     };
       
     public func clear() {

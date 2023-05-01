@@ -35,9 +35,9 @@ module {
   // @todo: Needs to test that the convictions are updated
   public class TestScheduler() = {
 
-    let users_ = Users.build(Map.new<Principal, User>(), null);
+    let users_ = Users.build(Map.new<Principal, User>(Map.phash), null);
 
-    let questions_ = Questions.build(Map.new<Nat, Question>(), { var v : Nat = 0; });
+    let questions_ = Questions.build(Map.new<Nat, Question>(Map.nhash), { var v : Nat = 0; });
 
     let queries_ = Queries.build(Queries.initRegister());
 
@@ -98,9 +98,9 @@ module {
       let last_selection_date = 1000;
 
       let scheduler = Scheduler.build(
-        Types.initRef(selection_rate),
+        Types.init(selection_rate),
         Map.fromIter(Array.vals(status_durations), Types.statushash),
-        Types.initRef(last_selection_date),
+        Types.init(last_selection_date),
         questions_,
         users_,
         queries_
