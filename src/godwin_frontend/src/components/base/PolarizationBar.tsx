@@ -96,12 +96,11 @@ type Props = {
     right: CategorySide;
   };
   polarizationValue: Polarization;
-  polarizationWeight: number;
   ballots: [string, Ballot, number][];
   chartType: ChartTypeEnum;
 };
 
-const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, polarizationWeight, ballots, chartType}: Props) => {
+const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots, chartType}: Props) => {
 
   const labels = [name];
   const normedPolarization = getNormalizedPolarization(polarizationValue);
@@ -110,7 +109,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, p
     labels,
     datasets: [
       {
-        borderColor: '#666666',
+        borderColor: '#000000',
         borderWidth: 0.8,
         borderSkipped: false,
         labels: [polarizationInfo.left.symbol],
@@ -118,7 +117,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, p
         backgroundColor: polarizationInfo.left.color,
       },
       {
-        borderColor: '#666666',
+        borderColor: '#000000',
         borderWidth: 0.8,
         borderSkipped: false,
         labels: [polarizationInfo.center.symbol],
@@ -126,7 +125,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, p
         backgroundColor: polarizationInfo.center.color,
       },
       {
-        borderColor: '#666666',
+        borderColor: '#000000',
         borderWidth: 0.8,
         borderSkipped: false,
         labels: [polarizationInfo.right.symbol],

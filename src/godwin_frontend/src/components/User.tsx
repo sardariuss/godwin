@@ -1,18 +1,14 @@
-import { _SERVICE, Category, Polarization, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { Account } from "./../../declarations/godwin_master/godwin_master.did";
 import { ActorContext } from "../ActorContext"
 import { Principal } from "@dfinity/principal";
 import { IcrcAccount, encodeIcrcAccount } from "@dfinity/ledger";
 import { arrayOfNumberToUint8Array, fromNullable } from "@dfinity/utils";
+import Convictions from "./Convictions";
 import Copy from "./Copy";
 
 import { useEffect, useState, useContext } from "react";
 
 import CONSTANTS from "../Constants";
-
-import { ChartTypeEnum, toMap, toPolarizationInfo } from "../utils";
-
-import PolarizationBar from "./base/PolarizationBar";
 
 import { useParams } from "react-router-dom";
 
@@ -23,17 +19,9 @@ const UserComponent = () => {
 
   const [principal, setPrincipal] = useState<Principal | undefined>(undefined);
   const [isLoggedUser, setIsLoggedUser] = useState<boolean>(false);
-
   const [userName, setUserName] = useState<string | undefined>(undefined);
-  
   const [account, setAccount] = useState<Account | undefined>(undefined);
-
   const [balance, setBalance] = useState<bigint | undefined>(undefined);
-
-  const [convictions, setConvictions] = useState<Map<Category, Polarization>>(new Map<Category, Polarization>());
-  const [ballots, setBallots] = useState<Map<Category, [string, Ballot, number][]>>(new Map<Category, [string, Ballot, number][]>());
-  const [categoryWeights, setCategoryWeights] = useState<Map<Category, number>>(new Map<Category, number>());
-  const [categoryMax, setCategoryMax] = useState<number | undefined>(undefined);
 
 	const refreshUser = async () => {
     if (user === undefined) {
@@ -51,52 +39,10 @@ const UserComponent = () => {
       setUserName(undefined);
     } else {
       let user_name = fromNullable(await master.getUserName(principal));
+      console.log(user_name);
       setUserName(user_name === undefined ? CONSTANTS.DEFAULT_USER_NAME : user_name);
     }
   }
-
-  const refreshConvictions = async () => {
-    if (principal === undefined) {
-      setConvictions(new Map<Category, Polarization>());
-      setBallots(new Map<Category, [string, Ballot, number][]>());
-      setCategoryWeights(new Map<Category, number>());
-      setCategoryMax(undefined);
-      return;
-    }
-   
-    // @todo
-    let sub = subs.get("classic6");
-    if (sub === undefined){
-      return;
-    }
-
-    let queryConvictions = await sub.actor.getUserConvictions(principal);
-    
-    if (queryConvictions[0] !== undefined) {
-      setConvictions(toMap(queryConvictions[0]));
-    }
-
-    let queryOpinions = await sub.actor.getUserOpinions(principal);
-
-    if (queryOpinions[0] !== undefined) {
-      let weighted_ballots = new Map<Category, [string, Ballot, number][]>();
-      let category_weights = new Map<Category, number>();
-
-      for (let i = 0; i < queryOpinions[0].length; i++){
-        let [vote_id, categorization, opinion] = queryOpinions[0][i];
-        categorization.forEach(([category, polarization]) => {
-          let weight = (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
-          category_weights.set(category, (category_weights.get(category) ?? 0) + Math.abs(weight));
-          let array : [string, Ballot, number][] = weighted_ballots.get(category) ?? [];
-          array.push([vote_id.toString(), opinion, weight]);
-          weighted_ballots.set(category, array);
-        });
-      }
-      setBallots(weighted_ballots);
-      setCategoryWeights(category_weights);
-      setCategoryMax(Math.max(...Array.from(category_weights.values())));
-    }
-	}
 
   const refreshAccount = async () => {
     if (principal === undefined || !isLoggedUser) {
@@ -156,7 +102,6 @@ const UserComponent = () => {
   }, [subs, isAuthenticated, user]);
 
   useEffect(() => {
-    refreshConvictions();
     refreshAccount();
     refreshUserName();
   }, [principal, isLoggedUser]);
@@ -228,45 +173,15 @@ const UserComponent = () => {
               }
             </div>
           </div>
-          <div className="border-y border-slate-700">
-            <div className="bg-gradient-to-r from-purple-700 from-10% via-indigo-800 via-30% to-sky-600 to-90% dark:text-white font-medium border-t border-gray-600 pt-2 pb-1 text-center">
-              {subs.get("classic6")?.name}
-            </div>
-            <div className="flex flex-col w-full">
-              <ol className="w-full">
-              {
-                [...Array.from(convictions.entries())].map((elem, index) => (
-                  (
-                    <li key={elem[0]}>
-                      <PolarizationBar 
-                        name={elem[0]}
-                        showName={true}
-                        polarizationInfo={toPolarizationInfo(subs.get("classic6")?.categories[index][1], CONSTANTS.CATEGORIZATION_INFO.center)}
-                        polarizationValue={elem[1]}
-                        polarizationWeight={(categoryWeights.get(elem[0]) ?? 0) / (categoryMax ?? 1)}
-                        ballots={ballots.get(elem[0]) ?? []}
-                        chartType={ChartTypeEnum.Bar}>
-                      </PolarizationBar>
-                    </li>
-                  )
-                ))
-              }
-              </ol>
-            </div>
-          </div>
-          { /*
-          <div>Votes:
-            <ul className="list-none">
-            {
-              votes.map((vote, index) => (
-                <li className="list-none" key={index}>
-                  Vote on question {vote[0].toString()}: {vote[1].toString()} : {getVote()}
-                </li>
-              ))
-            }
-            </ul>
-          </div>
-          */ }
+          <ol>
+          {
+            [...Array.from(subs.entries())].map(([name, sub]) => (
+              <li key={name}>
+                <Convictions sub={sub} principal={principal}/>
+              </li>
+            ))
+          }
+          </ol>
         </div>
     }
     </div>

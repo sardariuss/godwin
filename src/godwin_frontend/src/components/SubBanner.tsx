@@ -17,7 +17,7 @@ const SubBanner = ({sub} : Props) => {
         { sub.name }
       </div>
       <div className="relative w-full overflow-clip bg-gray-100 dark:bg-gray-700 border-y py-1 border-gray-600">
-        <div className="dark:text-white font-normal" 
+        <div className="dark:text-white font-normal whitespace-nowrap"
           style={{transform: `translateX(` + `${(shift - diff) * 100}` + `%)`}}>
           { sub.categories.map((category, index) => 
             <span key={category[0]}>
