@@ -1,12 +1,12 @@
-import Result "mo:base/Result";
-import Nat64 "mo:base/Nat64";
-import Nat "mo:base/Nat";
-import Buffer "mo:base/Buffer";
-import Blob "mo:base/Blob";
-import Principal "mo:base/Principal";
-import Debug "mo:base/Debug";
+import Result     "mo:base/Result";
+import Nat64      "mo:base/Nat64";
+import Nat        "mo:base/Nat";
+import Buffer     "mo:base/Buffer";
+import Blob       "mo:base/Blob";
+import Principal  "mo:base/Principal";
+import Debug      "mo:base/Debug";
 
-import Token "canister:godwin_token";
+import TokenTypes "../godwin_token/Types";
 
 module {
 
@@ -17,29 +17,29 @@ module {
     #IdentifierAlreadyTaken;
   };
 
-  public type AirdropError = Token.TransferError or {
+  public type AirdropError = TokenTypes.TransferError or {
     #AlreadySupplied;
     #AirdropOver;
   };
 
-  public type TransferError = Token.TransferError or {
+  public type TransferError = TokenTypes.TransferError or {
     #NotAllowed;
   };
 
-  public type MintBatchArgs = Token.MintBatchArgs;
+  public type MintBatchArgs = TokenTypes.MintBatchArgs;
 
   public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError>;
 
-  public type TransferResult = Result<Token.TxIndex, TransferError>;
+  public type TransferResult = Result<TokenTypes.TxIndex, TransferError>;
 
-  public type AirdropResult = Result<Token.TxIndex, AirdropError>;
+  public type AirdropResult = Result<TokenTypes.TxIndex, AirdropError>;
 
-  public type MintBatchResult = Result<[(Token.Mint, Token.TransferResult)], TransferError>;
+  public type MintBatchResult = Result<[(TokenTypes.Mint, TokenTypes.TransferResult)], TransferError>;
 
-  public type Balance = Token.Balance;
+  public type Balance = TokenTypes.Balance;
 
   public type MasterInterface = actor {
-    pullTokens: shared(Principal, Token.Balance, ?Blob) -> async TransferResult;
+    pullTokens: shared(Principal, TokenTypes.Balance, ?Blob) -> async TransferResult;
     airdrop: shared() -> async AirdropResult;
     mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
   };

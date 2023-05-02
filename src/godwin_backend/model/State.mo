@@ -35,7 +35,7 @@ module {
   type User                = Types.User;
   type StatusData          = Types.StatusData;
   type VoteHistory         = Types.VoteHistory;
-  type FailedPayout        = Types.FailedPayout;
+  //type FailedPayout        = Types.FailedPayout; // @todo
 
   public type State = {
     name              : Ref<Text>; // @todo: this shouldn't be a ref

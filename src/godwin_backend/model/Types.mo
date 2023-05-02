@@ -10,8 +10,6 @@ import Set "mo:map/Set";
 
 import Duration "../utils/Duration";
 
-import Token "canister:godwin_token";
-
 module {
 
   // For convenience: from base module
@@ -170,17 +168,6 @@ module {
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
   public type PolarizationMap = Trie<Category, Polarization>;
   public type PolarizationArray = [(Category, Polarization)];
-
-  public type SubTransferArgs = {
-    principal: Principal;
-    sub_subaccount: Blob;
-    amount: Nat;
-  };
-
-  public type FailedPayout = SubTransferArgs and {
-    time: Nat64;
-    error: Token.TransferError or { #Trapped; };
-  };
 
   public type PrincipalError = {
     #PrincipalIsAnonymous;

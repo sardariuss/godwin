@@ -1,7 +1,6 @@
 import Types "../../../src/godwin_backend/model/Types";
 import Questions "../../../src/godwin_backend/model/Questions";
 import Queries "../../../src/godwin_backend/model/QuestionQueries";
-import Interests "../../../src/godwin_backend/model/votes/Interests";
 
 import TestableItems "../testableItems";
 import Principals "../Principals";
@@ -58,8 +57,7 @@ module {
     
     let questions = Questions.build(Map.new<Nat, Question>(Map.nhash), { var v : Nat = 0; });
 
-    let interest_votes = Interests.build(Interests.initRegister());
-    let queries = Queries.build(Queries.initRegister(), questions, interest_votes);
+    let queries = Queries.build(Queries.initRegister());
     
     // Test that created questions are equal to original questions
     for (new_question in Array.vals(array_originals)){

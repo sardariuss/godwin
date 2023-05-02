@@ -1,64 +1,31 @@
 import Types           "Types";
 import Status          "Status";
-import Categories      "Categories";
-import Decay           "Decay";
-import Votes           "votes/Votes";
-import Opinions        "votes/Opinions";
-import Categorizations "votes/Categorizations";
-import Interests       "votes/Interests";
-import Polarization    "votes/representation/Polarization";
-import Cursor          "votes/representation/Cursor";
-import PolarizationMap "votes/representation/PolarizationMap";
 
 import Utils           "../utils/Utils";
 import WMap            "../utils/wrappers/WMap";
-import Duration        "../utils/Duration";
 
 import Map             "mo:map/Map";
-import Set             "mo:map/Set";
 
 import Debug           "mo:base/Debug";
-import Iter            "mo:base/Iter";
 import Option          "mo:base/Option";
-import Float           "mo:base/Float";
-import Principal       "mo:base/Principal";
-import Trie            "mo:base/Trie";
 import Nat             "mo:base/Nat";
 
 module {
 
   // For convenience: from base module
-  type Time               = Int;
-  type Iter<T>            = Iter.Iter<T>;
+  type Time        = Int;
 
   // For convenience: from map module
-  type Map<K, V>          = Map.Map<K, V>;
-  type Map2D<K1, K2, V>   = Map<K1, Map<K2, V>>;
-  type WMap<K, V>         = WMap.WMap<K, V>;
-  type WMap2D<K1, K2, V>  = WMap.WMap2D<K1, K2, V>;
-  type Set<K>             = Set.Set<K>;
-
-  // For convenience: from other modules
-  type Categories         = Categories.Categories;
-  type Duration           = Duration.Duration;
-  type InterestVote       = Interests.Vote;
-  type OpinionVote        = Opinions.Vote;
-  type CategorizationVote = Categorizations.Vote;
-  type OpinionBallot      = Opinions.Ballot;
+  type Map<K, V>   = Map.Map<K, V>;
+  type WMap<K, V>  = WMap.WMap<K, V>;
 
   // For convenience: from types module
-  type Question           = Types.Question;
-  type Status             = Types.Status;
-  type Category           = Types.Category;
-  type Cursor             = Types.Cursor;
-  type Polarization       = Types.Polarization;
-  type PolarizationMap    = Types.PolarizationMap;
-  type Decay              = Types.Decay; 
-  type User               = Types.User;
-  type StatusInfo         = Types.StatusInfo;
-  type QuestionId         = Types.QuestionId;
-  type StatusData         = Types.StatusData;
-  let questionHash        = Types.questionHash;
+  type Question    = Types.Question;
+  type Status      = Types.Status;
+  type StatusInfo  = Types.StatusInfo;
+  type QuestionId  = Types.QuestionId;
+  type StatusData  = Types.StatusData;
+  let questionHash = Types.questionHash;
 
   public type Register = Map<QuestionId, StatusData>;
 

@@ -54,7 +54,7 @@ actor Master {
 
   stable let _airdrop_user_amount = 1_000_000;
 
-  public shared func createSubGodwin(identifier: Text, parameters: Parameters) : async CreateSubGodwinResult  {
+  public shared({caller}) func createSubGodwin(identifier: Text, parameters: Parameters) : async CreateSubGodwinResult  {
     
     // The identifier shall be alphanumeric because it will be used in the url.
     if (not TextUtils.isAlphaNumeric(identifier)){
@@ -66,7 +66,7 @@ actor Master {
     };
 
     let new_sub = await (system Godwin.Godwin)(#new {settings = ?{ 
-      controllers = null; // @todo: verify the sub godwin controller is the master
+      controllers = ?[Principal.fromActor(Master), caller]; // @todo: verify the sub godwin controller is the master
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;

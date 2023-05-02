@@ -1,3 +1,5 @@
+import Types "Types";
+
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 import Int "mo:base/Int";
@@ -10,8 +12,31 @@ import ICRC1 "mo:icrc1/ICRC1";
 
 actor Token {
 
+  type Account                 = Types.Account;
+  type Subaccount              = Types.Subaccount;
+  type Transaction             = Types.Transaction;
+  type Balance                 = Types.Balance;
+  type TransferArgs            = Types.TransferArgs;
+  type Mint                    = Types.Mint;
+  type BurnArgs                = Types.BurnArgs;
+  type SupportedStandard       = Types.SupportedStandard;
+  type InitArgs                = Types.InitArgs;
+  type MetaDatum               = Types.MetaDatum;
+  type TxIndex                 = Types.TxIndex;
+  type GetTransactionsRequest  = Types.GetTransactionsRequest;
+  type GetTransactionsResponse = Types.GetTransactionsResponse;
+  type TransferResult          = Types.TransferResult;
+  type TransferError           = Types.TransferError;
+  type ReapAccountError        = Types.ReapAccountError;
+  type ReapAccountResult       = Types.ReapAccountResult;
+  type ReapAccountRecipient    = Types.ReapAccountRecipient;
+  type ReapAccountArgs         = Types.ReapAccountArgs;
+  type MintRecipient           = Types.MintRecipient;
+  type MintBatchArgs           = Types.MintBatchArgs;
+  type MintBatchResult         = Types.MintBatchResult;
+
   // @todo: fix args
-  let token_args : ICRC1.InitArgs = {
+  let token_args : InitArgs = {
     name = "Godwin";
     symbol = "GDW";
     decimals = 6;
@@ -38,49 +63,49 @@ actor Token {
     ICRC1.decimals(token);
   };
 
-  public shared query func icrc1_fee() : async ICRC1.Balance {
+  public shared query func icrc1_fee() : async Balance {
     ICRC1.fee(token);
   };
 
-  public shared query func icrc1_metadata() : async [ICRC1.MetaDatum] {
+  public shared query func icrc1_metadata() : async [MetaDatum] {
     ICRC1.metadata(token);
   };
 
-  public shared query func icrc1_total_supply() : async ICRC1.Balance {
+  public shared query func icrc1_total_supply() : async Balance {
     ICRC1.total_supply(token);
   };
 
-  public shared query func icrc1_minting_account() : async ?ICRC1.Account {
+  public shared query func icrc1_minting_account() : async ?Account {
     ?ICRC1.minting_account(token);
   };
 
-  public shared query func icrc1_balance_of(args : ICRC1.Account) : async ICRC1.Balance {
+  public shared query func icrc1_balance_of(args : Account) : async Balance {
     ICRC1.balance_of(token, args);
   };
 
-  public shared query func icrc1_supported_standards() : async [ICRC1.SupportedStandard] {
+  public shared query func icrc1_supported_standards() : async [SupportedStandard] {
     ICRC1.supported_standards(token);
   };
 
-  public shared ({ caller }) func icrc1_transfer(args : ICRC1.TransferArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func icrc1_transfer(args : TransferArgs) : async TransferResult {
     await* ICRC1.transfer(token, args, caller);
   };
 
-  public shared ({ caller }) func mint(args : ICRC1.Mint) : async ICRC1.TransferResult {
+  public shared ({ caller }) func mint(args : Mint) : async TransferResult {
     await* ICRC1.mint(token, args, caller);
   };
 
-  public shared ({ caller }) func burn(args : ICRC1.BurnArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func burn(args : BurnArgs) : async TransferResult {
     await* ICRC1.burn(token, args, caller);
   };
 
   // Functions from the rosetta icrc1 ledger
-  public shared query func get_transactions(req : ICRC1.GetTransactionsRequest) : async ICRC1.GetTransactionsResponse {
+  public shared query func get_transactions(req : GetTransactionsRequest) : async GetTransactionsResponse {
     ICRC1.get_transactions(token, req);
   };
 
   // Additional functions not included in the ICRC1 standard
-  public shared func get_transaction(i : ICRC1.TxIndex) : async ?ICRC1.Transaction {
+  public shared func get_transaction(i : TxIndex) : async ?Transaction {
     await* ICRC1.get_transaction(token, i);
   };
 
@@ -94,31 +119,6 @@ actor Token {
   ///////////////////////////////////////////
 
   // Additional functions specific to godwin
-
-  public type TransferError = ICRC1.TransferError;
-
-  public type ReapAccountError = {
-    #InsufficientFunds : { balance : ICRC1.Balance; };
-    #NoRecipients;
-    #NegativeShare: ReapAccountRecipient;
-    #DivisionByZero : { sum_shares : Float; };
-  };
-
-  public type ReapAccountResult = {
-    #Ok : [ (ICRC1.TransferArgs, ICRC1.TransferResult)];
-    #Err : ReapAccountError;
-  };
-
-  public type ReapAccountRecipient = {
-    account : ICRC1.Account;
-    share : Float;
-  };
-
-  public type ReapAccountArgs = {
-    subaccount : ?ICRC1.Subaccount;
-    to : [ReapAccountRecipient];
-    memo : ?Blob;
-  };
 
   // Kind of an equivalent to icrc4_transfer_batch function, with pre_validate = false and batch_fee = null
   // but where only one account can be specified
@@ -151,10 +151,10 @@ actor Token {
       return #Err(#DivisionByZero({sum_shares}));
     };
 
-    let results = Buffer.Buffer<(ICRC1.TransferArgs, ICRC1.TransferResult)>(num_recipients);
+    let results = Buffer.Buffer<(TransferArgs, TransferResult)>(num_recipients);
 
     for ({account; share;} in args.to.vals()) {
-      let tranfer_args : ICRC1.TransferArgs = {
+      let tranfer_args : TransferArgs = {
         from_subaccount = args.subaccount;
         to = account;
         amount = Int.abs(Float.toInt(Float.trunc((Float.fromInt(amount_without_fees) * share) / sum_shares)));
@@ -170,21 +170,6 @@ actor Token {
     return #Ok(Buffer.toArray(results));
   };
 
-  public type MintRecipient = {
-    account : ICRC1.Account;
-    amount : ICRC1.Balance;
-  };
-
-  public type MintBatchArgs = {
-    to : [MintRecipient];
-    memo : ?Blob;
-  };
-
-  public type MintBatchResult = {
-    #Ok : [(ICRC1.Mint, ICRC1.TransferResult)];
-    #Err : ICRC1.TransferError;
-  };
-
   public shared({caller}) func mint_batch(args : MintBatchArgs) : async MintBatchResult {
     
     if (caller != token.minting_account.owner) {
@@ -196,10 +181,10 @@ actor Token {
       );
     };
 
-    let results = Buffer.Buffer<(ICRC1.Mint, ICRC1.TransferResult)>(args.to.size());
+    let results = Buffer.Buffer<(Mint, TransferResult)>(args.to.size());
 
     for ({account; amount;} in Array.vals(args.to)) {
-      let mint_args : ICRC1.Mint = {
+      let mint_args : Mint = {
         from_subaccount = null;
         to = account;
         amount;
