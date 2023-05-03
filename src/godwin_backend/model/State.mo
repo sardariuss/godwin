@@ -1,5 +1,5 @@
 import Types           "Types";
-import QuestionQueries "QuestionQueries";
+import QuestionQueries "questions/QuestionQueries";
 import Categories      "Categories";
 import Interests       "votes/Interests";
 import Categorizations "votes/Categorizations";

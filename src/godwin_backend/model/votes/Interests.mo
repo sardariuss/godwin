@@ -8,7 +8,7 @@ import PayForNew           "../token/PayForNew";
 import PayInterface        "../token/PayInterface";
 import PayTypes            "../token/Types";
 import QuestionVoteHistory "../QuestionVoteHistory";
-import QuestionQueries     "../QuestionQueries";
+import QuestionQueries     "../questions/QuestionQueries";
 
 import Result              "mo:base/Result";
 import Float               "mo:base/Float";

@@ -1,16 +1,16 @@
-import Types               "../Types";
-import QuestionQueries     "../QuestionQueries";
-import Categorizations     "../votes/Categorizations";
-import Votes               "../votes/Votes";
-import Model               "../controller/Model";
-import Questions           "../Questions";
-import Categories          "../Categories";
-import Duration            "../../utils/Duration";
-import Utils               "../../utils/Utils";
-import SubaccountGenerator "../token/SubaccountGenerator";
 import Event               "Event";
 import Schema              "Schema";
+import Types               "../Types";
+import Model               "../Model";
+import Categories          "../Categories";
+import QuestionQueries     "../questions/QuestionQueries";
+import Questions           "../questions/Questions";
+import Categorizations     "../votes/Categorizations";
+import Votes               "../votes/Votes";
+import SubaccountGenerator "../token/SubaccountGenerator";
 
+import Duration            "../../utils/Duration";
+import Utils               "../../utils/Utils";
 import StateMachine        "../../utils/StateMachine";
 
 import Result              "mo:base/Result";
@@ -23,6 +23,7 @@ module {
   // For convenience: from other modules
   type Questions              = Questions.Questions;
   type Model                  = Model.Model;
+  type Duration               = Duration.Duration;
   type Event                  = Event.Event;
   type Schema                 = Schema.Schema;
   type Key                    = QuestionQueries.Key;
@@ -37,7 +38,6 @@ module {
   type Question               = Types.Question;
   type Category               = Types.Category;
   type Decay                  = Types.Decay;
-  type Duration               = Duration.Duration;
   type Status                 = Types.Status;
   type PolarizationArray      = Types.PolarizationArray;
   type Ballot<T>              = Types.Ballot<T>;

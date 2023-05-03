@@ -43,6 +43,11 @@ let additions =
         , repo = "https://github.com/NatLabs/icrc1/"
         , dependencies = ["base"]
         },
+        { name = "testing"
+        , version = "v0.1.0"
+        , repo = "https://github.com/internet-computer/testing"
+        , dependencies = [] : List Text
+        }
     ] : List Package
 
 let overrides =

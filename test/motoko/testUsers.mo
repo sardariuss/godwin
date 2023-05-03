@@ -1,7 +1,7 @@
 import Types "../../src/godwin_backend/model/Types";
 import Users "../../src/godwin_backend/model/Users";
 import Polarization "../../src/godwin_backend/representation/Polarization";
-import Questions "../../src/godwin_backend/Questions";
+import Questions "../../src/godwin_backend/questions/Questions";
 import Question "../../src/godwin_backend/questions/question";
 import Utils "../../src/godwin_backend/utils/Utils";
 import TestableItems "testableItems";

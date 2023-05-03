@@ -1,10 +1,10 @@
 //import TestQueries "questions/testQueries";
-import TestQuestions "questions/testQuestions";
+import TestQuestions "questions/testQuestions2";
 //import TestHotRanking "questions/testHotRanking";
 //import TestInterests "votes/testInterests";
 //import TestOpinions "votes/testOpinions";
 //import TestCategorizations "votes/testCategorizations";
-//import TestScheduler "testmodel/QuestionQueries";
+//import TestScheduler "testmodel/questions/QuestionQueries";
 //import TestUsers "testUsers";
 
 // @todo: fix unit tests

@@ -2,7 +2,7 @@ import Types               "../Types";
 import Votes               "Votes"; 
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
-import Cursor             "representation/Cursor";
+import Cursor              "representation/Cursor";
 import QuestionVoteHistory "../QuestionVoteHistory";
 
 import Result              "mo:base/Result";

@@ -1,59 +1,26 @@
 import Types           "Types";
-import Status          "Status";
-import Categories      "Categories";
-import Decay           "Decay";
-import Votes           "votes/Votes";
-import Polarization    "votes/representation/Polarization";
-import Cursor          "votes/representation/Cursor";
-import PolarizationMap "votes/representation/PolarizationMap";
-
 import Utils           "../utils/Utils";
 import WMap            "../utils/wrappers/WMap";
-import WSet            "../utils/wrappers/WSet";
-import Duration        "../utils/Duration";
 
 import Map             "mo:map/Map";
-import Set             "mo:map/Set";
 
 import Result          "mo:base/Result";
 import Debug           "mo:base/Debug";
-import Iter            "mo:base/Iter";
 import Option          "mo:base/Option";
-import Float           "mo:base/Float";
-import Principal       "mo:base/Principal";
-import Trie            "mo:base/Trie";
 import Array           "mo:base/Array";
 
 module {
 
   // For convenience: from base module
-  type Time               = Int;
-  type Iter<T>            = Iter.Iter<T>;
   type Result<Ok, Err>       = Result.Result<Ok, Err>;
 
   // For convenience: from map module
   type Map<K, V>          = Map.Map<K, V>;
-  type Map2D<K1, K2, V>   = Map<K1, Map<K2, V>>;
   type WMap<K, V>         = WMap.WMap<K, V>;
-  type WMap2D<K1, K2, V>  = WMap.WMap2D<K1, K2, V>;
-  type Set<K>             = Set.Set<K>;
-  type WSet<K>            = WSet.WSet<K>;
-
-  // For convenience: from other modules
-  type Categories              = Categories.Categories;
-  type Duration                = Duration.Duration;
 
   // For convenience: from types module
-  type Question                = Types.Question;
-  type Status                  = Types.Status;
-  type Category                = Types.Category;
-  type Cursor                  = Types.Cursor;
-  type Polarization            = Types.Polarization;
-  type PolarizationMap         = Types.PolarizationMap;
-  type Decay                   = Types.Decay; 
-  type User                    = Types.User;
+  //type Question                = Types.Question;
   type VoteHistory             = Types.VoteHistory;
-  type StatusData              = Types.StatusData;
   type FindCurrentVoteError    = Types.FindCurrentVoteError;
   type FindHistoricalVoteError = Types.FindHistoricalVoteError;
   type QuestionId              = Types.QuestionId;

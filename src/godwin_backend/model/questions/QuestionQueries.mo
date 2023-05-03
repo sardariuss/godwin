@@ -1,5 +1,5 @@
 import Types      "Types";
-import Queries    "../utils/Queries";
+import Queries    "../../utils/Queries";
 
 import Map        "mo:map/Map";
 

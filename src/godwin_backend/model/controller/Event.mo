@@ -1,12 +1,7 @@
-import Types "../Types";
-
 import Map "mo:map/Map";
-
-import Debug "mo:base/Debug";
 
 module {
 
-  type Question = Types.Question;
   type Time = Int;
   
   public type Event = {
@@ -16,7 +11,7 @@ module {
 
   func toKey(event: Event) : Text {
     switch(event){
-      case(#TIME_UPDATE(_)) { "TIME_UPDATE"; };
+      case(#TIME_UPDATE(_))     { "TIME_UPDATE";     };
       case(#REOPEN_QUESTION(_)) { "REOPEN_QUESTION"; };
     };
   };

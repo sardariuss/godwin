@@ -1,88 +1,255 @@
-import Types "../../../src/godwin_backend/model/Types";
-import Polarization "../../../src/godwin_backend/model/votes/representation/Polarization";
-import Queries "../../../src/godwin_backend/model/QuestionQueries";
+import Types         "../../../src/godwin_backend/model/questions/Types";
+import Queries "../../../src/godwin_backend/model/questions/QuestionQueries";
 
-import TestableItems "../testableItems";
+import TestifyTypes  "testifyTypes";
 
-import Matchers "mo:matchers/Matchers";
-import Suite "mo:matchers/Suite";
+import Testify       "mo:testing/Testify";
+import SuiteState    "mo:testing/SuiteState";
+
+import Principals    "../Principals";
 
 import Principal "mo:base/Principal";
-import Buffer "mo:base/Buffer";
-import Trie "mo:base/Trie";
-
-module {
+import Array "mo:base/Array";
   
-  type Polarization = Types.Polarization;
-  type Trie<K, V> = Trie.Trie<K, V>;
+// For convenience: from types module
+type Question = Types.Question;
+type OpenQuestionError = Types.OpenQuestionError;
+type StatusInfo = Types.StatusInfo;
 
-  // @todo: add tests on lower and upper bounds for the queryQuestions function
-  // @todo: add tests on entries and entriesRev functions
-  public class TestQueries() = {
+type QuestionQueries = Queries.QuestionQueries;
+type ScanLimitResult = Queries.ScanLimitResult;
 
-    // For convenience: from base module
-    type Principal = Principal.Principal;
-    // For convenience: from matchers module
-    let { run;test;suite; } = Suite;
-    // For convenience: from types module
-    type Question = Types.Question;
-    
-    let testScanResult = TestableItems.testScanLimitResult;
+let { toAuthorEntry; toTextEntry; toDateEntry; toStatusEntry; toInterestScore; } = Queries;
 
-    let question_0 :                        Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Selfishness is the overriding drive in the human species, no matter the context."; text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Cursor>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };
-    let question_0_text_update :            Question = { id = 0; author = Principal.fromText("sixzy-7pdha-xesaj-edo76-wuzat-gdfeh-eihfz-5b6on-eqcu2-4p23j-qqe"); title = "Above all is selfishness is the overriding drive in the human species";            text = ""; date = 8493; status = #INTEREST({ date = 8493; ballots = Trie.empty<Principal, Cursor>(); aggregate = { ups = 0; downs = 0; score = 13; }}); interests_history = []; vote_history = []; };
-    let question_1 :                        Question = { id = 1; author = Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae"); title = "Patents should not exist.";                                                        text = ""; date = 2432; status = #VOTING({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 2432, []) });                 interests_history = []; vote_history = []; };
-    let question_1_date_update :            Question = { id = 1; author = Principal.fromText("2an7n-c4inx-7otxp-f4gmm-lz4yk-z6rvd-ogxe4-fype3-icqva-w5ylq-sae"); title = "Patents should not exist.";                                                        text = ""; date = 5123; status = #VOTING({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 2432, []) });                 interests_history = []; vote_history = []; };
-    let question_2 :                        Question = { id = 2; author = Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe"); title = "Marriage should be abolished.";                                                    text = ""; date = 3132; status = #VOTING({ stage = #OPINION; iteration = Iteration.new(3132); });                                                            interests_history = []; vote_history = []; };
-    let question_2_interests_update :       Question = { id = 2; author = Principal.fromText("zl5om-yevaq-syyny-vn5bl-ahjnu-cc2qx-b7oqi-ojbct-xrxjw-ivql6-uqe"); title = "Marriage should be abolished.";                                                    text = ""; date = 3132; status = #VOTING({ stage = #OPINION; iteration = Iteration.new(3132); });                                                            interests_history = []; vote_history = []; };
-    let question_3 :                        Question = { id = 3; author = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe"); title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; status = #INTEREST({ date = 4213; ballots = Trie.empty<Principal, Cursor>(); aggregate = { ups = 0; downs = 0; score = 21; }}); interests_history = []; vote_history = []; };
-    let question_3_selection_stage_update : Question = { id = 3; author = Principal.fromText("ytsdx-ddotz-rkcxu-mfivi-nvtwo-cv5ip-uw5jh-7om6u-gano3-ev6sl-3qe"); title = "It is necessary to massively invest in research to improve productivity.";         text = ""; date = 4213; status = #VOTING({ stage = #CATEGORIZATION; iteration = Iteration.openCategorization(Iteration.new(0), 4213, []) });                 interests_history = []; vote_history = []; };
-    let question_4 :                        Question = { id = 4; author = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae"); title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; status = #VOTING({ stage = #OPINION; iteration = Iteration.new(9711); });                                                            interests_history = []; vote_history = []; };
-    let question_4_categorization_update :  Question = { id = 4; author = Principal.fromText("zzzno-jyjub-5bu5a-nnvpt-w52zs-chfkz-bd4ar-ztjzy-xjz24-i4r3g-gae"); title = "Insurrection is necessary to deeply change society.";                              text = ""; date = 9711; status = #VOTING({ stage = #OPINION; iteration = Iteration.new(9711); });                                                            interests_history = []; vote_history = []; };
+type NamedTest<T> = SuiteState.NamedTest<T>;
+type Test<T> = SuiteState.Test<T>;
+type Suite<T> = SuiteState.Suite<T>;
 
-    public func getSuite() : Suite.Suite {
-      let tests = Buffer.Buffer<Suite.Suite>(0);
+let { testifyElement; optionalTestify } = Testify;
+let { describe; itp; equal; } = SuiteState;
+let { testify_scan_limit_result; } = TestifyTypes;
 
-      let queries = Queries.build(Queries.initRegister());
+// @todo: add tests on lower and upper bounds for the queryQuestions function
+// @todo: add tests on entries and entriesRev functions
 
-      // Add questions
-      queries.add(question_0);
-      queries.add(question_1);
-      queries.add(question_2);
-      queries.add(question_3);
-      queries.add(question_4);
-      tests.add(test("Query by #TITLE",                               { ids = [4, 3]; next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                                null,                                        null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #TITLE",                               { ids = [2, 1]; next_id = ?0;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                                Queries.initQuestionKey(question_2, #TITLE), null,                                                #fwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids = [4, 0]; next_id = ?3;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                        null,                                        null,                                                #bwd, 2 )))));
-      tests.add(test("Query by #CREATION_DATE",                       { ids = [3, 2]; next_id = ?1;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                        null,                                        Queries.initQuestionKey(question_3, #CREATION_DATE), #bwd, 2 )))));
-      tests.add(test("Query by #INTEREST",                            { ids = [3, 0]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                             null,                                        null,                                                #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#OPEN)",        { ids = [2, 4]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#OPEN),         null,                                        null,                                                #fwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION))", { ids = [1];    next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)),  null,                                        null,                                                #fwd, 5 )))));
-      
-      // Replace questions
-      queries.replace(question_0, question_0_text_update);
-      queries.replace(question_1, question_1_date_update);
-      queries.replace(question_2, question_2_interests_update);
-      queries.replace(question_3, question_3_selection_stage_update);
-      queries.replace(question_4, question_4_categorization_update);
-      tests.add(test("Query by #TITLE (after replace)",                               { ids = [0, 4, 3];    next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after replace)",                       { ids = [4, 0, 1, 3]; next_id = ?2;   }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after replace)",                            { ids = [0];          next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#OPEN) (after replace)",        { ids = [2, 4];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#OPEN),        null, null, #fwd, 5 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after replace)", { ids = [1, 3];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 5 )))));
+let principals = Principals.init();
 
-      // Remove questions
-      queries.remove(question_0_text_update);
-      queries.remove(question_1_date_update);
-      tests.add(test("Query by #TITLE (after remove)",                               { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#TITLE,                               null, null, #fwd, 3 )))));
-      tests.add(test("Query by #CREATION_DATE (after remove)",                       { ids = [4, 3, 2]; next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#CREATION_DATE,                       null, null, #bwd, 4 )))));
-      tests.add(test("Query by #INTEREST (after remove)",                            { ids = [];        next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#INTEREST,                            null, null, #bwd, 5 )))));
-      tests.add(test("Query by #STATUS(#OPEN) (after remove)",        { ids = [2, 4];    next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#OPEN),        null, null, #fwd, 4 )))));
-      tests.add(test("Query by #STATUS(#VOTING(#CATEGORIZATION)) (after remove)", { ids = [3];       next_id = null; }, Matchers.equals(testScanResult(queries.queryQuestions(#STATUS(#VOTING(#CATEGORIZATION)), null, null, #fwd, 4 )))));
+let questions : [(Question, StatusInfo, Float)] = [
+  ({ id = 0; author = principals[0]; text = "Selfishness is the overriding drive in the human species, no matter the context."; date = 8493; }, { status = #CANDIDATE; iteration = 0; date = 6000; }, 87),
+  ({ id = 1; author = principals[1]; text = "Patents should not exist.";                                                        date = 2432; }, { status = #OPEN;      iteration = 0; date = 3000; }, 40),
+  ({ id = 2; author = principals[2]; text = "Marriage should be abolished.";                                                    date = 3132; }, { status = #OPEN;      iteration = 0; date = 2000; }, 38),
+  ({ id = 3; author = principals[3]; text = "It is necessary to massively invest in research to improve productivity.";         date = 4213; }, { status = #CANDIDATE; iteration = 0; date = 4000; }, 23),
+  ({ id = 4; author = principals[4]; text = "Insurrection is necessary to deeply change society.";                              date = 9711; }, { status = #OPEN;      iteration = 0; date = 5000; }, 77),
+];
 
-      suite("Test Queries module", Buffer.toArray(tests));
-    };
+let updated_status : [StatusInfo] = [
+  { status = #CANDIDATE; iteration = 0; date = 27;  },
+  { status = #CLOSED;    iteration = 0; date = 454; },
+  { status = #OPEN;      iteration = 0; date = 968; },
+  { status = #REJECTED;  iteration = 0; date = 516; },
+  { status = #CLOSED;    iteration = 0; date = 959; },
+];
 
-  };
+let updated_scores : [Float] = [165, 137, 232, 118, 183];
 
+let register = Queries.initRegister();
+Queries.addOrderBy(register, #TEXT);
+Queries.addOrderBy(register, #DATE);
+Queries.addOrderBy(register, #STATUS(#CANDIDATE));
+Queries.addOrderBy(register, #STATUS(#OPEN));
+Queries.addOrderBy(register, #STATUS(#CLOSED));
+Queries.addOrderBy(register, #STATUS(#REJECTED));
+Queries.addOrderBy(register, #INTEREST_SCORE);
+
+let queries = Queries.build(register);
+for ((question, status_info, score) in Array.vals(questions)){
+  queries.add(toTextEntry(question));
+  queries.add(toDateEntry(question));
+  queries.add(toStatusEntry(question.id, status_info.status, status_info.date));
+  queries.add(toInterestScore(question.id, score));
 };
+
+let s = SuiteState.Suite<QuestionQueries>(queries);
+
+// Test the creation of questions 
+await* s.run([
+  describe("Query the questions before update", [
+    itp(
+      "#TEXT, null, null, #FWD, 2",
+      equal(
+        testifyElement(testify_scan_limit_result, { keys = [4, 3]; next = ?2; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#TEXT, null, null, #FWD, 2);
+        }
+      )
+    ),
+    itp(
+      "#TEXT, ?2  , null, #FWD, 2",
+      equal(
+        testifyElement(testify_scan_limit_result, { keys = [2, 1]; next = ?0; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#TEXT, ?2  , null, #FWD, 2);
+        }
+      )
+    ),
+    itp(
+      "#DATE, null, null, #BWD, 2",
+      equal(
+        testifyElement(testify_scan_limit_result, { keys = [4, 0]; next = ?3; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#DATE, null, null, #BWD, 2);
+        }
+      )
+    ),
+    itp(
+      "#DATE, null, ?3  , #BWD, 2",
+      equal(
+        testifyElement(testify_scan_limit_result, { keys = [3, 2]; next = ?1; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#DATE, null, ?3  , #BWD, 2);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#CANDIDATE), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 0]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#OPEN), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [2, 1, 4]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#INTEREST_SCORE, null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0, 4, 1, 2, 3]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#INTEREST_SCORE, null, null, #BWD, 5);
+        }
+      )
+    ),
+  ])
+]);
+
+// Update the status and score
+for ((question, status_info, score) in Array.vals(questions)){
+  let update = updated_status[question.id];
+  queries.replace(?toStatusEntry(question.id, status_info.status, status_info.date), ?toStatusEntry(question.id, update.status, update.date));
+  queries.replace(?toInterestScore(question.id, score), ?toInterestScore(question.id, updated_scores[question.id]));
+};
+
+await* s.run([
+  describe("Query the questions after update", [
+    itp(
+      "#STATUS(#CANDIDATE), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#OPEN), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [2]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#CLOSED), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [1, 4]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#REJECTED), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#INTEREST_SCORE, null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 1, 0, 4, 2]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#INTEREST_SCORE, null, null, #FWD, 5);
+        }
+      )
+    ),
+  ])
+]);
+
+// Remove a question
+let (question_3, status_info_3, score_3) = (questions[2].0, updated_status[2], updated_scores[2]);
+queries.remove(toTextEntry(question_3));
+queries.remove(toDateEntry(question_3));
+queries.remove(toStatusEntry(question_3.id, status_info_3.status, status_info_3.date));
+queries.remove(toInterestScore(question_3.id, score_3));
+
+await* s.run([
+  describe("Query the questions after removal of question with ID 2", [
+    itp(
+      "#STATUS(#CANDIDATE), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#OPEN), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = []; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#CLOSED), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [1, 4]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#STATUS(#REJECTED), null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5);
+        }
+      )
+    ),
+    itp(
+      "#INTEREST_SCORE, null, null, #FWD, 5",
+      equal(
+        testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 1, 0, 4]; next = null; }),
+        func (queries: QuestionQueries) : ScanLimitResult {
+          queries.scan(#INTEREST_SCORE, null, null, #FWD, 5);
+        }
+      )
+    ),
+  ])
+]);

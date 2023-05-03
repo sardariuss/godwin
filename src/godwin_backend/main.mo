@@ -1,11 +1,11 @@
 import Types "model/Types";
-import QuestionQueries "model/QuestionQueries"; // @todo
+import QuestionQueries "model/questions/QuestionQueries"; // @todo
 import State "model/State";
 import Factory "model/Factory";
 import Controller "model/controller/Controller";
 import Scenario "../../test/motoko/Scenario"; // @todo
 import Duration "utils/Duration";
-import StatusManager "model/StatusManager";
+import StatusManager "model/questions/StatusManager";
 
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";

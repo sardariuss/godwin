@@ -1,37 +1,37 @@
-import Types "../Types";
-import QuestionQueries "../QuestionQueries";
-import Categorizations "../votes/Categorizations";
-import Questions "../Questions";
-import Votes "../votes/Votes";
-import Categories "../Categories";
-import Users "../Users";
-import SubaccountGenerator "../token/SubaccountGenerator";
-import StatusManager "../StatusManager";
-import Interests "../votes/Interests";
-import Opinions "../votes/Opinions";
+import Types               "Types";
+import QuestionQueries     "questions/QuestionQueries";
+import Categorizations     "votes/Categorizations";
+import Votes               "votes/Votes";
+import Categories          "Categories";
+import Users               "Users";
+import SubaccountGenerator "token/SubaccountGenerator";
+import Questions           "questions/Questions";
+import StatusManager       "questions/StatusManager";
+import Interests           "votes/Interests";
+import Opinions            "votes/Opinions";
 
-import Ref "../../utils/Ref";
-import WRef "../../utils/wrappers/WRef";
-import Duration "../../utils/Duration";
+import Ref                 "../utils/Ref";
+import WRef                "../utils/wrappers/WRef";
+import Duration            "../utils/Duration";
 
-import Debug "mo:base/Debug";
-import Principal "mo:base/Principal";
+import Debug               "mo:base/Debug";
+import Principal           "mo:base/Principal";
 
 module {
 
-  type Time = Int;
-  type Status = Types.Status;
-  type Duration = Duration.Duration;
-  type Ref<T> = Ref.Ref<T>;
-  type WRef<T> = WRef.WRef<T>;
+  type Time                = Int;
+  type Status              = Types.Status;
+  type Duration            = Duration.Duration;
+  type Ref<T>              = Ref.Ref<T>;
+  type WRef<T>             = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
-  type Categories = Categories.Categories;
-  type Questions = Questions.Questions;
-  type Users = Users.Users;
-  type QuestionQueries = QuestionQueries.QuestionQueries;
-  type StatusManager = StatusManager.StatusManager;
-  type InterestVotes = Interests.Interests;
-  type OpinionVotes = Opinions.Opinions;
+  type Categories          = Categories.Categories;
+  type Questions           = Questions.Questions;
+  type Users               = Users.Users;
+  type QuestionQueries     = QuestionQueries.QuestionQueries;
+  type StatusManager       = StatusManager.StatusManager;
+  type InterestVotes       = Interests.Interests;
+  type OpinionVotes        = Opinions.Opinions;
   type CategorizationVotes = Categorizations.Categorizations;
 
   public func build(

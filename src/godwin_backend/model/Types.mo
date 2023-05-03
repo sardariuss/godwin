@@ -1,14 +1,15 @@
-import MasterTypes "../../godwin_master/Types";
-import PayTypes "/token/Types";
+import MasterTypes   "../../godwin_master/Types";
+import PayTypes      "/token/Types";
+import QuestionTypes "/questions/Types";
 
-import Trie "mo:base/Trie";
-import Principal "mo:base/Principal";
-import Result "mo:base/Result";
+import Trie          "mo:base/Trie";
+import Principal     "mo:base/Principal";
+import Result        "mo:base/Result";
 
-import Map "mo:map/Map";
-import Set "mo:map/Set";
+import Map           "mo:map/Map";
+import Set           "mo:map/Set";
 
-import Duration "../utils/Duration";
+import Duration      "../utils/Duration";
 
 module {
 
@@ -20,6 +21,14 @@ module {
 
   type Map<K, V> = Map.Map<K, V>;
   type Set<K> = Set.Set<K>;
+
+  // @todo: are all these types required in the canister interface?
+  public type Question          = QuestionTypes.Question;
+  public type Status            = QuestionTypes.Status;
+  public type StatusInfo        = QuestionTypes.StatusInfo;
+  public type QuestionId        = QuestionTypes.QuestionId;
+  public type StatusData        = QuestionTypes.StatusData;
+  public type OpenQuestionError = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
 
   type Duration = Duration.Duration;
 
@@ -55,39 +64,11 @@ module {
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
-  public type QuestionId = Nat;
-  public let questionHash = Map.nhash;
-
-  public type Question = {
-    id: QuestionId;
-    author: Principal;
-    text: Text;
-    date: Time;
-  };
-
   public type StatusHistory = Map<Status, [Time]>;
 
   public type User = {
     convictions: PolarizationMap;
     opinions: Set<Nat>;
-  };
-
-  public type Status = {
-    #CANDIDATE;
-    #OPEN;
-    #CLOSED;
-    #REJECTED;
-  };
-
-  public type StatusInfo = {
-    status: Status;
-    iteration: Nat;
-    date: Time;
-  };
-
-  public type StatusData = {
-    var current: StatusInfo;
-    history: Map<Status, [Time]>;
   };
 
   public type VoteId = Nat;
@@ -189,11 +170,6 @@ module {
     #QuestionNotFound;
   };
 
-  public type OpenQuestionError = PrincipalError or {
-    #TextTooLong;
-    #OpenInterestVoteFailed: OpenVoteError;
-  };
-  
   public type ReopenQuestionError = PrincipalError or GetQuestionError or {
     #InvalidStatus;
     #OpenInterestVoteFailed: OpenVoteError;

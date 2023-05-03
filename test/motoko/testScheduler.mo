@@ -1,7 +1,7 @@
 import Types "../../src/godwin_backend/model/Types";
-import Questions "../../src/godwin_backend/Questions";
+import Questions "../../src/godwin_backend/questions/Questions";
 import Queries "../../src/godwin_backend/questions/queries";
-import Scheduler "../../src/godwin_backend/model/QuestionQueries";
+import Scheduler "../../src/godwin_backend/model/questions/QuestionQueries";
 import Users "../../src/godwin_backend/model/Users";
 
 import Map "mo:map/Map";

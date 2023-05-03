@@ -3,8 +3,8 @@ import Cursor "../../src/godwin_backend/model/votes/representation/Cursor";
 import Polarization "../../src/godwin_backend/model/votes/representation/Polarization";
 import CursorMap "../../src/godwin_backend/model/votes/representation/CursorMap";
 import PolarizationMap "../../src/godwin_backend/model/votes/representation/PolarizationMap";
-import Queries "../../src/godwin_backend/model/QuestionQueries";
-import Questions "../../src/godwin_backend/model/Questions";
+import Queries "../../src/godwin_backend/model/questions/QuestionQueries";
+import Questions "../../src/godwin_backend/model/questions/Questions";
 import Types "../../src/godwin_backend/model/Types";
 
 import Testable "mo:matchers/Testable";

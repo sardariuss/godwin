@@ -1,8 +1,8 @@
 import Types           "Types";
 import Status          "Status";
 
-import Utils           "../utils/Utils";
-import WMap            "../utils/wrappers/WMap";
+import Utils           "../../utils/Utils";
+import WMap            "../../utils/wrappers/WMap";
 
 import Map             "mo:map/Map";
 

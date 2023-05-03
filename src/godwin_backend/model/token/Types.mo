@@ -1,5 +1,4 @@
 import MasterTypes "../../../godwin_master/Types";
-
 import TokenTypes "../../../godwin_token/Types";
 
 import Result "mo:base/Result";

@@ -1,13 +1,13 @@
 import Types               "Types";
-import Questions           "Questions";
 import State               "State";
-import QuestionQueries     "QuestionQueries";
+import Model               "Model";
 import Categories          "Categories";
 import Users               "Users";
-import StatusManager       "StatusManager";
 import QuestionVoteHistory "QuestionVoteHistory";
+import StatusManager       "questions/StatusManager";
+import Questions           "questions/Questions";
+import QuestionQueries     "questions/QuestionQueries";
 import Controller          "controller/Controller";
-import Model               "controller/Model";
 import Votes               "votes/Votes";
 import Interests           "votes/Interests";
 import Categorizations     "votes/Categorizations";

@@ -41,7 +41,7 @@ actor Master {
     // +% is the same as addWrap, meaning it wraps on overflow
     func(key: (Principal, Text)) : Nat32 = (Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff, // @todo: remove cast to Nat with map v8.0.0
     func(a: (Principal, Text), b: (Principal, Text)) : Bool = a.0 == b.0 and a.1 == b.1,
-    func() = (Principal.fromText("aaaaa-aa"), "")
+    func() = (Principal.fromText("2vxsx-fae"), "")
   );
 
   stable let _sub_godwins = Map.new<(Principal, Text), Godwin>(pthash);

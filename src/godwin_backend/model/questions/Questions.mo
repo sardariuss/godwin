@@ -1,7 +1,7 @@
 import Types "Types";
-import WMap "../utils/wrappers/WMap";
-import Ref "../utils/Ref";
-import WRef "../utils/wrappers/WRef";
+import WMap "../../utils/wrappers/WMap";
+import Ref "../../utils/Ref";
+import WRef "../../utils/wrappers/WRef";
 
 import Map "mo:map/Map";
 
@@ -15,7 +15,7 @@ import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 
-import TextUtils "../utils/Text";
+import TextUtils "../../utils/Text";
 import Heap "mo:base/Heap";
 import Order "mo:base/Order";
 
@@ -33,11 +33,8 @@ module {
   type Iter<T> = Iter.Iter<T>;
   type Order = Order.Order;
 
+  type Question          = Types.Question;
   type OpenQuestionError = Types.OpenQuestionError;
-
-  // For convenience: from types module
-  type Question = Types.Question;
-  type GetQuestionError = Types.GetQuestionError;
 
   public func toText(question: Question) : Text {
     var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(8);
@@ -86,6 +83,9 @@ module {
     };
 
     public func createQuestion(author: Principal, date: Int, text: Text) : Question {
+      if (canCreateQuestion(author, date, text) != null){
+        Debug.trap("The question cannot be created.");
+      };
       let question = {
         id = _index.get();
         author;
@@ -102,15 +102,6 @@ module {
         case(null) { Debug.trap("The question does not exist"); };
         case(?question) { 
           ignore _register.remove(question.id);
-        };
-      };
-    };
-
-    public func replaceQuestion(question: Question) {
-      switch(_register.getOpt(question.id)){
-        case(null) { Debug.trap("The question does not exist"); };
-        case(_) { 
-          ignore _register.put(question.id, question);
         };
       };
     };

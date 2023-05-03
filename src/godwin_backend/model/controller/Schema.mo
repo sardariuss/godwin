@@ -1,31 +1,28 @@
-import Status "../Status";
-import Duration "../../utils/Duration";
-import Types "../Types";
-import Model "Model";
-import Event "Event";
+import Event        "Event";
+import Types        "../Types";
+import Model        "../Model";
+import Status       "../questions/Status";
 
+import Duration     "../../utils/Duration";
 import StateMachine "../../utils/StateMachine";
 
-import Option "mo:base/Option";
-import Debug "mo:base/Debug";
-import Principal "mo:base/Principal";
+import Option       "mo:base/Option";
+import Debug        "mo:base/Debug";
+import Principal    "mo:base/Principal";
 
 module {
 
-  type Time = Int;
-  type Question = Types.Question;
-  type Status = Types.Status;
-  type Model = Model.Model;
-  type Event = Event.Event;
-  type OpenVoteError = Types.OpenVoteError;
-  type QuestionId = Nat;
+  type Time            = Int;
+  type Question        = Types.Question;
+  type Status          = Types.Status;
+  type Model           = Model.Model;
+  type Event           = Event.Event;
+  type QuestionId      = Types.QuestionId;
   type TransitionError = Types.TransitionError;
   
-  public type Schema = StateMachine.Schema<Status, Event, TransitionError, QuestionId>;
-
+  public type Schema           = StateMachine.Schema<Status, Event, TransitionError, QuestionId>;
   public type TransitionResult = StateMachine.TransitionResult<TransitionError>;
-
-  public type EventResult = StateMachine.EventResult<Status, TransitionError>;
+  public type EventResult      = StateMachine.EventResult<Status, TransitionError>;
 
   public class SchemaBuilder(_model: Model) {
 

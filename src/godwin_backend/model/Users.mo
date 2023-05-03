@@ -1,5 +1,5 @@
 import Types           "Types";
-import Status          "Status";
+import Status          "questions/Status";
 import Categories      "Categories";
 import Decay           "Decay";
 import Votes           "votes/Votes";
