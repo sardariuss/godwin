@@ -1,5 +1,6 @@
-import Types               "../Types";
+import Types               "Types";
 import Votes               "Votes";
+import VotesHistory        "VotesHistory";
 import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
@@ -7,7 +8,7 @@ import Cursor              "representation/Cursor";
 import PayForNew           "../token/PayForNew";
 import PayInterface        "../token/PayInterface";
 import PayTypes            "../token/Types";
-import QuestionVoteHistory "../QuestionVoteHistory";
+import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 
 import Result              "mo:base/Result";
@@ -21,22 +22,22 @@ module {
   type VoteId                 = Types.VoteId;
   type Cursor                 = Types.Cursor;
   type Polarization           = Types.Polarization;
+  type InterestVote           = Types.InterestVote;
+  type InterestBallot         = Types.InterestBallot;
   type PutBallotError         = Types.PutBallotError;
   type GetBallotError         = Types.GetBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
   
   type BallotAggregator       = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type QuestionVoteHistory    = QuestionVoteHistory.QuestionVoteHistory;
-  type Question               = Types.Question;
+  type VotesHistory    = VotesHistory.VotesHistory;
+  type Question               = QuestionTypes.Question;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
   type PayForNew              = PayForNew.PayForNew;
   type PayoutError            = PayTypes.PayoutError;
   
-  public type VoteRegister    = Votes.VoteRegister<Cursor, Polarization>;
-  public type Vote            = Types.Vote<Cursor, Polarization>;
-  public type Ballot          = Types.Ballot<Cursor>;
+  public type Register        = Votes.Register<Cursor, Polarization>;
 
   type Key = QuestionQueries.Key;
   let { toInterestScore; } = QuestionQueries;
@@ -44,13 +45,13 @@ module {
   let PRICE_OPENING_VOTE = 1000; // @todo
   let PRICE_PUT_BALLOT = 1000; // @todo
 
-  public func initVoteRegister() : VoteRegister {
+  public func initRegister() : Register {
     Votes.initRegister<Cursor, Polarization>();
   };
 
   public func build(
     votes: Votes.Votes<Cursor, Polarization>,
-    history: QuestionVoteHistory,
+    history: VotesHistory,
     queries: QuestionQueries,
     pay_interface: PayInterface,
     pay_for_new: PayForNew
@@ -71,7 +72,7 @@ module {
   public class Interests(
     _votes: PayToVote.PayToVote<Cursor, Polarization>,
     _pay_for_new: PayForNew,
-    _history: QuestionVoteHistory,
+    _history: VotesHistory,
     _queries: QuestionQueries
   ) {
     
@@ -112,7 +113,7 @@ module {
       });
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<InterestBallot, GetBallotError> {
       let vote_id = switch(_history.findCurrentVote(question_id)) {
         case (#err(err)) { return #err(err); };
         case (#ok(id)) { id; };
@@ -120,8 +121,8 @@ module {
       _votes.getBallot(principal, vote_id);
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<InterestVote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : InterestVote {
         _votes.getVote(vote_id);
       });
     };

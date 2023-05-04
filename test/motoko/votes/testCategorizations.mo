@@ -3,11 +3,8 @@ import Categories "../../../src/godwin_backend/model/Categories";
 import Categorizations "../../../src/godwin_backend/model/votes/Categorizations";
 import Utils "../../../src/godwin_backend/utils/Utils";
 
-import TestableItems "../testableItems";
+//import TestableItems "../testableItems";
 import Principals "../Principals";
-
-import Matchers "mo:matchers/Matchers";
-import Suite "mo:matchers/Suite";
 
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";

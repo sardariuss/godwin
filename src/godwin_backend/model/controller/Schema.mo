@@ -59,7 +59,7 @@ module {
         case(_) { Debug.trap("Invalid event type"); };
       };
       // Get the most interesting question
-      let most_interesting = switch(_model.getQueries().iter(#INTEREST_SCORE, #FWD).next()){
+      let most_interesting = switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
         case (null) { result.set(#err(#EmptyQueryInterestScore)); return; };
         case(?question_id) { question_id; };
       };

@@ -3,12 +3,12 @@ import State               "State";
 import Model               "Model";
 import Categories          "Categories";
 import Users               "Users";
-import QuestionVoteHistory "QuestionVoteHistory";
 import StatusManager       "questions/StatusManager";
 import Questions           "questions/Questions";
 import QuestionQueries     "questions/QuestionQueries";
 import Controller          "controller/Controller";
 import Votes               "votes/Votes";
+import VotesHistory        "votes/VotesHistory";
 import Interests           "votes/Interests";
 import Categorizations     "votes/Categorizations";
 import Opinions            "votes/Opinions";
@@ -54,7 +54,7 @@ module {
     );
 
     let interest_votes = Votes.Votes<Cursor, Polarization>(state.votes.interest, Polarization.nil());
-    let interest_history = QuestionVoteHistory.build(state.votes.interest_history);
+    let interest_history = VotesHistory.build(state.votes.interest_history);
     
     let interests = Interests.build(
       interest_votes,
@@ -65,7 +65,7 @@ module {
     );
     
     let opinion_votes = Votes.Votes<Cursor, Polarization>(state.votes.opinion, Polarization.nil());
-    let opinion_history = QuestionVoteHistory.build(state.votes.opinion_history);
+    let opinion_history = VotesHistory.build(state.votes.opinion_history);
     
     let opinions = Opinions.build(
       opinion_votes,
@@ -73,7 +73,7 @@ module {
     );
     
     let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(state.votes.categorization, PolarizationMap.nil(categories));
-    let categorization_history = QuestionVoteHistory.build(state.votes.categorization_history);
+    let categorization_history = VotesHistory.build(state.votes.categorization_history);
     
     let categorizations = Categorizations.build(
       categories,

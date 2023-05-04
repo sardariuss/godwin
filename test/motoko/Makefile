@@ -3,4 +3,4 @@ default:
 	rm -f suite.wasm
 
 test:
-	find questions -type f -name 'test*.mo' -print0 | xargs -0 $(shell vessel bin)/moc $(shell mops sources) -r
+	$(shell vessel bin)/moc $(shell mops sources) -r suite.mo

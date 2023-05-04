@@ -1,4 +1,4 @@
-import Types               "../Types";
+import Types               "Types";
 
 import Votes               "Votes";
 import BallotAggregator    "BallotAggregator";

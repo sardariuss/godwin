@@ -39,7 +39,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type PutBallotError = Types.PutBallotError;
   type InterestBallot = Types.InterestBallot;
   type OpinionBallot = Types.OpinionBallot;
-  type CategorizationBallot = Types.CategorizationBallot;
+  type PublicCategorizationBallot = Types.PublicCategorizationBallot;
   type PublicVote<T, A> = Types.PublicVote<T, A>;
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
@@ -53,6 +53,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type StatusInfo = Types.StatusInfo;
   type TransitionError = Types.TransitionError;
   type QuestionId = Types.QuestionId;
+
+  stable var time_now : Time.Time = Time.now();
 
   let _start_date = Time.now() - Duration.toTime(#HOURS(6));  // @temp
 
@@ -136,11 +138,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _controller.putOpinionBallot(caller, question_id, Time.now(), cursor);
   };
 
-  public query({caller}) func getCategorizationBallot(question_id: QuestionId) : async Result<CategorizationBallot, GetBallotError> {
+  public query({caller}) func getCategorizationBallot(question_id: QuestionId) : async Result<PublicCategorizationBallot, GetBallotError> {
     _controller.getCategorizationBallot(caller, question_id);
   };
 
-  public shared({caller}) func putCategorizationBallot(question_id: QuestionId, answer: CursorArray) : async Result<CategorizationBallot, PutBallotError> {
+  public shared({caller}) func putCategorizationBallot(question_id: QuestionId, answer: CursorArray) : async Result<PublicCategorizationBallot, PutBallotError> {
     await* _controller.putCategorizationBallot(caller, question_id, Time.now(), answer);
   };
 

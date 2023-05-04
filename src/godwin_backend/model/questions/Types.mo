@@ -31,6 +31,8 @@ module {
     var current: StatusInfo;
     history: Map<Status, [Time]>;
   };
+
+  public type StatusHistory = Map<Status, [Time]>;
   
   public let questionHash = Map.nhash;
 

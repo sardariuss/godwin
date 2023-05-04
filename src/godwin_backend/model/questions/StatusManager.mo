@@ -20,11 +20,12 @@ module {
   type WMap<K, V>  = WMap.WMap<K, V>;
 
   // For convenience: from types module
-  type Question    = Types.Question;
-  type Status      = Types.Status;
-  type StatusInfo  = Types.StatusInfo;
-  type QuestionId  = Types.QuestionId;
-  type StatusData  = Types.StatusData;
+  type Question      = Types.Question;
+  type Status        = Types.Status;
+  type StatusInfo    = Types.StatusInfo;
+  type QuestionId    = Types.QuestionId;
+  type StatusData    = Types.StatusData;
+  type StatusHistory = Types.StatusHistory;
   let questionHash = Types.questionHash;
 
   public type Register = Map<QuestionId, StatusData>;
@@ -59,7 +60,7 @@ module {
       };
     };
 
-    public func getHistory(question_id: QuestionId) : Map<Status, [Time]> {
+    public func getHistory(question_id: QuestionId) : StatusHistory {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
         case(?status_data) { status_data.history; };

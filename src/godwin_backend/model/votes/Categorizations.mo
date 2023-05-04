@@ -1,5 +1,6 @@
-import Types               "../Types";
+import Types               "Types";
 import Votes               "Votes";
+import VotesHistory        "VotesHistory";
 import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
 import PolarizationMap     "representation/PolarizationMap";
@@ -7,7 +8,6 @@ import CursorMap           "representation/CursorMap";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PayInterface        "../token/PayInterface";
 import Categories          "../Categories";
-import QuestionVoteHistory "../QuestionVoteHistory";
 
 import Utils               "../../utils/Utils";
 
@@ -23,11 +23,13 @@ module {
 
   type Categories             = Categories.Categories;
   type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
-  type QuestionVoteHistory    = QuestionVoteHistory.QuestionVoteHistory;
+  type VotesHistory    = VotesHistory.VotesHistory;
   type PayToVote              = PayToVote.PayToVote<CursorMap, PolarizationMap>;
   type PayInterface           = PayInterface.PayInterface;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
+  type CategorizationVote     = Types.CategorizationVote;
+  type CategorizationBallot   = Types.CategorizationBallot;
   type PutBallotError         = Types.PutBallotError;
   type CloseVoteError         = Types.CloseVoteError;
   type GetVoteError           = Types.GetVoteError;
@@ -36,9 +38,7 @@ module {
   type PolarizationArray      = Types.PolarizationArray;
   type RevealVoteError        = Types.RevealVoteError;
 
-  public type VoteRegister    = Votes.VoteRegister<CursorMap, PolarizationMap>;
-  public type Vote            = Types.Vote<CursorMap, PolarizationMap>;
-  public type Ballot          = Types.Ballot<CursorMap>;
+  public type Register    = Votes.Register<CursorMap, PolarizationMap>;
 
   let PRICE_PUT_BALLOT = 1000; // @todo
 
@@ -48,7 +48,7 @@ module {
     aggregate: PolarizationArray;
   };
 
-  public func toPublicVote(vote: Vote) : PublicVote {
+  public func toPublicVote(vote: CategorizationVote) : PublicVote {
     
     let ballots = Buffer.Buffer<(Principal, Types.Ballot<CursorArray>)>(Map.size(vote.ballots));
     for ((principal, ballot) in Map.entries(vote.ballots)) {
@@ -62,14 +62,14 @@ module {
     };
   };
 
-  public func initVoteRegister() : VoteRegister {
+  public func initRegister() : Register {
     Votes.initRegister<CursorMap, PolarizationMap>();
   };
 
   public func build(
     categories: Categories,
     votes: Votes.Votes<CursorMap, PolarizationMap>,
-    history: QuestionVoteHistory,
+    history: VotesHistory,
     pay_interface: PayInterface
   ) : Categorizations {
     let ballot_aggregator = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(
@@ -85,7 +85,7 @@ module {
 
   public class Categorizations(
     _votes: PayToVote,
-    _history: QuestionVoteHistory
+    _history: VotesHistory
   ) {
     
     public func openVote(question_id: Nat) {
@@ -106,14 +106,14 @@ module {
       await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;}, PRICE_PUT_BALLOT);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<CategorizationBallot, GetBallotError> {
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<CategorizationBallot, GetBallotError> {
         _votes.getBallot(principal, vote_id);
       });
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<CategorizationVote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : CategorizationVote {
         _votes.getVote(vote_id);
       });
     };

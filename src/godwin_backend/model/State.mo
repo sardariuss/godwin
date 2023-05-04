@@ -67,11 +67,11 @@ module {
       index              : Ref<Nat>;
     };
     votes          : {
-      interest                : Interests.VoteRegister;
+      interest                : Interests.Register;
       interest_history        : Map<Nat, VoteHistory>;
-      opinion                 : Opinions.VoteRegister;
+      opinion                 : Opinions.Register;
       opinion_history         : Map<Nat, VoteHistory>;
-      categorization          : Categorizations.VoteRegister;
+      categorization          : Categorizations.Register;
       categorization_history  : Map<Nat, VoteHistory>;
     };
     users          : {
@@ -111,11 +111,11 @@ module {
         index                       = Ref.init<Nat>(0);
       };
       votes         = {
-        interest                    = Interests.initVoteRegister();
+        interest                    = Interests.initRegister();
         interest_history            = Map.new<Nat, VoteHistory>(Map.nhash);
-        opinion                     = Opinions.initVoteRegister();
+        opinion                     = Opinions.initRegister();
         opinion_history             = Map.new<Nat, VoteHistory>(Map.nhash);
-        categorization              = Categorizations.initVoteRegister();
+        categorization              = Categorizations.initRegister();
         categorization_history      = Map.new<Nat, VoteHistory>(Map.nhash);
       };
       users         = {

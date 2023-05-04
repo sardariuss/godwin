@@ -1,7 +1,6 @@
 [dependencies]
 base = "0.7.3"
-matchers = "https://github.com/kritzcreek/motoko-matchers"
 stableRBT = "https://github.com/canscale/StableRBTree#v0.6.0"
 map = "8.1.0"
 fuzz = "0.1.0"
-testing = "https://github.com/internet-computer/testing"
+testing = "https://github.com/sardariuss/testing.mo#main"

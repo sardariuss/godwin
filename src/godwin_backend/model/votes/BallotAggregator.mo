@@ -1,23 +1,22 @@
-import Types "../Types";
+import Types     "Types";
 
-import Map "mo:map/Map";
+import Map       "mo:map/Map";
 
 import Principal "mo:base/Principal";
-import Option "mo:base/Option";
-import Result "mo:base/Result";
+import Option    "mo:base/Option";
+import Result    "mo:base/Result";
 
 module {
 
   // For convenience: from base module
-  type Principal = Principal.Principal;
+  type Principal       = Principal.Principal;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
 
-  type Map<K, V> = Map.Map<K, V>;
+  type Map<K, V>       = Map.Map<K, V>;
 
-  type Ballot<T> = Types.Ballot<T>;
-  type Vote<T, A> = Types.Vote<T, A>;
-
-  type AddBallotError = Types.AddBallotError;
+  type Ballot<T>       = Types.Ballot<T>;
+  type Vote<T, A>      = Types.Vote<T, A>;
+  type AddBallotError  = Types.AddBallotError;
 
   public class BallotAggregator<T, A>(
     _is_valid_answer: (T) -> Bool,

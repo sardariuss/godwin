@@ -1,9 +1,9 @@
-import Types               "../Types";
-import Votes               "Votes"; 
+import Types               "Types";
+import Votes               "Votes";
+import VotesHistory        "VotesHistory";
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
 import Cursor              "representation/Cursor";
-import QuestionVoteHistory "../QuestionVoteHistory";
 
 import Result              "mo:base/Result";
 
@@ -13,27 +13,27 @@ module {
   type Time                = Int;
 
   type Cursor              = Types.Cursor;
-  type Polarization        = Types.Polarization;
-  type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
-  
+  type Polarization        = Types.Polarization;  
   type PutBallotError      = Types.PutBallotError;
   type CloseVoteError      = Types.CloseVoteError;
   type GetVoteError        = Types.GetVoteError;
   type GetBallotError      = Types.GetBallotError;
   type RevealVoteError     = Types.RevealVoteError;
+  type OpinionBallot       = Types.OpinionBallot;
+  type OpinionVote         = Types.OpinionVote;
 
-  public type VoteRegister = Votes.VoteRegister<Cursor, Polarization>;
-  public type Vote         = Types.Vote<Cursor, Polarization>;
-  public type Ballot       = Types.Ballot<Cursor>;
+  type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
+  type VotesHistory = VotesHistory.VotesHistory;
 
-  public func initVoteRegister() : VoteRegister {
+  public type Register     = Votes.Register<Cursor, Polarization>;
+
+  public func initRegister() : Register {
     Votes.initRegister<Cursor, Polarization>();
   };
 
   public func build(
     votes: Votes.Votes<Cursor, Polarization>,
-    history: QuestionVoteHistory
+    history: VotesHistory
   ) : Opinions {
     Opinions(
       votes,
@@ -48,7 +48,7 @@ module {
   public class Opinions(
     _votes: Votes.Votes<Cursor, Polarization>,
     _aggregator: BallotAggregator, // @todo: shall the aggregator be part of the votes module?
-    _history: QuestionVoteHistory
+    _history: VotesHistory
   ) {
     
     public func openVote(question_id: Nat) {
@@ -60,8 +60,8 @@ module {
       ignore _history.closeCurrentVote(question_id);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<OpinionBallot, GetBallotError> {
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<OpinionBallot, GetBallotError> {
         _votes.getBallot(principal, vote_id);
       });
     };
@@ -76,8 +76,8 @@ module {
       });
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<OpinionVote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : OpinionVote {
         _votes.getVote(vote_id);
       });
     };

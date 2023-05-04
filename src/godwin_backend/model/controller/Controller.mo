@@ -54,7 +54,7 @@ module {
   type StatusInfo             = Types.StatusInfo;
   type InterestBallot         = Types.InterestBallot;
   type OpinionBallot          = Types.OpinionBallot;
-  type CategorizationBallot   = Types.CategorizationBallot;
+  type PublicCategorizationBallot   = Types.PublicCategorizationBallot;
   type VoteId                 = Types.VoteId;
   // Errors
   type AddCategoryError       = Types.AddCategoryError;
@@ -189,15 +189,15 @@ module {
       });
     };
       
-    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<Ballot<CursorArray>, GetBallotError> {
-      Result.mapOk(_model.getCategorizationVotes().getBallot(caller, question_id), func(ballot: Ballot<CursorMap>) : Ballot<CursorArray> {
+    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<PublicCategorizationBallot, GetBallotError> {
+      Result.mapOk(_model.getCategorizationVotes().getBallot(caller, question_id), func(ballot: Ballot<CursorMap>) : PublicCategorizationBallot {
         { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
       });
     };
       
-    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async* Result<CategorizationBallot, PutBallotError> {
-      Result.mapOk<(), CategorizationBallot, PutBallotError>(
-        await* _model.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal)), func() : CategorizationBallot {
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async* Result<PublicCategorizationBallot, PutBallotError> {
+      Result.mapOk<(), PublicCategorizationBallot, PutBallotError>(
+        await* _model.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal)), func() : PublicCategorizationBallot {
           { date = date; answer = cursors; };
         });
     };

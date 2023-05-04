@@ -2,6 +2,7 @@ import Types           "Types";
 import Status          "questions/Status";
 import Categories      "Categories";
 import Decay           "Decay";
+import VoteTypes       "votes/Types";
 import Votes           "votes/Votes";
 import Opinions        "votes/Opinions";
 import Categorizations "votes/Categorizations";
@@ -10,7 +11,7 @@ import Polarization    "votes/representation/Polarization";
 import Cursor          "votes/representation/Cursor";
 import CursorMap       "votes/representation/CursorMap";
 import PolarizationMap "votes/representation/PolarizationMap";
-import QuestionVoteHistory "QuestionVoteHistory";
+import VotesHistory    "votes/VotesHistory";
 
 import Utils           "../utils/Utils";
 import WMap            "../utils/wrappers/WMap";
@@ -44,11 +45,8 @@ module {
   // For convenience: from other modules
   type Categories         = Categories.Categories;
   type Duration           = Duration.Duration;
-  type InterestVote       = Interests.Vote;
-  type OpinionVote        = Opinions.Vote;
-  type CategorizationVote = Categorizations.Vote;
-  type OpinionBallot      = Opinions.Ballot;
-  type QuestionVoteHistory = QuestionVoteHistory.QuestionVoteHistory;
+  type OpinionBallot      = VoteTypes.OpinionBallot;
+  type VotesHistory = VotesHistory.VotesHistory;
   type Votes<T, A>        = Votes.Votes<T, A>;
   type Vote<T, A>        = Types.Vote<T, A>;
 
@@ -70,9 +68,9 @@ module {
 
   public func build(
     users: Map<Principal, User>,
-    opinion_history: QuestionVoteHistory,
+    opinion_history: VotesHistory,
     opinion_votes: Votes<Cursor, Polarization>,
-    categorization_history: QuestionVoteHistory,
+    categorization_history: VotesHistory,
     categorization_votes: Votes<CursorMap, PolarizationMap>,
     half_life: ?Duration,
     date_init: Time,
@@ -91,9 +89,9 @@ module {
   
   public class Users(
     _users: WMap.WMap<Principal, User>,
-    _opinion_history: QuestionVoteHistory,
+    _opinion_history: VotesHistory,
     _opinion_votes: Votes<Cursor, Polarization>,
-    _categorization_history: QuestionVoteHistory,
+    _categorization_history: VotesHistory,
     _categorization_votes: Votes<CursorMap, PolarizationMap>,
     _categories: Categories,
     _decay_params: ?Decay
@@ -107,9 +105,9 @@ module {
       Option.map(_users.getOpt(principal), func(user: User) : PolarizationMap { user.convictions; });
     };
     
-    public func getUserOpinions(principal: Principal) : ?[(VoteId, PolarizationArray, Opinions.Ballot)] {
-      Option.map(_users.getOpt(principal), func(user: User) : [(VoteId, PolarizationArray, Opinions.Ballot)] {
-        let buffer = Buffer.Buffer<(VoteId, PolarizationArray, Opinions.Ballot)>(Set.size(user.opinions));
+    public func getUserOpinions(principal: Principal) : ?[(VoteId, PolarizationArray, OpinionBallot)] {
+      Option.map(_users.getOpt(principal), func(user: User) : [(VoteId, PolarizationArray, OpinionBallot)] {
+        let buffer = Buffer.Buffer<(VoteId, PolarizationArray, OpinionBallot)>(Set.size(user.opinions));
         for(vote_id in Set.keys(user.opinions)) {
           let ballot = switch(Map.get(_opinion_votes.getVote(vote_id).ballots, Map.phash, principal)){
             case(?b) { b; };

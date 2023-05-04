@@ -1,6 +1,7 @@
 import Types           "Types";
-import Utils           "../utils/Utils";
-import WMap            "../utils/wrappers/WMap";
+
+import Utils           "../../utils/Utils";
+import WMap            "../../utils/wrappers/WMap";
 
 import Map             "mo:map/Map";
 
@@ -12,27 +13,28 @@ import Array           "mo:base/Array";
 module {
 
   // For convenience: from base module
-  type Result<Ok, Err>       = Result.Result<Ok, Err>;
+  type Result<Ok, Err>         = Result.Result<Ok, Err>;
 
   // For convenience: from map module
-  type Map<K, V>          = Map.Map<K, V>;
-  type WMap<K, V>         = WMap.WMap<K, V>;
+  type Map<K, V>               = Map.Map<K, V>;
+  type WMap<K, V>              = WMap.WMap<K, V>;
 
   // For convenience: from types module
-  //type Question                = Types.Question;
   type VoteHistory             = Types.VoteHistory;
   type FindCurrentVoteError    = Types.FindCurrentVoteError;
   type FindHistoricalVoteError = Types.FindHistoricalVoteError;
-  type QuestionId              = Types.QuestionId;
   type VoteId                  = Types.VoteId;
 
-  public type Register = Map<QuestionId, VoteHistory>;
+  // For convenience
+  type QuestionId              = Nat;
 
-  public func build(register: Register) : QuestionVoteHistory {
-    QuestionVoteHistory(WMap.WMap(register, Map.nhash));
+  public type Register         = Map<QuestionId, VoteHistory>;
+
+  public func build(register: Register) : VotesHistory {
+    VotesHistory(WMap.WMap(register, Map.nhash));
   };
   
-  public class QuestionVoteHistory(_register: WMap<QuestionId, VoteHistory>) {
+  public class VotesHistory(_register: WMap<QuestionId, VoteHistory>) {
 
     public func addVote(question_id: QuestionId, vote_id: VoteId) {
       switch(_register.getOpt(question_id)){
