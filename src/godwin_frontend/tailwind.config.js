@@ -16,6 +16,7 @@ module.exports = {
 				'google-red': "#DB4437",
 				'google-yellow': "#F4B400",
 				'google-green': "#0F9D58",
+				'slate-850' : '#172032'
       },
 			transitionDuration: {
 				'2000': '2000ms',
@@ -23,4 +24,5 @@ module.exports = {
 		},
 	},
 	plugins: [],
+	darkMode: 'class',
 };

@@ -18,7 +18,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, stat
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
 	return (
-    <div className="text-gray-500 border-gray-200 dark:border-gray-700 dark:text-gray-400">
+    <div className="text-gray-500 dark:border-gray-700 dark:text-gray-400">
       {
         statusInfo !== undefined ? (
           <div className={statusHistory.length > 0 ? "hover:cursor-pointer" : ""} onClick={(e) => { if (statusHistory.length > 0) setHistoryVisible(!historyVisible)}}>

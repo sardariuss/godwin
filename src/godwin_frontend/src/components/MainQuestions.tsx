@@ -83,9 +83,9 @@ const MainQuestions = () => {
         <div className="flex flex-col items-center w-full">
           <div className="flex flex-col sticky top-0 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <SubBanner sub={sub}/>
-            <div className="flex flex-col border-x border-slate-700 w-1/3">
-              <div className="border-b border-gray-200 dark:border-gray-700 w-full">
-                <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
+            <div className="flex flex-col border-x dark:border-gray-700 w-1/3">
+              <div className="border-b dark:border-gray-700 w-full">
+                <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                 {
                   mainTabs.map((tab, index) => (
                     <li key={index} className="grow">
@@ -99,8 +99,8 @@ const MainQuestions = () => {
                 currentMainTab === MainTab.HOME ?
                 <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion> :
                 <div>
-                  <div className="border-b border-gray-200 dark:border-gray-700">
-                    <ul className="flex flex-wrap text-sm text-gray-400 font-medium text-center">
+                  <div className="border-b dark:border-gray-700">
+                    <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                     {
                       filters.map((filter, index) => (
                         <li key={index} className="grow">
@@ -114,7 +114,7 @@ const MainQuestions = () => {
               }
             </div>
           </div>
-          <div className="flex flex-col border mb-5 border-slate-700 w-1/3">
+          <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
             <ListQuestions actor={sub.actor} categories={toMap(sub.categories)} order_by={getQueryParams(currentBrowseFilter)[0]} query_direction={getQueryParams(currentBrowseFilter)[1]}/>
           </div>
         </div>

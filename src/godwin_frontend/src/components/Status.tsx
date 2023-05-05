@@ -64,10 +64,10 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
 
 	return (
     <div className={(showBorder? ( borderDashed ? "border-l-2 border-dashed" : "border-l-2 border-solid") : "") + " text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-500 pl-2 ml-4"}>
-      <div className={"text-gray-900 dark:text-white -ml-6 " + (borderDashed ? "pb-3" : "pb-5")}>
+      <div className={`text-gray-900 dark:text-white -ml-6 ${borderDashed ? "pb-3" : "pb-5"}`}>
         <div className="flex flex-row gap-x-3">
-          <span className={"flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 " + ( isHistory ? "bg-gray-100 dark:bg-gray-700" : "bg-blue-200 dark:bg-blue-900" )} >
-            <svg xmlns="http://www.w3.org/2000/svg" className={"w-5 h-5 " + ( isHistory ? "text-gray-500 dark:text-gray-400" : "text-blue-500 dark:text-blue-400" )} fill="currentColor" viewBox="0 96 960 960" width="48"><path d={statusToPath(status)}/></svg>
+          <span className={"flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-2 " + ( isHistory ? "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400" : "bg-blue-200 fill-blue-700 ring-blue-700 dark:bg-blue-800 dark:fill-blue-500 dark:ring-blue-500" )} >
+            <svg xmlns="http://www.w3.org/2000/svg" className={"w-5 h-5"} viewBox="0 96 960 960"><path d={statusToPath(status)}/></svg>
           </span>
           <div className="flex flex-col grow">
             <div className="flex flex-row items-center gap-x-1">

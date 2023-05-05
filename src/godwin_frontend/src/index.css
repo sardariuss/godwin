@@ -10,6 +10,15 @@
 	}
 }
 
+@layer components {
+  .icon-svg {
+    @apply fill-gray-700 dark:fill-gray-300;
+  }
+  .icon-svg-hover {
+    @apply cursor-pointer fill-black dark:fill-white;
+  }
+}
+
 textarea {
   border: none;
   background-color: transparent;

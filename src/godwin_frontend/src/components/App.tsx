@@ -33,7 +33,7 @@ function App() {
 
   return (
 		<>
-      <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900 justify-between">
+      <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900 dark:border-gray-700 justify-between">
         <ActorContext.Provider value={{
           authClient,
           setAuthClient,

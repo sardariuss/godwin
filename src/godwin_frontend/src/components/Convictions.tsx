@@ -75,7 +75,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
     <div>
       {
         numberBallots === 0 ? <></> :
-        <div className="flex flex-col w-full border-y border-slate-700">
+        <div className="flex flex-col w-full border-y dark:border-gray-700">
           <SubBanner sub={sub}/>
           <div className="flex flex-col w-full">
             <ol className="w-full">

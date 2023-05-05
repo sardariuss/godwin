@@ -32,7 +32,7 @@ export const CursorSlider = ({id, cursor, polarizationInfo, disabled, setCursor,
   const [sliderRightColor, setSliderRightColor] = useState<string>("white");
   const [sliderValue, setSliderValue] = useState<number>(cursor);
 
-  const white = new Color("white");
+  const white = new Color("#dddddd");
   // Invert the color ranges to get the correct gradient
   const leftColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
   const rightColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});

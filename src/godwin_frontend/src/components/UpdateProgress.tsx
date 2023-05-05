@@ -21,7 +21,6 @@ const theme = extendTheme({
           ...(ownerState.size === 'custom' && {
             '--CircularProgress-trackThickness': '2px',
             '--CircularProgress-progressThickness': '2px',
-            '--CircularProgress-progressColor': '#FFFFFF',
             '--CircularProgress-trackColor': 'transparent',
             '--_root-size': 'var(--CircularProgress-size, 25px)', // use --_root-size to let other components overrides via --CircularProgress-size
           }),
@@ -131,6 +130,9 @@ const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_functi
           value={updateProgress ? 40 : countdownProgress ? (countdownProgress / delay_duration_ms) * 100 : 0}
           variant="soft"
           size="custom"
+          sx={{
+            '--CircularProgress-progressColor': `${ document.documentElement.classList.contains('dark') ? "rgb(209 213 219)" : "rgb(55 65 81)" }`,
+          }}
         > 
         </CircularProgress>
         </CssVarsProvider>
@@ -140,7 +142,7 @@ const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_functi
           updateProgress ? 
             <></> :
           countdownProgress?
-            <div className="flex w-full items-center text-center place-content-center dark:text-gray-200 dark:hover:text-white hover:cursor-pointer" onClick={(e) => stopCountdown()}>◼</div> :
+            <div className="flex w-full items-center text-center place-content-center text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white hover:cursor-pointer" onClick={(e) => stopCountdown()}>◼</div> :
           error === null ?
             children : error.length !== 0 ?
             <Tooltip title={error} arrow>

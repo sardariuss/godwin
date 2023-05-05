@@ -13,10 +13,10 @@ const SubBanner = ({sub} : Props) => {
 
   return (
     <div className="flex flex-col text-center w-full items-center">
-      <div className="w-full bg-gradient-to-r from-purple-700 from-10% via-indigo-800 via-30% to-sky-600 to-90% dark:text-white font-medium border-t border-gray-600 pt-2 pb-1">
+      <div className="w-full bg-gradient-to-r from-purple-200 dark:from-purple-700 from-10% dark:via-indigo-800 via-indigo-100 via-30% dark:to-sky-600 to-sky-200 to-90% text-black dark:text-white font-medium pt-2 pb-1">
         { sub.name }
       </div>
-      <div className="relative w-full overflow-clip bg-gray-100 dark:bg-gray-700 border-y py-1 border-gray-600">
+      <div className="relative w-full overflow-clip bg-gray-100 dark:bg-gray-700 border-y py-1 dark:border-gray-700">
         <div className="dark:text-white font-normal whitespace-nowrap"
           style={{transform: `translateX(` + `${(shift - diff) * 100}` + `%)`}}>
           { sub.categories.map((category, index) => 
