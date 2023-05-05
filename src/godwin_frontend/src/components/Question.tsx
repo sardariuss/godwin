@@ -58,12 +58,12 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
   }, []);
 
 	return (
-		<div className="flex flex-col text-gray-900 dark:text-white border-b border-slate-700">
+		<div className="flex flex-col text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
 			{
 				question !== undefined && statusInfo !== undefined ?
 				<div className="flex flex-row">
 					<div className="flex flex-col py-1 px-10 justify-start w-full space-y-2">
-						<div className="justify-start text-lg font-normal">
+						<div className="justify-start text-sm font-normal">
 							{ question === undefined ? "n/a" : question.text }
 						</div>
 						<div className="flex items-center w-full justify-center">
@@ -87,7 +87,7 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 						</div>
 						{
 							showHistory ?
-								<div className="border-y border-slate-700">
+								<div className="border-y dark:border-gray-700">
 									<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
 								</div> :
 								<></>

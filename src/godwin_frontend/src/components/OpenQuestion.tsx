@@ -39,12 +39,12 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
 	return (
     <form>
-      <div className="w-full border-b border-gray-200 dark:border-gray-600">
+      <div className="w-full border-b dark:border-gray-700">
         <div className="px-4 py-2">
           <textarea rows={4} onChange={(e) => updateText(e.target.value)} className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400" placeholder={placeholder} required></textarea>
         </div>
-        <div className="flex flex-row-reverse gap-x-3 px-3 py-2 border-t dark:border-gray-600">
-          <button type="submit" className={"py-2.5 px-4 text-xs font-medium text-center text-white bg-blue-700 rounded-lg inline-flex focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 hover:enabled:bg-blue-800 disabled:bg-gray-700"} disabled={selectedSubId===null || text.length <= 0} onClick={(e) => submitQuestion()}>
+        <div className="flex flex-row-reverse gap-x-3 px-3 py-2 border-t dark:border-gray-700">
+          <button type="submit" className={`py-2.5 px-4 text-xs font-medium text-center text-white bg-blue-700 rounded-lg inline-flex focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 hover:enabled:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-700`} disabled={selectedSubId===null || text.length <= 0} onClick={(e) => submitQuestion()}>
             Suggest question
           </button>
           {
