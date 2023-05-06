@@ -22,15 +22,15 @@ module {
   type VoteId                 = Types.VoteId;
   type Cursor                 = Types.Cursor;
   type Polarization           = Types.Polarization;
-  type InterestVote           = Types.InterestVote;
-  type InterestBallot         = Types.InterestBallot;
+  type Vote                   = Types.Vote<Cursor, Polarization>;
+  type Ballot                 = Types.Ballot<Cursor>;
   type PutBallotError         = Types.PutBallotError;
   type GetBallotError         = Types.GetBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
   
   type BallotAggregator       = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type VotesHistory    = VotesHistory.VotesHistory;
+  type VotesHistory           = VotesHistory.VotesHistory;
   type Question               = QuestionTypes.Question;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
@@ -113,7 +113,7 @@ module {
       });
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<InterestBallot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
       let vote_id = switch(_history.findCurrentVote(question_id)) {
         case (#err(err)) { return #err(err); };
         case (#ok(id)) { id; };
@@ -121,8 +121,8 @@ module {
       _votes.getBallot(principal, vote_id);
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<InterestVote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : InterestVote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
         _votes.getVote(vote_id);
       });
     };

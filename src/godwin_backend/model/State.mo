@@ -1,4 +1,6 @@
 import Types           "Types";
+import VoteTypes       "votes/Types";
+import QuestionTypes   "questions/Types";
 import QuestionQueries "questions/QuestionQueries";
 import Categories      "Categories";
 import Interests       "votes/Interests";
@@ -22,19 +24,21 @@ module {
   type Map<K, V>           = Map.Map<K, V>;
   type Ref<V>              = Ref.Ref<V>;
 
+  type Duration            = Duration.Duration;
+
   // For convenience: from types module
   type Parameters          = Types.Parameters;
-  type Question            = Types.Question;
-  type Cursor              = Types.Cursor;
-  type Category            = Types.Category;
-  type CursorMap           = Types.CursorMap;
-  type PolarizationMap     = Types.PolarizationMap;
-  type Duration            = Duration.Duration;
-  type Polarization        = Types.Polarization;
   type SchedulerParameters = Types.SchedulerParameters;
   type User                = Types.User;
-  type StatusData          = Types.StatusData;
-  type VoteHistory         = Types.VoteHistory;
+  type VoteHistory         = VoteTypes.VoteHistory;
+  type Cursor              = VoteTypes.Cursor;
+  type Category            = VoteTypes.Category;
+  type CursorMap           = VoteTypes.CursorMap;
+  type PolarizationMap     = VoteTypes.PolarizationMap;
+  type Polarization        = VoteTypes.Polarization;
+  type Question            = QuestionTypes.Question;
+  type StatusData          = QuestionTypes.StatusData;
+
   //type FailedPayout        = Types.FailedPayout; // @todo
 
   public type State = {

@@ -29,7 +29,7 @@ module {
 
   public type StatusData = {
     var current: StatusInfo;
-    history: Map<Status, [Time]>;
+    history: StatusHistory;
   };
 
   public type StatusHistory = Map<Status, [Time]>;

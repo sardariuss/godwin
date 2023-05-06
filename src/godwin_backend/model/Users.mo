@@ -1,7 +1,8 @@
 import Types           "Types";
-import Status          "questions/Status";
 import Categories      "Categories";
 import Decay           "Decay";
+import QuestionTypes   "questions/Types";
+import Status          "questions/Status";
 import VoteTypes       "votes/Types";
 import Votes           "votes/Votes";
 import Opinions        "votes/Opinions";
@@ -21,7 +22,6 @@ import Map             "mo:map/Map";
 import Set             "mo:map/Set";
 
 import Debug           "mo:base/Debug";
-import Iter            "mo:base/Iter";
 import Option          "mo:base/Option";
 import Float           "mo:base/Float";
 import Principal       "mo:base/Principal";
@@ -33,38 +33,38 @@ module {
 
   // For convenience: from base module
   type Time               = Int;
-  type Iter<T>            = Iter.Iter<T>;
 
   // For convenience: from map module
   type Map<K, V>          = Map.Map<K, V>;
-  type Map2D<K1, K2, V>   = Map<K1, Map<K2, V>>;
   type WMap<K, V>         = WMap.WMap<K, V>;
-  type WMap2D<K1, K2, V>  = WMap.WMap2D<K1, K2, V>;
   type Set<K>             = Set.Set<K>;
+
+  public type Decay       = Decay.Decay;
+  public type User = {
+    convictions: PolarizationMap;
+    opinions: Set<VoteId>;
+  };
 
   // For convenience: from other modules
   type Categories         = Categories.Categories;
   type Duration           = Duration.Duration;
-  type OpinionBallot      = VoteTypes.OpinionBallot;
-  type VotesHistory = VotesHistory.VotesHistory;
+  type VotesHistory       = VotesHistory.VotesHistory;
   type Votes<T, A>        = Votes.Votes<T, A>;
-  type Vote<T, A>        = Types.Vote<T, A>;
-
+  
   // For convenience: from types module
-  type Question           = Types.Question;
-  type Status             = Types.Status;
-  type Category           = Types.Category;
-  type Cursor             = Types.Cursor;
-  type Polarization       = Types.Polarization;
-  type CursorMap          = Types.CursorMap;
-  type PolarizationMap    = Types.PolarizationMap;
-  type Decay              = Types.Decay; 
-  type User               = Types.User;
-  type StatusInfo         = Types.StatusInfo;
-  type StatusHistory      = Types.StatusHistory;
-  type StatusData         = Types.StatusData;
-  type VoteId             = Types.VoteId;
   type PolarizationArray  = Types.PolarizationArray;
+  type Question           = QuestionTypes.Question;
+  type Status             = QuestionTypes.Status;
+  type StatusInfo         = QuestionTypes.StatusInfo;
+  type StatusData         = QuestionTypes.StatusData;
+  type OpinionBallot      = VoteTypes.OpinionBallot;
+  type Vote<T, A>         = VoteTypes.Vote<T, A>;
+  type Category           = VoteTypes.Category;
+  type Cursor             = VoteTypes.Cursor;
+  type Polarization       = VoteTypes.Polarization;
+  type CursorMap          = VoteTypes.CursorMap;
+  type PolarizationMap    = VoteTypes.PolarizationMap;
+  type VoteId             = VoteTypes.VoteId;
 
   public func build(
     users: Map<Principal, User>,

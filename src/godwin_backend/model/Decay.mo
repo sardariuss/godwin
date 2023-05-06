@@ -7,9 +7,12 @@ import Option "mo:base/Option";
 
 module {
 
-  // For convenience: from types module
-  type Decay = Types.Decay;
   type Duration = Duration.Duration;
+
+  public type Decay = {
+    lambda: Float;
+    shift: Float; // Used to shift X so that the exponential does not underflow/overflow
+  };
 
   // The bigger positive number a float 64 can hold is 1.797693134e+308, which is approx. equal to exp(709)
   // The smaller positive number a float64 can hold is 4.940656458e-324, which is approx. equal to exp(-744)

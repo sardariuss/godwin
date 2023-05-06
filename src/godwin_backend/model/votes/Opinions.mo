@@ -19,8 +19,8 @@ module {
   type GetVoteError        = Types.GetVoteError;
   type GetBallotError      = Types.GetBallotError;
   type RevealVoteError     = Types.RevealVoteError;
-  type OpinionBallot       = Types.OpinionBallot;
-  type OpinionVote         = Types.OpinionVote;
+  type Ballot              = Types.Ballot<Cursor>;
+  type Vote                = Types.Vote<Cursor, Polarization>;
 
   type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
   type VotesHistory = VotesHistory.VotesHistory;
@@ -60,8 +60,8 @@ module {
       ignore _history.closeCurrentVote(question_id);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<OpinionBallot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<OpinionBallot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
         _votes.getBallot(principal, vote_id);
       });
     };
@@ -76,8 +76,8 @@ module {
       });
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<OpinionVote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : OpinionVote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
         _votes.getVote(vote_id);
       });
     };

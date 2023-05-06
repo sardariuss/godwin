@@ -1,23 +1,23 @@
-import Types           "Types";
-import Status          "Status";
+import Types  "Types";
+import Status "Status";
 
-import Utils           "../../utils/Utils";
-import WMap            "../../utils/wrappers/WMap";
+import Utils  "../../utils/Utils";
+import WMap   "../../utils/wrappers/WMap";
 
-import Map             "mo:map/Map";
+import Map    "mo:map/Map";
 
-import Debug           "mo:base/Debug";
-import Option          "mo:base/Option";
-import Nat             "mo:base/Nat";
+import Debug  "mo:base/Debug";
+import Option "mo:base/Option";
+import Nat    "mo:base/Nat";
 
 module {
 
   // For convenience: from base module
-  type Time        = Int;
+  type Time          = Int;
 
   // For convenience: from map module
-  type Map<K, V>   = Map.Map<K, V>;
-  type WMap<K, V>  = WMap.WMap<K, V>;
+  type Map<K, V>     = Map.Map<K, V>;
+  type WMap<K, V>    = WMap.WMap<K, V>;
 
   // For convenience: from types module
   type Question      = Types.Question;
@@ -26,7 +26,7 @@ module {
   type QuestionId    = Types.QuestionId;
   type StatusData    = Types.StatusData;
   type StatusHistory = Types.StatusHistory;
-  let questionHash = Types.questionHash;
+  let questionHash   = Types.questionHash;
 
   public type Register = Map<QuestionId, StatusData>;
 
@@ -67,25 +67,17 @@ module {
       };
     };
 
-    public func getStatusIteration(question_id: QuestionId, status: Status) : Nat {
-      // Get the status data
-      let status_data = switch(_register.getOpt(question_id)){
-        case(null) { return 0; };
-        case(?data) { data; };
-      };
-      // Get the status info
-      let status_history = switch(Map.get(status_data.history, Status.status_hash, status)){
-        case(null) { return 0; };
-        case(?history) { history; };
-      };
-      // Return the size
-      status_history.size();
-    };
-
     public func deleteStatus(question_id: QuestionId) {
       _register.delete(question_id);
     };
 
+  };
+
+  public func getStatusIteration(status_history: StatusHistory, status: Status) : Nat {
+    switch(Map.get(status_history, Status.status_hash, status)){
+      case(null) { return 0; };
+      case(?history) { history.size(); };
+    };
   };
 
 };

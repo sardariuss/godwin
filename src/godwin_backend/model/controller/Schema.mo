@@ -1,14 +1,15 @@
-import Event        "Event";
-import Types        "../Types";
-import Model        "../Model";
-import Status       "../questions/Status";
+import Event         "Event";
+import Types         "../Types";
+import Model         "../Model";
+import Status        "../questions/Status";
+import StatusManager "../questions/StatusManager";
 
-import Duration     "../../utils/Duration";
-import StateMachine "../../utils/StateMachine";
+import Duration      "../../utils/Duration";
+import StateMachine  "../../utils/StateMachine";
 
-import Option       "mo:base/Option";
-import Debug        "mo:base/Debug";
-import Principal    "mo:base/Principal";
+import Option        "mo:base/Option";
+import Debug         "mo:base/Debug";
+import Principal     "mo:base/Principal";
 
 module {
 
@@ -38,7 +39,7 @@ module {
     };
 
     func timedOutFirstIteration(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      if (_model.getStatusManager().getStatusIteration(question_id, #CANDIDATE) != 0){
+      if (StatusManager.getStatusIteration(_model.getStatusManager().getHistory(question_id), #CANDIDATE) != 0){
         result.set(#err(#WrongStatusIteration));
         return;
       };
@@ -46,7 +47,7 @@ module {
     };
 
     func timedOutNextIterations(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      if (_model.getStatusManager().getStatusIteration(question_id, #CANDIDATE) == 0){
+      if (StatusManager.getStatusIteration(_model.getStatusManager().getHistory(question_id), #CANDIDATE) == 0){
         result.set(#err(#WrongStatusIteration));
         return;
       };

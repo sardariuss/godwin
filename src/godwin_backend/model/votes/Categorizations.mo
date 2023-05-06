@@ -28,39 +28,17 @@ module {
   type PayInterface           = PayInterface.PayInterface;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-  type CategorizationVote     = Types.CategorizationVote;
-  type CategorizationBallot   = Types.CategorizationBallot;
+  type Vote                   = Types.Vote<CursorMap, PolarizationMap>;
+  type Ballot                 = Types.Ballot<CursorMap>;
   type PutBallotError         = Types.PutBallotError;
   type CloseVoteError         = Types.CloseVoteError;
   type GetVoteError           = Types.GetVoteError;
   type GetBallotError         = Types.GetBallotError;
-  type CursorArray            = Types.CursorArray;
-  type PolarizationArray      = Types.PolarizationArray;
   type RevealVoteError        = Types.RevealVoteError;
 
   public type Register    = Votes.Register<CursorMap, PolarizationMap>;
 
   let PRICE_PUT_BALLOT = 1000; // @todo
-
-  public type PublicVote = {
-    id: Nat;
-    ballots: [(Principal, Types.Ballot<CursorArray>)];
-    aggregate: PolarizationArray;
-  };
-
-  public func toPublicVote(vote: CategorizationVote) : PublicVote {
-    
-    let ballots = Buffer.Buffer<(Principal, Types.Ballot<CursorArray>)>(Map.size(vote.ballots));
-    for ((principal, ballot) in Map.entries(vote.ballots)) {
-      ballots.add((principal, { date = ballot.date; answer = Utils.trieToArray(ballot.answer); }));
-    };
-
-    {
-      id = vote.id;
-      ballots = Buffer.toArray(ballots);
-      aggregate = Utils.trieToArray(vote.aggregate);
-    };
-  };
 
   public func initRegister() : Register {
     Votes.initRegister<CursorMap, PolarizationMap>();
@@ -106,14 +84,14 @@ module {
       await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;}, PRICE_PUT_BALLOT);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<CategorizationBallot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<CategorizationBallot, GetBallotError> {
+    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
+      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
         _votes.getBallot(principal, vote_id);
       });
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<CategorizationVote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : CategorizationVote {
+    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
+      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
         _votes.getVote(vote_id);
       });
     };

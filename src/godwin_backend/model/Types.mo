@@ -14,39 +14,41 @@ module {
 
   // For convenience: from base module
   type Principal = Principal.Principal;
+  type Time = Int;
 
   type Set<K> = Set.Set<K>;
   
   type Duration = Duration.Duration;
 
   // @todo: are all these types required in the canister interface?
-  public type Question          = QuestionTypes.Question;
-  public type Status            = QuestionTypes.Status;
-  public type StatusInfo        = QuestionTypes.StatusInfo;
-  public type QuestionId        = QuestionTypes.QuestionId;
-  public type StatusData        = QuestionTypes.StatusData;
-  public type StatusHistory     = QuestionTypes.StatusHistory;
-  public type OpenQuestionError = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
+  public type QuestionId                 = QuestionTypes.QuestionId;  
+  public type Question                   = QuestionTypes.Question;
+  public type Status                     = QuestionTypes.Status;
+  public type StatusInfo                 = QuestionTypes.StatusInfo;
+  public type StatusData                 = QuestionTypes.StatusData;
+  public type StatusHistory              = [(Status, [Time])];
+  public type OpenQuestionError          = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
 
   // @todo: are all these types required in the canister interface?
   public type VoteId                     = VoteTypes.VoteId;
   public type VoteHistory                = VoteTypes.VoteHistory;
-  public type Vote<T, A>                 = VoteTypes.Vote<T, A>;
-  public type PublicVote<T, A>           = VoteTypes.PublicVote<T, A>;
-  public type Ballot<T>                  = VoteTypes.Ballot<T>;
   public type Cursor                     = VoteTypes.Cursor;
   public type Polarization               = VoteTypes.Polarization;
-  public type CursorMap                  = VoteTypes.CursorMap;
-  public type CursorArray                = VoteTypes.CursorArray;
-  public type PolarizationMap            = VoteTypes.PolarizationMap;
-  public type PolarizationArray          = VoteTypes.PolarizationArray;
+  public type CursorArray                = [(VoteTypes.Category, VoteTypes.Cursor)];
+  public type PolarizationArray          = [(VoteTypes.Category, VoteTypes.Polarization)];
+
   public type InterestBallot             = VoteTypes.InterestBallot;
   public type OpinionBallot              = VoteTypes.OpinionBallot;
-  public type CategorizationBallot       = VoteTypes.CategorizationBallot;
-  public type PublicCategorizationBallot = VoteTypes.PublicCategorizationBallot;
-  public type InterestVote               = VoteTypes.InterestVote;
-  public type OpinionVote                = VoteTypes.OpinionVote;
-  public type CategorizationVote         = VoteTypes.CategorizationVote;
+  public type CategorizationBallot       = VoteTypes.Ballot<CursorArray>;
+  public type Vote<T, A> = {
+    id: VoteId;
+    ballots: [(Principal, VoteTypes.Ballot<T>)];
+    aggregate: A;
+  };
+  public type InterestVote               = Vote<Cursor, Polarization>;
+  public type OpinionVote                = Vote<Cursor, Polarization>;
+  public type CategorizationVote         = Vote<CursorArray, PolarizationArray>;
+  
   public type FindCurrentVoteError       = VoteTypes.FindCurrentVoteError;
   public type FindHistoricalVoteError    = VoteTypes.FindHistoricalVoteError;
   public type OpenVoteError              = VoteTypes.OpenVoteError;
@@ -86,7 +88,7 @@ module {
   };
 
   public type User = {
-    convictions: PolarizationMap;
+    convictions: VoteTypes.PolarizationMap;
     opinions: Set<Nat>;
   };
 

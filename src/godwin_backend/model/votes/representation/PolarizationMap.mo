@@ -1,13 +1,13 @@
+import Types        "Types";
 import Polarization "Polarization";
-import Types "../../Types";
-import Categories "../../Categories";
-import Utils "../../../utils/Utils";
+import Categories   "../../Categories";
+import Utils        "../../../utils/Utils";
 
-import Text "mo:base/Text";
-import Trie "mo:base/Trie";
-import Option "mo:base/Option";
-import Buffer "mo:base/Buffer";
-import Iter "mo:base/Iter";
+import Text         "mo:base/Text";
+import Trie         "mo:base/Trie";
+import Option       "mo:base/Option";
+import Buffer       "mo:base/Buffer";
+import Iter         "mo:base/Iter";
 
 module {
 

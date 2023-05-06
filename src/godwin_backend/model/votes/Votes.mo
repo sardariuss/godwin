@@ -19,18 +19,9 @@ module {
 
   type Ballot<T>        = Types.Ballot<T>;
   type Vote<T, A>       = Types.Vote<T, A>;
-  type PublicVote<T, A> = Types.PublicVote<T, A>;
   type CloseVoteError   = Types.CloseVoteError;
   type GetVoteError     = Types.GetVoteError;
   type GetBallotError   = Types.GetBallotError;
-
-  public func toPublicVote<T, A>(vote: Vote<T, A>) : PublicVote<T, A> {
-    {
-      id = vote.id;
-      ballots = Utils.mapToArray(vote.ballots);
-      aggregate = vote.aggregate;
-    }
-  };
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";

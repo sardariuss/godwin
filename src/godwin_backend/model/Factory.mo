@@ -1,8 +1,10 @@
-import Types               "Types";
+import VoteTypes           "votes/Types";
+import QuestionTypes       "questions/Types";
 import State               "State";
 import Model               "Model";
 import Categories          "Categories";
 import Users               "Users";
+import Facade              "Facade";
 import StatusManager       "questions/StatusManager";
 import Questions           "questions/Questions";
 import QuestionQueries     "questions/QuestionQueries";
@@ -20,16 +22,16 @@ import PayForNew           "token/PayForNew";
 
 module {
 
-  type Question        = Types.Question;
-  type Status          = Types.Status;
-  type Cursor          = Types.Cursor;
-  type Polarization    = Types.Polarization;
-  type CursorMap       = Types.CursorMap;
-  type PolarizationMap = Types.PolarizationMap;
-  type Controller      = Controller.Controller;
+  type Question        = QuestionTypes.Question;
+  type Status          = QuestionTypes.Status;
+  type Cursor          = VoteTypes.Cursor;
+  type Polarization    = VoteTypes.Polarization;
+  type CursorMap       = VoteTypes.CursorMap;
+  type PolarizationMap = VoteTypes.PolarizationMap;
+  type Facade          = Facade.Facade;
   type State           = State.State;
 
-  public func build(state: State) : Controller {
+  public func build(state: State) : Facade {
 
     let master = state.master;
     
@@ -109,7 +111,9 @@ module {
 
     let controller = Controller.build(model);
 
-    controller;
+    let facade = Facade.Facade(controller);
+
+    facade;
   };
 
 };

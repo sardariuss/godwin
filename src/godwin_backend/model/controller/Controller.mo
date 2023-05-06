@@ -3,8 +3,10 @@ import Schema              "Schema";
 import Types               "../Types";
 import Model               "../Model";
 import Categories          "../Categories";
+import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 import Questions           "../questions/Questions";
+import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
 import SubaccountGenerator "../token/SubaccountGenerator";
@@ -35,32 +37,31 @@ module {
   type Time                   = Int;
 
   // For convenience: from types module
-  type Question               = Types.Question;
-  type Category               = Types.Category;
-  type Decay                  = Types.Decay;
-  type Status                 = Types.Status;
+  type Question               = QuestionTypes.Question;
+  type Status                 = QuestionTypes.Status;
+  type StatusHistory          = QuestionTypes.StatusHistory; // @todo
+  type StatusInfo             = QuestionTypes.StatusInfo;
+  type OpenQuestionError      = Types.OpenQuestionError; // @todo
+  
+  type Category               = VoteTypes.Category;
+  type Decay                  = Types.Decay; // @todo
   type PolarizationArray      = Types.PolarizationArray;
-  type Ballot<T>              = Types.Ballot<T>;
-  type Vote<T, A>             = Types.Vote<T, A>;
-  type PublicVote<T, A>       = Types.PublicVote<T, A>;
-  type Cursor                 = Types.Cursor;
-  type Polarization           = Types.Polarization;
-  type CursorMap              = Types.CursorMap;
-  type PolarizationMap        = Types.PolarizationMap;
-  type CursorArray            = Types.CursorArray;
   type CategoryInfo           = Types.CategoryInfo;
-  type CategoryArray          = Types.CategoryArray;
-  type StatusHistory          = Types.StatusHistory;
-  type StatusInfo             = Types.StatusInfo;
-  type InterestBallot         = Types.InterestBallot;
-  type OpinionBallot          = Types.OpinionBallot;
-  type PublicCategorizationBallot   = Types.PublicCategorizationBallot;
-  type VoteId                 = Types.VoteId;
+  type CursorArray            = Types.CursorArray;
+  type Ballot<T>              = VoteTypes.Ballot<T>;
+  type Vote<T, A>             = VoteTypes.Vote<T, A>;
+  type Cursor                 = VoteTypes.Cursor;
+  type Polarization           = VoteTypes.Polarization;
+  type CursorMap              = VoteTypes.CursorMap;
+  type PolarizationMap        = VoteTypes.PolarizationMap;
+  type InterestBallot         = VoteTypes.InterestBallot;
+  type OpinionBallot          = VoteTypes.OpinionBallot;
+  type CategorizationBallot   = VoteTypes.CategorizationBallot;
+  type VoteId                 = VoteTypes.VoteId;
   // Errors
   type AddCategoryError       = Types.AddCategoryError;
   type RemoveCategoryError    = Types.RemoveCategoryError;
   type GetQuestionError       = Types.GetQuestionError;
-  type OpenQuestionError      = Types.OpenQuestionError;
   type ReopenQuestionError    = Types.ReopenQuestionError;
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type SetPickRateError       = Types.SetPickRateError;
@@ -86,8 +87,8 @@ module {
       _model.getUsers().getDecay();
     };
 
-    public func getCategories() : CategoryArray {
-      Iter.toArray(_model.getCategories().entries());
+    public func getCategories() : Categories.Categories {
+      _model.getCategories();
     };
 
     public func addCategory(caller: Principal, category: Category, info: CategoryInfo) : Result<(), AddCategoryError> {
@@ -173,33 +174,24 @@ module {
       _model.getInterestVotes().getBallot(caller, question_id);
     };
 
-    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Cursor) : async* Result<InterestBallot, PutBallotError> {
-      Result.mapOk<(), InterestBallot, PutBallotError>(await* _model.getInterestVotes().putBallot(principal, question_id, date, interest), func() : InterestBallot {
-        { date = date; answer = interest; }
-      });
+    public func putInterestBallot(principal: Principal, question_id: Nat, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {
+      await* _model.getInterestVotes().putBallot(principal, question_id, date, interest);
     };
 
     public func getOpinionBallot(caller: Principal, question_id: Nat) : Result<Ballot<Cursor>, GetBallotError> {
       _model.getOpinionVotes().getBallot(caller, question_id);
     };
 
-    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<OpinionBallot, PutBallotError> {
-      Result.mapOk<(), OpinionBallot, PutBallotError>(_model.getOpinionVotes().putBallot(principal, question_id, date, cursor), func() : OpinionBallot {
-        { date = date; answer = cursor; }
-      });
+    public func putOpinionBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
+      _model.getOpinionVotes().putBallot(principal, question_id, date, cursor);
     };
       
-    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<PublicCategorizationBallot, GetBallotError> {
-      Result.mapOk(_model.getCategorizationVotes().getBallot(caller, question_id), func(ballot: Ballot<CursorMap>) : PublicCategorizationBallot {
-        { date = ballot.date; answer = Utils.trieToArray(ballot.answer); };
-      });
+    public func getCategorizationBallot(caller: Principal, question_id: Nat) : Result<CategorizationBallot, GetBallotError> {
+      _model.getCategorizationVotes().getBallot(caller, question_id);
     };
       
-    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorArray) : async* Result<PublicCategorizationBallot, PutBallotError> {
-      Result.mapOk<(), PublicCategorizationBallot, PutBallotError>(
-        await* _model.getCategorizationVotes().putBallot(principal, question_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal)), func() : PublicCategorizationBallot {
-          { date = date; answer = cursors; };
-        });
+    public func putCategorizationBallot(principal: Principal, question_id: Nat, date: Time, cursors: CursorMap) : async* Result<(), PutBallotError> {
+      await* _model.getCategorizationVotes().putBallot(principal, question_id, date, cursors);
     };
 
     public func getStatusInfo(question_id: Nat) : Result<StatusInfo, ReopenQuestionError> {
@@ -209,52 +201,41 @@ module {
       };
     };
 
-    public func getStatusHistory(question_id: Nat) : Result<[(Status, [Time])], ReopenQuestionError> {
+    public func getStatusHistory(question_id: Nat) : Result<StatusHistory, ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
         case(null) { #err(#PrincipalIsAnonymous); };
-        case(?question) { #ok(Utils.mapToArray(_model.getStatusManager().getHistory(question_id))); };
+        case(?question) { #ok(_model.getStatusManager().getHistory(question_id)); };
       };
     };
 
-    public func revealInterestVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, RevealVoteError> {
-      switch(_model.getInterestVotes().revealVote(question_id, iteration)){
-        case(#err(err)) { #err(err); };
-        case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
-      };
+    public func revealInterestVote(question_id: Nat, iteration: Nat) : Result<Vote<Cursor, Polarization>, RevealVoteError> {
+      _model.getInterestVotes().revealVote(question_id, iteration);
     };
 
-    public func revealOpinionVote(question_id: Nat, iteration: Nat) : Result<PublicVote<Cursor, Polarization>, RevealVoteError> {
-      switch(_model.getOpinionVotes().revealVote(question_id, iteration)){
-        case(#err(err)) { #err(err); };
-        case(#ok(vote)) { #ok(Votes.toPublicVote(vote)); };
-      };
+    public func revealOpinionVote(question_id: Nat, iteration: Nat) : Result<Vote<Cursor, Polarization>, RevealVoteError> {
+      _model.getOpinionVotes().revealVote(question_id, iteration);
     };
 
-    public func revealCategorizationVote(question_id: Nat, iteration: Nat) : Result<PublicVote<CursorArray, PolarizationArray>, RevealVoteError> {
-      switch(_model.getCategorizationVotes().revealVote(question_id, iteration)){
-        case(#err(err)) { #err(err); };
-        case(#ok(vote)) { #ok(Categorizations.toPublicVote(vote)); };
-      };
+    public func revealCategorizationVote(question_id: Nat, iteration: Nat) : Result<Vote<CursorMap, PolarizationMap>, RevealVoteError> {
+      _model.getCategorizationVotes().revealVote(question_id, iteration);
     };
 
-    public func getUserConvictions(principal: Principal) : ?PolarizationArray {
-      Option.map(_model.getUsers().getUserConvictions(principal), func(convictions: PolarizationMap) : PolarizationArray {
-        Utils.trieToArray(convictions);
-      });
+    public func getUserConvictions(principal: Principal) : ?PolarizationMap {
+      _model.getUsers().getUserConvictions(principal);
     };
 
     public func getUserOpinions(principal: Principal) : ?[(VoteId, PolarizationArray, Ballot<Cursor>)] {
       _model.getUsers().getUserOpinions(principal);
     };
 
-    func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getMaster(), #InsufficientCredentials), (func(){}));
-    };
-
     public func run(time: Time) : async* () {
       for (question in _model.getQuestions().iter()){
         await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, TransitionError>());
       };
+    };
+
+    func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
+      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getMaster(), #InsufficientCredentials), (func(){}));
     };
 
     func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
