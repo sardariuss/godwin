@@ -21,6 +21,7 @@ import Debug     "mo:base/Debug";
 import Prim      "mo:prim";
 import Nat32     "mo:base/Nat32";
 import Option    "mo:base/Option";
+import ExperimentalCycles "mo:base/ExperimentalCycles";
 
 import Token     "canister:godwin_token";
 
@@ -54,6 +55,10 @@ actor Master {
 
   stable let _airdrop_user_amount = 1_000_000;
 
+  public query func getCyclesBalance() : async Nat {
+    ExperimentalCycles.balance();
+  };
+
   public shared({caller}) func createSubGodwin(identifier: Text, parameters: Parameters) : async CreateSubGodwinResult  {
     
     // The identifier shall be alphanumeric because it will be used in the url.
@@ -65,8 +70,11 @@ actor Master {
       return #err(#IdentifierAlreadyTaken);
     };
 
+    // Add 50B cycles; creating the canister seem to take 8B, installation 6B.
+    ExperimentalCycles.add(50_000_000_000);
+
     let new_sub = await (system Godwin.Godwin)(#new {settings = ?{ 
-      controllers = ?[Principal.fromActor(Master), caller]; // @todo: verify the sub godwin controller is the master
+      controllers = ?[Principal.fromActor(Master)];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;

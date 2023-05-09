@@ -44,7 +44,7 @@ actor Token {
     max_supply = 1_000_000_000_000_000;
     initial_balances = [({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 100_000_000_000_000)];
     min_burn_amount = 1_000_000_000;
-    minting_account = { owner = Principal.fromText("rrkah-fqaaa-aaaaa-aaaaq-cai"); subaccount = null; };
+    minting_account = { owner = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"); subaccount = null; };
     advanced_settings = null;
   };
 
@@ -114,6 +114,10 @@ actor Token {
     let amount = ExperimentalCycles.available();
     let accepted = ExperimentalCycles.accept(amount);
     assert (accepted == amount);
+  };
+
+  public query func get_cycles_balance() : async Nat {
+    ExperimentalCycles.balance();
   };
 
   ///////////////////////////////////////////

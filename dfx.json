@@ -60,16 +60,8 @@
     "build": {
       "args": "",
       "packtool": "mops sources"
-    },
-    "replica": {
-      "subnet_type": "system"
     }
   },
-  "networks": {
-    "local": {
-      "bind": "127.0.0.1:4943",
-      "type": "ephemeral"
-    }
-  },
+  "output_env_file": ".env",
   "version": 1
 }
