@@ -25,6 +25,10 @@ module {
   ) {
 
     public func putBallot(vote: Vote<T, A>, principal: Principal, ballot: Ballot<T>) : Result<(A, A), AddBallotError> {
+      // Verify the vote is not closed
+      if (vote.status == #CLOSED){
+        return #err(#VoteClosed);
+      };
       // Verify the principal is not anonymous
       if (Principal.isAnonymous(principal)){
         return #err(#PrincipalIsAnonymous);

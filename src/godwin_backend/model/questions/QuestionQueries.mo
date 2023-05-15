@@ -14,40 +14,23 @@ import Float      "mo:base/Float";
 
 module {
 
-  type Map<K, V> = Map.Map<K, V>;
+  type Map<K, V>             = Map.Map<K, V>;
   type Queries<OrderBy, Key> = Queries.Queries<OrderBy, Key>;
-  type Order = Order.Order;
-  type Time = Int;
-  type Question = Types.Question;
-  type Status = Types.Status;
-
-  // @todo: AUTHOR, TEXT and DATE are not used
-  public type OrderBy = {
-    #AUTHOR;
-    #TEXT;
-    #DATE;
-    #STATUS: Status;
-    #INTEREST_SCORE;
-  };
-
-  public type Key = {
-    #AUTHOR: AuthorEntry;
-    #TEXT: TextEntry;
-    #DATE: DateEntry;
-    #STATUS: StatusEntry;
-    #INTEREST_SCORE: InterestScore;
-  };
-
-  type DateEntry = { question_id: Nat; date: Time; };
-  type TextEntry = { question_id: Nat; text: Text; date: Time; };
-  type AuthorEntry = { question_id: Nat; author: Principal; date: Time; };
-  type StatusEntry = { question_id: Nat; status: Status; date: Int; };
-  type InterestScore = { question_id: Nat; score: Float; };
+  type Order                 = Order.Order;
+  type Time                  = Int;
+  type Question              = Types.Question;
+  type Status                = Types.Status;
+  type OrderBy               = Types.OrderBy;
+  type Key                   = Types.Key;
+  type DateEntry             = Types.DateEntry;
+  type TextEntry             = Types.TextEntry;
+  type AuthorEntry           = Types.AuthorEntry;
+  type StatusEntry           = Types.StatusEntry;
+  type InterestScore         = Types.InterestScore;
 
   public type Register = Queries.Register<OrderBy, Key>;
+  
   public type QuestionQueries = Queries.Queries<OrderBy, Key>;
-  public type Direction = Queries.Direction;
-  public type ScanLimitResult = Queries.ScanLimitResult;
 
   public func initRegister() : Register {
     Queries.initRegister<OrderBy, Key>(orderByHash);

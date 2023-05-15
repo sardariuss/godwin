@@ -1,25 +1,27 @@
-import Types "../../src/godwin_backend/model/Types";
-import Facade "../../src/godwin_backend/model/Facade";
-import Factory "../../src/godwin_backend/model/Factory";
-import State "../../src/godwin_backend/model/State";
-import Duration "../../src/godwin_backend/utils/Duration";
+import Types     "../../src/godwin_backend/model/Types";
+import Facade    "../../src/godwin_backend/model/Facade";
+import Factory   "../../src/godwin_backend/model/Factory";
+import State     "../../src/godwin_backend/model/State";
+import Duration  "../../src/godwin_backend/utils/Duration";
 
-import Random "Random";
+import Utils     "../../src/godwin_backend/utils/Utils";
+
+import Random    "Random";
 
 import Principal "mo:base/Principal";
-import Debug "mo:base/Debug";
-import Nat "mo:base/Nat";
+import Debug     "mo:base/Debug";
+import Nat       "mo:base/Nat";
 
-import Fuzz "mo:fuzz";
-import Array "mo:base/Array";
+import Fuzz      "mo:fuzz";
+import Array     "mo:base/Array";
 
 module {
 
   type Principal = Principal.Principal;
-  type Time = Int;
-  type Facade = Facade.Facade;
-  type Duration = Duration.Duration;
-  type Fuzzer = Fuzz.Fuzzer;
+  type Time      = Int;
+  type Facade    = Facade.Facade;
+  type Duration  = Types.Duration;
+  type Fuzzer    = Fuzz.Fuzzer;
 
   let SEED = 123456789;
 
@@ -47,24 +49,29 @@ module {
       };
 
       for (question_id in Array.vals(facade.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
+        let status_info = Utils.unwrapOk(facade.getStatusInfo(question_id));
+        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, status_info.iteration));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
-            ignore await* facade.putInterestBallot(principal, question_id, time, Random.randomInterest(fuzzer));
+            ignore await* facade.putInterestBallot(principal, interest_vote_id, time, Random.randomInterest(fuzzer));
           };
         };
       };
 
       for (question_id in Array.vals(facade.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
+        let status_info = Utils.unwrapOk(facade.getStatusInfo(question_id));
+        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, status_info.iteration));
+        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, status_info.iteration));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));
-            ignore facade.putOpinionBallot(principal, question_id, time, Random.randomOpinion(fuzzer));
+            ignore facade.putOpinionBallot(principal, opinion_vote_id, time, Random.randomOpinion(fuzzer));
             
           };
           if (Random.random(fuzzer) < 0.1){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(question_id));
-            ignore await* facade.putCategorizationBallot(principal, question_id, time, Random.randomCategorization(fuzzer, facade.getCategories()));
+            ignore await* facade.putCategorizationBallot(principal, categorization_vote_id, time, Random.randomCategorization(fuzzer, facade.getCategories()));
           };
         };
       };

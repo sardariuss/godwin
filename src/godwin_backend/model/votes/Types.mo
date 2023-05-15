@@ -5,6 +5,7 @@ import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
 
 import Map                 "mo:map/Map";
+import Set                 "mo:map/Set";
 
 module {
 
@@ -13,6 +14,7 @@ module {
   type Principal = Principal.Principal;
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
+  type Set<K> = Set.Set<K>;
 
   public type Category        = RepresentationTypes.Category;
   public type Cursor          = RepresentationTypes.Cursor;
@@ -23,13 +25,17 @@ module {
   public type VoteId = Nat;
   public let voteHash = Map.nhash;
 
-  public type VoteHistory = {
-    current: ?VoteId;
-    history: [VoteId];
+  public type VoteHistory = [VoteId];
+  public type VoterHistory = Set<VoteId>;
+
+  public type Status = {
+    #OPEN;
+    #CLOSED;
   };
 
   public type Vote<T, A> = {
     id: VoteId;
+    var status: Status;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
   };
@@ -47,18 +53,23 @@ module {
   public type OpinionVote = Vote<Cursor, Polarization>;
   public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
 
+  public type Voter = {
+    interests: Set<VoteId>;
+    opinions: Set<VoteId>;
+    categorizations: Set<VoteId>;
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
 
-  public type FindCurrentVoteError = {
-    #VoteLinkNotFound;
-    #VoteClosed;
+  public type FindVoteError = {
+    #QuestionNotFound;
+    #IterationOutOfBounds;
   };
 
-  public type FindHistoricalVoteError = {
-    #VoteLinkNotFound;
-    #IterationOutOfBounds;
+  public type FindQuestionIterationError = {
+    #VoteNotFound;
   };
 
   public type OpenVoteError = {
@@ -69,7 +80,10 @@ module {
     #VoteNotFound;
   };
 
-  public type RevealVoteError = FindHistoricalVoteError;
+  public type RevealVoteError = {
+    #VoteNotFound;
+    #VoteOpen;
+  };
 
   public type CloseVoteError = {
     #AlreadyClosed;
@@ -77,7 +91,7 @@ module {
     #NoSubacountLinked;
   };
 
-  public type GetBallotError = FindCurrentVoteError or {
+  public type FindBallotError = {
     #BallotNotFound;
     #VoteNotFound;
   };
@@ -88,7 +102,7 @@ module {
     #InvalidBallot;
   };
 
-  public type PutBallotError = PrincipalError or FindCurrentVoteError or AddBallotError or {
+  public type PutBallotError = PrincipalError or AddBallotError or {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;

@@ -1,6 +1,6 @@
 import Types               "Types";
 import Votes               "Votes";
-import VotesHistory        "VotesHistory";
+import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
@@ -11,6 +11,8 @@ import PayTypes            "../token/Types";
 import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 
+import Set                 "mo:map/Set";
+
 import Result              "mo:base/Result";
 import Float               "mo:base/Float";
 
@@ -18,20 +20,22 @@ module {
 
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
-
+  type Set<K>                 = Set.Set<K>;
+  
   type VoteId                 = Types.VoteId;
   type Cursor                 = Types.Cursor;
   type Polarization           = Types.Polarization;
   type Vote                   = Types.Vote<Cursor, Polarization>;
   type Ballot                 = Types.Ballot<Cursor>;
   type PutBallotError         = Types.PutBallotError;
-  type GetBallotError         = Types.GetBallotError;
+  type FindBallotError         = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
   
   type BallotAggregator       = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type VotesHistory           = VotesHistory.VotesHistory;
+  type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
+  type Key                    = QuestionTypes.Key;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
   type PayForNew              = PayForNew.PayForNew;
@@ -39,7 +43,6 @@ module {
   
   public type Register        = Votes.Register<Cursor, Polarization>;
 
-  type Key = QuestionQueries.Key;
   let { toInterestScore; } = QuestionQueries;
 
   let PRICE_OPENING_VOTE = 1000; // @todo
@@ -51,7 +54,7 @@ module {
 
   public func build(
     votes: Votes.Votes<Cursor, Polarization>,
-    history: VotesHistory,
+    joins: QuestionVoteJoins,
     queries: QuestionQueries,
     pay_interface: PayInterface,
     pay_for_new: PayForNew
@@ -64,7 +67,7 @@ module {
     Interests(
       PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_INTEREST_BALLOT),
       pay_for_new,
-      history,
+      joins,
       queries
     );
   };
@@ -72,7 +75,7 @@ module {
   public class Interests(
     _votes: PayToVote.PayToVote<Cursor, Polarization>,
     _pay_for_new: PayForNew,
-    _history: VotesHistory,
+    _joins: QuestionVoteJoins,
     _queries: QuestionQueries
   ) {
     
@@ -82,49 +85,52 @@ module {
         case (#ok(id)) { id; };
       };
       let question = on_success();
-      // Add to the question's vote history
-      _history.addVote(question.id, vote_id);
+      // Add a join between the question and the vote
+      _joins.addJoin(question.id, vote_id);
       // Update the associated key for the #INTEREST_SCORE order_by
       _queries.add(toInterestScore(question.id, computeScore(_votes.getVote(vote_id).aggregate)));
       #ok(question);
     };
 
-    public func closeVote(question_id: Nat) : async* () {
-      let vote_id = _history.closeCurrentVote(question_id);
-      let vote = _votes.getVote(vote_id);
-      _queries.remove(toInterestScore(question_id, computeScore(vote.aggregate)));
+    public func closeVote(vote_id: Nat) : async* () {
+      // Close the vote
+      _votes.closeVote(vote_id);
+      // Remove the vote from the interest query
+      _queries.remove(toInterestScore(
+        _joins.getQuestionIteration(vote_id).0,
+        computeScore(_votes.getVote(vote_id).aggregate))
+      );
       // 1. Pay out the buyer
       await* _pay_for_new.refund(vote_id, 1.0); // @todo: share;
       // 2. Pay out the voters
       await* _votes.payout(vote_id);
     };
 
-    public func putBallot(principal: Principal, question_id: Nat, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {
-      let vote_id = switch(_history.findCurrentVote(question_id)) {
-        case (#err(err)) { return #err(err); };
-        case (#ok(id)) { id; };
-      };
+    public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {    
       
       let old_appeal = _votes.getVote(vote_id).aggregate;
 
       Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}, PRICE_PUT_BALLOT), func(){
         let new_appeal = _votes.getVote(vote_id).aggregate;
+        let question_id = _joins.getQuestionIteration(vote_id).0;
         _queries.replace(?toInterestScore(question_id, computeScore(old_appeal)), ?toInterestScore(question_id, computeScore(new_appeal)));
       });
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      let vote_id = switch(_history.findCurrentVote(question_id)) {
-        case (#err(err)) { return #err(err); };
-        case (#ok(id)) { id; };
-      };
+    public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {
       _votes.getBallot(principal, vote_id);
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
-        _votes.getVote(vote_id);
-      });
+    public func findBallot(principal: Principal, vote_id: VoteId) : Result<Ballot, FindBallotError> {
+      _votes.findBallot(principal, vote_id);
+    };
+
+    public func revealVote(vote_id: VoteId) : Result<Vote, RevealVoteError> {
+      _votes.revealVote(vote_id);
+    };
+
+    public func getVoterHistory(principal: Principal) : Set<VoteId> {
+      _votes.getVoterHistory(principal);
     };
 
   // @todo

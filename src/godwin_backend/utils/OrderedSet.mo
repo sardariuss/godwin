@@ -1,19 +1,22 @@
-import RBT "mo:stableRBT/StableRBTree";
+import Types  "Types";
 
-import Order "mo:base/Order";
+import RBT    "mo:stableRBT/StableRBTree";
+
+import Order  "mo:base/Order";
 import Option "mo:base/Option";
-import Iter "mo:base/Iter";
-import Debug "mo:base/Debug";
-import Array "mo:base/Array";
+import Iter   "mo:base/Iter";
+import Debug  "mo:base/Debug";
+import Array  "mo:base/Array";
 
 module {
 
-  type Order = Order.Order;
-  type Iter<T> = Iter.Iter<T>;
+  type Order              = Order.Order;
+  type Iter<T>            = Iter.Iter<T>;
 
-  public type Direction = { #FWD; #BWD; };
+  type Direction          = Types.Direction;
+  type ScanLimitResult<K> = Types.ScanLimitResult<K>;
+
   public type OrderedSet<K> = RBT.Tree<K, ()>;
-  public type ScanLimitResult<K> = { keys : [K]; next : ?K };
 
   public func init<K>() : OrderedSet<K> {
     RBT.init<K, ()>();

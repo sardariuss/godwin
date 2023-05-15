@@ -1,5 +1,5 @@
 import { _SERVICE, Status, Category, CategoryInfo, PublicVote, PublicVote_1, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { nsToStrDate, statusToString, toMap } from "../utils";
+import { nsToStrDate, statusToString, toMap, VoteType } from "../utils";
 
 import InterestAggregate from "./aggregates/InterestAggregate";
 import OpinionAggregate from "./aggregates/OpinionAggregate";
@@ -32,29 +32,35 @@ type Props = {
   borderDashed: boolean;
 };
 
-enum VoteType {
-  INTEREST,
-  OPINION,
-  CATEGORIZATION,
-  NONE
-};
-
 const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
-  const [selectedVote, setSelectedVote] = useState<VoteType>(VoteType.NONE);
-  const [interestVote, setInterestVote] = useState<PublicVote | undefined>();
-  const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>();
-  const [categorizationVote, setCategorizationVote] = useState<PublicVote_1 | undefined>();
+  const [selectedVote, setSelectedVote] = useState<VoteType | undefined>(undefined);
+  const [interestVote, setInterestVote] = useState<PublicVote | undefined>(undefined);
+  const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>(undefined);
+  const [categorizationVote, setCategorizationVote] = useState<PublicVote_1 | undefined>(undefined);
 
   const fetchRevealedVotes = async () => {
+  
+    setInterestVote(undefined);
+    setOpinionVote(undefined);
+    setCategorizationVote(undefined);
+
     if (isHistory){
-      if (status['CANDIDATE'] !== undefined){
-        setInterestVote((await actor.revealInterestVote(questionId, iteration))['ok']);
-      }
-      if (status['OPEN'] !== undefined){
-        setOpinionVote((await actor.revealOpinionVote(questionId, iteration))['ok']);
-        setCategorizationVote((await actor.revealCategorizationVote(questionId, iteration))['ok']);
-      }
+      if (status['CANDIDATE'] !== undefined) {
+				let interest_vote_id = (await actor.findInterestVoteId(questionId, iteration))['ok'];
+				if (interest_vote_id !== undefined) {
+          setInterestVote((await actor.revealInterestVote(interest_vote_id))['ok']);
+				}
+			} else if (status['OPEN'] !== undefined) {
+				let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
+				if (opinion_vote_id !== undefined) {
+					setOpinionVote((await actor.revealOpinionVote(opinion_vote_id))['ok']);
+				}
+				let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, iteration))['ok'];
+				if (categorization_vote_id !== undefined) {
+					setCategorizationVote((await actor.revealCategorizationVote(categorization_vote_id))['ok']);
+				}
+			}
     }
   }
 
@@ -79,21 +85,21 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
                   status['CANDIDATE'] !== undefined ?
                     <InterestAggregate 
                       aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.INTEREST : VoteType.NONE) }}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.INTEREST : undefined) }}
                       selected={ selectedVote === VoteType.INTEREST}
                     />
                   : status['OPEN'] !== undefined ?
                   <div className="flex flex-row items-center gap-x-1">
                     <OpinionAggregate
                       aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.OPINION : VoteType.NONE) }}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.OPINION : undefined) }}
                       selected={ selectedVote === VoteType.OPINION}
                     />
                     {" · "}
                     <CategorizationAggregate 
                       aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
                       categories={categories}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.CATEGORIZATION : VoteType.NONE) }}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.CATEGORIZATION : undefined) }}
                       selected={ selectedVote === VoteType.CATEGORIZATION}
                     />
                   </div>
@@ -103,7 +109,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               </div>
             </div>
             <div className="text-xs font-extralight">{ nsToStrDate(date) }</div>
-            <div className={ selectedVote !== VoteType.NONE ? "mt-5" : "" }>
+            <div className={ selectedVote !== undefined ? "mt-5" : "" }>
               <div>
               {
                 // @todo: ad vote id

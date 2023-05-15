@@ -1,92 +1,71 @@
-import Color from 'colorjs.io';
+import { PolarizationInfo, toCursorInfo } from '../../utils';
 
-import { CategorySide } from "./../../../declarations/godwin_backend/godwin_backend.did";
-import CONSTANTS from '../../Constants';
-
-import { toCursorInfo } from '../../utils';
-
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
   id: string;
-  cursor: number;
   disabled: boolean;
-  polarizationInfo: {
-    left: CategorySide;
-    center: CategorySide;
-    right: CategorySide;
-  };
+  asToggle: boolean;
+  cursor: number;
+  polarizationInfo: PolarizationInfo;
   setCursor: (cursor: number) => (void);
   onMouseUp: () => (void);
   onMouseDown: () => (void);
 };
 
-export const CursorSlider = ({id, cursor, polarizationInfo, disabled, setCursor, onMouseUp, onMouseDown}: Props) => {
+export const CursorSlider = ({id, disabled, asToggle, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
   const marginWidth = thumbSize / 2;
   const marginRatio = marginWidth / sliderWidth;
 
-  const [sliderLeftColor, setSliderLeftColor] = useState<string>("white");
-  const [sliderRightColor, setSliderRightColor] = useState<string>("white");
-  const [sliderValue, setSliderValue] = useState<number>(cursor);
-
-  const white = new Color("#dddddd");
-  // Invert the color ranges to get the correct gradient
-  const leftColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
-  const rightColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
-
-  const refreshSlider = (value: number) => {
-    setSliderValue(value);
-    setSliderLeftColor(new Color(leftColorRange(value > 0 ? value : 0).toString()).to("srgb").toString({format: "hex"}));
-    setSliderRightColor(new Color(rightColorRange(value < 0 ? -value : 0).toString()).to("srgb").toString({format: "hex"}));
-  };
+  const [cursorInfo, setCursorInfo] = useState(toCursorInfo(cursor, polarizationInfo));
 
   const refreshValue = (value: number) => {
-    setCursor(value);
-    refreshSlider(value);
+    var filtered_value = value;
+    if (asToggle) {
+      filtered_value = value > 0.33 ?  1.0 : value < -0.33 ? -1.0 : 0.0;
+    }
+    setCursor(filtered_value);
+    setCursorInfo(toCursorInfo(filtered_value, polarizationInfo));
   };
 
   useEffect(() => {
-    refreshSlider(cursor)
+    refreshValue(cursor)
   }, [cursor]);
 
 	return (
     <div id={"cursor_" + id} className="flex flex-col items-center">
       <div className="text-xs mb-2">
-        {
-          toCursorInfo(sliderValue, polarizationInfo).name
-        }
+        { cursorInfo.name }
       </div>
       <input 
         id={"cursor_input_" + id}
         min="-1"
         max="1"
         step="0.02"
-        value={sliderValue}
+        value={cursorInfo.value}
         type="range"
         onChange={(e) => refreshValue(Number(e.target.value))}
         onMouseUp={(e) => onMouseUp()}
         onMouseDown={(e) => onMouseDown()}
-        className={"input appearance-none " + (sliderValue > CONSTANTS.CURSOR_SIDE_THRESHOLD ? "right" : sliderValue < -CONSTANTS.CURSOR_SIDE_THRESHOLD ? "left" : "center") } 
+        className={"input appearance-none"} 
         style={{
-          "--progress-percent": `${ ((marginRatio + ((sliderValue + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
-          "--slider-left-color": `${sliderLeftColor}`,
-          "--slider-right-color": `${sliderRightColor}`,
+          "--progress-percent": `${ ((marginRatio + ((cursorInfo.value + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
+          "--slider-left-color": `${cursorInfo.colors.left}`,
+          "--slider-right-color": `${cursorInfo.colors.right}`,
           "--margin-left": `${(marginRatio * 100).toString() + "%"}`,
           "--margin-right": `${((1 - marginRatio) * 100).toString() + "%"}`,
           "--slider-width": `${sliderWidth + "px"}`,
-          "--thumb-left": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.left.symbol}` + `</text></svg>")`,
-          "--thumb-center": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.center.symbol}` + `</text></svg>")`,
-          "--thumb-right": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${polarizationInfo.right.symbol}` + `</text></svg>")`,
+          "--slider-image": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${cursorInfo.symbol}` + `</text></svg>")`,
           "--thumb-size": `${thumbSize + "px"}`,
           "--cursor-type": `${disabled ? "auto" : "grab"}`
         } as React.CSSProperties }
         disabled={disabled}
       />
       <div className="text-xs font-extralight mt-1">
-        { sliderValue }
+        { cursorInfo.value.toFixed(2) }
       </div>
     </div>
 	);

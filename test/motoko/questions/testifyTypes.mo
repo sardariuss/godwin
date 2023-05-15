@@ -1,5 +1,4 @@
 import Types     "../../../src/godwin_backend/model/questions/Types";
-import Queries   "../../../src/godwin_backend/model/questions/QuestionQueries";
 import Questions "../../../src/godwin_backend/model/questions/Questions";
 
 import Testify "mo:testing/Testify";
@@ -11,7 +10,7 @@ import Buffer  "mo:base/Buffer";
 
 module {
 
-  type ScanLimitResult   = Queries.ScanLimitResult;
+  type ScanLimitResult   = Types.ScanLimitResult;
   type Question          = Types.Question;
   type OpenQuestionError = Types.OpenQuestionError;
 

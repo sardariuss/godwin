@@ -15,12 +15,12 @@ import Array "mo:base/Array";
 module {
 
   // For convenience: from types module
-  type Question = Types.Question;
+  type Question          = Types.Question;
   type OpenQuestionError = Types.OpenQuestionError;
-  type StatusInfo = Types.StatusInfo;
+  type StatusInfo        = Types.StatusInfo;
+  type ScanLimitResult   = Types.ScanLimitResult;
 
-  type QuestionQueries = Queries.QuestionQueries;
-  type ScanLimitResult = Queries.ScanLimitResult;
+  type QuestionQueries   = Queries.QuestionQueries;
 
   let { toAuthorEntry; toTextEntry; toDateEntry; toStatusEntry; toInterestScore; } = Queries;
 

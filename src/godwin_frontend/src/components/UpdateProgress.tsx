@@ -121,7 +121,7 @@ const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_functi
   }
 
 	return (
-    <div className="flex relative justify-items-center w-full">
+    <div className="flex relative justify-items-center justify-center w-full">
       <div className="relative flex w-full" style={{visibility: updateProgress === false && countdownProgress === null ? "hidden" : "visible"}}>
         <CssVarsProvider theme={theme}>
         <CircularProgress

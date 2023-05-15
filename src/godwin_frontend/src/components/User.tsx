@@ -5,12 +5,31 @@ import { IcrcAccount, encodeIcrcAccount } from "@dfinity/ledger";
 import { arrayOfNumberToUint8Array, fromNullable } from "@dfinity/utils";
 import Convictions from "./Convictions";
 import Copy from "./Copy";
+import { TabButton } from "./TabButton";
+import SubNameBanner from "./SubNameBanner";
+import {VoterHistory} from "./VoterHistory";
 
 import { useEffect, useState, useContext } from "react";
 
 import CONSTANTS from "../Constants";
 
 import { useParams } from "react-router-dom";
+
+export enum UserFilter {
+  CONVICTIONS,
+  VOTES
+};
+
+const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES];
+
+const filterToText = (filter: UserFilter) => {
+  switch (filter) {
+    case UserFilter.CONVICTIONS:
+      return "Convictions";
+    case UserFilter.VOTES:
+      return "Votes";
+  }
+}
 
 const UserComponent = () => {
 
@@ -22,6 +41,8 @@ const UserComponent = () => {
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [account, setAccount] = useState<Account | undefined>(undefined);
   const [balance, setBalance] = useState<bigint | undefined>(undefined);
+
+  const [currentUserFilter, setCurrentUserFilter] = useState<UserFilter>(UserFilter.CONVICTIONS);
 
 	const refreshUser = async () => {
     if (user === undefined) {
@@ -117,8 +138,8 @@ const UserComponent = () => {
         <div>Undefined user</div> : 
         <div className="flex flex-col border dark:border-gray-700 my-5 w-1/3 text-gray-900 dark:text-white">
           <div className="grid grid-cols-5">
-            <div className="col-start-2 col-span-3 flex flex-row justify-center">
-              <svg className="w-32" xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960" fill="white"><path d="M232.001 802.923q59.923-38.461 118.922-58.961 59-20.5 129.077-20.5t129.384 20.5q59.308 20.5 119.231 58.961 43.615-50.538 64.807-106.692Q814.615 640.077 814.615 576q0-141.538-96.538-238.077Q621.538 241.385 480 241.385t-238.077 96.538Q145.385 434.462 145.385 576q0 64.077 21.5 120.231 21.5 56.154 65.116 106.692Zm247.813-204.231q-53.968 0-90.775-36.994-36.808-36.993-36.808-90.961 0-53.967 36.994-90.775 36.993-36.807 90.961-36.807 53.968 0 90.775 36.993 36.808 36.994 36.808 90.961 0 53.968-36.994 90.775-36.993 36.808-90.961 36.808Zm-.219 357.307q-78.915 0-148.39-29.77-69.475-29.769-120.878-81.576-51.403-51.808-80.864-120.802-29.462-68.994-29.462-148.351 0-78.972 29.77-148.159 29.769-69.186 81.576-120.494 51.808-51.307 120.802-81.076 68.994-29.77 148.351-29.77 78.972 0 148.159 29.77 69.186 29.769 120.494 81.076 51.307 51.308 81.076 120.654 29.77 69.345 29.77 148.233 0 79.272-29.77 148.192-29.769 68.919-81.076 120.727-51.308 51.807-120.783 81.576-69.474 29.77-148.775 29.77Z"/></svg>
+            <div className="col-start-2 col-span-3 flex flex-row justify-center dark:fill-white">
+              <svg className="w-32" xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M232.001 802.923q59.923-38.461 118.922-58.961 59-20.5 129.077-20.5t129.384 20.5q59.308 20.5 119.231 58.961 43.615-50.538 64.807-106.692Q814.615 640.077 814.615 576q0-141.538-96.538-238.077Q621.538 241.385 480 241.385t-238.077 96.538Q145.385 434.462 145.385 576q0 64.077 21.5 120.231 21.5 56.154 65.116 106.692Zm247.813-204.231q-53.968 0-90.775-36.994-36.808-36.993-36.808-90.961 0-53.967 36.994-90.775 36.993-36.807 90.961-36.807 53.968 0 90.775 36.993 36.808 36.994 36.808 90.961 0 53.968-36.994 90.775-36.993 36.808-90.961 36.808Zm-.219 357.307q-78.915 0-148.39-29.77-69.475-29.769-120.878-81.576-51.403-51.808-80.864-120.802-29.462-68.994-29.462-148.351 0-78.972 29.77-148.159 29.769-69.186 81.576-120.494 51.808-51.307 120.802-81.076 68.994-29.77 148.351-29.77 78.972 0 148.159 29.77 69.186 29.769 120.494 81.076 51.307 51.308 81.076 120.654 29.77 69.345 29.77 148.233 0 79.272-29.77 148.192-29.769 68.919-81.076 120.727-51.308 51.807-120.783 81.576-69.474 29.77-148.775 29.77Z"/></svg>
               <div className="flex flex-col justify-evenly">
                 {
                   // @todo: should have a minimum length, and a visual indicator if min/max is reached
@@ -177,7 +198,25 @@ const UserComponent = () => {
           {
             [...Array.from(subs.entries())].map(([name, sub]) => (
               <li key={name}>
-                <Convictions sub={sub} principal={principal}/>
+                <div className="flex flex-col w-full border-y dark:border-gray-700">
+                  <SubNameBanner sub={sub}/>
+                  <div className="border-b dark:border-gray-700">
+                    <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
+                    {
+                      filters.map((filter, index) => (
+                        <li key={index} className="grow">
+                          <TabButton label={filterToText(filter)} isCurrent={filter == currentUserFilter} setIsCurrent={() => setCurrentUserFilter(filter)}/>
+                        </li>
+                      ))
+                    }
+                    </ul>
+                  </div>
+                  {
+                    currentUserFilter === UserFilter.CONVICTIONS ?
+                    <Convictions sub={sub} principal={principal}/> :
+                    <VoterHistory sub={sub} principal={principal}/>
+                  }
+                </div>
               </li>
             ))
           }

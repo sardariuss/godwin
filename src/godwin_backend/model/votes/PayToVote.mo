@@ -12,6 +12,7 @@ import WRef                "../../utils/wrappers/WRef";
 import Ref                 "../../utils/Ref";
 
 import Map                 "mo:map/Map";
+import Set                 "mo:map/Set";
 
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
@@ -25,16 +26,19 @@ module {
   type Result<Ok, Err>  = Result.Result<Ok, Err>;
 
   type Map<K, V>        = Map.Map<K, V>;
+  type Set<K>           = Set.Set<K>;
   
   type Ref<T>           = Ref.Ref<T>;
   type WRef<T>          = WRef.WRef<T>;
 
+  type VoteId           = Types.VoteId;
   type Vote<T, A>       = Types.Vote<T, A>;
   type OpenVoteError    = Types.OpenVoteError;
   type PutBallotError   = Types.PutBallotError;
   type Ballot<T>        = Types.Ballot<T>;
   type GetVoteError     = Types.GetVoteError;
-  type GetBallotError   = Types.GetBallotError;
+  type FindBallotError   = Types.FindBallotError;
+  type RevealVoteError  = Types.RevealVoteError;
   
   type Balance          = PayTypes.Balance;
   type SubaccountPrefix = PayTypes.SubaccountPrefix;
@@ -95,20 +99,36 @@ module {
 
     // From the votes module
 
-    public func newVote() : Nat {
+    public func newVote() : VoteId {
       _votes.newVote();
     };
 
-    public func findVote(id: Nat) : Result<Vote<T, A>, GetVoteError> {
+    public func closeVote(id: VoteId) {
+      _votes.closeVote(id);
+    };
+
+    public func findVote(id: VoteId) : Result<Vote<T, A>, GetVoteError> {
       _votes.findVote(id);
     };
 
-    public func getVote(id: Nat) : Vote<T, A> {
+    public func getVote(id: VoteId) : Vote<T, A> {
       _votes.getVote(id);
     };
 
-    public func getBallot(principal: Principal, id: Nat) : Result<Ballot<T>, GetBallotError> {
-      _votes.getBallot(principal, id);
+    public func getBallot(principal: Principal, vote_id: VoteId) : Ballot<T> {
+      _votes.getBallot(principal, vote_id);
+    };
+
+    public func findBallot(principal: Principal, vote_id: VoteId) : Result<Ballot<T>, FindBallotError> {
+      _votes.findBallot(principal, vote_id);
+    };
+
+    public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
+      _votes.revealVote(id);
+    };
+
+    public func getVoterHistory(principal: Principal) : Set<VoteId> {
+      _votes.getVoterHistory(principal);
     };
 
   };

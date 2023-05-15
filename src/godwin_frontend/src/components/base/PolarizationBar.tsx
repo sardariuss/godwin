@@ -7,7 +7,6 @@ import { Bar }          from 'react-chartjs-2'
 
 import { ChartTypeEnum } from "../../utils";
 
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -105,28 +104,38 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
   const labels = [name];
   const normedPolarization = getNormalizedPolarization(polarizationValue);
 
+  const getBorderColor = () : string => {
+    if (document.documentElement.classList.contains('dark')){
+      return '#333333';
+    } else {
+      return '#bbbbbb';
+    }
+  };
+
+  //document.documentElement.classList.contains('dark')
+
   const data = {
     labels,
     datasets: [
       {
-        borderColor: '#000000',
-        borderWidth: 0.8,
+        borderColor: getBorderColor(),
+        borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.left.symbol],
         data: labels.map(() => normedPolarization.left),
         backgroundColor: polarizationInfo.left.color,
       },
       {
-        borderColor: '#000000',
-        borderWidth: 0.8,
+        borderColor: getBorderColor(),
+        borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.center.symbol],
         data: labels.map(() => normedPolarization.center),
         backgroundColor: polarizationInfo.center.color,
       },
       {
-        borderColor: '#000000',
-        borderWidth: 0.8,
+        borderColor: getBorderColor(),
+        borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.right.symbol],
         data: labels.map(() => normedPolarization.right),
@@ -139,12 +148,15 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
       <div className="grid grid-cols-5 w-full">
         <div className="flex flex-col items-center z-10 grow place-self-center">
           <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
+          <div className="text-xs font-extralight">{ polarizationInfo.left.name }</div>
         </div>
         <div className="col-span-3 z-0 grow">
           <div className={"max-h-16 w-full"}>
           {
             chartType === ChartTypeEnum.Scatter ? 
-              <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart> :
+              <div className="max-h-16">
+                <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart>
+              </div> :
             chartType === ChartTypeEnum.Bar ?
               <Bar data={data} options={options}/> :
               <></>
@@ -153,11 +165,12 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
         </div>
         <div className="flex flex-col items-center z-10 grow place-self-center">
           <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
+          <div className="text-xs font-extralight">{ polarizationInfo.right.name }</div>
         </div>
         {
           showName ? 
           <div className="col-start-1 col-end-6 text-center text-xs align-top font-light">
-              {name}
+              {name /*+ ": " + polarizationValue.left.toPrecision(2) + " / " + polarizationValue.center.toPrecision(2) + " / " + polarizationValue.right.toPrecision(2)*/}
           </div> :
           <> </>
         }

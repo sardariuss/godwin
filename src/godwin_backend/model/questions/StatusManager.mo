@@ -26,12 +26,11 @@ module {
   type QuestionId    = Types.QuestionId;
   type StatusData    = Types.StatusData;
   type StatusHistory = Types.StatusHistory;
-  let questionHash   = Types.questionHash;
 
   public type Register = Map<QuestionId, StatusData>;
 
   public func build(register: Register) : StatusManager {
-    StatusManager(WMap.WMap(register, questionHash));
+    StatusManager(WMap.WMap(register, Map.nhash));
   };
   
   public class StatusManager(_register: WMap.WMap<QuestionId, StatusData>) {

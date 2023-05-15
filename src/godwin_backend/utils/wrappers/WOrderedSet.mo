@@ -1,3 +1,5 @@
+import Types "Types";
+
 import WRef "WRef";
 import OrderedSet "../OrderedSet";
 
@@ -6,13 +8,14 @@ import Iter "mo:base/Iter";
 
 module {
 
-  type Order = Order.Order;
-  type Iter<T> = Iter.Iter<T>;
+  type Order              = Order.Order;
+  type Iter<T>            = Iter.Iter<T>;
 
-  type WRef<T> = WRef.WRef<T>;
-  type Direction = OrderedSet.Direction;
-  type OrderedSet<K> = OrderedSet.OrderedSet<K>;
-  type ScanLimitResult<K> = OrderedSet.ScanLimitResult<K>;
+  type Direction          = Types.Direction;
+  type ScanLimitResult<K> = Types.ScanLimitResult<K>;
+  
+  type WRef<T>            = WRef.WRef<T>;
+  type OrderedSet<K>      = OrderedSet.OrderedSet<K>;
 
   public class WOrderedSet<K>(set_: WRef<OrderedSet<K>>, compare_: (K, K) -> Order.Order) {
 

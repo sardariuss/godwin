@@ -98,18 +98,16 @@ const MainQuestions = () => {
               {
                 currentMainTab === MainTab.HOME ?
                 <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion> :
-                <div>
-                  <div className="border-b dark:border-gray-700">
-                    <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
-                    {
-                      filters.map((filter, index) => (
-                        <li key={index} className="grow">
-                          <TabButton label={filterToText(filter)} isCurrent={filter == currentBrowseFilter} setIsCurrent={() => setCurrentBrowseFilter(filter)}/>
-                        </li>
-                      ))
-                    }
-                    </ul>
-                  </div>
+                <div className="border-b dark:border-gray-700">
+                  <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
+                  {
+                    filters.map((filter, index) => (
+                      <li key={index} className="grow">
+                        <TabButton label={filterToText(filter)} isCurrent={filter == currentBrowseFilter} setIsCurrent={() => setCurrentBrowseFilter(filter)}/>
+                      </li>
+                    ))
+                  }
+                  </ul>
                 </div>
               }
             </div>

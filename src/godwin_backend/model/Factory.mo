@@ -3,14 +3,13 @@ import QuestionTypes       "questions/Types";
 import State               "State";
 import Model               "Model";
 import Categories          "Categories";
-import Users               "Users";
 import Facade              "Facade";
 import StatusManager       "questions/StatusManager";
 import Questions           "questions/Questions";
 import QuestionQueries     "questions/QuestionQueries";
 import Controller          "controller/Controller";
 import Votes               "votes/Votes";
-import VotesHistory        "votes/VotesHistory";
+import QuestionVoteJoins   "votes/QuestionVoteJoins";
 import Interests           "votes/Interests";
 import Categorizations     "votes/Categorizations";
 import Opinions            "votes/Opinions";
@@ -56,43 +55,33 @@ module {
     );
 
     let interest_votes = Votes.Votes<Cursor, Polarization>(state.votes.interest, Polarization.nil());
-    let interest_history = VotesHistory.build(state.votes.interest_history);
+    let interest_join = QuestionVoteJoins.build(state.joins.interests);
     
     let interests = Interests.build(
       interest_votes,
-      interest_history,
+      interest_join,
       queries,
       pay_interface,
       pay_to_open_question
     );
     
     let opinion_votes = Votes.Votes<Cursor, Polarization>(state.votes.opinion, Polarization.nil());
-    let opinion_history = VotesHistory.build(state.votes.opinion_history);
+    let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
     
     let opinions = Opinions.build(
       opinion_votes,
-      opinion_history,
+      opinion_join,
     );
     
     let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(state.votes.categorization, PolarizationMap.nil(categories));
-    let categorization_history = VotesHistory.build(state.votes.categorization_history);
+    let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     
     let categorizations = Categorizations.build(
       categories,
       categorization_votes,
-      categorization_history,
+      categorization_join,
       pay_interface
     );
-
-    let users = Users.build(
-      state.users.register,
-      opinion_history,
-      opinion_votes,
-      categorization_history,
-      categorization_votes,
-      state.users.convictions_half_life,
-      state.creation_date,
-      categories);
 
     let model = Model.build(
       state.name,
@@ -102,11 +91,13 @@ module {
       categories,
       questions,
       status_manager,
-      users,
       queries,
       interests,
       opinions,
-      categorizations
+      categorizations,
+      interest_join,
+      opinion_join,
+      categorization_join
     );
 
     let controller = Controller.build(model);

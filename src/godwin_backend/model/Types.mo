@@ -2,9 +2,8 @@ import PayTypes      "token/Types";
 import QuestionTypes "questions/Types";
 import VoteTypes     "votes/Types";
 
+import UtilsTypes    "../utils/Types";
 import MasterTypes   "../../godwin_master/Types";
-
-import Duration      "../utils/Duration";
 
 import Set           "mo:map/Set";
 
@@ -13,12 +12,14 @@ import Principal     "mo:base/Principal";
 module {
 
   // For convenience: from base module
-  type Principal = Principal.Principal;
-  type Time = Int;
+  type Principal                         = Principal.Principal;
+  type Time                              = Int;
 
-  type Set<K> = Set.Set<K>;
+  type Set<K>                            = Set.Set<K>;
   
-  type Duration = Duration.Duration;
+  public type Duration                   = UtilsTypes.Duration;
+  public type Direction                  = UtilsTypes.Direction;
+  public type ScanLimitResult<K>         = UtilsTypes.ScanLimitResult<K>;
 
   // @todo: are all these types required in the canister interface?
   public type QuestionId                 = QuestionTypes.QuestionId;  
@@ -28,10 +29,10 @@ module {
   public type StatusData                 = QuestionTypes.StatusData;
   public type StatusHistory              = [(Status, [Time])];
   public type OpenQuestionError          = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
+  public type QuestionOrderBy            = QuestionTypes.OrderBy;
 
   // @todo: are all these types required in the canister interface?
   public type VoteId                     = VoteTypes.VoteId;
-  public type VoteHistory                = VoteTypes.VoteHistory;
   public type Cursor                     = VoteTypes.Cursor;
   public type Polarization               = VoteTypes.Polarization;
   public type CursorArray                = [(VoteTypes.Category, VoteTypes.Cursor)];
@@ -48,14 +49,14 @@ module {
   public type InterestVote               = Vote<Cursor, Polarization>;
   public type OpinionVote                = Vote<Cursor, Polarization>;
   public type CategorizationVote         = Vote<CursorArray, PolarizationArray>;
-  
-  public type FindCurrentVoteError       = VoteTypes.FindCurrentVoteError;
-  public type FindHistoricalVoteError    = VoteTypes.FindHistoricalVoteError;
+
+  public type FindVoteError              = VoteTypes.FindVoteError;
+  public type FindQuestionIterationError = VoteTypes.FindQuestionIterationError;
   public type OpenVoteError              = VoteTypes.OpenVoteError;
   public type GetVoteError               = VoteTypes.GetVoteError;
   public type RevealVoteError            = VoteTypes.RevealVoteError;
   public type CloseVoteError             = VoteTypes.CloseVoteError;
-  public type GetBallotError             = VoteTypes.GetBallotError;
+  public type FindBallotError             = VoteTypes.FindBallotError;
   public type AddBallotError             = VoteTypes.AddBallotError;
   public type PutBallotError             = VoteTypes.PutBallotError;
 
@@ -85,11 +86,6 @@ module {
   public type Decay = {
     lambda: Float;
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
-  };
-
-  public type User = {
-    convictions: VoteTypes.PolarizationMap;
-    opinions: Set<Nat>;
   };
 
   public type Category = Text;

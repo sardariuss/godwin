@@ -18,7 +18,17 @@ export type CursorInfo = {
   value: number;
   name: string;
   symbol: string;
-}
+  colors: {
+    left: string;
+    right: string;
+  };
+};
+
+export enum VoteType {
+  INTEREST,
+  OPINION,
+  CATEGORIZATION,
+};
 
 export const orderByToString = (orderBy: OrderBy) => {
   if (orderBy['AUTHOR'] !== undefined) return 'Author';
@@ -107,7 +117,7 @@ const getMonthStr = (month: number) => {
 };
 
 export const nsToStrDate = (ns: bigint) => {
-  let date = new Date(Number(ns) / 1000000);
+  let date = new Date(Date.now());//(Number(ns) / 1000000);
   //11:09 PM · Feb 18, 2023
 
   var year = date.getFullYear(),
@@ -150,13 +160,66 @@ export const getNormalizedPolarization = (polarization: Polarization) : Polariza
   };
 };
 
-export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
-  if (cursor < (-1 * CONSTANTS.CURSOR_SIDE_THRESHOLD)) {
-    return { name: polarizationInfo.left.name, symbol: polarizationInfo.left.symbol, value: cursor };
-  } else if (cursor > CONSTANTS.CURSOR_SIDE_THRESHOLD) {
-    return { name: polarizationInfo.right.name, symbol: polarizationInfo.right.symbol, value: cursor };
+export const toPolarization = (cursor: number) : Polarization => {
+  if (Math.abs(cursor) > 1.0) {
+    throw new Error('Invalid cursor');
+  }
+  if (cursor >= 0.0) {
+    return {
+      left   : 0,
+      center : 1.0 - cursor,
+      right  : cursor,
+    };
   } else {
-    return { name: polarizationInfo.center.name, symbol: polarizationInfo.center.symbol, value: cursor };
+    return {
+      left   : -cursor,
+      center : 1.0 + cursor,
+      right  : 0,
+    };
+  };
+}
+
+export const mul = (polarization: Polarization, coef: number) : Polarization => {
+  if (coef >= 0.0){
+    return {
+      left   : polarization.left * coef,
+      center : polarization.center * coef,
+      right  : polarization.right * coef,
+    };
+  } else {
+    return {
+      left   : polarization.right * -coef,
+      center : polarization.center * -coef,
+      right  : polarization.left * -coef,
+    };
+  }
+};
+
+export const addPolarization = (polarization1: Polarization, polarization2: Polarization) : Polarization => {
+  return {
+    left   : polarization1.left + polarization2.left,
+    center : polarization1.center + polarization2.center,
+    right  : polarization1.right + polarization2.right,
+  };
+};
+
+export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
+  const white = new Color("#dddddd");
+  // Invert the color ranges to get the correct gradient
+  const leftRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
+  const rightRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
+
+  const colors = {
+    left : new Color(leftRange(cursor > 0 ? cursor : 0).toString()).to("srgb").toString({format: "hex"}),
+    right: new Color(rightRange(cursor < 0 ? -cursor : 0).toString()).to("srgb").toString({format: "hex"}),
+  };
+
+  if (cursor < (-1 * CONSTANTS.CURSOR_SIDE_THRESHOLD)) {
+    return { name: polarizationInfo.left.name, symbol: polarizationInfo.left.symbol, value: cursor, colors };
+  } else if (cursor > CONSTANTS.CURSOR_SIDE_THRESHOLD) {
+    return { name: polarizationInfo.right.name, symbol: polarizationInfo.right.symbol, value: cursor, colors };
+  } else {
+    return { name: polarizationInfo.center.name, symbol: polarizationInfo.center.symbol, value: cursor, colors };
   }
 }
 
@@ -181,3 +244,61 @@ export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo
     return new Color(rightColorRange(cursor).toString()).to("srgb").toString({format: "hex"});
   }
 }
+
+export type PolarizationColorRanges = {
+  left: any,
+  center: Color,
+  right: any
+};
+
+export const polarizationToColorRange = (polarizationInfo: PolarizationInfo) : PolarizationColorRanges => {
+  const white = new Color("#dddddd");
+  // Invert the color ranges to get the correct gradient
+  let leftColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
+  const rightColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
+
+
+  return {
+    left: leftColorRange,
+    center: white,
+    right: rightColorRange,
+  };
+};
+
+interface ScanLimitResult<T> {
+  'keys' : Array<T>,
+  'next' : [] | [T],
+};
+
+export type ScanResults<T> = {
+  ids: T[],
+  next : T | undefined,
+}
+
+export const fromScanLimitResult = <T,>(query_result: ScanLimitResult<T>) : ScanResults<T> => {
+  let ids = Array.from(query_result.keys);
+  let [next] = query_result.next;
+  return { ids, next };
+}
+
+export function timeAgo(input) {
+  const date = (input instanceof Date) ? input : new Date(input);
+  const formatter = new Intl.RelativeTimeFormat('en', { style: 'narrow' });
+  const ranges = {
+    years: 3600 * 24 * 365,
+    months: 3600 * 24 * 30,
+    weeks: 3600 * 24 * 7,
+    days: 3600 * 24,
+    hours: 3600,
+    minutes: 60,
+    seconds: 1
+  };
+  const secondsElapsed = (date.getTime() - Date.now()) / 1000;
+  for (let key in ranges) {
+    if (ranges[key] < Math.abs(secondsElapsed)) {
+      const delta = secondsElapsed / ranges[key];
+      return formatter.format(Math.round(delta), key as keyof typeof ranges);
+    }
+  }
+}
+

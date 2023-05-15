@@ -1,9 +1,12 @@
 import Types               "Types";
 import Votes               "Votes";
-import VotesHistory        "VotesHistory";
+import QuestionVoteJoins   "QuestionVoteJoins";
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
 import Cursor              "representation/Cursor";
+
+import Set                 "mo:map/Set";
+import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
 
@@ -11,19 +14,22 @@ module {
 
   type Result<Ok, Err>     = Result.Result<Ok, Err>;
   type Time                = Int;
+  type Set<K>              = Set.Set<K>;
+  type Map<K, V>           = Map.Map<K, V>;
 
+  type VoteId              = Types.VoteId;
   type Cursor              = Types.Cursor;
   type Polarization        = Types.Polarization;  
   type PutBallotError      = Types.PutBallotError;
   type CloseVoteError      = Types.CloseVoteError;
   type GetVoteError        = Types.GetVoteError;
-  type GetBallotError      = Types.GetBallotError;
+  type FindBallotError      = Types.FindBallotError;
   type RevealVoteError     = Types.RevealVoteError;
   type Ballot              = Types.Ballot<Cursor>;
   type Vote                = Types.Vote<Cursor, Polarization>;
 
   type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
-  type VotesHistory = VotesHistory.VotesHistory;
+  type QuestionVoteJoins   = QuestionVoteJoins.QuestionVoteJoins;
 
   public type Register     = Votes.Register<Cursor, Polarization>;
 
@@ -33,7 +39,7 @@ module {
 
   public func build(
     votes: Votes.Votes<Cursor, Polarization>,
-    history: VotesHistory
+    joins: QuestionVoteJoins
   ) : Opinions {
     Opinions(
       votes,
@@ -42,44 +48,50 @@ module {
         Polarization.addCursor,
         Polarization.subCursor
       ),
-      history);
+      joins);
   };
 
   public class Opinions(
     _votes: Votes.Votes<Cursor, Polarization>,
     _aggregator: BallotAggregator, // @todo: shall the aggregator be part of the votes module?
-    _history: VotesHistory
+    _joins: QuestionVoteJoins
   ) {
     
     public func openVote(question_id: Nat) {
       let vote_id = _votes.newVote();
-      _history.addVote(question_id, vote_id);
+      _joins.addJoin(question_id, vote_id);
     };
 
-    public func closeVote(question_id: Nat) {
-      ignore _history.closeCurrentVote(question_id);
+    public func closeVote(vote_id: VoteId) {
+      _votes.closeVote(vote_id);
     };
 
-    public func getBallot(principal: Principal, question_id: Nat) : Result<Ballot, GetBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<Ballot, GetBallotError> {
-        _votes.getBallot(principal, vote_id);
-      });
+    public func putBallot(principal: Principal, vote_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
+      let vote = _votes.getVote(vote_id);
+      switch(_aggregator.putBallot(vote, principal, {date; answer = cursor;})){
+        case(#ok(_)) { #ok; };
+        case(#err(err)) { #err(err); };
+      };
     };
 
-    public func putBallot(principal: Principal, question_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      Result.chain(_history.findCurrentVote(question_id), func(vote_id: Nat) : Result<(), PutBallotError> {
-        let vote = _votes.getVote(vote_id);
-        switch(_aggregator.putBallot(vote, principal, {date; answer = cursor;})){
-          case(#ok(_)) { #ok; };
-          case(#err(err)) { #err(err); };
-        };
-      });
+    public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {
+      _votes.getBallot(principal, vote_id);
     };
 
-    public func revealVote(question_id: Nat, iteration: Nat) : Result<Vote, RevealVoteError> {
-      Result.mapOk(_history.findHistoricalVote(question_id, iteration), func(vote_id: Nat) : Vote {
-        _votes.getVote(vote_id);
-      });
+    public func findBallot(principal: Principal, vote_id: VoteId) : Result<Ballot, FindBallotError> {
+      _votes.findBallot(principal, vote_id);
+    };
+
+    public func revealVote(vote_id: VoteId) : Result<Vote, RevealVoteError> {
+      _votes.revealVote(vote_id);
+    };
+
+    public func getVoterBallots(principal: Principal, vote_ids: Set<VoteId>) : Map<VoteId, Ballot> {
+      _votes.getVoterBallots(principal, vote_ids);
+    };
+
+    public func getVoterHistory(principal: Principal) : Set<VoteId> {
+      _votes.getVoterHistory(principal);
     };
 
   };

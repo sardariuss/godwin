@@ -10,10 +10,11 @@ import { useState } from "react";
 type Props = {
 	actor: ActorSubclass<_SERVICE>,
 	categories: Map<Category, CategoryInfo>,
-  questionId: bigint
+  opinionVoteId: bigint | undefined,
+  categorizationVoteId: bigint | undefined
 };
 
-const OpenVotes = ({actor, categories, questionId}: Props) => {
+const OpenVotes = ({actor, categories, opinionVoteId, categorizationVoteId}: Props) => {
 
   const [showCategorization, setShowCategorization] = useState<boolean>(false);
 
@@ -27,11 +28,14 @@ const OpenVotes = ({actor, categories, questionId}: Props) => {
         }
         <div className="col-start-2 col-span-8 place-self-center grow">
         { showCategorization ?
-          <VoteCategorization actor={actor} categories={categories} questionId={questionId}/> :
+          categorizationVoteId !== undefined ?
+            <VoteCategorization actor={actor} categories={categories} voteId={categorizationVoteId}/> :
+            <></> :
           <SingleCursorVote 
             countdownDurationMs={5000} 
+            asToggle={false}
             polarizationInfo={CONSTANTS.OPINION_INFO} 
-            questionId={questionId} 
+            voteId={opinionVoteId} 
             allowUpdateBallot={true}
             putBallot={actor.putOpinionBallot} 
             getBallot={actor.getOpinionBallot}

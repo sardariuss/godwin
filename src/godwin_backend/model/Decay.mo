@@ -1,13 +1,13 @@
-import Types "Types";
+import Types    "Types";
 import Duration "../utils/Duration";
 
-import Float "mo:base/Float";
-import Debug "mo:base/Debug";
-import Option "mo:base/Option";
+import Float    "mo:base/Float";
+import Debug    "mo:base/Debug";
+import Option   "mo:base/Option";
 
 module {
 
-  type Duration = Duration.Duration;
+  type Duration = Types.Duration;
 
   public type Decay = {
     lambda: Float;

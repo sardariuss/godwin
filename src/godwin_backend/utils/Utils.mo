@@ -1,31 +1,36 @@
-import Map "mo:map/Map";
+import Types   "Types";
 
-import Array "mo:base/Array";
-import Trie "mo:base/Trie";
-import TrieSet "mo:base/TrieSet";
-import Time "mo:base/Time";
-import Buffer "mo:base/Buffer";
-import Option "mo:base/Option";
-import Result "mo:base/Result";
-import Iter "mo:base/Iter";
-import Char "mo:base/Char";
-import Nat32 "mo:base/Nat32";
-import Text "mo:base/Text";
+import Map     "mo:map/Map";
+import Set     "mo:map/Set";
+
+import Array   "mo:base/Array";
+import Trie    "mo:base/Trie";
+import Time    "mo:base/Time";
+import Buffer  "mo:base/Buffer";
+import Option  "mo:base/Option";
+import Result  "mo:base/Result";
+import Iter    "mo:base/Iter";
+import Char    "mo:base/Char";
+import Nat32   "mo:base/Nat32";
+import Text    "mo:base/Text";
+import Debug   "mo:base/Debug";
 
 module {
 
   // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
-  type Key<K> = Trie.Key<K>;
-  type Buffer<T> = Buffer.Buffer<T>;
-  type Set<K> = TrieSet.Set<K>;
-  type Time = Time.Time;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Iter<T> = { next : () -> ?T };
+  type Trie<K, V>         = Trie.Trie<K, V>;
+  type Key<K>             = Trie.Key<K>;
+  type Buffer<T>          = Buffer.Buffer<T>;
+  type Set<K>             = Set.Set<K>;
+  type Time               = Time.Time;
+  type Result<Ok, Err>    = Result.Result<Ok, Err>;
+  type Iter<T>            = { next : () -> ?T };
+  type ScanLimitResult<K> = Types.ScanLimitResult<K>;
+  type Direction          = Types.Direction;
 
   // For convenience: from map module
-  type Map<K, V> = Map.Map<K, V>;
-  type HashUtils<K> = Map.HashUtils<K>;
+  type Map<K, V>       = Map.Map<K, V>;
+  type HashUtils<K>    = Map.HashUtils<K>;
 
   /// Creates a buffer from an array
   public func toBuffer<T>(x :[T]) : Buffer<T>{
@@ -50,14 +55,6 @@ module {
       buffer.add(key_val);
     };
     Buffer.toArray(buffer);
-  };
-
-  public func keys<K, V>(trie: Trie<K, V>, key: (K) -> Key<K>, equal: (K, K) -> Bool) : Set<K> {
-    var set = TrieSet.empty<K>();
-    for ((k, _) in Trie.iter(trie)){
-      set := Trie.put(set, key(k), equal, ()).0;
-    };
-    set;
   };
 
   public func append<T>(left: [T], right: [T]) : [T] {
@@ -88,13 +85,42 @@ module {
     trie;
   };
 
-  public func setIter<K>(set: Set<K>) : Iter<K> {
-    Array.vals(TrieSet.toArray(set));
-  };
-
   public func toResult<Err>(bool: Bool, err: Err) : Result<(), Err> {
     if (bool) { #ok(); }
     else      { #err(err); };
+  };
+
+  public func unwrapOk<Ok, Err>(result: Result<Ok, Err>) : Ok {
+    switch(result){
+      case(#ok(ok)) { ok };
+      case(#err(err)) { Debug.trap("Failed to unwrap result"); };
+    };
+  };
+
+  public func setScanLimit<K>(set: Set<K>, hash: HashUtils<K>, dir: Direction, limit: Nat, previous: ?K) : ScanLimitResult<K> {
+    let keys = Buffer.Buffer<K>(limit);
+    var next : ?K = null;
+    let iter = switch(dir){
+      case(#FWD) { Set.keysFrom<K>(set, hash, previous); };
+      case(#BWD) { Set.keysFromDesc<K>(set, hash, previous);  };
+    };
+    label keys_desc loop {
+      switch(iter.next()){
+        case(?k) {
+          if (keys.size() < limit)      { keys.add(k);     }
+          else if (Option.isNull(next)) { next := ?k;      }
+          else                          { break keys_desc; };
+        };
+        case(null)                      { break keys_desc; };
+      };
+    };
+    { keys = Buffer.toArray(keys); next; };
+  };
+
+  public func mapScanLimitResult<K1, K2>(scan: ScanLimitResult<K1>, f: (K1) -> K2) : ScanLimitResult<K2> {
+    let keys = Array.map(scan.keys, f);
+    let next = Option.map(scan.next, f);
+    { keys = keys; next = next; };
   };
 
   public func mapToArray<K, V>(map: Map<K, V>) : [(K, V)]{

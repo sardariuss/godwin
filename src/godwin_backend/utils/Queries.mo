@@ -1,28 +1,30 @@
-import WMap "wrappers/WMap";
+import Types      "Types";
+
+import WMap       "wrappers/WMap";
 import OrderedSet "OrderedSet";
-import Utils "Utils";
+import Utils      "Utils";
 
-import Map "mo:map/Map";
+import Map        "mo:map/Map";
 
-import Order "mo:base/Order";
-import Debug "mo:base/Debug";
-import Option "mo:base/Option";
-import Array "mo:base/Array";
-import Iter "mo:base/Iter";
-import Nat "mo:base/Nat";
+import Order      "mo:base/Order";
+import Debug      "mo:base/Debug";
+import Option     "mo:base/Option";
+import Array      "mo:base/Array";
+import Iter       "mo:base/Iter";
+import Nat        "mo:base/Nat";
 
 module {
 
   // For convenience: from base module
-  type Order = Order.Order;
-  type Iter<T> = Iter.Iter<T>;
-  type OrderedSet<K> = OrderedSet.OrderedSet<K>;
+  type Order           = Order.Order;
+  type Iter<T>         = Iter.Iter<T>;
+  type OrderedSet<K>   = OrderedSet.OrderedSet<K>;
   
-  type WMap<K, V> = WMap.WMap<K, V>;
-  type Map<K, V> = Map.Map<K, V>;
+  type WMap<K, V>      = WMap.WMap<K, V>;
+  type Map<K, V>       = Map.Map<K, V>;
   
-  public type Direction = OrderedSet.Direction;
-  public type ScanLimitResult = OrderedSet.ScanLimitResult<Nat>;
+  type Direction       = Types.Direction;
+  type ScanLimitResult = Types.ScanLimitResult<Nat>;
 
   public type Register<OrderBy, Key> = Map<OrderBy, Inner<Key>>;
   

@@ -1,42 +1,33 @@
 
 import QuestionComponent from "./Question";
-import { OrderBy, Direction, ScanLimitResult, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { QuestionOrderBy, Direction, ScanLimitResult_3, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
 import { ActorSubclass } from "@dfinity/agent";
 
 import { useEffect, useState } from "react";
 
-type Results = {
-  ids: bigint[],
-  next : bigint | undefined,
-}
-
-const fromQuery = (query_result: ScanLimitResult) => {
-  let ids = Array.from(query_result.keys);
-  let [next] = query_result.next;
-  return { ids, next };
-}
+import { ScanResults, fromScanLimitResult } from "../utils";
 
 export type ListQuestionsInput = {
   actor: ActorSubclass<_SERVICE>,
   categories: Map<Category, CategoryInfo>,
-  order_by: OrderBy,
+  order_by: QuestionOrderBy,
   query_direction: Direction
 }
 
 const ListQuestions = ({actor, categories, order_by, query_direction}: ListQuestionsInput) => {
 
-  const [results, setResults] = useState<Results>({ ids : [], next: undefined});
+  const [results, setResults] = useState<ScanResults<bigint>>({ ids : [], next: undefined});
   const [trigger_next, setTriggerNext] = useState<boolean>(false);
 	
   const refreshQuestions = async () => {
-    let query_result : ScanLimitResult = await actor.getQuestions(order_by, query_direction, BigInt(10), []);
-    setResults(fromQuery(query_result));
+    let query_result : ScanLimitResult_3 = await actor.getQuestions(order_by, query_direction, BigInt(10), []);
+    setResults(fromScanLimitResult(query_result));
   };
 
   const getNextQuestions = async () => {
     if (results.next !== undefined){
-      let query_result : ScanLimitResult = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next]);
+      let query_result : ScanLimitResult_3 = await actor.getQuestions(order_by, query_direction, BigInt(10), [results.next]);
       let ids : bigint[] = [...new Set([...results.ids, ...Array.from(query_result.keys)])];
       let [next] = query_result.next;
       setResults({ ids, next });

@@ -37,7 +37,6 @@ const CategorizationPolarizationBars = ({showName, categorizationVote, categorie
               showName={showName}
               polarizationInfo={toPolarizationInfo(categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
               polarizationValue={aggregate}
-              polarizationWeight={1.0}
               ballots={getBallotsFromCategory(categorizationVote, index).map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}
               chartType={chartType}>
             </PolarizationBar>
@@ -52,7 +51,7 @@ const CategorizationPolarizationBars = ({showName, categorizationVote, categorie
           chartType={chartType}
           setChartType={setChartType}
         />
-        <div className="text-xs font-light text-gray-400 place-self-center">
+        <div className="text-xs font-light place-self-center">
           { "id " + categorizationVote.id.toString() }
         </div>
       </div>

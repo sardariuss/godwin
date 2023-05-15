@@ -6,6 +6,7 @@ import Categories      "Categories";
 import Interests       "votes/Interests";
 import Categorizations "votes/Categorizations";
 import Opinions        "votes/Opinions";
+import Joins           "votes/QuestionVoteJoins";
 
 import Duration        "../utils/Duration";
 import Ref             "../utils/Ref";
@@ -24,13 +25,10 @@ module {
   type Map<K, V>           = Map.Map<K, V>;
   type Ref<V>              = Ref.Ref<V>;
 
-  type Duration            = Duration.Duration;
-
   // For convenience: from types module
+  type Duration            = Types.Duration;
   type Parameters          = Types.Parameters;
   type SchedulerParameters = Types.SchedulerParameters;
-  type User                = Types.User;
-  type VoteHistory         = VoteTypes.VoteHistory;
   type Cursor              = VoteTypes.Cursor;
   type Category            = VoteTypes.Category;
   type CursorMap           = VoteTypes.CursorMap;
@@ -72,15 +70,13 @@ module {
     };
     votes          : {
       interest                : Interests.Register;
-      interest_history        : Map<Nat, VoteHistory>;
       opinion                 : Opinions.Register;
-      opinion_history         : Map<Nat, VoteHistory>;
       categorization          : Categorizations.Register;
-      categorization_history  : Map<Nat, VoteHistory>;
     };
-    users          : {
-      register                : Map<Principal, User>;
-      convictions_half_life   : ?Duration;
+    joins          : {
+      interests               : Joins.Register;
+      opinions                : Joins.Register;
+      categorizations         : Joins.Register;
     };
   };
 
@@ -116,15 +112,13 @@ module {
       };
       votes         = {
         interest                    = Interests.initRegister();
-        interest_history            = Map.new<Nat, VoteHistory>(Map.nhash);
         opinion                     = Opinions.initRegister();
-        opinion_history             = Map.new<Nat, VoteHistory>(Map.nhash);
         categorization              = Categorizations.initRegister();
-        categorization_history      = Map.new<Nat, VoteHistory>(Map.nhash);
       };
-      users         = {
-        register                    = Map.new<Principal, User>(Map.phash);
-        convictions_half_life       = parameters.history.convictions_half_life;
+      joins         = {
+        interests                   = Joins.initRegister();
+        opinions                    = Joins.initRegister();
+        categorizations             = Joins.initRegister();
       };
     };
   };

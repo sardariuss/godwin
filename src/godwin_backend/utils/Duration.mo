@@ -1,3 +1,5 @@
+import Types "Types";
+
 import Float "mo:base/Float";
 import Int "mo:base/Int";
 
@@ -5,13 +7,7 @@ module {
   // For convenience: from base module
   type Time = Int;
 
-  public type Duration = {
-    #DAYS: Nat;
-    #HOURS: Nat;
-    #MINUTES: Nat;
-    #SECONDS: Nat;
-    #NS: Nat; // To be able to ease the tests on the scheduler
-  };
+  type Duration = Types.Duration;
   
   public func toTime(duration: Duration) : Time {
     switch(duration) {
