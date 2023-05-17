@@ -26,8 +26,8 @@ module {
   public type Question                   = QuestionTypes.Question;
   public type Status                     = QuestionTypes.Status;
   public type StatusInfo                 = QuestionTypes.StatusInfo;
-  public type StatusData                 = QuestionTypes.StatusData;
-  public type StatusHistory              = [(Status, [Time])];
+  public type StatusHistory              = [StatusInfo];
+  public type IterationHistory           = [StatusHistory];
   public type OpenQuestionError          = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
   public type QuestionOrderBy            = QuestionTypes.OrderBy;
 
@@ -91,6 +91,12 @@ module {
   public type Category = Text;
   
   public type CategoryArray = [(Category, CategoryInfo)];
+
+  public type VoteKind = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
 
   public type CategoryInfo = {
     left: CategorySide;

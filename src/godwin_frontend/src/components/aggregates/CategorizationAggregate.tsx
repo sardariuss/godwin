@@ -13,7 +13,7 @@ type Props = {
   setSelected: (selected: boolean) => void
 };
 
-const OpinionAggregate = ({ aggregate, categories, selected, setSelected }: Props) => {
+const CategorizationAggregate = ({ aggregate, categories, selected, setSelected }: Props) => {
 
   const [cursorInfo, setCursorInfo] = useState<CursorInfo | undefined>(undefined);
 
@@ -48,4 +48,4 @@ const OpinionAggregate = ({ aggregate, categories, selected, setSelected }: Prop
 	);
 };
 
-export default OpinionAggregate;
+export default CategorizationAggregate;

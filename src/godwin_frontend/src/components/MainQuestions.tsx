@@ -1,9 +1,9 @@
-import { OrderBy, Direction } from "../../declarations/godwin_backend/godwin_backend.did";
+import { QuestionOrderBy, Direction } from "../../declarations/godwin_backend/godwin_backend.did";
 import { ActorContext, Sub } from "../ActorContext";
 import { TabButton } from "./TabButton";
 import { MainTabButton } from "./MainTabButton";
-import ListQuestions from "./ListQuestions";
-import { toMap } from "../utils";
+import { ListQuestions } from "./ListQuestions";
+import { ScanResults, fromScanLimitResult, toMap } from "../utils";
 import OpenQuestion from "./OpenQuestion";
 import SubBanner from "./SubBanner";
 
@@ -48,7 +48,7 @@ const filterToText = (filter: BrowseFilter) => {
 
 const filters = [BrowseFilter.CANDIDATE, BrowseFilter.OPEN, BrowseFilter.ARCHIVED, BrowseFilter.REJECTED];
 
-const getQueryParams = (filter: BrowseFilter) : [OrderBy, Direction] => {
+const getQueryParams = (filter: BrowseFilter) : [QuestionOrderBy, Direction] => {
   switch (filter) {
     case BrowseFilter.CANDIDATE:
       return [{ 'INTEREST_SCORE' : null          }, { 'BWD' : null }];
@@ -61,6 +61,8 @@ const getQueryParams = (filter: BrowseFilter) : [OrderBy, Direction] => {
   }
 }
 
+type QueryFunction = (next: bigint | undefined) => Promise<ScanResults<bigint>>;
+
 const MainQuestions = () => {
 
   const { subgodwin } = useParams();
@@ -68,13 +70,23 @@ const MainQuestions = () => {
   const [sub, setSub] = useState<Sub | undefined>(undefined);
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(MainTab.HOME);
   const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter>(BrowseFilter.CANDIDATE);
+  const [queryQuestions, setQueryQuestions] = useState<QueryFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 
   useEffect(() => {
     if (subgodwin !== undefined) {
       setSub(subs.get(subgodwin));
-      console.log(subs.get(subgodwin));
     }
   }, [subgodwin, subs]);
+
+  useEffect(() => {
+    if (sub === undefined) {
+      setQueryQuestions(() => () => Promise.resolve({ ids : [], next: undefined}));
+    } else {
+      setQueryQuestions(() => (next: bigint | undefined) => sub.actor.getQuestions(getQueryParams(currentBrowseFilter)[0], getQueryParams(currentBrowseFilter)[1], BigInt(10), next? [next] : []).then(
+        fromScanLimitResult
+      ));
+    }
+  }, [sub, currentBrowseFilter]);
 
 	return (
     (
@@ -113,7 +125,7 @@ const MainQuestions = () => {
             </div>
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
-            <ListQuestions actor={sub.actor} categories={toMap(sub.categories)} order_by={getQueryParams(currentBrowseFilter)[0]} query_direction={getQueryParams(currentBrowseFilter)[1]}/>
+            <ListQuestions sub={sub}  query_questions={queryQuestions}/>
           </div>
         </div>
     )

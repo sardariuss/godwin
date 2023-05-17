@@ -29,25 +29,17 @@ module {
 
     public func build() : Schema {
       let schema = StateMachine.init<Status, Event, TransitionError, QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
-      StateMachine.addTransition(schema, #CANDIDATE, ?#REJECTED,  timedOutFirstIteration, [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #CANDIDATE, ?#CLOSED,    timedOutNextIterations, [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #REJECTED,  null,        timedOut,               [#TIME_UPDATE(#id)]);
+      StateMachine.addTransition(schema, #CANDIDATE, ?#REJECTED,  timedOut,               [#TIME_UPDATE(#id)]);
+      StateMachine.addTransition(schema, #REJECTED,  null,        timedOutFirstIteration, [#TIME_UPDATE(#id)]);
       StateMachine.addTransition(schema, #CANDIDATE, ?#OPEN,      tickMostInteresting,    [#TIME_UPDATE(#id)]);
       StateMachine.addTransition(schema, #OPEN,      ?#CLOSED,    timedOut,               [#TIME_UPDATE(#id)]);
       StateMachine.addTransition(schema, #CLOSED,    ?#CANDIDATE, reopenQuestion,         [#REOPEN_QUESTION(#id)]);
+      StateMachine.addTransition(schema, #REJECTED,  ?#CANDIDATE, reopenQuestion,         [#REOPEN_QUESTION(#id)]);
       schema;
     };
 
     func timedOutFirstIteration(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      if (StatusManager.getStatusIteration(_model.getStatusManager().getHistory(question_id), #CANDIDATE) != 0){
-        result.set(#err(#WrongStatusIteration));
-        return;
-      };
-      await* timedOut(question_id, event, result);
-    };
-
-    func timedOutNextIterations(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      if (StatusManager.getStatusIteration(_model.getStatusManager().getHistory(question_id), #CANDIDATE) == 0){
+      if (_model.getStatusManager().getCurrentStatus(question_id).0 != 1){
         result.set(#err(#WrongStatusIteration));
         return;
       };
@@ -83,7 +75,7 @@ module {
         case(#TIME_UPDATE(#data({time}))) { time; };
         case(_) { Debug.trap("Invalid event type"); };
       };
-      let status_info = _model.getStatusManager().getCurrent(question_id);
+      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
       if (time < status_info.date + Duration.toTime(_model.getStatusDuration(status_info.status))){
         result.set(#err(#TooSoon)); return;
       };
@@ -106,7 +98,10 @@ module {
         case(?question) { question; };
       };
       // @todo: risk of reentry, user will loose tokens if the question has already been reopened
-      switch(await* _model.getInterestVotes().openVote(caller, func() : Question { question; })){
+      switch(await* _model.getInterestVotes().openVote(caller, func() : (Question, Nat) { 
+          let iteration = _model.getStatusManager().newIteration(question_id);
+          (question, iteration);
+        })){
         case(#err(err)) { result.set(#err(err)); return; };
         case(#ok(_)) { result.set(#ok); };
       };

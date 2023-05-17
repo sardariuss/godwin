@@ -7,6 +7,7 @@ import Categories          "Categories";
 
 import Utils               "../utils/Utils";
 
+import StableBuffer        "mo:stablebuffer/StableBuffer";
 import Map                 "mo:map/Map";
 import Set                 "mo:map/Set";
 
@@ -34,7 +35,6 @@ module {
   type Decay                  = Types.Decay; // @todo
   type CursorArray            = Types.CursorArray;
   type PolarizationArray      = Types.PolarizationArray;
-  type StatusHistoryArray     = Types.StatusHistory;
   type CategoryInfo           = Types.CategoryInfo;
   type CategoryArray          = Types.CategoryArray;
   type InterestVote           = Types.InterestVote;
@@ -46,10 +46,16 @@ module {
   type ShareableVote<T, A>    = Types.Vote<T, A>;
   type Direction              = Types.Direction;
   type ScanLimitResult<K>     = Types.ScanLimitResult<K>;
+  type ShareableStatusHistory = Types.StatusHistory;   
+  type ShareableIterationHistory = Types.IterationHistory;
+  type FindQuestionIterationError = Types.FindQuestionIterationError;
+  type VoteKind               = Types.VoteKind;
   type Question               = QuestionTypes.Question;
   type Status                 = QuestionTypes.Status;
   type StatusHistoryMap       = QuestionTypes.StatusHistory;
   type StatusInfo             = QuestionTypes.StatusInfo;
+  type StatusHistory          = QuestionTypes.StatusHistory;
+  type IterationHistory       = QuestionTypes.IterationHistory;
   type Category               = VoteTypes.Category;
   type Ballot<T>              = VoteTypes.Ballot<T>;
   type Vote<T, A>             = VoteTypes.Vote<T, A>;
@@ -66,7 +72,7 @@ module {
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type SetPickRateError       = Types.SetPickRateError;
   type SetDurationError       = Types.SetDurationError;
-  type FindBallotError         = Types.FindBallotError;
+  type FindBallotError        = Types.FindBallotError;
   type PutBallotError         = Types.PutBallotError;
   type GetVoteError           = Types.GetVoteError;
   type OpenVoteError          = Types.OpenVoteError;
@@ -167,13 +173,9 @@ module {
         });
     };
 
-    public func getStatusInfo(question_id: Nat) : Result<StatusInfo, ReopenQuestionError> {
-      _controller.getStatusInfo(question_id);
-    };
-
-    public func getStatusHistory(question_id: Nat) : Result<StatusHistoryArray, ReopenQuestionError> {
-      Result.mapOk<StatusHistoryMap, StatusHistoryArray, ReopenQuestionError>(_controller.getStatusHistory(question_id), func(history: StatusHistoryMap) : StatusHistoryArray {
-        Utils.mapToArray(history);
+    public func getIterationHistory(question_id: Nat) : Result<ShareableIterationHistory, ReopenQuestionError> {
+      Result.mapOk<IterationHistory, ShareableIterationHistory, ReopenQuestionError>(_controller.getIterationHistory(question_id), func(history: IterationHistory) : ShareableIterationHistory {
+        toShareableIterationHistory(history);
       });
     };
 
@@ -223,6 +225,14 @@ module {
       });
     };
 
+    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
+      _controller.getQuestionIteration(vote_kind, vote_id);
+    };
+
+    public func getQuestionIdsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+      _controller.getQuestionIdsFromAuthor(principal, direction, limit, previous_id);
+    };
+
     public func getVoterConvictions(principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)]))] {
       Utils.mapToArray(_controller.getVoterConvictions(principal));
     };
@@ -233,7 +243,7 @@ module {
 
   };
 
-  public func toShareableVote<T, A>(vote: Vote<T, A>) : ShareableVote<T, A> {
+  func toShareableVote<T, A>(vote: Vote<T, A>) : ShareableVote<T, A> {
     {
       id = vote.id;
       ballots = Utils.mapToArray(vote.ballots);
@@ -241,7 +251,7 @@ module {
     }
   };
 
-  public func toShareableCategorizationVote(vote: Vote<CursorMap, PolarizationMap>) : CategorizationVote {
+  func toShareableCategorizationVote(vote: Vote<CursorMap, PolarizationMap>) : CategorizationVote {
     
     let ballots = Buffer.Buffer<(Principal, Ballot<CursorArray>)>(Map.size(vote.ballots));
     for ((principal, ballot) in Map.entries(vote.ballots)) {
@@ -253,6 +263,14 @@ module {
       ballots = Buffer.toArray(ballots);
       aggregate = Utils.trieToArray(vote.aggregate);
     };
+  };
+
+  func toShareableIterationHistory(history: IterationHistory) : ShareableIterationHistory {
+    let iterations = StableBuffer.init<ShareableStatusHistory>();
+    for (iteration in StableBuffer.vals(history)){
+      StableBuffer.add(iterations, StableBuffer.toArray(iteration));
+    };
+    StableBuffer.toArray(iterations);
   };
 
 };

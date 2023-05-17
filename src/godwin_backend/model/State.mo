@@ -1,6 +1,7 @@
 import Types           "Types";
 import VoteTypes       "votes/Types";
 import QuestionTypes   "questions/Types";
+import Questions       "questions/Questions";	
 import QuestionQueries "questions/QuestionQueries";
 import Categories      "Categories";
 import Interests       "votes/Interests";
@@ -34,8 +35,7 @@ module {
   type CursorMap           = VoteTypes.CursorMap;
   type PolarizationMap     = VoteTypes.PolarizationMap;
   type Polarization        = VoteTypes.Polarization;
-  type Question            = QuestionTypes.Question;
-  type StatusData          = QuestionTypes.StatusData;
+  type IterationHistory    = QuestionTypes.IterationHistory;
 
   //type FailedPayout        = Types.FailedPayout; // @todo
 
@@ -47,13 +47,9 @@ module {
     pay_interface     : {
       //failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
     };
-    questions         : {
-      register           : Map<Nat, Question>;
-      index              : Ref<Nat>;
-      character_limit    : Ref<Nat>;
-    };
+    questions         : Questions.Register;
     status            : {
-      register           : Map<Nat, StatusData>;
+      register           : Map<Nat, IterationHistory>;
     };
     queries           : {
       register           : QuestionQueries.Register;
@@ -90,13 +86,9 @@ module {
         //failed_payouts              = Set.new<FailedPayout>();
       };
       status        = {
-        register                    = Map.new<Nat, StatusData>(Map.nhash);
+        register                    = Map.new<Nat, IterationHistory>(Map.nhash);
       };
-      questions     = {
-        register                    = Map.new<Nat, Question>(Map.nhash);
-        index                       = Ref.init<Nat>(0);
-        character_limit             = Ref.init<Nat>(parameters.questions.character_limit);
-      };
+      questions                     = Questions.initRegister(parameters.questions.character_limit);
       queries       = {
         register                    = QuestionQueries.initRegister();
       };

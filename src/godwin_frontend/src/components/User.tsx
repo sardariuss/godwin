@@ -5,9 +5,10 @@ import { IcrcAccount, encodeIcrcAccount } from "@dfinity/ledger";
 import { arrayOfNumberToUint8Array, fromNullable } from "@dfinity/utils";
 import Convictions from "./Convictions";
 import Copy from "./Copy";
-import { TabButton } from "./TabButton";
+import { MainTabButton } from "./MainTabButton";
 import SubNameBanner from "./SubNameBanner";
 import {VoterHistory} from "./VoterHistory";
+import {VoterQuestions} from "./VoterQuestions";
 
 import { useEffect, useState, useContext } from "react";
 
@@ -17,15 +18,21 @@ import { useParams } from "react-router-dom";
 
 export enum UserFilter {
   CONVICTIONS,
-  VOTES
+  VOTES,
+  QUESTIONS,
+  ACTIVITY
 };
 
-const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES];
+const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES, UserFilter.QUESTIONS, UserFilter.ACTIVITY];
 
 const filterToText = (filter: UserFilter) => {
   switch (filter) {
     case UserFilter.CONVICTIONS:
       return "Convictions";
+    case UserFilter.QUESTIONS:
+      return "Questions";
+    case UserFilter.ACTIVITY:
+      return "Activity";
     case UserFilter.VOTES:
       return "Votes";
   }
@@ -204,8 +211,8 @@ const UserComponent = () => {
                     <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                     {
                       filters.map((filter, index) => (
-                        <li key={index} className="grow">
-                          <TabButton label={filterToText(filter)} isCurrent={filter == currentUserFilter} setIsCurrent={() => setCurrentUserFilter(filter)}/>
+                        <li key={index} className="w-1/4">
+                          <MainTabButton label={filterToText(filter)} isCurrent={filter == currentUserFilter} setIsCurrent={() => setCurrentUserFilter(filter)}/>
                         </li>
                       ))
                     }
@@ -214,7 +221,11 @@ const UserComponent = () => {
                   {
                     currentUserFilter === UserFilter.CONVICTIONS ?
                     <Convictions sub={sub} principal={principal}/> :
-                    <VoterHistory sub={sub} principal={principal}/>
+                    currentUserFilter === UserFilter.VOTES ?
+                    <VoterHistory sub={sub} principal={principal}/> :
+                    currentUserFilter === UserFilter.QUESTIONS ?
+                    <VoterQuestions sub={sub} principal={principal}/> :
+                    <></>
                   }
                 </div>
               </li>

@@ -79,14 +79,14 @@ module {
     _queries: QuestionQueries
   ) {
     
-    public func openVote(principal: Principal, on_success: () -> Question) : async* Result<Question, OpenVoteError> {
+    public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
       let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
         case (#err(err)) { return #err(#PayInError(err)); };
         case (#ok(id)) { id; };
       };
-      let question = on_success();
+      let (question, iteration) = on_success();
       // Add a join between the question and the vote
-      _joins.addJoin(question.id, vote_id);
+      _joins.addJoin(question.id, iteration, vote_id);
       // Update the associated key for the #INTEREST_SCORE order_by
       _queries.add(toInterestScore(question.id, computeScore(_votes.getVote(vote_id).aggregate)));
       #ok(question);

@@ -28,13 +28,13 @@ module {
   type QuestionId              = Nat;
 
   public type Register = {
-    indexed_by_question : Map<QuestionId, [VoteId]>;
+    indexed_by_question : Map<QuestionId, Map<Nat, VoteId>>;
     indexed_by_vote     : Map<VoteId, (QuestionId, Nat)>;
   };
 
   public func initRegister() : Register {
     {
-      indexed_by_question = Map.new<QuestionId, [VoteId]>(Map.nhash);
+      indexed_by_question = Map.new<QuestionId, Map<Nat, VoteId>>(Map.nhash);
       indexed_by_vote     = Map.new<VoteId, (QuestionId, Nat)>(Map.nhash);
     };
   };
@@ -48,7 +48,7 @@ module {
   
   // @todo: add ID to function names
   public class QuestionVoteJoins(
-    _indexed_by_question: WMap<QuestionId, [VoteId]>,
+    _indexed_by_question: WMap<QuestionId, Map<Nat, VoteId>>,
     _indexed_by_vote: WMap<VoteId, (QuestionId, Nat)>
   ) {
 
@@ -71,10 +71,10 @@ module {
         case(null)   { return #err(#QuestionNotFound); };
         case(?votes) { votes;                          };
       };
-      if (iteration >= votes.size()) {
-        return #err(#IterationOutOfBounds);
+      switch (Map.get(votes, Map.nhash, iteration)) {
+        case(null) { #err(#IterationOutOfBounds) };
+        case(?vote_id) { #ok(vote_id); };
       };
-      #ok(votes[iteration]);
     };
 
     public func getVoteId(question_id: QuestionId, iteration: Nat) : VoteId {
@@ -85,18 +85,11 @@ module {
       };
     };
 
-    public func getLastVoteId(question_id: QuestionId) : VoteId {
-      switch(_indexed_by_question.getOpt(question_id)){
-        case(null)   { Debug.trap("Question not found"); };
-        case(?votes) { votes[votes.size() - 1];          };
-      };
-    };
-
-    public func addJoin(question_id: QuestionId, vote_id: VoteId) {
+    public func addJoin(question_id: QuestionId, iteration: Nat, vote_id: VoteId) {
       
-      let votes = Option.get(_indexed_by_question.getOpt(question_id), []);
+      let votes = Option.get(_indexed_by_question.getOpt(question_id), Map.new<Nat, VoteId>(Map.nhash));
       
-      if (Array.find(votes, func(id: VoteId) : Bool { id == vote_id; }) != null) {
+      if (Option.isSome(Map.get(votes, Map.nhash, iteration))) {
         Debug.trap("This vote had already been added to the indexed_by_question map");
       };
       
@@ -104,8 +97,9 @@ module {
         Debug.trap("This vote had already been added to the indexed_by_vote map");
       };
 
-      _indexed_by_question.set(question_id, Utils.append(votes, [vote_id]));
-      _indexed_by_vote.set(vote_id, (question_id, votes.size()));
+      Map.set(votes, Map.nhash, iteration, vote_id);
+      _indexed_by_question.set(question_id, votes);
+      _indexed_by_vote.set(vote_id, (question_id, iteration));
     };
 
   };

@@ -1,3 +1,4 @@
+import { Category } from "../declarations/godwin_master/godwin_master.did";
 import { PutBallotError, PayInError, Status, Polarization, CategorySide, CategoryInfo, OrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
@@ -28,6 +29,19 @@ export enum VoteType {
   INTEREST,
   OPINION,
   CATEGORIZATION,
+};
+
+export const VoteTypes = [
+  VoteType.INTEREST,
+  VoteType.OPINION,
+  VoteType.CATEGORIZATION,
+];
+
+export const voteTypeToString = (voteType: VoteType) => {
+  if (voteType === VoteType.INTEREST) return 'Interest';
+  if (voteType === VoteType.OPINION) return 'Opinion';
+  if (voteType === VoteType.CATEGORIZATION) return 'Categorization';
+  throw new Error('Invalid voteType');
 };
 
 export const orderByToString = (orderBy: OrderBy) => {
@@ -281,7 +295,7 @@ export const fromScanLimitResult = <T,>(query_result: ScanLimitResult<T>) : Scan
   return { ids, next };
 }
 
-export function timeAgo(input) {
+export const timeAgo = (input) => {
   const date = (input instanceof Date) ? input : new Date(input);
   const formatter = new Intl.RelativeTimeFormat('en', { style: 'narrow' });
   const ranges = {
@@ -301,4 +315,21 @@ export function timeAgo(input) {
     }
   }
 }
+
+export const getStrongestCategory = (ballot: Map<Category, number>) : [Category, number] => {
+  var greatest_cursor = 0;
+  var winning_category : Category = ballot.keys().next().value;
+  ballot.forEach((cursor, category) => {
+    if (Math.abs(cursor) > Math.abs(greatest_cursor)) {
+      greatest_cursor = cursor;
+      winning_category = category;
+    };
+  });
+  return [winning_category, greatest_cursor];
+};
+
+export const getStrongestCategoryCursorInfo = (ballot: Map<Category, number>, categories: Map<Category, CategoryInfo>) : CursorInfo => {
+  const [winning_category, greatest_cursor] = getStrongestCategory(ballot);
+  return toCursorInfo(greatest_cursor, toPolarizationInfo(categories.get(winning_category), CONSTANTS.CATEGORIZATION_INFO.center));
+};
 

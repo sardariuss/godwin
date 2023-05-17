@@ -49,8 +49,8 @@ module {
       };
 
       for (question_id in Array.vals(facade.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
-        let status_info = Utils.unwrapOk(facade.getStatusInfo(question_id));
-        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, status_info.iteration));
+        let iteration_history = Utils.unwrapOk(facade.getIterationHistory(question_id));
+        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
@@ -60,9 +60,9 @@ module {
       };
 
       for (question_id in Array.vals(facade.getQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
-        let status_info = Utils.unwrapOk(facade.getStatusInfo(question_id));
-        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, status_info.iteration));
-        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, status_info.iteration));
+        let iteration_history = Utils.unwrapOk(facade.getIterationHistory(question_id));
+        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration_history.size() - 1));
+        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));

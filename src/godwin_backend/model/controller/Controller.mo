@@ -50,6 +50,7 @@ module {
   type StatusInfo             = QuestionTypes.StatusInfo;
   type Key                    = QuestionTypes.Key;
   type OrderBy                = QuestionTypes.OrderBy;
+  type IterationHistory       = QuestionTypes.IterationHistory;
   type OpenQuestionError      = Types.OpenQuestionError; // @todo
   
   type Category               = VoteTypes.Category;
@@ -60,6 +61,7 @@ module {
   type Direction              = Types.Direction;
   type ScanLimitResult<K>     = Types.ScanLimitResult<K>;
   type Duration               = Types.Duration;
+  type VoteKind               = Types.VoteKind;
   type VoterHistory           = VoteTypes.VoterHistory;
   type Ballot<T>              = VoteTypes.Ballot<T>;
   type Vote<T, A>             = VoteTypes.Vote<T, A>;
@@ -72,6 +74,7 @@ module {
   type CategorizationBallot   = VoteTypes.CategorizationBallot;
   type VoteId                 = VoteTypes.VoteId;
   type FindVoteError          = VoteTypes.FindVoteError;
+  type FindQuestionIterationError = VoteTypes.FindQuestionIterationError;
   // Errors
   type AddCategoryError       = Types.AddCategoryError;
   type RemoveCategoryError    = Types.RemoveCategoryError;
@@ -160,11 +163,12 @@ module {
         case(null) {};
       };
       // Callback on create question if opening the interest vote succeeds
-      let open_question = func() : Question {
+      let open_question = func() : (Question, Nat) {
         let question = _model.getQuestions().createQuestion(caller, date, text);
         _model.getQueries().add(toStatusEntry(question.id, #CANDIDATE, date));
-        _model.getStatusManager().setCurrent(question.id, #CANDIDATE, date);
-        question;
+        let iteration = _model.getStatusManager().newIteration(question.id);
+        _model.getStatusManager().setCurrentStatus(question.id, #CANDIDATE, date);
+        (question, iteration);
       };
       // Open the interest vote
       Result.mapErr<Question, OpenVoteError, OpenQuestionError>(
@@ -206,17 +210,10 @@ module {
       await* _model.getCategorizationVotes().putBallot(principal, vote_id, date, cursors);
     };
 
-    public func getStatusInfo(question_id: Nat) : Result<StatusInfo, ReopenQuestionError> {
+    public func getIterationHistory(question_id: Nat) : Result<IterationHistory, ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
         case(null) { #err(#PrincipalIsAnonymous); };
-        case(?question) { #ok(_model.getStatusManager().getCurrent(question_id)); };
-      };
-    };
-
-    public func getStatusHistory(question_id: Nat) : Result<StatusHistory, ReopenQuestionError> {
-      switch(_model.getQuestions().findQuestion(question_id)){
-        case(null) { #err(#PrincipalIsAnonymous); };
-        case(?question) { #ok(_model.getStatusManager().getHistory(question_id)); };
+        case(?question) { #ok(_model.getStatusManager().getIterationHistory(question_id)); };
       };
     };
 
@@ -265,6 +262,27 @@ module {
       });
     };
 
+    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
+      let result = switch(vote_kind){
+        case(#INTEREST){
+          _model.getInterestJoins().findQuestionIteration(vote_id);
+        };
+        case(#OPINION){
+          _model.getOpinionJoins().findQuestionIteration(vote_id);
+        };
+        case(#CATEGORIZATION){
+          _model.getCategorizationJoins().findQuestionIteration(vote_id);
+        };
+      };
+      Result.mapOk<(QuestionId, Nat), (Question, Nat), FindQuestionIterationError>(result, func(question_iteration: (QuestionId, Nat)) : (Question, Nat){
+        (_model.getQuestions().getQuestion(question_iteration.0), question_iteration.1);
+      });
+    };
+
+    public func getQuestionIdsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+      Utils.setScanLimit<VoteId>(_model.getQuestions().getQuestionIdsFromAuthor(principal), Map.nhash, direction, limit, previous_id);
+    };
+
     public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)])> {
       // Get voter opinions
       // @toto: Watchout, asssumes same vote id for opinion and categorization!
@@ -292,7 +310,7 @@ module {
 
     func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
 
-      let current = _model.getStatusManager().getCurrent(question_id);
+      let (iteration, current) = _model.getStatusManager().getCurrentStatus(question_id);
 
       // Submit the event
       await* StateMachine.submitEvent(_schema, current.status, question_id, event, result);
@@ -308,29 +326,32 @@ module {
           // Close vote(s) if any
           switch(current.status){
             case(#CANDIDATE) { 
-              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getLastVoteId(question_id));
+              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, iteration));
             };
             case(#OPEN)      { 
-              _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getLastVoteId(question_id));
-              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getLastVoteId(question_id)); 
+              _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
+              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, iteration)); 
             };
             case(_) {};
           };
           switch(new){
             case(null) {
               // Remove status and question
-              _model.getStatusManager().deleteStatus(question_id);
+              _model.getStatusManager().removeIterationHistory(question_id);
               _model.getQuestions().removeQuestion(question_id);
             };
             case(?status){
-              // Open a vote if applicable (interest vote is opened when opening or reopening a question)
               switch(status){
-                case(#OPEN) { _model.getOpinionVotes().openVote(question_id);
-                              _model.getCategorizationVotes().openVote(question_id); };
+                case(#CANDIDATE) { 
+                  // Interest vote has already been opened by the state machine
+                };
+                case(#OPEN) { 
+                  _model.getOpinionVotes().openVote(question_id, iteration);
+                  _model.getCategorizationVotes().openVote(question_id, iteration); };
                 case(_) {};
               };
               // Finally set the status as current
-              _model.getStatusManager().setCurrent(question_id, status, date);
+              _model.getStatusManager().setCurrentStatus(question_id, status, date);
             };
           };
         };

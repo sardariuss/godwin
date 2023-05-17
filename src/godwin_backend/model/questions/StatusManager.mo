@@ -1,13 +1,13 @@
 import Types  "Types";
-import Status "Status";
 
-import Utils  "../../utils/Utils";
 import WMap   "../../utils/wrappers/WMap";
 
+import Buffer "mo:stablebuffer/StableBuffer";
 import Map    "mo:map/Map";
 
 import Debug  "mo:base/Debug";
 import Option "mo:base/Option";
+import Int    "mo:base/Int";
 import Nat    "mo:base/Nat";
 
 module {
@@ -16,67 +16,72 @@ module {
   type Time          = Int;
 
   // For convenience: from map module
-  type Map<K, V>     = Map.Map<K, V>;
-  type WMap<K, V>    = WMap.WMap<K, V>;
+  type Map<K, V>        = Map.Map<K, V>;
+  type WMap<K, V>       = WMap.WMap<K, V>;
+  type Buffer<T>        = Buffer.StableBuffer<T>;
 
   // For convenience: from types module
-  type Question      = Types.Question;
-  type Status        = Types.Status;
-  type StatusInfo    = Types.StatusInfo;
-  type QuestionId    = Types.QuestionId;
-  type StatusData    = Types.StatusData;
-  type StatusHistory = Types.StatusHistory;
+  type Question         = Types.Question;
+  type Status           = Types.Status;
+  type QuestionId       = Types.QuestionId;
+  type StatusInfo       = Types.StatusInfo;
+  type StatusHistory    = Types.StatusHistory;
+  type IterationHistory = Types.IterationHistory;
 
-  public type Register = Map<QuestionId, StatusData>;
+  public type Register = Map<QuestionId, IterationHistory>;
 
   public func build(register: Register) : StatusManager {
     StatusManager(WMap.WMap(register, Map.nhash));
   };
   
-  public class StatusManager(_register: WMap.WMap<QuestionId, StatusData>) {
+  public class StatusManager(_register: WMap.WMap<QuestionId, IterationHistory>) {
 
-    public func setCurrent(question_id: QuestionId, status: Status, date: Time) {
+    public func newIteration(question_id: QuestionId) : Nat {
+      let iteration_history = Option.get(_register.getOpt(question_id), Buffer.init<StatusHistory>());
+      let status_history = Buffer.init<StatusInfo>();
+      Buffer.add(iteration_history, status_history);
+      _register.set(question_id, iteration_history);
+      Int.abs(Buffer.size(iteration_history) - 1);
+    };
+
+    public func setCurrentStatus(question_id: QuestionId, status: Status, date: Time) {
+      let (iteration, status_history) = getCurrentStatusHistory(question_id);
+      Buffer.add(status_history, {status; date;});
+    };
+
+    public func getCurrentStatus(question_id: QuestionId) : (Nat, StatusInfo) {
+      let (iteration, status_history) = getCurrentStatusHistory(question_id);
+      let num_statuses : Int = Buffer.size(status_history);
+      if (num_statuses == 0) {
+        Debug.trap("Current iteration has an empty status history");
+      };
+      (iteration, Buffer.get(status_history, Int.abs(num_statuses - 1)));
+    };
+
+    public func getIterationHistory(question_id: QuestionId): IterationHistory {
       switch(_register.getOpt(question_id)){
-        case(null) { 
-          // Create a new entry with an empty history
-          _register.set(question_id, { var current = { status; date; iteration = 0; }; history = Map.new<Status, [Time]>(Status.status_hash); }); 
-        };
-        case(?status_data) {
-          // Add the (previous) current status to the history
-          var iterations = Option.get(Map.get(status_data.history, Status.status_hash, status_data.current.status), []);
-          iterations := Utils.append<Time>(iterations, [status_data.current.date]);
-          Map.set(status_data.history, Status.status_hash, status_data.current.status, iterations);
-          // Update the current status
-          status_data.current := { status; date; iteration = Option.get(Map.get(status_data.history, Status.status_hash, status), []).size(); };
-        };
+        case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no iterations history"); };
+        case(?it_history){ it_history; };
       };
     };
 
-    public func getCurrent(question_id: QuestionId) : StatusInfo {
-      switch(_register.getOpt(question_id)){
-        case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
-        case(?status_data) { status_data.current; };
-      };
-    };
-
-    public func getHistory(question_id: QuestionId) : StatusHistory {
-      switch(_register.getOpt(question_id)){
-        case(null) { Debug.trap("Not status data found for the question with id='" # Nat.toText(question_id) # "'") };
-        case(?status_data) { status_data.history; };
-      };
-    };
-
-    public func deleteStatus(question_id: QuestionId) {
+    public func removeIterationHistory(question_id: QuestionId) {
       _register.delete(question_id);
     };
 
-  };
-
-  public func getStatusIteration(status_history: StatusHistory, status: Status) : Nat {
-    switch(Map.get(status_history, Status.status_hash, status)){
-      case(null) { return 0; };
-      case(?history) { history.size(); };
+    func getCurrentStatusHistory(question_id: QuestionId) : (Nat, StatusHistory) {
+      let iteration_history = switch(_register.getOpt(question_id)){
+        case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no iterations history"); };
+        case(?it_history){ it_history; };
+      };
+      let num_iterations : Int = Buffer.size(iteration_history);
+      if (num_iterations == 0) {
+        Debug.trap("The question '" # Nat.toText(question_id) # "' has an empty iterations history");
+      };
+      let last_iteration = Int.abs(num_iterations - 1);
+      (last_iteration, Buffer.get(iteration_history, last_iteration));
     };
+
   };
 
 };

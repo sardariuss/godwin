@@ -1,10 +1,9 @@
-import SingleCursorVote from "./base/SingleCursorVote";
 import InterestVote from "./votes/InterestVote";
 import StatusHistoryComponent from "./StatusHistory";
 import OpenVotes from "./votes/OpenVotes";
 import CONSTANTS from "../Constants";
 
-import { Question, StatusInfo, Status, Time, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
 import { useEffect, useState } from "react";
 import { ActorSubclass } from "@dfinity/agent";
@@ -16,73 +15,77 @@ type Props = {
   questionId: bigint
 };
 
-function toArray(history_array: Array<[Status, Array<Time>]>) : StatusInfo[] {
-  let history: StatusInfo[] = [];
-  for (let [status, dates] of history_array) {
-    let iteration = 0;
-    for (let date of dates) {
-      history.push({status: status, iteration: BigInt(iteration), date: date});
-      iteration++;
-    }
-  }
-  return history.sort((a, b) => Number(b.date - a.date));
-};
-
 const QuestionBody = ({actor, categories, questionId}: Props) => {
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
-	const [statusInfo, setStatusInfo] = useState<StatusInfo | undefined>(undefined);
 	const [showHistory, setShowHistory] = useState<boolean>(false);
-	const [statusHistoryArray, setStatusHistoryArray] = useState<StatusInfo[]>([]);
+	const [iterationHistory, setIterationHistory] = useState<StatusInfo[][]>([]);
+	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
+	const [currentStatus, setCurrentStatus] = useState<StatusInfo | undefined>(undefined);
 	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteType, bigint>>(new Map<VoteType, bigint>());
 
-	const getQuestion = async () => {
-		let question = await actor.getQuestion(questionId);
+	const fetchQuestion = async () => {
+		const question = await actor.getQuestion(questionId);
 		setQuestion(question['ok']);
-	};
+	}
 
-	const getStatusInfo = async () => {
+	const fetchIterationHistory = async () => {
+		var iterations : StatusInfo[][] = [];
+		var statuses : StatusInfo[] = [];
+		var current : StatusInfo | undefined = undefined;
 
-		let statusInfo = await actor.getStatusInfo(questionId);
-		setStatusInfo(statusInfo['ok']);
+		const history = await actor.getIterationHistory(questionId);
 		
-		var joins = new Map<VoteType, bigint>();
-		
-		if (statusInfo['ok'] !== undefined){
-			
-			let [status, iteration] = [statusInfo['ok'].status, statusInfo['ok'].iteration];
-			
-			if (status['CANDIDATE'] !== undefined) {
-				let interest_vote_id = (await actor.findInterestVoteId(questionId, iteration))['ok'];
-				if (interest_vote_id !== undefined) {
-					joins.set(VoteType.INTEREST, interest_vote_id);
-				}
-			} else if (status['OPEN'] !== undefined) {
-				let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
-				if (opinion_vote_id !== undefined) {
-					joins.set(VoteType.OPINION, opinion_vote_id);
-				}
-				let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, iteration))['ok'];
-				if (categorization_vote_id !== undefined) {
-					joins.set(VoteType.CATEGORIZATION, categorization_vote_id);
+		if (history['ok'] !== undefined){
+			iterations = history['ok'];	
+			if (iterations.length !== 0) {
+				statuses = iterations[iterations.length - 1];
+				if (statuses.length !== 0) {
+					current = statuses[statuses.length - 1];
 				}
 			}
 		}
+	
+		setIterationHistory(iterations);
+		setStatusHistory(statuses);
+		setCurrentStatus(current);
+	}
+
+	const fetchQuestionVoteJoins = async (iteration_index: number, status_info: StatusInfo) => {
+
+		var joins = new Map<VoteType, bigint>();
+				
+		if (status_info.status['CANDIDATE'] !== undefined) {
+			let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(iteration_index)))['ok'];
+			if (interest_vote_id !== undefined) {
+				joins.set(VoteType.INTEREST, interest_vote_id);
+			}
+		} else if (status_info.status['OPEN'] !== undefined) {
+			let opinion_vote_id = (await actor.findOpinionVoteId(questionId, BigInt(iteration_index)))['ok'];
+			if (opinion_vote_id !== undefined) {
+				joins.set(VoteType.OPINION, opinion_vote_id);
+			}
+			let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(iteration_index)))['ok'];
+			if (categorization_vote_id !== undefined) {
+				joins.set(VoteType.CATEGORIZATION, categorization_vote_id);
+			}
+		}
+
 		setQuestionVoteJoins(joins);
 	};
 
-	const fetchStatusHistory = async () => {
-    let history = await actor.getStatusHistory(questionId);
-    if (history['ok'] !== undefined){
-      setStatusHistoryArray(toArray(history['ok']));
-    };
-  };
+	useEffect(() => {
+		fetchQuestion();
+		fetchIterationHistory();
+  }, []);
 
 	useEffect(() => {
-		getQuestion();
-		getStatusInfo();
-		fetchStatusHistory();
-  }, []);
+		if (iterationHistory.length > 0 && currentStatus !== undefined) {
+			fetchQuestionVoteJoins(iterationHistory.length - 1, currentStatus);
+		} else {
+			setQuestionVoteJoins(new Map<VoteType, bigint>());
+		}
+	}, [iterationHistory, currentStatus]);
 
 	return (
 		<div className="flex flex-col text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
@@ -95,7 +98,7 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
-					statusInfo !== undefined ?
+					currentStatus !== undefined ?
 						questionVoteJoins.get(VoteType.INTEREST) !== undefined ?
 							<InterestVote 
 								countdownDurationMs={5000} 
@@ -115,7 +118,7 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 								categorizationVoteId={questionVoteJoins.get(VoteType.CATEGORIZATION)}
 								categories={categories}
 							/> :
-						statusInfo.status['CANDIDATE'] !== undefined || statusInfo.status['OPEN'] !== undefined ?
+							currentStatus.status['CANDIDATE'] !== undefined || currentStatus.status['OPEN'] !== undefined ?
 							<div role="status">
 								<svg className="inline w-6 h-6 text-gray-200 animate-spin dark:text-gray-600 fill-gray-600 dark:fill-gray-300" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
 									<path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
@@ -125,13 +128,12 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 							<></> : <></>
 				}
 				{
-					statusInfo !== undefined && showHistory ?
+					currentStatus !== undefined && showHistory ?
 						<div className="border-y dark:border-gray-700">
-							<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={statusInfo} statusHistory={statusHistoryArray}/>
+							<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={currentStatus} statusHistory={statusHistory.slice(0, statusHistory.length - 1)}/>
 						</div> :
 						<></>
 				}
-				{ /*
 				<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
 					<div className="flex w-1/3 justify-center items-center">
 						<div className="h-4 w-4 hover:cursor-pointer hover:dark:dark:fill-white" onClick={(e) => setShowHistory(!showHistory)}>
@@ -149,7 +151,6 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 						</div>
 					</div>
 				</div>
-				*/ }
 			</div>
 		</div>
 	);

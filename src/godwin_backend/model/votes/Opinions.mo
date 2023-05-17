@@ -57,9 +57,9 @@ module {
     _joins: QuestionVoteJoins
   ) {
     
-    public func openVote(question_id: Nat) {
+    public func openVote(question_id: Nat, iteration: Nat) {
       let vote_id = _votes.newVote();
-      _joins.addJoin(question_id, vote_id);
+      _joins.addJoin(question_id, iteration, vote_id);
     };
 
     public func closeVote(vote_id: VoteId) {

@@ -36,11 +36,7 @@ module {
     
     let categories = Categories.build(state.categories);
     
-    let questions = Questions.build(
-      state.questions.register,
-      state.questions.index,
-      state.questions.character_limit
-    );
+    let questions = Questions.Questions(state.questions);
 
     let status_manager = StatusManager.build(state.status.register);
 

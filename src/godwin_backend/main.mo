@@ -59,6 +59,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type QuestionOrderBy            = Types.QuestionOrderBy;
   type Direction                  = Types.Direction;
   type ScanLimitResult<K>         = Types.ScanLimitResult<K>;
+  type IterationHistory           = Types.IterationHistory;
+  type VoteKind                   = Types.VoteKind;
+  type FindQuestionIterationError = Types.FindQuestionIterationError;
 
   stable var time_now : Time.Time = Time.now();
 
@@ -153,12 +156,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* _facade.putCategorizationBallot(caller, vote_id, Time.now(), answer);
   };
 
-  public query func getStatusInfo(question_id: QuestionId) : async Result<StatusInfo, ReopenQuestionError> {
-    _facade.getStatusInfo(question_id);
-  };
-
-  public query func getStatusHistory(question_id: QuestionId) : async Result<StatusHistory, ReopenQuestionError> {
-    _facade.getStatusHistory(question_id);
+  public query func getIterationHistory(question_id: QuestionId) : async Result<IterationHistory, ReopenQuestionError> {
+    _facade.getIterationHistory(question_id);
   };
 
   public query func revealInterestVote(vote_id: VoteId) : async Result<InterestVote, RevealVoteError>{
@@ -195,6 +194,14 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   public query func getVoterCategorizationHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, CategorizationBallot)> {
     _facade.getVoterCategorizationHistory(principal, limit, previous_id);
+  };
+
+  public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(Question, Nat), FindQuestionIterationError> {
+    _facade.getQuestionIteration(vote_kind, vote_id);
+  };
+
+  public query func getQuestionIdsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
+    _facade.getQuestionIdsFromAuthor(principal, direction, limit, previous_id);
   };
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)]))] {
