@@ -1,5 +1,6 @@
 import Types               "Types";
 import Votes               "Votes";
+import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
@@ -27,7 +28,6 @@ module {
   type RevealVoteError     = Types.RevealVoteError;
   type Ballot              = Types.Ballot<Cursor>;
   type Vote                = Types.Vote<Cursor, Polarization>;
-  type UpdateAggregate     = Types.UpdateAggregate<Cursor, Polarization>;
 
   type QuestionVoteJoins   = QuestionVoteJoins.QuestionVoteJoins;
 
@@ -38,18 +38,25 @@ module {
   };
 
   public func build(
-    votes: Votes.Votes<Cursor, Polarization>,
+    vote_register: Votes.Register<Cursor, Polarization>,
     joins: QuestionVoteJoins
   ) : Opinions {
     Opinions(
-      votes,
-      BallotAggregator.makeUpdateAggregate<Cursor, Polarization>(Polarization.addCursor, Polarization.subCursor),
+      Votes.Votes<Cursor, Polarization>(
+        vote_register,
+        VotePolicy.VotePolicy<Cursor, Polarization>(
+          true, // _change_ballot_authorized
+          Cursor.isValid,
+          Polarization.addCursor,
+          Polarization.subCursor,
+          Polarization.nil()
+        ),
+        null),
       joins);
   };
 
   public class Opinions(
     _votes: Votes.Votes<Cursor, Polarization>,
-    _update_aggregate: UpdateAggregate, // @todo: shall the aggregator be part of the votes module?
     _joins: QuestionVoteJoins
   ) {
     
@@ -58,12 +65,12 @@ module {
       _joins.addJoin(question_id, iteration, vote_id);
     };
 
-    public func closeVote(vote_id: VoteId) {
-      _votes.closeVote(vote_id);
+    public func closeVote(vote_id: VoteId) : async* () {
+      await* _votes.closeVote(vote_id);
     };
 
-    public func putBallot(principal: Principal, vote_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      _votes.putBallot(principal, vote_id, {date; answer = cursor;}, _update_aggregate);
+    public func putBallot(principal: Principal, vote_id: Nat, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
+      await* _votes.putBallot(principal, vote_id, {date; answer = cursor;});
     };
 
     public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {

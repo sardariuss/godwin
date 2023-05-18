@@ -3,6 +3,7 @@ import PayTypes            "../token/Types";
 
 import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
+import Result              "mo:base/Result";
 
 import Map                 "mo:map/Map";
 import Set                 "mo:map/Set";
@@ -11,6 +12,7 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
@@ -44,8 +46,6 @@ module {
     date: Int;
     answer: T;
   };
-
-  public type UpdateAggregate<T, A> = (A, ?Ballot<T>, ?Ballot<T>) -> A;
 
   public type InterestBallot = Ballot<Cursor>;
   public type OpinionBallot = Ballot<Cursor>;
@@ -116,13 +116,16 @@ module {
   };
 
   public type RemoveBallotError = {
+    #PrincipalIsAnonymous;
     #VoteNotFound;
     #VoteClosed;
+    #ChangeBallotNotAllowed;
   };
 
   public type PutBallotError = PrincipalError or AddBallotError or {
+    #VoteLocked;
     #VoteNotFound;
-    #AlreadyVoted;
+    #ChangeBallotNotAllowed;
     #NoSubacountLinked;
     #PayinError: PayTypes.PayinError;
   };

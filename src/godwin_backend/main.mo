@@ -145,7 +145,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func putOpinionBallot(vote_id: VoteId, cursor: Cursor) : async Result<OpinionBallot, PutBallotError> {
-    _facade.putOpinionBallot(caller, vote_id, Time.now(), cursor);
+    await* _facade.putOpinionBallot(caller, vote_id, Time.now(), cursor);
   };
 
   public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<CategorizationBallot, FindBallotError> {

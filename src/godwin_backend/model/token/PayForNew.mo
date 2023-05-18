@@ -65,18 +65,17 @@ module {
       };
     };
 
-// @todo
-//    public func refund(elem: Id, share: Float) : async* () {
-//      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
-//        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
-//        case(?v) { v; };
-//      };
-//      switch(await* _pay_interface.batchPayOut(subaccount, Buffer.fromArray([{to = principal; share; }]))){
-//        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
-//        case (#ok(_)) {};
-//      };
-//      _lock_register.delete(elem);
-//    };
+    public func refund(elem: Id, price: Balance) : async* () {
+      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
+        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
+        case(?v) { v; };
+      };
+      switch(await* _pay_interface.payout(subaccount, principal, price)){
+        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
+        case (#ok(_)) {};
+      };
+      _lock_register.delete(elem);
+    };
 
     func getNextSubaccount() : Subaccount {
       let subaccount = SubaccountGenerator.getSubaccount(_subaccount_prefix, _subaccount_index.get());

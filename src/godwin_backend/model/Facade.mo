@@ -154,8 +154,8 @@ module {
       _controller.getOpinionBallot(caller, vote_id);
     };
 
-    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : Result<OpinionBallot, PutBallotError> {
-      Result.mapOk<(), OpinionBallot, PutBallotError>(_controller.putOpinionBallot(principal, vote_id, date, cursor), func() : OpinionBallot {
+    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<OpinionBallot, PutBallotError> {
+      Result.mapOk<(), OpinionBallot, PutBallotError>(await* _controller.putOpinionBallot(principal, vote_id, date, cursor), func() : OpinionBallot {
         { date = date; answer = cursor; }
       });
     };

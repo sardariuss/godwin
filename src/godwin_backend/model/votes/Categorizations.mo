@@ -1,8 +1,10 @@
 import Types               "Types";
 import Votes               "Votes";
-import QuestionVoteJoins   "QuestionVoteJoins";
+import VotePolicy          "VotePolicy";
 import PayToVote           "PayToVote";
-import BallotAggregator    "BallotAggregator";
+import BallotInfos         "BallotInfos";
+
+import QuestionVoteJoins   "QuestionVoteJoins";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
 import SubaccountGenerator "../token/SubaccountGenerator";
@@ -25,9 +27,8 @@ module {
   type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
-  type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
-  type PayToVote              = PayToVote.PayToVote<CursorMap, PolarizationMap>;
+  type PayToVote              = PayToVote.PayToVote<CursorMap>;
   type PayInterface           = PayInterface.PayInterface;
   
   type VoteId                 = Types.VoteId;
@@ -51,24 +52,35 @@ module {
   };
 
   public func build(
+    vote_register: Votes.Register<CursorMap, PolarizationMap>,
+    ballot_infos: Map<Principal, Map<VoteId, BallotTransactions>>,
+    pay_interface: PayInterface,
     categories: Categories,
-    votes: Votes.Votes<CursorMap, PolarizationMap>,
     joins: QuestionVoteJoins,
-    pay_interface: PayInterface
   ) : Categorizations {
-    let ballot_aggregator = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>(
-      func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
-      PolarizationMap.addCursorMap,
-      PolarizationMap.subCursorMap
-    );
     Categorizations(
-      PayToVote.PayToVote(votes, Map.new<Principal, Map<VoteId, BallotTransactions>>(Map.phash), ballot_aggregator, pay_interface, #PUT_CATEGORIZATION_BALLOT), // @todo: add map to build args
+      Votes.Votes<CursorMap, PolarizationMap>(
+        vote_register,
+        VotePolicy.VotePolicy<CursorMap, PolarizationMap>(
+          false, // _change_ballot_authorized
+          func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
+          PolarizationMap.addCursorMap,
+          PolarizationMap.subCursorMap,
+          PolarizationMap.nil(categories)
+        ),
+        ?PayToVote.PayToVote<CursorMap>(
+          BallotInfos.BallotInfos(ballot_infos),
+          pay_interface,
+          #PUT_CATEGORIZATION_BALLOT,
+          PRICE_PUT_BALLOT,
+        )
+      ),
       joins
     );
   };
 
   public class Categorizations(
-    _votes: PayToVote,
+    _votes: Votes.Votes<CursorMap, PolarizationMap>,
     _joins: QuestionVoteJoins
   ) {
     
@@ -78,8 +90,7 @@ module {
     };
 
     public func closeVote(vote_id: VoteId) : async*() {
-      _votes.closeVote(vote_id);
-      await* _votes.payout(vote_id);
+      await* _votes.closeVote(vote_id);
     };
 
     public func getVote(id: VoteId) : Vote {
@@ -87,7 +98,7 @@ module {
     };
 
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, cursor_map: CursorMap) : async* Result<(), PutBallotError> {
-      await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;}, PRICE_PUT_BALLOT);
+      await* _votes.putBallot(principal, vote_id, {date; answer = cursor_map;});
     };
 
     public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {

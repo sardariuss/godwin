@@ -198,8 +198,8 @@ module {
       _model.getOpinionVotes().findBallot(caller, vote_id);
     };
 
-    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      _model.getOpinionVotes().putBallot(principal, vote_id, date, cursor);
+    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
+      await* _model.getOpinionVotes().putBallot(principal, vote_id, date, cursor);
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<CategorizationBallot, FindBallotError> {
@@ -329,7 +329,7 @@ module {
               await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, iteration));
             };
             case(#OPEN)      { 
-              _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
+              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
               await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, iteration)); 
             };
             case(_) {};

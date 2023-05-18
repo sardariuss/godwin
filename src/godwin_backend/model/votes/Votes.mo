@@ -1,7 +1,6 @@
 import Types      "Types";
-import BallotAggregator "BallotAggregator";
-import UtilsTypes "../../utils/Types";
-import Utils      "../../utils/Utils";
+import VotePolicy "VotePolicy";
+import PayToVote  "PayToVote";
 
 import Map        "mo:map/Map";
 import Set        "mo:map/Set";
@@ -12,6 +11,8 @@ import Debug      "mo:base/Debug";
 import Nat        "mo:base/Nat";
 import Int        "mo:base/Int";
 import Option     "mo:base/Option";
+import Nat32      "mo:base/Nat32";
+import Prim       "mo:prim";
 
 module {
 
@@ -22,19 +23,16 @@ module {
   type Map<K, V>          = Map.Map<K, V>;
   type Set<K>             = Set.Set<K>;
 
-  type ScanLimitResult<T> = UtilsTypes.ScanLimitResult<T>;
-
-  type BallotAggregator<T, A> = BallotAggregator.BallotAggregator<T, A>;
-
   type VoteId             = Types.VoteId;
   type Ballot<T>          = Types.Ballot<T>;
   type Vote<T, A>         = Types.Vote<T, A>;
-  type UpdateAggregate<T, A> = Types.UpdateAggregate<T, A>;
   type GetVoteError       = Types.GetVoteError;
   type FindBallotError    = Types.FindBallotError;
   type RevealVoteError    = Types.RevealVoteError;
   type PutBallotError     = Types.PutBallotError;
-  type RemoveBallotError  = Types.RemoveBallotError;
+
+  type VotePolicy<T, A>   = VotePolicy.VotePolicy<T, A>;
+  type PayToVote<T>       = PayToVote.PayToVote<T>;
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
@@ -58,11 +56,20 @@ module {
     }
   };
 
+  let pnhash: Map.HashUtils<(Principal, Nat)> = (
+    // +% is the same as addWrap, meaning it wraps on overflow
+    func(key: (Principal, Nat)) : Nat32 = (Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Nat32.fromIntWrap(key.1)) & 0x3fffffff,
+    func(a: (Principal, Nat), b: (Principal, Nat)) : Bool = a.0 == b.0 and a.1 == b.1,
+    func() = (Principal.fromText("2vxsx-fae"), 0)
+  );
+
   public class Votes<T, A>(
     _register: Register<T, A>,
-    _is_valid_answer: (T) -> Bool,
-    _empty_aggregate: A
+    _policy: VotePolicy<T, A>,
+    _pay_to_vote: ?PayToVote<T>
   ) {
+
+    let _ballot_locks = Set.new<(Principal, VoteId)>(pnhash);
 
     public func newVote() : VoteId {
       let index = _register.index;
@@ -70,61 +77,79 @@ module {
         id = index;
         var status = #OPEN;
         ballots = Map.new<Principal, Ballot<T>>(Map.phash);
-        var aggregate = _empty_aggregate; 
+        var aggregate = _policy.emptyAggregate(); 
       };
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;
     };
 
-    public func closeVote(id: VoteId) {
+    public func closeVote(id: VoteId) : async*() {
       switch(Map.get(_register.votes, Map.nhash, id)){
         case(null) { Debug.trap("Could not find a vote with ID '" # Nat.toText(id) # "'"); };
         case(?vote) {
+          // Check if the vote in not already closed
+          if (vote.status == #CLOSED) {
+            Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed");
+          };
+          // Close the vote
+          vote.status := #CLOSED;
+          Map.set(_register.votes, Map.nhash, id, vote); // @todo: not required ?
+          // Payout if any
+          switch(_pay_to_vote){
+            case(null) {};
+            case(?pay_to_vote) { await* pay_to_vote.payout(id, vote.ballots); };
+          };
+        };
+      };
+    };
+
+    public func putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+      // Prevent reentry
+      if (Set.has(_ballot_locks, pnhash, (principal, id))) {
+        return #err(#VoteLocked);
+      };
+      
+      ignore Set.put(_ballot_locks, pnhash, (principal, id));
+      let result = await* _putBallot(principal, id, ballot);
+      Set.delete(_ballot_locks, pnhash, (principal, id));
+      result;
+    };
+
+    // @todo: it might be dangerous to check the condition before evaluating the precondition, because the condition might have
+    // changed after the evaluation, and updating the state not working.
+    // Right now it is not the case, it is just a Map.put
+    func _putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+      
+      // Check if the user can put the ballot
+      let vote = switch(_policy.canPutBallot(_register.votes, id, principal, ballot)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(v)) { v; };
+      };
+
+      // Payin if any
+      let result = switch(_pay_to_vote){
+        case(null) { #ok(); };
+        case(?pay_to_vote) { await* pay_to_vote.payin(id, principal); };
+      };
+      
+      switch(result) {
+        case(#err(err)){ #err(err); };
+        case(#ok(_)){
+          // Add the ballot
+          let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
+          // Update the aggregate
+          vote.aggregate := _policy.updateAggregate(vote.aggregate, ?ballot, old_ballot);
           // Link the vote to the voters
           for (principal in Map.keys(vote.ballots)){
             let history = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
             Set.add(history, Map.nhash, id);
             Map.set(_register.voters_history, Map.phash, principal, history);
           };
-          // Close the vote
-          vote.status := #CLOSED;
-          Map.set(_register.votes, Map.nhash, id, vote); 
+          #ok;
         };
       };
-    };
-
-    public func putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>, update_aggregate: UpdateAggregate<T, A>) : Result<(), PutBallotError> {
-      Result.chain<Vote<T, A>, (), PutBallotError>(findVote(id), func(vote: Vote<T, A>) {
-        // Verify the vote is not closed
-        if (vote.status == #CLOSED){
-          return #err(#VoteClosed);
-        };
-        // Verify the principal is not anonymous
-        if (Principal.isAnonymous(principal)){
-          return #err(#PrincipalIsAnonymous);
-        };
-        // Verify the ballot is valid
-        if (not _is_valid_answer(ballot.answer)){
-          return #err(#InvalidBallot);
-        };
-        let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
-        vote.aggregate := update_aggregate(vote.aggregate, ?ballot, old_ballot);
-        #ok;
-      });
-    };
-
-    public func removeBallot(principal: Principal, id: VoteId, update_aggregate: UpdateAggregate<T, A>) : Result<(), RemoveBallotError> {
-      Result.chain<Vote<T, A>, (), RemoveBallotError>(findVote(id), func(vote: Vote<T, A>) {
-        // Verify the vote is not closed
-        if (vote.status == #CLOSED){
-          return #err(#VoteClosed);
-        };
-        // Update the vote
-        let old_ballot = Map.remove(vote.ballots, Map.phash, principal);
-        vote.aggregate := update_aggregate(vote.aggregate, null, old_ballot);
-        #ok;
-      });
+      
     };
 
     public func findVote(id: VoteId) : Result<Vote<T, A>, GetVoteError> {
