@@ -22,6 +22,7 @@ module {
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
   type Set<K>                 = Set.Set<K>;
+  type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
   type BallotAggregator       = BallotAggregator.BallotAggregator<CursorMap, PolarizationMap>;
@@ -37,8 +38,9 @@ module {
   type PutBallotError         = Types.PutBallotError;
   type CloseVoteError         = Types.CloseVoteError;
   type GetVoteError           = Types.GetVoteError;
-  type FindBallotError         = Types.FindBallotError;
+  type FindBallotError        = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
+  type BallotTransactions     = Types.BallotTransactions;
 
   public type Register    = Votes.Register<CursorMap, PolarizationMap>;
 
@@ -60,7 +62,7 @@ module {
       PolarizationMap.subCursorMap
     );
     Categorizations(
-      PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_CATEGORIZATION_BALLOT),
+      PayToVote.PayToVote(votes, Map.new<Principal, Map<VoteId, BallotTransactions>>(Map.phash), ballot_aggregator, pay_interface, #PUT_CATEGORIZATION_BALLOT), // @todo: add map to build args
       joins
     );
   };

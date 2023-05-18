@@ -37,16 +37,11 @@ module {
   type Polarization        = VoteTypes.Polarization;
   type IterationHistory    = QuestionTypes.IterationHistory;
 
-  //type FailedPayout        = Types.FailedPayout; // @todo
-
   public type State = {
     name              : Ref<Text>; // @todo: this shouldn't be a ref
     master            : Ref<Principal>; // @todo: this shouldn't be a ref
     creation_date     : Time;
     categories        : Categories.Register;
-    pay_interface     : {
-      //failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
-    };
     questions         : Questions.Register;
     status            : {
       register           : Map<Nat, IterationHistory>;
@@ -82,9 +77,6 @@ module {
       master                        = Ref.init<Principal>(master);
       creation_date                 = creation_date;
       categories                    = Categories.initRegister(parameters.categories);
-      pay_interface = {
-        //failed_payouts              = Set.new<FailedPayout>();
-      };
       status        = {
         register                    = Map.new<Nat, IterationHistory>(Map.nhash);
       };

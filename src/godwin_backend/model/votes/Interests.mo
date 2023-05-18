@@ -12,6 +12,7 @@ import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 
 import Set                 "mo:map/Set";
+import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
 import Float               "mo:base/Float";
@@ -21,6 +22,7 @@ module {
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
   type Set<K>                 = Set.Set<K>;
+  type Map<K, V>              = Map.Map<K, V>;
   
   type VoteId                 = Types.VoteId;
   type Cursor                 = Types.Cursor;
@@ -31,6 +33,7 @@ module {
   type FindBallotError         = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
+  type BallotTransactions     = Types.BallotTransactions;
   
   type BallotAggregator       = BallotAggregator.BallotAggregator<Cursor, Polarization>;
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -65,7 +68,7 @@ module {
       Polarization.subCursor
     );
     Interests(
-      PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_INTEREST_BALLOT),
+      PayToVote.PayToVote(votes, Map.new<Principal, Map<VoteId, BallotTransactions>>(Map.phash), ballot_aggregator, pay_interface, #PUT_INTEREST_BALLOT), // @todo: add map to args
       pay_for_new,
       joins,
       queries
@@ -81,7 +84,7 @@ module {
     
     public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
       let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
-        case (#err(err)) { return #err(#PayInError(err)); };
+        case (#err(err)) { return #err(#PayinError(err)); };
         case (#ok(id)) { id; };
       };
       let (question, iteration) = on_success();

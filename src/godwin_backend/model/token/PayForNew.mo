@@ -26,7 +26,7 @@ module {
   type PayInterface     = PayInterface.PayInterface;
   type Subaccount       = Types.Subaccount;
   type Balance          = Types.Balance;
-  type PayInError       = Types.PayInError;
+  type PayinError       = Types.PayinError;
   type PayoutError      = Types.PayoutError;
   type SubaccountPrefix = Types.SubaccountPrefix;
   
@@ -36,14 +36,12 @@ module {
     pay_interface: PayInterface,
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
-    //failed_payout_register: Map<Id, PayoutError>,
     subaccount_index: Ref<Nat>
   ) : PayForNew {
     PayForNew(
       pay_interface,
       subaccount_prefix,
       WMap.WMap(lock_register, Map.nhash),
-      //WMap.WMap(failed_payout_register, Map.nhash),
       WRef.WRef(subaccount_index)
     );
   };
@@ -52,13 +50,12 @@ module {
     _pay_interface: PayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
-    //_failed_payout_register: WMap<Id, PayoutError>,
     _subaccount_index: WRef<Nat>
   ){
 
-    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayInError>{
+    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayinError>{
       let subaccount = getNextSubaccount();
-      switch(await* _pay_interface.payIn(subaccount, buyer, price)) {
+      switch(await* _pay_interface.payin(subaccount, buyer, price)) {
         case (#err(err)) { #err(err); };
         case (#ok(_)) {
           let id = create_new();
@@ -68,24 +65,17 @@ module {
       };
     };
 
-    public func refund(elem: Id, share: Float) : async* () {
-      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
-        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
-        case(?v) { v; };
-      };
-      switch(await* _pay_interface.payOut(subaccount, Buffer.fromArray([{to = principal; share; }]))){
-        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
-        case (#ok(_)) {};
-      };
-      _lock_register.delete(elem);
-    };
-
-//    public func findFailedRefund(elem: Id) : ?PayoutError {
-//      _failed_payout_register.getOpt(elem);
-//    };
-//
-//    public func findFailedRefunds() : [(Id, PayoutError)] {
-//      Iter.toArray(_failed_payout_register.entries());
+// @todo
+//    public func refund(elem: Id, share: Float) : async* () {
+//      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
+//        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
+//        case(?v) { v; };
+//      };
+//      switch(await* _pay_interface.batchPayOut(subaccount, Buffer.fromArray([{to = principal; share; }]))){
+//        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
+//        case (#ok(_)) {};
+//      };
+//      _lock_register.delete(elem);
 //    };
 
     func getNextSubaccount() : Subaccount {

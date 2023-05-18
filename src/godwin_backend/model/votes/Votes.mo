@@ -1,4 +1,5 @@
 import Types      "Types";
+import BallotAggregator "BallotAggregator";
 import UtilsTypes "../../utils/Types";
 import Utils      "../../utils/Utils";
 
@@ -23,12 +24,17 @@ module {
 
   type ScanLimitResult<T> = UtilsTypes.ScanLimitResult<T>;
 
+  type BallotAggregator<T, A> = BallotAggregator.BallotAggregator<T, A>;
+
   type VoteId             = Types.VoteId;
   type Ballot<T>          = Types.Ballot<T>;
   type Vote<T, A>         = Types.Vote<T, A>;
+  type UpdateAggregate<T, A> = Types.UpdateAggregate<T, A>;
   type GetVoteError       = Types.GetVoteError;
   type FindBallotError    = Types.FindBallotError;
   type RevealVoteError    = Types.RevealVoteError;
+  type PutBallotError     = Types.PutBallotError;
+  type RemoveBallotError  = Types.RemoveBallotError;
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
@@ -54,6 +60,7 @@ module {
 
   public class Votes<T, A>(
     _register: Register<T, A>,
+    _is_valid_answer: (T) -> Bool,
     _empty_aggregate: A
   ) {
 
@@ -85,6 +92,39 @@ module {
           Map.set(_register.votes, Map.nhash, id, vote); 
         };
       };
+    };
+
+    public func putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>, update_aggregate: UpdateAggregate<T, A>) : Result<(), PutBallotError> {
+      Result.chain<Vote<T, A>, (), PutBallotError>(findVote(id), func(vote: Vote<T, A>) {
+        // Verify the vote is not closed
+        if (vote.status == #CLOSED){
+          return #err(#VoteClosed);
+        };
+        // Verify the principal is not anonymous
+        if (Principal.isAnonymous(principal)){
+          return #err(#PrincipalIsAnonymous);
+        };
+        // Verify the ballot is valid
+        if (not _is_valid_answer(ballot.answer)){
+          return #err(#InvalidBallot);
+        };
+        let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
+        vote.aggregate := update_aggregate(vote.aggregate, ?ballot, old_ballot);
+        #ok;
+      });
+    };
+
+    public func removeBallot(principal: Principal, id: VoteId, update_aggregate: UpdateAggregate<T, A>) : Result<(), RemoveBallotError> {
+      Result.chain<Vote<T, A>, (), RemoveBallotError>(findVote(id), func(vote: Vote<T, A>) {
+        // Verify the vote is not closed
+        if (vote.status == #CLOSED){
+          return #err(#VoteClosed);
+        };
+        // Update the vote
+        let old_ballot = Map.remove(vote.ballots, Map.phash, principal);
+        vote.aggregate := update_aggregate(vote.aggregate, null, old_ballot);
+        #ok;
+      });
     };
 
     public func findVote(id: VoteId) : Result<Vote<T, A>, GetVoteError> {

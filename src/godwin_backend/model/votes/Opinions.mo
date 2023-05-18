@@ -27,8 +27,8 @@ module {
   type RevealVoteError     = Types.RevealVoteError;
   type Ballot              = Types.Ballot<Cursor>;
   type Vote                = Types.Vote<Cursor, Polarization>;
+  type UpdateAggregate     = Types.UpdateAggregate<Cursor, Polarization>;
 
-  type BallotAggregator    = BallotAggregator.BallotAggregator<Cursor, Polarization>;
   type QuestionVoteJoins   = QuestionVoteJoins.QuestionVoteJoins;
 
   public type Register     = Votes.Register<Cursor, Polarization>;
@@ -43,17 +43,13 @@ module {
   ) : Opinions {
     Opinions(
       votes,
-      BallotAggregator.BallotAggregator<Cursor, Polarization>(
-        Cursor.isValid,
-        Polarization.addCursor,
-        Polarization.subCursor
-      ),
+      BallotAggregator.makeUpdateAggregate<Cursor, Polarization>(Polarization.addCursor, Polarization.subCursor),
       joins);
   };
 
   public class Opinions(
     _votes: Votes.Votes<Cursor, Polarization>,
-    _aggregator: BallotAggregator, // @todo: shall the aggregator be part of the votes module?
+    _update_aggregate: UpdateAggregate, // @todo: shall the aggregator be part of the votes module?
     _joins: QuestionVoteJoins
   ) {
     
@@ -67,11 +63,7 @@ module {
     };
 
     public func putBallot(principal: Principal, vote_id: Nat, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      let vote = _votes.getVote(vote_id);
-      switch(_aggregator.putBallot(vote, principal, {date; answer = cursor;})){
-        case(#ok(_)) { #ok; };
-        case(#err(err)) { #err(err); };
-      };
+      _votes.putBallot(principal, vote_id, {date; answer = cursor;}, _update_aggregate);
     };
 
     public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {

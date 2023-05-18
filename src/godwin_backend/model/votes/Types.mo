@@ -45,6 +45,8 @@ module {
     answer: T;
   };
 
+  public type UpdateAggregate<T, A> = (A, ?Ballot<T>, ?Ballot<T>) -> A;
+
   public type InterestBallot = Ballot<Cursor>;
   public type OpinionBallot = Ballot<Cursor>;
   public type CategorizationBallot = Ballot<CursorMap>;
@@ -52,6 +54,17 @@ module {
   public type InterestVote = Vote<Cursor, Polarization>;
   public type OpinionVote = Vote<Cursor, Polarization>;
   public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
+
+  public type BallotTransactions = {
+    payin: PayTypes.TxIndex;
+    payout: {
+      #PENDING;
+      #PROCESSED: {
+        refund: ?PayTypes.SinglePayoutResult;
+        reward: ?PayTypes.SinglePayoutResult;
+      };
+    };
+  };
 
   public type Voter = {
     interests: Set<VoteId>;
@@ -73,7 +86,7 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayInError: PayTypes.PayInError;
+    #PayinError: PayTypes.PayinError;
   };
 
   public type GetVoteError = {
@@ -102,11 +115,16 @@ module {
     #InvalidBallot;
   };
 
+  public type RemoveBallotError = {
+    #VoteNotFound;
+    #VoteClosed;
+  };
+
   public type PutBallotError = PrincipalError or AddBallotError or {
     #VoteNotFound;
     #AlreadyVoted;
     #NoSubacountLinked;
-    #PayInError: PayTypes.PayInError;
+    #PayinError: PayTypes.PayinError;
   };
 
 };
