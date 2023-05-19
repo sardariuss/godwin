@@ -23,7 +23,7 @@ module {
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
 
-  type Transactions           = PayTypes.Transactions;
+  type TransactionsRecord     = PayTypes.TransactionsRecord;
 
   public type Register    = Votes.Register<CursorMap, PolarizationMap>;
 
@@ -37,7 +37,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<CursorMap, PolarizationMap>,
-    transactions_register: Map<Principal, Map<VoteId, Transactions>>,
+    transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     pay_interface: PayInterface,
     categories: Categories
   ) : Categorizations {

@@ -10,22 +10,22 @@ import Nat                 "mo:base/Nat";
 module {
 
   // For convenience: from base module
-  type Principal    = Principal.Principal;
+  type Principal          = Principal.Principal;
 
-  type Map<K, V>    = Map.Map<K, V>;
+  type Map<K, V>          = Map.Map<K, V>;
 
-  type Id           = Nat;
-  type Transactions = Types.Transactions;
-  type TxIndex      = Types.TxIndex;
-  type PayoutResult = Types.PayoutResult;
+  type Id                 = Nat;
+  type TransactionsRecord = Types.TransactionsRecord;
+  type TxIndex            = Types.TxIndex;
+  type PayoutResult       = Types.PayoutResult;
 
-  public class UserTransactions(
-    _register: Map<Principal, Map<Id, Transactions>>,
+  public class TransactionsRecords(
+    _register: Map<Principal, Map<Id, TransactionsRecord>>,
   ) {
 
     public func initWithPayin(principal: Principal, id: Id, tx_index: TxIndex) {
       // Get the transactions from this user
-      let transactions = getUserTransactions(principal);
+      let transactions = getRecords(principal);
       // Check there is not already a record for this element
       if (Map.has(transactions, Map.nhash, id)){
         Debug.trap("Cannot init transaction record: " #
@@ -39,7 +39,7 @@ module {
     public func setPayout(principal: Principal, id: Id, refund: ?PayoutResult, reward: ?PayoutResult){
       let error_prefix = "Cannot update the transaction record for principal '" # Principal.toText(principal) # "' and element '" # Nat.toText(id) # "'";
       // Get the transactions from this user
-      let transactions = getUserTransactions(principal);
+      let transactions = getRecords(principal);
       // Get the record for this element
       var record = switch (Map.get(transactions, Map.nhash, id)) {
         case(null) { Debug.trap(error_prefix # ": the transaction record cannot be found"); };
@@ -55,8 +55,15 @@ module {
       Map.set(_register, Map.phash, principal, transactions);
     };
 
-    func getUserTransactions(principal: Principal) : Map<Id, Transactions> {
-      Option.get(Map.get(_register, Map.phash, principal), Map.new<Id, Transactions>(Map.nhash));
+    public func find(principal: Principal, id: Id) : ?TransactionsRecord {
+      switch(Map.get(_register, Map.phash, principal)){
+        case(null) { null; };
+        case(?transactions) { Map.get(transactions, Map.nhash, id); };
+      };
+    };
+
+    func getRecords(principal: Principal) : Map<Id, TransactionsRecord> {
+      Option.get(Map.get(_register, Map.phash, principal), Map.new<Id, TransactionsRecord>(Map.nhash));
     };
 
   };

@@ -54,14 +54,7 @@ module {
   public type MintError        = MasterTypes.TransferError or CanisterCallError or { #BatchError : [SingleMintInfo]; };
   public type MintResult       = Result<(), MintError>;
 
-  // @todo
-  public type SubTransferArgs = {
-    principal: Principal;
-    sub_subaccount: Blob;
-    amount: Nat;
-  };
-
-  public type Transactions = {
+  public type TransactionsRecord = {
     payin: TxIndex;
     payout: {
       #PENDING;

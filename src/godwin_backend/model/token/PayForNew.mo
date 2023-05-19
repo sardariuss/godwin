@@ -1,7 +1,7 @@
 import Types               "Types";
 import PayInterface        "PayInterface";
 import SubaccountGenerator "SubaccountGenerator";
-import UserTransactions    "UserTransactions";
+import TransactionsRecords "TransactionsRecords";
 
 import WMap                "../../utils/wrappers/WMap";
 import WRef                "../../utils/wrappers/WRef";
@@ -19,19 +19,19 @@ module {
 
   type Result<Ok, Err>  = Result.Result<Ok, Err>;
 
-  type Ref<T>           = Ref.Ref<T>;
-  type WRef<T>          = WRef.WRef<T>;
-  type WMap<K, V>       = WMap.WMap<K, V>;
-  type Map<K, V>        = Map.Map<K, V>;
+  type Ref<T>              = Ref.Ref<T>;
+  type WRef<T>             = WRef.WRef<T>;
+  type WMap<K, V>          = WMap.WMap<K, V>;
+  type Map<K, V>           = Map.Map<K, V>;
 
-  type PayInterface     = PayInterface.PayInterface;
-  type Subaccount       = Types.Subaccount;
-  type Balance          = Types.Balance;
-  type PayinError       = Types.PayinError;
-  type PayoutError      = Types.PayoutError;
-  type SubaccountPrefix = Types.SubaccountPrefix;
-  type Transactions     = Types.Transactions;
-  type UserTransactions = UserTransactions.UserTransactions;
+  type PayInterface        = PayInterface.PayInterface;
+  type Subaccount          = Types.Subaccount;
+  type Balance             = Types.Balance;
+  type PayinError          = Types.PayinError;
+  type PayoutError         = Types.PayoutError;
+  type SubaccountPrefix    = Types.SubaccountPrefix;
+  type TransactionsRecord  = Types.TransactionsRecord;
+  type TransactionsRecords = TransactionsRecords.TransactionsRecords;
   
   type Id = Nat;
 
@@ -40,14 +40,14 @@ module {
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
     subaccount_index: Ref<Nat>,
-    user_transactions: Map<Principal, Map<Id, Transactions>>
+    user_transactions: Map<Principal, Map<Id, TransactionsRecord>>
   ) : PayForNew {
     PayForNew(
       pay_interface,
       subaccount_prefix,
       WMap.WMap(lock_register, Map.nhash),
       WRef.WRef(subaccount_index),
-      UserTransactions.UserTransactions(user_transactions)
+      TransactionsRecords.TransactionsRecords(user_transactions)
     );
   };
 
@@ -56,7 +56,7 @@ module {
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
     _subaccount_index: WRef<Nat>,
-    _user_transactions: UserTransactions
+    _user_transactions: TransactionsRecords
   ){
 
     public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayinError>{
@@ -80,6 +80,10 @@ module {
       let result = await* _pay_interface.payout(subaccount, principal, price);
       _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
       _lock_register.delete(id);
+    };
+
+    public func findTransactionsRecord(principal: Principal, id: Id) : ?TransactionsRecord {
+      _user_transactions.find(principal, id);
     };
 
     func getNextSubaccount() : Subaccount {

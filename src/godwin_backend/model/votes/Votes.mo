@@ -1,6 +1,7 @@
 import Types      "Types";
 import VotePolicy "VotePolicy";
 import PayToVote  "PayToVote";
+import PayTypes   "../token/Types";
 
 import Map        "mo:map/Map";
 import Set        "mo:map/Set";
@@ -30,6 +31,8 @@ module {
   type FindBallotError    = Types.FindBallotError;
   type RevealVoteError    = Types.RevealVoteError;
   type PutBallotError     = Types.PutBallotError;
+  
+  type TransactionsRecord = PayTypes.TransactionsRecord;
 
   type VotePolicy<T, A>   = VotePolicy.VotePolicy<T, A>;
   type PayToVote<T>       = PayToVote.PayToVote<T>;
@@ -200,6 +203,13 @@ module {
 
     public func getVoterHistory(principal: Principal) : Set<VoteId> {
       Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
+    };
+
+    public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      switch(_pay_to_vote){
+        case(null) { null; };
+        case(?pay_to_vote) { pay_to_vote.findTransactionsRecord(principal, id); };
+      };
     };
 
   };

@@ -22,6 +22,7 @@ module {
   type Ballot<T>              = Types.Ballot<T>;
 
   type PayoutRecipient        = PayTypes.PayoutRecipient;
+  type TransactionsRecord     = PayTypes.TransactionsRecord;
 
   public class PayToVote<T>(
     _pay_for_element: PayForElement.PayForElement
@@ -43,6 +44,10 @@ module {
       };
       // Payout the recipients
       await* _pay_for_element.payout(vote_id, recipients);
+    };
+
+    public func findTransactionsRecord(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _pay_for_element.findTransactionsRecord(principal, id);
     };
 
   };

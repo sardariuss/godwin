@@ -1,7 +1,7 @@
 import Types               "Types";
 import SubaccountGenerator "SubaccountGenerator";
 import PayInterface        "PayInterface";
-import UserTransactions    "UserTransactions";
+import TransactionsRecords "TransactionsRecords";
 
 import Map                 "mo:map/Map";
 
@@ -28,20 +28,20 @@ module {
   type PayoutError            = Types.PayoutError;
   type PayoutResult           = Types.PayoutResult;
   type PayinResult            = Types.PayinResult;
-  type Transactions           = Types.Transactions;
+  type TransactionsRecord     = Types.TransactionsRecord;
 
   type PayInterface           = PayInterface.PayInterface;
 
   type Id                     = Nat;
 
   public func build(
-    transactions_register: Map<Principal, Map<Id, Transactions>>,
+    transactions_register: Map<Principal, Map<Id, TransactionsRecord>>,
     pay_interface: PayInterface,
     subaccount_prefix: SubaccountPrefix,
     pay_in_price: Nat
   ) : PayForElement {
     PayForElement(
-      UserTransactions.UserTransactions(transactions_register),
+      TransactionsRecords.TransactionsRecords(transactions_register),
       pay_interface,
       subaccount_prefix,
       pay_in_price
@@ -49,7 +49,7 @@ module {
   };
 
   public class PayForElement(
-    _user_transactions: UserTransactions.UserTransactions,
+    _user_transactions: TransactionsRecords.TransactionsRecords,
     _pay_interface: PayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _pay_in_price: Nat // @todo
@@ -74,6 +74,10 @@ module {
         _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
       };
 
+    };
+
+    public func findTransactionsRecord(principal: Principal, id: Id) : ?TransactionsRecord {
+      _user_transactions.find(principal, id);
     };
 
   };

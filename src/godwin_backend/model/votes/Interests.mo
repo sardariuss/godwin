@@ -42,7 +42,7 @@ module {
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
   type PayForNew              = PayForNew.PayForNew;
-  type Transactions           = PayTypes.Transactions;
+  type TransactionsRecord     = PayTypes.TransactionsRecord;
   
   public type Register        = Votes.Register<Cursor, Polarization>;
 
@@ -57,7 +57,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<Cursor, Polarization>,
-    transactions_register: Map<Principal, Map<VoteId, Transactions>>,
+    transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     pay_interface: PayInterface,
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
@@ -145,6 +145,14 @@ module {
 
     public func getVoterHistory(principal: Principal) : Set<VoteId> {
       _votes.getVoterHistory(principal);
+    };
+
+    public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _votes.findBallotTransactions(principal, id);
+    };
+
+    public func findOpenVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _pay_for_new.findTransactionsRecord(principal, id);
     };
 
   };

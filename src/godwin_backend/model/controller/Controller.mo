@@ -52,6 +52,8 @@ module {
   type OrderBy                = QuestionTypes.OrderBy;
   type IterationHistory       = QuestionTypes.IterationHistory;
   type OpenQuestionError      = Types.OpenQuestionError; // @todo
+
+  type TransactionsRecord     = Types.TransactionsRecord;
   
   type Category               = VoteTypes.Category;
   type Decay                  = Types.Decay; // @todo
@@ -83,7 +85,7 @@ module {
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type SetPickRateError       = Types.SetPickRateError;
   type SetDurationError       = Types.SetDurationError;
-  type FindBallotError         = Types.FindBallotError;
+  type FindBallotError        = Types.FindBallotError;
   type PutBallotError         = Types.PutBallotError;
   type GetVoteError           = Types.GetVoteError;
   type OpenVoteError          = Types.OpenVoteError;
@@ -296,6 +298,22 @@ module {
           ?(ballot, Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(vote_id).aggregate)));
         }
       );
+    };
+
+    public func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getInterestVotes().findOpenVoteTransactions(principal, id);
+    };
+    
+    public func findInterestBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getInterestVotes().findBallotTransactions(principal, id);
+    };
+
+    public func findOpinionBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getOpinionVotes().findBallotTransactions(principal, id);
+    };
+
+    public func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getCategorizationVotes().findBallotTransactions(principal, id);
     };
 
     public func run(time: Time) : async* () {
