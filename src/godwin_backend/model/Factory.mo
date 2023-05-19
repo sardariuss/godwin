@@ -47,14 +47,15 @@ module {
       pay_interface,
       #OPEN_QUESTION,
       state.opened_questions.register,
-      state.opened_questions.index
+      state.opened_questions.index,
+      state.opened_questions.transactions
     );
 
     let interest_join = QuestionVoteJoins.build(state.joins.interests);
     
     let interests = Interests.build(
       state.votes.interest.register,
-      state.votes.interest.ballot_infos,
+      state.votes.interest.transactions,
       pay_interface,
       pay_to_open_question,
       interest_join,
@@ -64,18 +65,16 @@ module {
     let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
     
     let opinions = Opinions.build(
-      state.votes.opinion.register,
-      opinion_join,
+      state.votes.opinion.register
     );
     
     let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     
     let categorizations = Categorizations.build(
       state.votes.categorization.register,
-      state.votes.categorization.ballot_infos,
+      state.votes.categorization.transactions,
       pay_interface,
-      categories,
-      categorization_join
+      categories
     );
 
     let model = Model.build(

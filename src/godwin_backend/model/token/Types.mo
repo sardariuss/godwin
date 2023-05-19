@@ -34,9 +34,9 @@ module {
   public type PayinError       = MasterTypes.TransferError or CanisterCallError;
   public type PayinResult      = Result<TxIndex, PayinError>;
   // Payout types
-  public type SinglePayoutRecipient  = { to: Principal; share: Float; };
+  public type PayoutRecipient  = { to: Principal; share: Float; };
   //public type SinglePayoutInfo = (TokenTypes.TransferArgs, TokenTypes.TransferResult);
-  public type SinglePayoutError = TokenTypes.ReapAccountError or CanisterCallError or {
+  public type PayoutError = TokenTypes.TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
     #SingleReapLost: {
       share: Float;
       subgodwin_subaccount: Subaccount;
@@ -46,8 +46,6 @@ module {
       error: TransferError;
     };
   };
-  public type SinglePayoutResult = Result<TxIndex, SinglePayoutError>;
-  public type PayoutError = TransferError or CanisterCallError;
   public type PayoutResult = Result<TxIndex, PayoutError>;
   // Mint types
   public type MintRecipient    = { to: Principal; amount: Balance;};
@@ -61,6 +59,17 @@ module {
     principal: Principal;
     sub_subaccount: Blob;
     amount: Nat;
+  };
+
+  public type Transactions = {
+    payin: TxIndex;
+    payout: {
+      #PENDING;
+      #PROCESSED: {
+        refund: ?PayoutResult;
+        reward: ?PayoutResult;
+      };
+    };
   };
 
 };

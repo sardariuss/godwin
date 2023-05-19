@@ -1,6 +1,7 @@
 import Types               "Types";
 import PayInterface        "PayInterface";
 import SubaccountGenerator "SubaccountGenerator";
+import UserTransactions    "UserTransactions";
 
 import WMap                "../../utils/wrappers/WMap";
 import WRef                "../../utils/wrappers/WRef";
@@ -29,6 +30,8 @@ module {
   type PayinError       = Types.PayinError;
   type PayoutError      = Types.PayoutError;
   type SubaccountPrefix = Types.SubaccountPrefix;
+  type Transactions     = Types.Transactions;
+  type UserTransactions = UserTransactions.UserTransactions;
   
   type Id = Nat;
 
@@ -36,13 +39,15 @@ module {
     pay_interface: PayInterface,
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
-    subaccount_index: Ref<Nat>
+    subaccount_index: Ref<Nat>,
+    user_transactions: Map<Principal, Map<Id, Transactions>>
   ) : PayForNew {
     PayForNew(
       pay_interface,
       subaccount_prefix,
       WMap.WMap(lock_register, Map.nhash),
-      WRef.WRef(subaccount_index)
+      WRef.WRef(subaccount_index),
+      UserTransactions.UserTransactions(user_transactions)
     );
   };
 
@@ -50,31 +55,31 @@ module {
     _pay_interface: PayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
-    _subaccount_index: WRef<Nat>
+    _subaccount_index: WRef<Nat>,
+    _user_transactions: UserTransactions
   ){
 
     public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayinError>{
       let subaccount = getNextSubaccount();
       switch(await* _pay_interface.payin(subaccount, buyer, price)) {
         case (#err(err)) { #err(err); };
-        case (#ok(_)) {
+        case (#ok(tx_index)) {
           let id = create_new();
           _lock_register.set(id, (buyer, subaccount));
+          _user_transactions.initWithPayin(buyer, id, tx_index);
           return #ok(id);
         };
       };
     };
 
-    public func refund(elem: Id, price: Balance) : async* () {
-      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
-        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
+    public func refund(id: Id, price: Balance) : async* () {
+      let (principal, subaccount) = switch(_lock_register.getOpt(id)){
+        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      switch(await* _pay_interface.payout(subaccount, principal, price)){
-        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
-        case (#ok(_)) {};
-      };
-      _lock_register.delete(elem);
+      let result = await* _pay_interface.payout(subaccount, principal, price);
+      _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
+      _lock_register.delete(id);
     };
 
     func getNextSubaccount() : Subaccount {

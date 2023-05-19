@@ -26,9 +26,8 @@ module {
   type CanisterCallError              = Types.CanisterCallError;
   type PayinError                     = Types.PayinError;
   type PayinResult                    = Types.PayinResult;
-  type SinglePayoutRecipient          = Types.SinglePayoutRecipient;
-  type SinglePayoutError              = Types.SinglePayoutError;
-  type SinglePayoutResult             = Types.SinglePayoutResult;
+  type PayoutRecipient                = Types.PayoutRecipient;
+  type PayoutError                    = Types.PayoutError;
   type PayoutResult                   = Types.PayoutResult;
   type MintRecipient                  = Types.MintRecipient;
   type MintArgs                       = Types.MintArgs;
@@ -67,14 +66,13 @@ module {
       };
     };
 
-    public func batchPayout(subaccount: Blob, recipients: Buffer<SinglePayoutRecipient>, results: Map<Principal, SinglePayoutResult>) : async* () {
+    public func batchPayout(subaccount: Blob, recipients: Buffer<PayoutRecipient>, results: Map<Principal, PayoutResult>) : async* () {
 
       Map.clear(results);
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
       let to_accounts = Buffer.Buffer<Token.ReapAccountRecipient>(recipients.size());
 
-      // 1. iterate over recipients
       for (recipient in recipients.vals()){
         // Add to the recipients 
         to_accounts.add({ account = getMasterAccount(?recipient.to); share = recipient.share; });

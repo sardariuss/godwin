@@ -1,15 +1,14 @@
 import Types               "Types";
 import Votes               "Votes";
 import VotePolicy          "VotePolicy";
-import BallotInfos         "BallotInfos";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
-import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
 import Cursor              "representation/Cursor";
 import PayForNew           "../token/PayForNew";
 import PayInterface        "../token/PayInterface";
 import PayTypes            "../token/Types";
+import PayForElement       "../token/PayForElement";
 import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 
@@ -35,7 +34,6 @@ module {
   type FindBallotError        = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
-  type BallotTransactions     = Types.BallotTransactions;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -44,7 +42,7 @@ module {
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
   type PayForNew              = PayForNew.PayForNew;
-  type PayoutError            = PayTypes.PayoutError;
+  type Transactions           = PayTypes.Transactions;
   
   public type Register        = Votes.Register<Cursor, Polarization>;
 
@@ -59,7 +57,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<Cursor, Polarization>,
-    ballot_infos: Map<Principal, Map<VoteId, BallotTransactions>>,
+    transactions_register: Map<Principal, Map<VoteId, Transactions>>,
     pay_interface: PayInterface,
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
@@ -69,17 +67,19 @@ module {
       Votes.Votes(
         vote_register,
         VotePolicy.VotePolicy<Cursor, Polarization>(
-          false, // _change_ballot_authorized
+          #BALLOT_CHANGE_FORBIDDEN,
           Cursor.isValid,
           Polarization.addCursor,
           Polarization.subCursor,
           Polarization.nil()
         ),
         ?PayToVote.PayToVote<Cursor>(
-          BallotInfos.BallotInfos(ballot_infos),
-          pay_interface,
-          #PUT_INTEREST_BALLOT,
-          PRICE_PUT_BALLOT,
+          PayForElement.build(
+            transactions_register,
+            pay_interface,
+            #PUT_INTEREST_BALLOT,
+            PRICE_PUT_BALLOT,
+          )
         )
       ),
       pay_for_new,

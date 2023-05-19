@@ -8,6 +8,7 @@ import Interests       "votes/Interests";
 import Categorizations "votes/Categorizations";
 import Opinions        "votes/Opinions";
 import Joins           "votes/QuestionVoteJoins";
+import PayTypes        "token/Types";
 
 import Duration        "../utils/Duration";
 import Ref             "../utils/Ref";
@@ -36,7 +37,7 @@ module {
   type CursorMap           = VoteTypes.CursorMap;
   type PolarizationMap     = VoteTypes.PolarizationMap;
   type Polarization        = VoteTypes.Polarization;
-  type BallotTransactions  = VoteTypes.BallotTransactions;
+  type Transactions        = PayTypes.Transactions;
   type IterationHistory    = QuestionTypes.IterationHistory;
 
   public type State = {
@@ -60,18 +61,19 @@ module {
     opened_questions  : {
       register           : Map<Nat, (Principal, Blob)>;
       index              : Ref<Nat>;
+      transactions       : Map<Principal, Map<VoteId, Transactions>>;
     };
     votes          : {
       interest                : {
         register                  : Interests.Register;
-        ballot_infos              : Map<Principal, Map<VoteId, BallotTransactions>>;
+        transactions              : Map<Principal, Map<VoteId, Transactions>>;
        };
       opinion                 : {
         register                  : Opinions.Register;
       };
       categorization          : {
         register                  : Categorizations.Register;
-        ballot_infos              : Map<Principal, Map<VoteId, BallotTransactions>>;
+        transactions              : Map<Principal, Map<VoteId, Transactions>>;
        };
     };
     joins          : {
@@ -103,18 +105,19 @@ module {
       opened_questions = {
         register                    = Map.new<Nat, (Principal, Blob)>(Map.nhash);
         index                       = Ref.init<Nat>(0);
+        transactions                = Map.new<Principal, Map<VoteId, Transactions>>(Map.phash);
       };
       votes         = {
         interest                    = {
           register                      = Interests.initRegister();
-          ballot_infos                  = Map.new<Principal, Map<VoteId, BallotTransactions>>(Map.phash);
+          transactions                  = Map.new<Principal, Map<VoteId, Transactions>>(Map.phash);
         };
         opinion                     = {
           register                      = Opinions.initRegister();
         };
         categorization              = {
           register                      = Categorizations.initRegister();
-          ballot_infos                  = Map.new<Principal, Map<VoteId, BallotTransactions>>(Map.phash);
+          transactions                  = Map.new<Principal, Map<VoteId, Transactions>>(Map.phash);
         };
       };
       joins         = {

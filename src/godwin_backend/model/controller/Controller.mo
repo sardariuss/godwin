@@ -199,7 +199,7 @@ module {
     };
 
     public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
-      await* _model.getOpinionVotes().putBallot(principal, vote_id, date, cursor);
+      await* _model.getOpinionVotes().putBallot(principal, vote_id, { answer = cursor; date; });
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<CategorizationBallot, FindBallotError> {
@@ -207,7 +207,7 @@ module {
     };
       
     public func putCategorizationBallot(principal: Principal, vote_id: VoteId, date: Time, cursors: CursorMap) : async* Result<(), PutBallotError> {
-      await* _model.getCategorizationVotes().putBallot(principal, vote_id, date, cursors);
+      await* _model.getCategorizationVotes().putBallot(principal, vote_id, { answer = cursors; date; });
     };
 
     public func getIterationHistory(question_id: Nat) : Result<IterationHistory, ReopenQuestionError> {
@@ -346,8 +346,9 @@ module {
                   // Interest vote has already been opened by the state machine
                 };
                 case(#OPEN) { 
-                  _model.getOpinionVotes().openVote(question_id, iteration);
-                  _model.getCategorizationVotes().openVote(question_id, iteration); };
+                  _model.getOpinionJoins().addJoin(question_id, iteration, _model.getOpinionVotes().newVote());
+                  _model.getCategorizationJoins().addJoin(question_id, iteration, _model.getCategorizationVotes().newVote());
+                };
                 case(_) {};
               };
               // Finally set the status as current

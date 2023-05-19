@@ -15,25 +15,26 @@ import Option     "mo:base/Option";
 module {
 
   // For convenience: from base module
-  type Principal          = Principal.Principal;
-  type Result <Ok, Err>   = Result.Result<Ok, Err>;
+  type Principal                 = Principal.Principal;
+  type Result <Ok, Err>          = Result.Result<Ok, Err>;
     
-  type Map<K, V>          = Map.Map<K, V>;
-  type Set<K>             = Set.Set<K>;
+  type Map<K, V>                 = Map.Map<K, V>;
+  type Set<K>                    = Set.Set<K>;
 
-  type ScanLimitResult<T> = UtilsTypes.ScanLimitResult<T>;
+  type ScanLimitResult<T>        = UtilsTypes.ScanLimitResult<T>;
 
-  type VoteId             = Types.VoteId;
-  type Ballot<T>       = Types.Ballot<T>;
-  type Vote<T, A>      = Types.Vote<T, A>;
-  type GetVoteError       = Types.GetVoteError;
-  type FindBallotError    = Types.FindBallotError;
-  type RevealVoteError    = Types.RevealVoteError;
-  type PutBallotError     = Types.PutBallotError;
-  type RemoveBallotError  = Types.RemoveBallotError;
+  type VoteId                    = Types.VoteId;
+  type Ballot<T>                 = Types.Ballot<T>;
+  type Vote<T, A>                = Types.Vote<T, A>;
+  type GetVoteError              = Types.GetVoteError;
+  type FindBallotError           = Types.FindBallotError;
+  type RevealVoteError           = Types.RevealVoteError;
+  type PutBallotError            = Types.PutBallotError;
+  type RemoveBallotError         = Types.RemoveBallotError;
+  type BallotChangeAuthorization = Types.BallotChangeAuthorization;
 
   public class VotePolicy<T, A>(
-    _change_ballot_authorized: Bool,
+    _ballot_change_authorization: BallotChangeAuthorization,
     _is_valid_answer: (T) -> Bool,
     _add_to_aggregate: (A, T) -> A,
     _remove_from_aggregate: (A, T) -> A,
@@ -59,7 +60,7 @@ module {
         return #err(#InvalidBallot);
       };
       // Verify the principal has not already voted
-      if (not _change_ballot_authorized and Map.has(vote.ballots, Map.phash, principal)){
+      if (_ballot_change_authorization == #BALLOT_CHANGE_FORBIDDEN and Map.has(vote.ballots, Map.phash, principal)){
         return #err(#ChangeBallotNotAllowed);
       };
       #ok(vote);

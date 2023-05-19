@@ -55,21 +55,15 @@ module {
   public type OpinionVote = Vote<Cursor, Polarization>;
   public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
 
-  public type BallotTransactions = {
-    payin: PayTypes.TxIndex;
-    payout: {
-      #PENDING;
-      #PROCESSED: {
-        refund: ?PayTypes.SinglePayoutResult;
-        reward: ?PayTypes.SinglePayoutResult;
-      };
-    };
-  };
-
   public type Voter = {
     interests: Set<VoteId>;
     opinions: Set<VoteId>;
     categorizations: Set<VoteId>;
+  };
+
+  public type BallotChangeAuthorization = {
+    #BALLOT_CHANGE_AUTHORIZED;
+    #BALLOT_CHANGE_FORBIDDEN;
   };
 
   public type PrincipalError = {

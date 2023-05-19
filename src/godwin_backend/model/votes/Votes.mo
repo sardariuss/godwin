@@ -116,8 +116,8 @@ module {
       result;
     };
 
-    // @todo: it might be dangerous to check the condition before evaluating the precondition, because the condition might have
-    // changed after the evaluation, and updating the state not working.
+    // @todo: it might be dangerous to check the condition before awaiting the payement, because the condition might have
+    // changed after the await, and updating the state not working in consequence.
     // Right now it is not the case, it is just a Map.put
     func _putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
       
