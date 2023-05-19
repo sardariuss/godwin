@@ -31,6 +31,8 @@ module {
   public type OpenQuestionError          = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
   public type QuestionOrderBy            = QuestionTypes.OrderBy;
 
+  public type TransactionsRecord         = PayTypes.TransactionsRecord;
+
   // @todo: are all these types required in the canister interface?
   public type VoteId                     = VoteTypes.VoteId;
   public type Cursor                     = VoteTypes.Cursor;

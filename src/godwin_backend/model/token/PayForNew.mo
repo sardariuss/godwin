@@ -1,6 +1,7 @@
 import Types               "Types";
 import PayInterface        "PayInterface";
 import SubaccountGenerator "SubaccountGenerator";
+import TransactionsRecords "TransactionsRecords";
 
 import WMap                "../../utils/wrappers/WMap";
 import WRef                "../../utils/wrappers/WRef";
@@ -18,17 +19,19 @@ module {
 
   type Result<Ok, Err>  = Result.Result<Ok, Err>;
 
-  type Ref<T>           = Ref.Ref<T>;
-  type WRef<T>          = WRef.WRef<T>;
-  type WMap<K, V>       = WMap.WMap<K, V>;
-  type Map<K, V>        = Map.Map<K, V>;
+  type Ref<T>              = Ref.Ref<T>;
+  type WRef<T>             = WRef.WRef<T>;
+  type WMap<K, V>          = WMap.WMap<K, V>;
+  type Map<K, V>           = Map.Map<K, V>;
 
-  type PayInterface     = PayInterface.PayInterface;
-  type Subaccount       = Types.Subaccount;
-  type Balance          = Types.Balance;
-  type PayInError       = Types.PayInError;
-  type PayoutError      = Types.PayoutError;
-  type SubaccountPrefix = Types.SubaccountPrefix;
+  type PayInterface        = PayInterface.PayInterface;
+  type Subaccount          = Types.Subaccount;
+  type Balance             = Types.Balance;
+  type PayinError          = Types.PayinError;
+  type PayoutError         = Types.PayoutError;
+  type SubaccountPrefix    = Types.SubaccountPrefix;
+  type TransactionsRecord  = Types.TransactionsRecord;
+  type TransactionsRecords = TransactionsRecords.TransactionsRecords;
   
   type Id = Nat;
 
@@ -36,15 +39,15 @@ module {
     pay_interface: PayInterface,
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
-    //failed_payout_register: Map<Id, PayoutError>,
-    subaccount_index: Ref<Nat>
+    subaccount_index: Ref<Nat>,
+    user_transactions: Map<Principal, Map<Id, TransactionsRecord>>
   ) : PayForNew {
     PayForNew(
       pay_interface,
       subaccount_prefix,
       WMap.WMap(lock_register, Map.nhash),
-      //WMap.WMap(failed_payout_register, Map.nhash),
-      WRef.WRef(subaccount_index)
+      WRef.WRef(subaccount_index),
+      TransactionsRecords.TransactionsRecords(user_transactions)
     );
   };
 
@@ -52,41 +55,36 @@ module {
     _pay_interface: PayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
-    //_failed_payout_register: WMap<Id, PayoutError>,
-    _subaccount_index: WRef<Nat>
+    _subaccount_index: WRef<Nat>,
+    _user_transactions: TransactionsRecords
   ){
 
-    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayInError>{
+    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayinError>{
       let subaccount = getNextSubaccount();
-      switch(await* _pay_interface.payIn(subaccount, buyer, price)) {
+      switch(await* _pay_interface.payin(subaccount, buyer, price)) {
         case (#err(err)) { #err(err); };
-        case (#ok(_)) {
+        case (#ok(tx_index)) {
           let id = create_new();
           _lock_register.set(id, (buyer, subaccount));
+          _user_transactions.initWithPayin(buyer, id, tx_index);
           return #ok(id);
         };
       };
     };
 
-    public func refund(elem: Id, share: Float) : async* () {
-      let (principal, subaccount) = switch(_lock_register.getOpt(elem)){
-        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(elem) # "'') : not found in the map"); };
+    public func refund(id: Id, price: Balance) : async* () {
+      let (principal, subaccount) = switch(_lock_register.getOpt(id)){
+        case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      switch(await* _pay_interface.payOut(subaccount, Buffer.fromArray([{to = principal; share; }]))){
-        case (#err(err)) { /*_failed_payout_register.set(elem, err);*/ };
-        case (#ok(_)) {};
-      };
-      _lock_register.delete(elem);
+      let result = await* _pay_interface.payout(subaccount, principal, price);
+      _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
+      _lock_register.delete(id);
     };
 
-//    public func findFailedRefund(elem: Id) : ?PayoutError {
-//      _failed_payout_register.getOpt(elem);
-//    };
-//
-//    public func findFailedRefunds() : [(Id, PayoutError)] {
-//      Iter.toArray(_failed_payout_register.entries());
-//    };
+    public func findTransactionsRecord(principal: Principal, id: Id) : ?TransactionsRecord {
+      _user_transactions.find(principal, id);
+    };
 
     func getNextSubaccount() : Subaccount {
       let subaccount = SubaccountGenerator.getSubaccount(_subaccount_prefix, _subaccount_index.get());

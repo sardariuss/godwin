@@ -52,6 +52,8 @@ module {
   type OrderBy                = QuestionTypes.OrderBy;
   type IterationHistory       = QuestionTypes.IterationHistory;
   type OpenQuestionError      = Types.OpenQuestionError; // @todo
+
+  type TransactionsRecord     = Types.TransactionsRecord;
   
   type Category               = VoteTypes.Category;
   type Decay                  = Types.Decay; // @todo
@@ -83,7 +85,7 @@ module {
   type VerifyCredentialsError = Types.VerifyCredentialsError;
   type SetPickRateError       = Types.SetPickRateError;
   type SetDurationError       = Types.SetDurationError;
-  type FindBallotError         = Types.FindBallotError;
+  type FindBallotError        = Types.FindBallotError;
   type PutBallotError         = Types.PutBallotError;
   type GetVoteError           = Types.GetVoteError;
   type OpenVoteError          = Types.OpenVoteError;
@@ -198,8 +200,8 @@ module {
       _model.getOpinionVotes().findBallot(caller, vote_id);
     };
 
-    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : Result<(), PutBallotError> {
-      _model.getOpinionVotes().putBallot(principal, vote_id, date, cursor);
+    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
+      await* _model.getOpinionVotes().putBallot(principal, vote_id, { answer = cursor; date; });
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<CategorizationBallot, FindBallotError> {
@@ -207,7 +209,7 @@ module {
     };
       
     public func putCategorizationBallot(principal: Principal, vote_id: VoteId, date: Time, cursors: CursorMap) : async* Result<(), PutBallotError> {
-      await* _model.getCategorizationVotes().putBallot(principal, vote_id, date, cursors);
+      await* _model.getCategorizationVotes().putBallot(principal, vote_id, { answer = cursors; date; });
     };
 
     public func getIterationHistory(question_id: Nat) : Result<IterationHistory, ReopenQuestionError> {
@@ -298,6 +300,22 @@ module {
       );
     };
 
+    public func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getInterestVotes().findOpenVoteTransactions(principal, id);
+    };
+    
+    public func findInterestBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getInterestVotes().findBallotTransactions(principal, id);
+    };
+
+    public func findOpinionBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getOpinionVotes().findBallotTransactions(principal, id);
+    };
+
+    public func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getCategorizationVotes().findBallotTransactions(principal, id);
+    };
+
     public func run(time: Time) : async* () {
       for (question in _model.getQuestions().iter()){
         await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, TransitionError>());
@@ -329,7 +347,7 @@ module {
               await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, iteration));
             };
             case(#OPEN)      { 
-              _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
+              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
               await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, iteration)); 
             };
             case(_) {};
@@ -346,8 +364,9 @@ module {
                   // Interest vote has already been opened by the state machine
                 };
                 case(#OPEN) { 
-                  _model.getOpinionVotes().openVote(question_id, iteration);
-                  _model.getCategorizationVotes().openVote(question_id, iteration); };
+                  _model.getOpinionJoins().addJoin(question_id, iteration, _model.getOpinionVotes().newVote());
+                  _model.getCategorizationJoins().addJoin(question_id, iteration, _model.getCategorizationVotes().newVote());
+                };
                 case(_) {};
               };
               // Finally set the status as current

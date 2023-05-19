@@ -29,57 +29,58 @@ module {
   type Controller             = Controller.Controller;
 
   // For convenience: from types module
-  type QuestionId             = Types.QuestionId;
-  type Duration               = Types.Duration;
-  type QuestionOrderBy        = Types.QuestionOrderBy;
-  type Decay                  = Types.Decay; // @todo
-  type CursorArray            = Types.CursorArray;
-  type PolarizationArray      = Types.PolarizationArray;
-  type CategoryInfo           = Types.CategoryInfo;
-  type CategoryArray          = Types.CategoryArray;
-  type InterestVote           = Types.InterestVote;
-  type OpinionVote            = Types.OpinionVote;
-  type CategorizationVote     = Types.CategorizationVote;
-  type InterestBallot         = Types.InterestBallot;
-  type OpinionBallot          = Types.OpinionBallot;
-  type CategorizationBallot   = Types.CategorizationBallot;
-  type ShareableVote<T, A>    = Types.Vote<T, A>;
-  type Direction              = Types.Direction;
-  type ScanLimitResult<K>     = Types.ScanLimitResult<K>;
-  type ShareableStatusHistory = Types.StatusHistory;   
-  type ShareableIterationHistory = Types.IterationHistory;
+  type QuestionId                 = Types.QuestionId;
+  type Duration                   = Types.Duration;
+  type QuestionOrderBy            = Types.QuestionOrderBy;
+  type Decay                      = Types.Decay; // @todo
+  type CursorArray                = Types.CursorArray;
+  type PolarizationArray          = Types.PolarizationArray;
+  type CategoryInfo               = Types.CategoryInfo;
+  type CategoryArray              = Types.CategoryArray;
+  type InterestVote               = Types.InterestVote;
+  type OpinionVote                = Types.OpinionVote;
+  type CategorizationVote         = Types.CategorizationVote;
+  type InterestBallot             = Types.InterestBallot;
+  type OpinionBallot              = Types.OpinionBallot;
+  type CategorizationBallot       = Types.CategorizationBallot;
+  type ShareableVote<T, A>        = Types.Vote<T, A>;
+  type Direction                  = Types.Direction;
+  type ScanLimitResult<K>         = Types.ScanLimitResult<K>;
+  type ShareableStatusHistory     = Types.StatusHistory;   
+  type ShareableIterationHistory  = Types.IterationHistory;
   type FindQuestionIterationError = Types.FindQuestionIterationError;
-  type VoteKind               = Types.VoteKind;
-  type Question               = QuestionTypes.Question;
-  type Status                 = QuestionTypes.Status;
-  type StatusHistoryMap       = QuestionTypes.StatusHistory;
-  type StatusInfo             = QuestionTypes.StatusInfo;
-  type StatusHistory          = QuestionTypes.StatusHistory;
-  type IterationHistory       = QuestionTypes.IterationHistory;
-  type Category               = VoteTypes.Category;
-  type Ballot<T>              = VoteTypes.Ballot<T>;
-  type Vote<T, A>             = VoteTypes.Vote<T, A>;
-  type Cursor                 = VoteTypes.Cursor;
-  type Polarization           = VoteTypes.Polarization;
-  type CursorMap              = VoteTypes.CursorMap;
-  type PolarizationMap        = VoteTypes.PolarizationMap;
-  type VoteId                 = VoteTypes.VoteId;
+  type VoteKind                   = Types.VoteKind;
+  type TransactionsRecord         = Types.TransactionsRecord;
+  type Question                   = QuestionTypes.Question;
+  type Status                     = QuestionTypes.Status;
+  type StatusHistoryMap           = QuestionTypes.StatusHistory;
+  type StatusInfo                 = QuestionTypes.StatusInfo;
+  type StatusHistory              = QuestionTypes.StatusHistory;
+  type IterationHistory           = QuestionTypes.IterationHistory;
+  type Category                   = VoteTypes.Category;
+  type Ballot<T>                  = VoteTypes.Ballot<T>;
+  type Vote<T, A>                 = VoteTypes.Vote<T, A>;
+  type Cursor                     = VoteTypes.Cursor;
+  type Polarization               = VoteTypes.Polarization;
+  type CursorMap                  = VoteTypes.CursorMap;
+  type PolarizationMap            = VoteTypes.PolarizationMap;
+  type VoteId                     = VoteTypes.VoteId;
   // Errors
-  type AddCategoryError       = Types.AddCategoryError;
-  type RemoveCategoryError    = Types.RemoveCategoryError;
-  type GetQuestionError       = Types.GetQuestionError;
-  type ReopenQuestionError    = Types.ReopenQuestionError;
-  type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type SetPickRateError       = Types.SetPickRateError;
-  type SetDurationError       = Types.SetDurationError;
-  type FindBallotError        = Types.FindBallotError;
-  type PutBallotError         = Types.PutBallotError;
-  type GetVoteError           = Types.GetVoteError;
-  type OpenVoteError          = Types.OpenVoteError;
-  type RevealVoteError        = Types.RevealVoteError;
-  type TransitionError        = Types.TransitionError;
-  type OpenQuestionError      = Types.OpenQuestionError; // @todo
-  type FindVoteError          = Types.FindVoteError;
+  type AddCategoryError           = Types.AddCategoryError;
+  type RemoveCategoryError        = Types.RemoveCategoryError;
+  type GetQuestionError           = Types.GetQuestionError;
+  type ReopenQuestionError        = Types.ReopenQuestionError;
+  type VerifyCredentialsError     = Types.VerifyCredentialsError;
+  type SetPickRateError           = Types.SetPickRateError;
+  type SetDurationError           = Types.SetDurationError;
+  type FindBallotError            = Types.FindBallotError;
+  type PutBallotError             = Types.PutBallotError;
+  type GetVoteError               = Types.GetVoteError;
+  type OpenVoteError              = Types.OpenVoteError;
+  type RevealVoteError            = Types.RevealVoteError;
+  type TransitionError            = Types.TransitionError;
+  type OpenQuestionError          = Types.OpenQuestionError; // @todo
+  type FindVoteError              = Types.FindVoteError;
 
   public class Facade(_controller: Controller) = {
 
@@ -154,8 +155,8 @@ module {
       _controller.getOpinionBallot(caller, vote_id);
     };
 
-    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : Result<OpinionBallot, PutBallotError> {
-      Result.mapOk<(), OpinionBallot, PutBallotError>(_controller.putOpinionBallot(principal, vote_id, date, cursor), func() : OpinionBallot {
+    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<OpinionBallot, PutBallotError> {
+      Result.mapOk<(), OpinionBallot, PutBallotError>(await* _controller.putOpinionBallot(principal, vote_id, date, cursor), func() : OpinionBallot {
         { date = date; answer = cursor; }
       });
     };
@@ -235,6 +236,22 @@ module {
 
     public func getVoterConvictions(principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)]))] {
       Utils.mapToArray(_controller.getVoterConvictions(principal));
+    };
+
+    public func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _controller.findOpenInterestVoteTransactions(principal, id);
+    };
+    
+    public func findInterestBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _controller.findInterestBallotTransactions(principal, id);
+    };
+
+    public func findOpinionBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _controller.findOpinionBallotTransactions(principal, id);
+    };
+
+    public func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _controller.findCategorizationBallotTransactions(principal, id);
     };
 
     public func run(time: Time) : async* () {

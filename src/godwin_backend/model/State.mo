@@ -8,6 +8,7 @@ import Interests       "votes/Interests";
 import Categorizations "votes/Categorizations";
 import Opinions        "votes/Opinions";
 import Joins           "votes/QuestionVoteJoins";
+import PayTypes        "token/Types";
 
 import Duration        "../utils/Duration";
 import Ref             "../utils/Ref";
@@ -30,23 +31,20 @@ module {
   type Duration            = Types.Duration;
   type Parameters          = Types.Parameters;
   type SchedulerParameters = Types.SchedulerParameters;
+  type VoteId              = VoteTypes.VoteId;
   type Cursor              = VoteTypes.Cursor;
   type Category            = VoteTypes.Category;
   type CursorMap           = VoteTypes.CursorMap;
   type PolarizationMap     = VoteTypes.PolarizationMap;
   type Polarization        = VoteTypes.Polarization;
+  type TransactionsRecord  = PayTypes.TransactionsRecord;
   type IterationHistory    = QuestionTypes.IterationHistory;
-
-  //type FailedPayout        = Types.FailedPayout; // @todo
 
   public type State = {
     name              : Ref<Text>; // @todo: this shouldn't be a ref
     master            : Ref<Principal>; // @todo: this shouldn't be a ref
     creation_date     : Time;
     categories        : Categories.Register;
-    pay_interface     : {
-      //failed_payouts     : Set<FailedPayout>; // @todo: shall be adapted to the new payout system
-    };
     questions         : Questions.Register;
     status            : {
       register           : Map<Nat, IterationHistory>;
@@ -63,11 +61,20 @@ module {
     opened_questions  : {
       register           : Map<Nat, (Principal, Blob)>;
       index              : Ref<Nat>;
+      transactions       : Map<Principal, Map<VoteId, TransactionsRecord>>;
     };
     votes          : {
-      interest                : Interests.Register;
-      opinion                 : Opinions.Register;
-      categorization          : Categorizations.Register;
+      interest                : {
+        register                  : Interests.Register;
+        transactions              : Map<Principal, Map<VoteId, TransactionsRecord>>;
+       };
+      opinion                 : {
+        register                  : Opinions.Register;
+      };
+      categorization          : {
+        register                  : Categorizations.Register;
+        transactions              : Map<Principal, Map<VoteId, TransactionsRecord>>;
+       };
     };
     joins          : {
       interests               : Joins.Register;
@@ -82,9 +89,6 @@ module {
       master                        = Ref.init<Principal>(master);
       creation_date                 = creation_date;
       categories                    = Categories.initRegister(parameters.categories);
-      pay_interface = {
-        //failed_payouts              = Set.new<FailedPayout>();
-      };
       status        = {
         register                    = Map.new<Nat, IterationHistory>(Map.nhash);
       };
@@ -101,11 +105,20 @@ module {
       opened_questions = {
         register                    = Map.new<Nat, (Principal, Blob)>(Map.nhash);
         index                       = Ref.init<Nat>(0);
+        transactions                = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
       };
       votes         = {
-        interest                    = Interests.initRegister();
-        opinion                     = Opinions.initRegister();
-        categorization              = Categorizations.initRegister();
+        interest                    = {
+          register                      = Interests.initRegister();
+          transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        };
+        opinion                     = {
+          register                      = Opinions.initRegister();
+        };
+        categorization              = {
+          register                      = Categorizations.initRegister();
+          transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        };
       };
       joins         = {
         interests                   = Joins.initRegister();

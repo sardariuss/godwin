@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayInError, Status, Polarization, CategorySide, CategoryInfo, OrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, OrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
 import Color from 'colorjs.io';
@@ -93,11 +93,11 @@ export const putBallotErrorToString = (error: PutBallotError) => {
   if (error['VoteNotFound']         !== undefined) return 'VoteNotFound';
   if (error['PrincipalIsAnonymous'] !== undefined) return 'PrincipalIsAnonymous';
   if (error['VoteLinkNotFound']     !== undefined) return 'VoteLinkNotFound';
-  if (error['PayInError']           !== undefined) return 'PayInError: ' + payInErrorToString(error['PayInError']);
+  if (error['PayinError']           !== undefined) return 'PayinError: ' + payInErrorToString(error['PayinError']);
   throw new Error('Invalid PutBallotError');
 };
 
-export const payInErrorToString = (error: PayInError) => {
+export const payInErrorToString = (error: PayinError) => {
   if (error['GenericError']           !== undefined) return 'GenericError: (message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString() + ")";
   if (error['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
   if (error['NotAllowed']             !== undefined) return 'NotAllowed';
@@ -108,7 +108,7 @@ export const payInErrorToString = (error: PayInError) => {
   if (error['TooOld']                 !== undefined) return 'TooOld';
   if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
   if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
-  throw new Error('Invalid PayInError');
+  throw new Error('Invalid PayinError');
 };
 
 

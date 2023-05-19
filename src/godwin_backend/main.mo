@@ -24,6 +24,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Decay                      = Types.Decay;
   type Duration                   = Types.Duration;
   type Status                     = Types.Status;
+  type TransactionsRecord         = Types.TransactionsRecord;
   type StatusHistory              = Types.StatusHistory;
   type PolarizationArray          = Types.PolarizationArray;
   type AddCategoryError           = Types.AddCategoryError;
@@ -36,7 +37,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type SetPickRateError           = Types.SetPickRateError;
   type SetDurationError           = Types.SetDurationError;
   type GetUserConvictionsError    = Types.GetUserConvictionsError;
-  type FindBallotError             = Types.FindBallotError;
+  type FindBallotError            = Types.FindBallotError;
   type PutBallotError             = Types.PutBallotError;
   type InterestBallot             = Types.InterestBallot;
   type OpinionBallot              = Types.OpinionBallot;
@@ -145,7 +146,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   };
 
   public shared({caller}) func putOpinionBallot(vote_id: VoteId, cursor: Cursor) : async Result<OpinionBallot, PutBallotError> {
-    _facade.putOpinionBallot(caller, vote_id, Time.now(), cursor);
+    await* _facade.putOpinionBallot(caller, vote_id, Time.now(), cursor);
   };
 
   public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<CategorizationBallot, FindBallotError> {
@@ -206,6 +207,22 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)]))] {
     _facade.getVoterConvictions(principal);
+  };
+
+  public query func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    _facade.findOpenInterestVoteTransactions(principal, id);
+  };
+
+  public query func findInterestBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    _facade.findInterestBallotTransactions(principal, id);
+  };
+
+  public query func findOpinionBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    _facade.findOpinionBallotTransactions(principal, id);
+  };
+
+  public query func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    _facade.findCategorizationBallotTransactions(principal, id);
   };
 
   public shared func run() : async() {

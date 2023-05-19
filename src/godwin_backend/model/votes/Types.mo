@@ -3,6 +3,7 @@ import PayTypes            "../token/Types";
 
 import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
+import Result              "mo:base/Result";
 
 import Map                 "mo:map/Map";
 import Set                 "mo:map/Set";
@@ -11,6 +12,7 @@ module {
 
   // For convenience: from base module
   type Trie<K, V> = Trie.Trie<K, V>;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
@@ -59,6 +61,11 @@ module {
     categorizations: Set<VoteId>;
   };
 
+  public type BallotChangeAuthorization = {
+    #BALLOT_CHANGE_AUTHORIZED;
+    #BALLOT_CHANGE_FORBIDDEN;
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
@@ -73,7 +80,7 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayInError: PayTypes.PayInError;
+    #PayinError: PayTypes.PayinError;
   };
 
   public type GetVoteError = {
@@ -102,11 +109,19 @@ module {
     #InvalidBallot;
   };
 
-  public type PutBallotError = PrincipalError or AddBallotError or {
+  public type RemoveBallotError = {
+    #PrincipalIsAnonymous;
     #VoteNotFound;
-    #AlreadyVoted;
+    #VoteClosed;
+    #ChangeBallotNotAllowed;
+  };
+
+  public type PutBallotError = PrincipalError or AddBallotError or {
+    #VoteLocked;
+    #VoteNotFound;
+    #ChangeBallotNotAllowed;
     #NoSubacountLinked;
-    #PayInError: PayTypes.PayInError;
+    #PayinError: PayTypes.PayinError;
   };
 
 };

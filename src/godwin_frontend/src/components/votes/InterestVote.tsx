@@ -16,10 +16,9 @@ type Props = {
   allowUpdateBallot: boolean;
   putBallot: (args_0: bigint, args_1: number) => Promise<Result_7>;
   getBallot: (args_0: bigint) => Promise<Result_14>;
-  children?: React.ReactNode;
 };
 
-const SingleCursorVote = ({countdownDurationMs, polarizationInfo, asToggle, voteId, allowUpdateBallot, putBallot, getBallot, children}: Props) => {
+const SingleCursorVote = ({countdownDurationMs, polarizationInfo, asToggle, voteId, allowUpdateBallot, putBallot, getBallot}: Props) => {
 
   const [countdownVote, setCountdownVote] = useState<boolean>(false);
   const [triggerVote, setTriggerVote] = useState<boolean>(false);
@@ -54,7 +53,6 @@ const SingleCursorVote = ({countdownDurationMs, polarizationInfo, asToggle, vote
     <div className="flex flex-col justify-start w-full space-y-2">
       <div className="grid grid-cols-5 w-full">
         <div className="col-span-4 w-full justify-start text-sm font-normal">
-          {children}
         </div>
         {
         voteDate !== null ?

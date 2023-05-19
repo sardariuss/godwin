@@ -1,17 +1,19 @@
 import Types               "Types";
 import Votes               "Votes";
+import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
-import BallotAggregator    "BallotAggregator";
 import Polarization        "representation/Polarization";
 import Cursor              "representation/Cursor";
 import PayForNew           "../token/PayForNew";
 import PayInterface        "../token/PayInterface";
 import PayTypes            "../token/Types";
+import PayForElement       "../token/PayForElement";
 import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
 
 import Set                 "mo:map/Set";
+import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
 import Float               "mo:base/Float";
@@ -21,6 +23,7 @@ module {
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
   type Set<K>                 = Set.Set<K>;
+  type Map<K, V>              = Map.Map<K, V>;
   
   type VoteId                 = Types.VoteId;
   type Cursor                 = Types.Cursor;
@@ -28,18 +31,18 @@ module {
   type Vote                   = Types.Vote<Cursor, Polarization>;
   type Ballot                 = Types.Ballot<Cursor>;
   type PutBallotError         = Types.PutBallotError;
-  type FindBallotError         = Types.FindBallotError;
+  type FindBallotError        = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
+  type Votes<T, A>            = Votes.Votes<T, A>;
   
-  type BallotAggregator       = BallotAggregator.BallotAggregator<Cursor, Polarization>;
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
   type PayInterface           = PayInterface.PayInterface;
   type PayForNew              = PayForNew.PayForNew;
-  type PayoutError            = PayTypes.PayoutError;
+  type TransactionsRecord     = PayTypes.TransactionsRecord;
   
   public type Register        = Votes.Register<Cursor, Polarization>;
 
@@ -53,19 +56,32 @@ module {
   };
 
   public func build(
-    votes: Votes.Votes<Cursor, Polarization>,
-    joins: QuestionVoteJoins,
-    queries: QuestionQueries,
+    vote_register: Votes.Register<Cursor, Polarization>,
+    transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     pay_interface: PayInterface,
-    pay_for_new: PayForNew
+    pay_for_new: PayForNew,
+    joins: QuestionVoteJoins,
+    queries: QuestionQueries
   ) : Interests {
-    let ballot_aggregator = BallotAggregator.BallotAggregator<Cursor, Polarization>(
-      Cursor.isValid,
-      Polarization.addCursor,
-      Polarization.subCursor
-    );
     Interests(
-      PayToVote.PayToVote(votes, ballot_aggregator, pay_interface, #PUT_INTEREST_BALLOT),
+      Votes.Votes(
+        vote_register,
+        VotePolicy.VotePolicy<Cursor, Polarization>(
+          #BALLOT_CHANGE_FORBIDDEN,
+          Cursor.isValid,
+          Polarization.addCursor,
+          Polarization.subCursor,
+          Polarization.nil()
+        ),
+        ?PayToVote.PayToVote<Cursor>(
+          PayForElement.build(
+            transactions_register,
+            pay_interface,
+            #PUT_INTEREST_BALLOT,
+            PRICE_PUT_BALLOT,
+          )
+        )
+      ),
       pay_for_new,
       joins,
       queries
@@ -73,7 +89,7 @@ module {
   };
 
   public class Interests(
-    _votes: PayToVote.PayToVote<Cursor, Polarization>,
+    _votes: Votes<Cursor, Polarization>,
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries
@@ -81,7 +97,7 @@ module {
     
     public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
       let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
-        case (#err(err)) { return #err(#PayInError(err)); };
+        case (#err(err)) { return #err(#PayinError(err)); };
         case (#ok(id)) { id; };
       };
       let (question, iteration) = on_success();
@@ -94,23 +110,21 @@ module {
 
     public func closeVote(vote_id: Nat) : async* () {
       // Close the vote
-      _votes.closeVote(vote_id);
+      await* _votes.closeVote(vote_id);
       // Remove the vote from the interest query
       _queries.remove(toInterestScore(
         _joins.getQuestionIteration(vote_id).0,
         computeScore(_votes.getVote(vote_id).aggregate))
       );
-      // 1. Pay out the buyer
-      await* _pay_for_new.refund(vote_id, 1.0); // @todo: share;
-      // 2. Pay out the voters
-      await* _votes.payout(vote_id);
+      // Pay out the buyer
+      await* _pay_for_new.refund(vote_id, PRICE_OPENING_VOTE); // @todo: share;
     };
 
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {    
       
       let old_appeal = _votes.getVote(vote_id).aggregate;
 
-      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}, PRICE_PUT_BALLOT), func(){
+      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
         let new_appeal = _votes.getVote(vote_id).aggregate;
         let question_id = _joins.getQuestionIteration(vote_id).0;
         _queries.replace(?toInterestScore(question_id, computeScore(old_appeal)), ?toInterestScore(question_id, computeScore(new_appeal)));
@@ -133,10 +147,13 @@ module {
       _votes.getVoterHistory(principal);
     };
 
-  // @todo
-//    public func getFailedRefunds() : [(VoteId, PayoutError)] {
-//      _pay_for_new.getFailedRefunds();
-//    };
+    public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _votes.findBallotTransactions(principal, id);
+    };
+
+    public func findOpenVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _pay_for_new.findTransactionsRecord(principal, id);
+    };
 
   };
 

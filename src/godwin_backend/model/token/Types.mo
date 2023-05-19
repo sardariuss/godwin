@@ -18,24 +18,35 @@ module {
   };
 
   // Token general types
-  public type Subaccount = Blob;
-  public type Balance = TokenTypes.Balance;
-  public type Account = TokenTypes.Account;
-  public type TxIndex = TokenTypes.TxIndex;
+  public type Subaccount     = Blob;
+  public type Balance        = TokenTypes.Balance;
+  public type Account        = TokenTypes.Account;
+  public type TxIndex        = TokenTypes.TxIndex;
+  public type TransferResult = TokenTypes.TransferResult;
+  public type TransferArgs   = TokenTypes.TransferArgs;
+  public type TransferError  = TokenTypes.TransferError;
 
   public type CanisterCallError = {
     #CanisterCallError: Error.ErrorCode;
   };
 
   // PayIn types
-  public type PayInError       = MasterTypes.TransferError or CanisterCallError;
-  public type PayInResult      = Result<TxIndex, PayInError>;
+  public type PayinError       = MasterTypes.TransferError or CanisterCallError;
+  public type PayinResult      = Result<TxIndex, PayinError>;
   // Payout types
   public type PayoutRecipient  = { to: Principal; share: Float; };
-  public type PayoutArgs       = TokenTypes.ReapAccountArgs;
-  public type SinglePayoutInfo = (TokenTypes.TransferArgs, TokenTypes.TransferResult);
-  public type PayoutError      = TokenTypes.ReapAccountError or CanisterCallError or { #BatchError: [SinglePayoutInfo]; };
-  public type PayOutResult     = Result<(), PayoutError>;
+  //public type SinglePayoutInfo = (TokenTypes.TransferArgs, TokenTypes.TransferResult);
+  public type PayoutError = TokenTypes.TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
+    #SingleReapLost: {
+      share: Float;
+      subgodwin_subaccount: Subaccount;
+    };
+    #SingleTransferError: {
+      args: TransferArgs;
+      error: TransferError;
+    };
+  };
+  public type PayoutResult = Result<TxIndex, PayoutError>;
   // Mint types
   public type MintRecipient    = { to: Principal; amount: Balance;};
   public type MintArgs         = TokenTypes.MintBatchArgs;
@@ -43,15 +54,15 @@ module {
   public type MintError        = MasterTypes.TransferError or CanisterCallError or { #BatchError : [SingleMintInfo]; };
   public type MintResult       = Result<(), MintError>;
 
-  // @todo
-  public type SubTransferArgs = {
-    principal: Principal;
-    sub_subaccount: Blob;
-    amount: Nat;
-  };
-  public type FailedPayout = SubTransferArgs and {
-    time: Nat64;
-    error: TokenTypes.TransferError or { #Trapped; };
+  public type TransactionsRecord = {
+    payin: TxIndex;
+    payout: {
+      #PENDING;
+      #PROCESSED: {
+        refund: ?PayoutResult;
+        reward: ?PayoutResult;
+      };
+    };
   };
 
 };

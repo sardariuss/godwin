@@ -47,36 +47,34 @@ module {
       pay_interface,
       #OPEN_QUESTION,
       state.opened_questions.register,
-      state.opened_questions.index
+      state.opened_questions.index,
+      state.opened_questions.transactions
     );
 
-    let interest_votes = Votes.Votes<Cursor, Polarization>(state.votes.interest, Polarization.nil());
     let interest_join = QuestionVoteJoins.build(state.joins.interests);
     
     let interests = Interests.build(
-      interest_votes,
-      interest_join,
-      queries,
+      state.votes.interest.register,
+      state.votes.interest.transactions,
       pay_interface,
-      pay_to_open_question
+      pay_to_open_question,
+      interest_join,
+      queries
     );
     
-    let opinion_votes = Votes.Votes<Cursor, Polarization>(state.votes.opinion, Polarization.nil());
     let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
     
     let opinions = Opinions.build(
-      opinion_votes,
-      opinion_join,
+      state.votes.opinion.register
     );
     
-    let categorization_votes = Votes.Votes<CursorMap, PolarizationMap>(state.votes.categorization, PolarizationMap.nil(categories));
     let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     
     let categorizations = Categorizations.build(
-      categories,
-      categorization_votes,
-      categorization_join,
-      pay_interface
+      state.votes.categorization.register,
+      state.votes.categorization.transactions,
+      pay_interface,
+      categories
     );
 
     let model = Model.build(
