@@ -10,10 +10,11 @@ type Props = {
   questionId: bigint;
   categories: Map<Category, CategoryInfo>
   statusInfo: StatusInfo,
+  iteration: bigint,
   statusHistory: StatusInfo[]
 };
 
-const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, statusHistory}: Props) => {
+const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, iteration, statusHistory}: Props) => {
 
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
@@ -29,7 +30,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, stat
               status={statusInfo.status}
               date={statusInfo.date}
               isHistory={false}
-              iteration={statusInfo.iteration}
+              iteration={iteration}
               showBorder={statusHistory.length > 0}
               borderDashed={!historyVisible}>
             </StatusComponent>
@@ -51,7 +52,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, stat
                   status={status.status}
                   date={status.date}
                   isHistory={true}
-                  iteration={status.iteration}
+                  iteration={iteration}
                   showBorder={index < (statusHistory.length - 1)}
                   borderDashed={false}>
                 </StatusComponent>

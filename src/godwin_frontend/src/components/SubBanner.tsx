@@ -18,7 +18,7 @@ const SubBanner = ({sub} : Props) => {
       </div>
       <div className="relative w-full overflow-clip bg-gray-100 dark:bg-gray-700 border-y py-1 dark:border-gray-700">
         <div className="dark:text-white font-normal whitespace-nowrap"
-          style={{transform: `translateX(` + `${(shift - diff) * 100}` + `%)`}}>
+          style={{transform: `translate(` + `${(shift - diff) * 100}` + `vw, 0)`}}>
           { sub.categories.map((category, index) => 
             <span key={category[0]}>
               <span className="text-xs font-medium">{category[1].left.name.toLocaleLowerCase()  + " " }</span>
@@ -43,7 +43,7 @@ const SubBanner = ({sub} : Props) => {
             onChange={(e) => { if (diff === 0) { setDiff(Number(e.target.value) - shift) }; setShift(Number(e.target.value)); }}
             onMouseUp={(e) => { setShift(shift - diff); setDiff(0);}}
             onMouseDown={(e) => {}}
-            className={"input categories h-16 w-full grow"}
+            className={"input categories appearance-none h-16 w-full grow"}
             style={{"--cursor-hover" : `grab`, "--cursor-grabbing" : `grabbing`} as React.CSSProperties }
           />
         </div>

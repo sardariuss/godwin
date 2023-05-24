@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, OrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
 import Color from 'colorjs.io';
@@ -25,26 +25,33 @@ export type CursorInfo = {
   };
 };
 
-export enum VoteType {
+export enum VoteKind {
   INTEREST,
   OPINION,
   CATEGORIZATION,
 };
 
-export const VoteTypes = [
-  VoteType.INTEREST,
-  VoteType.OPINION,
-  VoteType.CATEGORIZATION,
+export const VoteKinds = [
+  VoteKind.INTEREST,
+  VoteKind.OPINION,
+  VoteKind.CATEGORIZATION,
 ];
 
-export const voteTypeToString = (voteType: VoteType) => {
-  if (voteType === VoteType.INTEREST) return 'Interest';
-  if (voteType === VoteType.OPINION) return 'Opinion';
-  if (voteType === VoteType.CATEGORIZATION) return 'Categorization';
-  throw new Error('Invalid voteType');
+export const voteKindToString = (voteKind: VoteKind) => {
+  if (voteKind === VoteKind.INTEREST) return 'Interest';
+  if (voteKind === VoteKind.OPINION) return 'Opinion';
+  if (voteKind === VoteKind.CATEGORIZATION) return 'Categorization';
+  throw new Error('Invalid voteKind');
 };
 
-export const orderByToString = (orderBy: OrderBy) => {
+export const voteKindToCandidVariant = (voteKind: VoteKind) => {
+  if (voteKind === VoteKind.INTEREST) return { 'INTEREST' : null };
+  if (voteKind === VoteKind.OPINION) return { 'OPINION' : null };
+  if (voteKind === VoteKind.CATEGORIZATION) return { 'CATEGORIZATION' : null };
+  throw new Error('Invalid voteKind');
+};
+
+export const orderByToString = (orderBy: QuestionOrderBy) => {
   if (orderBy['AUTHOR'] !== undefined) return 'Author';
   if (orderBy['DATE'] !== undefined) return 'Date';
   if (orderBy['TEXT'] !== undefined) return 'Text';
@@ -217,15 +224,18 @@ export const addPolarization = (polarization1: Polarization, polarization2: Pola
   };
 };
 
-export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo) : CursorInfo => {
+export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo, alpha : number = 1.0) : CursorInfo => {
   const white = new Color("#dddddd");
   // Invert the color ranges to get the correct gradient
   const leftRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
   const rightRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
 
+  const left = new Color(leftRange(cursor > 0 ? cursor : 0).toString()).to("srgb");
+  const right = new Color(rightRange(cursor < 0 ? -cursor : 0).toString()).to("srgb");
+
   const colors = {
-    left : new Color(leftRange(cursor > 0 ? cursor : 0).toString()).to("srgb").toString({format: "hex"}),
-    right: new Color(rightRange(cursor < 0 ? -cursor : 0).toString()).to("srgb").toString({format: "hex"}),
+    left : new Color('srgb', left.coords, alpha).toString({format: "hex"}),
+    right: new Color('srgb', right.coords, alpha).toString({format: "hex"}),
   };
 
   if (cursor < (-1 * CONSTANTS.CURSOR_SIDE_THRESHOLD)) {
@@ -246,17 +256,25 @@ export const toPolarizationInfo = (category_info: CategoryInfo, center: Category
 }
 
 // @todo: return the ranges instead ?
-export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo) : string => {
+export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo, alpha : number = 1.0) : string => {
   
-  const white = new Color("white");
+  const white = new Color("#dddddd");
   const leftColorRange = white.range(polarizationInfo.left.color, { space: "lch", outputSpace: "lch"});
   const rightColorRange = white.range(polarizationInfo.right.color, { space: "lch", outputSpace: "lch"});
 
   if (cursor < 0.0){
-    return new Color(leftColorRange(-cursor).toString()).to("srgb").toString({format: "hex"});
+    const left = new Color(leftColorRange(-cursor).toString()).to("srgb");
+    return new Color('srgb', left.coords, alpha).toString({format: "hex"});
   } else {
-    return new Color(rightColorRange(cursor).toString()).to("srgb").toString({format: "hex"});
+    const right = new Color(rightColorRange(cursor).toString()).to("srgb");
+    return new Color('srgb', right.coords, alpha).toString({format: "hex"});
   }
+}
+
+export const testcolor = () : string => {
+  const white = new Color("white");
+  const leftColorRange = white.range("red", { space: "lch", outputSpace: "lch"});
+  return new Color(leftColorRange(0.00000001).toString()).to("srgb").toString({format: "hex"});
 }
 
 export type PolarizationColorRanges = {
@@ -310,6 +328,7 @@ export const timeAgo = (input) => {
   const secondsElapsed = (date.getTime() - Date.now()) / 1000;
   for (let key in ranges) {
     if (ranges[key] < Math.abs(secondsElapsed)) {
+      if (key == 'seconds') return "now";
       const delta = secondsElapsed / ranges[key];
       return formatter.format(Math.round(delta), key as keyof typeof ranges);
     }

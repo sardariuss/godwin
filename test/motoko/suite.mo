@@ -1,10 +1,6 @@
 import TestQueries "questions/testQueries";
 import TestQuestions "questions/testQuestions";
-//import TestInterests "votes/testInterests";
-//import TestOpinions "votes/testOpinions";
-//import TestCategorizations "votes/testCategorizations";
-//import TestScheduler "testmodel/questions/QuestionQueries";
-//import TestUsers "testUsers";
+import TestOpinions "votes/testOpinions";
 
 import Status "mo:testing/Status";
 
@@ -15,11 +11,7 @@ import Debug "mo:base/Debug";
 let status = Status.Status();
 await* TestQueries.run(status);
 await* TestQuestions.run(status);
+await* TestOpinions.run(status);
 
 Debug.print("Overall results: ");
 status.printStatus();
-//TestInterests.run();
-//TestOpinions.run();
-//TestCategorizations.run();
-//Suite.run(TestScheduler.TestScheduler().getSuite());
-//Suite.run(TestUsers.TestUsers().getSuite());

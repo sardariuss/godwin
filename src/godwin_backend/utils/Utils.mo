@@ -249,4 +249,17 @@ module {
     };
   };
 
+  public func mapEqual<K, V>(map_a: Map<K, V>, map_b: Map<K, V>, hash: HashUtils<K>, equal: (V, V) -> Bool) : Bool {
+    if (Map.size(map_a) != Map.size(map_b)) return false;
+    for ((k, v_a) in Map.entries(map_a)){
+      switch(Map.get(map_b, hash, k)){
+        case(null) { return false; };
+        case(?v_b) {
+          if (not equal(v_a, v_b)) return false;
+        };
+      };
+    };
+    true;
+  };
+
 };

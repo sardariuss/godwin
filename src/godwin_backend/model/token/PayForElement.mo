@@ -1,6 +1,5 @@
 import Types               "Types";
 import SubaccountGenerator "SubaccountGenerator";
-import PayInterface        "PayInterface";
 import TransactionsRecords "TransactionsRecords";
 
 import Map                 "mo:map/Map";
@@ -29,14 +28,15 @@ module {
   type PayoutResult           = Types.PayoutResult;
   type PayinResult            = Types.PayinResult;
   type TransactionsRecord     = Types.TransactionsRecord;
-
-  type PayInterface           = PayInterface.PayInterface;
+  type IPayInterface          = Types.IPayInterface;
 
   type Id                     = Nat;
 
+  // \note: Use the IPayInterface to not link with the actual PayInterface which uses
+  // the canister:godwin_token. This is required to be able to build the tests.
   public func build(
     transactions_register: Map<Principal, Map<Id, TransactionsRecord>>,
-    pay_interface: PayInterface,
+    pay_interface: IPayInterface,
     subaccount_prefix: SubaccountPrefix,
     pay_in_price: Nat
   ) : PayForElement {
@@ -50,7 +50,7 @@ module {
 
   public class PayForElement(
     _user_transactions: TransactionsRecords.TransactionsRecords,
-    _pay_interface: PayInterface,
+    _pay_interface: IPayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _pay_in_price: Nat // @todo
   ) {

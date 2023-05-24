@@ -66,14 +66,14 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   stable var time_now : Time.Time = Time.now();
 
-  let _start_date = Time.now() - Duration.toTime(#HOURS(6));  // @temp
+  let _start_date = Time.now() - Duration.toTime(#HOURS(12));  // @temp
 
   stable var _state = State.initState(caller, _start_date, parameters);
 
   let _facade = Factory.build(_state);
 
   public shared func runScenario() : async () {
-    await* Scenario.run(_facade, _start_date, Time.now(), #MINUTES(5));
+    await* Scenario.run(_facade, _start_date, Time.now(), #MINUTES(10));
   };
 
   public query func getName() : async Text {
@@ -185,44 +185,28 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.findCategorizationVoteId(question_id, iteration);
   };
 
-  public query func getVoterInterestHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, InterestBallot)> {
-    _facade.getVoterInterestHistory(principal, limit, previous_id);
+  public query func revealInterestBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, ?InterestBallot, ?TransactionsRecord)> {
+    _facade.revealInterestBallots(principal, direction, limit, previous_id);
   };
 
-  public query func getVoterOpinionHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, OpinionBallot)> {
-    _facade.getVoterOpinionHistory(principal, limit, previous_id);
+  public query func revealOpinionBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, ?OpinionBallot, ?TransactionsRecord)> {
+    _facade.revealOpinionBallots(principal, direction, limit, previous_id);
   };
 
-  public query func getVoterCategorizationHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, CategorizationBallot)> {
-    _facade.getVoterCategorizationHistory(principal, limit, previous_id);
+  public query func revealCategorizationBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<(VoteId, ?CategorizationBallot, ?TransactionsRecord)> {
+    _facade.revealCategorizationBallots(principal, direction, limit, previous_id);
   };
 
   public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(Question, Nat), FindQuestionIterationError> {
     _facade.getQuestionIteration(vote_kind, vote_id);
   };
 
-  public query func getQuestionIdsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
-    _facade.getQuestionIdsFromAuthor(principal, direction, limit, previous_id);
+  public query func getQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
+    _facade.getQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)]))] {
     _facade.getVoterConvictions(principal);
-  };
-
-  public query func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
-    _facade.findOpenInterestVoteTransactions(principal, id);
-  };
-
-  public query func findInterestBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
-    _facade.findInterestBallotTransactions(principal, id);
-  };
-
-  public query func findOpinionBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
-    _facade.findOpinionBallotTransactions(principal, id);
-  };
-
-  public query func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
-    _facade.findCategorizationBallotTransactions(principal, id);
   };
 
   public shared func run() : async() {

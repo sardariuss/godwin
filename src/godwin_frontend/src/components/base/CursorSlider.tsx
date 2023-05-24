@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 type Props = {
   id: string;
   disabled: boolean;
-  asToggle: boolean;
   cursor: number;
   polarizationInfo: PolarizationInfo;
   setCursor: (cursor: number) => (void);
@@ -13,7 +12,7 @@ type Props = {
   onMouseDown: () => (void);
 };
 
-export const CursorSlider = ({id, disabled, asToggle, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
+export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
@@ -23,12 +22,8 @@ export const CursorSlider = ({id, disabled, asToggle, cursor, polarizationInfo, 
   const [cursorInfo, setCursorInfo] = useState(toCursorInfo(cursor, polarizationInfo));
 
   const refreshValue = (value: number) => {
-    var filtered_value = value;
-    if (asToggle) {
-      filtered_value = value > 0.33 ?  1.0 : value < -0.33 ? -1.0 : 0.0;
-    }
-    setCursor(filtered_value);
-    setCursorInfo(toCursorInfo(filtered_value, polarizationInfo));
+    setCursor(value);
+    setCursorInfo(toCursorInfo(value, polarizationInfo));
   };
 
   useEffect(() => {

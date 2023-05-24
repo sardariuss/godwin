@@ -1,5 +1,5 @@
-import { _SERVICE, Status, Category, CategoryInfo, PublicVote, PublicVote_1, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { nsToStrDate, statusToString, toMap, VoteType } from "../utils";
+import { _SERVICE, Status, Category, CategoryInfo, PublicVote, PublicVote_1 } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { nsToStrDate, statusToString, toMap, VoteKind } from "../utils";
 
 import InterestAggregate from "./aggregates/InterestAggregate";
 import OpinionAggregate from "./aggregates/OpinionAggregate";
@@ -34,7 +34,7 @@ type Props = {
 
 const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
-  const [selectedVote, setSelectedVote] = useState<VoteType | undefined>(undefined);
+  const [selectedVote, setSelectedVote] = useState<VoteKind | undefined>(undefined);
   const [interestVote, setInterestVote] = useState<PublicVote | undefined>(undefined);
   const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>(undefined);
   const [categorizationVote, setCategorizationVote] = useState<PublicVote_1 | undefined>(undefined);
@@ -85,22 +85,22 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
                   status['CANDIDATE'] !== undefined ?
                     <InterestAggregate 
                       aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.INTEREST : undefined) }}
-                      selected={ selectedVote === VoteType.INTEREST}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
+                      selected={ selectedVote === VoteKind.INTEREST}
                     />
                   : status['OPEN'] !== undefined ?
                   <div className="flex flex-row items-center gap-x-1">
                     <OpinionAggregate
                       aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.OPINION : undefined) }}
-                      selected={ selectedVote === VoteType.OPINION}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.OPINION : undefined) }}
+                      selected={ selectedVote === VoteKind.OPINION}
                     />
                     {" · "}
                     <CategorizationAggregate 
                       aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
                       categories={categories}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteType.CATEGORIZATION : undefined) }}
-                      selected={ selectedVote === VoteType.CATEGORIZATION}
+                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.CATEGORIZATION : undefined) }}
+                      selected={ selectedVote === VoteKind.CATEGORIZATION}
                     />
                   </div>
                   : <> </>
@@ -113,7 +113,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               <div>
               {
                 // @todo: ad vote id
-                selectedVote === VoteType.INTEREST && interestVote !== undefined ?
+                selectedVote === VoteKind.INTEREST && interestVote !== undefined ?
                   <SinglePolarizationBar
                     name={"INTEREST"}
                     showName={false}
@@ -124,7 +124,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               </div>
               <div>
               {
-                selectedVote === VoteType.OPINION && opinionVote !== undefined ?
+                selectedVote === VoteKind.OPINION && opinionVote !== undefined ?
                   <SinglePolarizationBar
                     name={"OPINION"}
                     showName={false}
@@ -135,7 +135,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               </div>
               <div>
               {
-                selectedVote === VoteType.CATEGORIZATION && categorizationVote !== undefined ?
+                selectedVote === VoteKind.CATEGORIZATION && categorizationVote !== undefined ?
                 <CategorizationPolarizationBars
                   showName={true}
                   categorizationVote={categorizationVote}

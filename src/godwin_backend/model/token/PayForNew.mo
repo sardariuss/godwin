@@ -1,5 +1,4 @@
 import Types               "Types";
-import PayInterface        "PayInterface";
 import SubaccountGenerator "SubaccountGenerator";
 import TransactionsRecords "TransactionsRecords";
 
@@ -24,7 +23,7 @@ module {
   type WMap<K, V>          = WMap.WMap<K, V>;
   type Map<K, V>           = Map.Map<K, V>;
 
-  type PayInterface        = PayInterface.PayInterface;
+  type IPayInterface       = Types.IPayInterface;
   type Subaccount          = Types.Subaccount;
   type Balance             = Types.Balance;
   type PayinError          = Types.PayinError;
@@ -35,8 +34,10 @@ module {
   
   type Id = Nat;
 
+  // \note: Use the IPayInterface to not link with the actual PayInterface which uses
+  // the canister:godwin_token. This is required to be able to build the tests.
   public func build(
-    pay_interface: PayInterface,
+    pay_interface: IPayInterface,
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
     subaccount_index: Ref<Nat>,
@@ -52,7 +53,7 @@ module {
   };
 
   public class PayForNew(
-    _pay_interface: PayInterface,
+    _pay_interface: IPayInterface,
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
     _subaccount_index: WRef<Nat>,

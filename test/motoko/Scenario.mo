@@ -23,7 +23,7 @@ module {
   type Duration  = Types.Duration;
   type Fuzzer    = Fuzz.Fuzzer;
 
-  let SEED = 123456789;
+  let SEED = 0;
 
   let NUM_USERS = 20;
 
@@ -53,8 +53,11 @@ module {
         let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(question_id));
-            ignore await* facade.putInterestBallot(principal, interest_vote_id, time, Random.randomInterest(fuzzer));
+            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(interest_vote_id));
+            switch(await* facade.putInterestBallot(principal, interest_vote_id, time, Random.randomInterest(fuzzer))){
+              case(#ok(_)){};
+              case(#err(err)) { Debug.print("Fail to put interest ballot: " # putBallotErrorToString(err)); };
+            };
           };
         };
       };
@@ -65,13 +68,19 @@ module {
         let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(question_id));
-            ignore facade.putOpinionBallot(principal, opinion_vote_id, time, Random.randomOpinion(fuzzer));
+            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(opinion_vote_id));
+            switch(await* facade.putOpinionBallot(principal, opinion_vote_id, time, Random.randomOpinion(fuzzer))){
+              case(#ok(_)){};
+              case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
+            };
             
           };
           if (Random.random(fuzzer) < 0.1){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(question_id));
-            ignore await* facade.putCategorizationBallot(principal, categorization_vote_id, time, Random.randomCategorization(fuzzer, facade.getCategories()));
+            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(categorization_vote_id));
+            switch(await* facade.putCategorizationBallot(principal, categorization_vote_id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
+              case(#ok(_)){};
+              case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
+            };
           };
         };
       };
@@ -86,6 +95,19 @@ module {
 
       await* facade.run(time);
 
+    };
+  };
+
+  func putBallotErrorToString(putBallotError: Types.PutBallotError) : Text {
+    switch(putBallotError){
+      case(#VoteLocked) { "VoteLocked"; };
+      case(#VoteNotFound) { "VoteNotFound"; };
+      case(#ChangeBallotNotAllowed) { "ChangeBallotNotAllowed"; };
+      case(#NoSubacountLinked) { "NoSubacountLinked"; };
+      case(#PayinError(_)) { "PayinError"; };
+      case(#PrincipalIsAnonymous) { "PrincipalIsAnonymous"; };
+      case(#VoteClosed) { "VoteClosed"; };
+      case(#InvalidBallot) { "InvalidBallot"; };
     };
   };
 

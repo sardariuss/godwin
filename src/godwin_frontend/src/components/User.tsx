@@ -1,14 +1,14 @@
 import { Account } from "./../../declarations/godwin_master/godwin_master.did";
 import { ActorContext } from "../ActorContext"
 import { Principal } from "@dfinity/principal";
-import { IcrcAccount, encodeIcrcAccount } from "@dfinity/ledger";
-import { arrayOfNumberToUint8Array, fromNullable } from "@dfinity/utils";
+import { fromNullable } from "@dfinity/utils";
 import Convictions from "./Convictions";
 import Copy from "./Copy";
 import { MainTabButton } from "./MainTabButton";
 import SubNameBanner from "./SubNameBanner";
 import {VoterHistory} from "./VoterHistory";
 import {VoterQuestions} from "./VoterQuestions";
+import { getEncodedAccount } from "../utils/LedgerUtils";
 
 import { useEffect, useState, useContext } from "react";
 
@@ -88,25 +88,6 @@ const UserComponent = () => {
       let balance = await token.icrc1_balance_of(account);
       setBalance(balance);
     }
-  }
-
-  const subaccountAsUint8Array = (subaccount: Uint8Array | number[] | undefined) : Uint8Array | undefined => {
-    if (subaccount === undefined) {
-      return undefined;
-    // @todo: not sure if this is useful
-    } else if (subaccount as Uint8Array) {
-    return subaccount as Uint8Array;
-    } else {
-      return arrayOfNumberToUint8Array(subaccount as number[]);
-    }
-  };
-
-  const getEncodedAccount = (account: Account) : string => {
-    let icrc_account : IcrcAccount = {
-      owner: account.owner,
-      subaccount: subaccountAsUint8Array(fromNullable(account.subaccount))
-    };
-    return encodeIcrcAccount(icrc_account);
   }
 
   // @todo: use a timer to not update the name at each character change
@@ -194,9 +175,9 @@ const UserComponent = () => {
             <div className="col-start-5 flex justify-end self-end">
               { 
                 isLoggedUser ?
-                  <div onClick={logout} className="flex w-8 hover:cursor-pointer mr-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960" fill="white"><path d="M201.54 936q-23.529 0-40.61-17.082-17.082-17.081-17.082-40.61V293.694q0-23.529 17.082-40.611 17.081-17.082 40.61-17.082h276.384v45.384H201.54q-4.616 0-8.462 3.846-3.847 3.847-3.847 8.463v584.614q0 4.616 3.847 8.462 3.846 3.846 8.462 3.846h276.384V936H201.54Zm462.921-197.693-32.999-32.23 97.384-97.384H375.769v-45.384h351.847l-97.385-97.384 32.615-32.615 153.306 153.498-151.691 151.499Z"/></svg>
-                  </div> : 
+                  <button onClick={logout} className="flex w-8 hover:cursor-pointer mr-2 button-svg">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M201.54 936q-23.529 0-40.61-17.082-17.082-17.081-17.082-40.61V293.694q0-23.529 17.082-40.611 17.081-17.082 40.61-17.082h276.384v45.384H201.54q-4.616 0-8.462 3.846-3.847 3.847-3.847 8.463v584.614q0 4.616 3.847 8.462 3.846 3.846 8.462 3.846h276.384V936H201.54Zm462.921-197.693-32.999-32.23 97.384-97.384H375.769v-45.384h351.847l-97.385-97.384 32.615-32.615 153.306 153.498-151.691 151.499Z"/></svg>
+                  </button> : 
                   <></> 
               }
             </div>

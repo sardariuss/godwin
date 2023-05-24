@@ -1,7 +1,7 @@
 import { Category, CategoryInfo, _SERVICE } from "../../../declarations/godwin_backend/godwin_backend.did";
 import { ActorSubclass } from "@dfinity/agent";
-import VoteCategorization from "../votes/Categorization";
-import SingleCursorVote from "../base/SingleCursorVote";
+import CategorizationVote from "../votes/CategorizationVote";
+import CursorVote from "../base/CursorVote";
 
 import CONSTANTS from "../../Constants";
 
@@ -29,17 +29,15 @@ const OpenVotes = ({actor, categories, opinionVoteId, categorizationVoteId}: Pro
         <div className="col-start-2 col-span-8 place-self-center grow">
         { showCategorization ?
           categorizationVoteId !== undefined ?
-            <VoteCategorization actor={actor} categories={categories} voteId={categorizationVoteId}/> :
+            <CategorizationVote actor={actor} categories={categories} voteId={categorizationVoteId}/> :
             <></> :
-          <SingleCursorVote 
-            countdownDurationMs={5000} 
-            asToggle={false}
-            polarizationInfo={CONSTANTS.OPINION_INFO} 
-            voteId={opinionVoteId} 
-            allowUpdateBallot={true}
-            putBallot={actor.putOpinionBallot} 
-            getBallot={actor.getOpinionBallot}
-          />
+            <CursorVote
+              countdownDurationMs={0} 
+              polarizationInfo={CONSTANTS.OPINION_INFO} 
+              voteId={opinionVoteId} 
+              putBallot={actor.putOpinionBallot} 
+              getBallot={actor.getOpinionBallot}
+            />
         }
         </div>
         { showCategorization ? <></> :

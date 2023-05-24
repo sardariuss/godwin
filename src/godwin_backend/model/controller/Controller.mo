@@ -243,25 +243,16 @@ module {
       _model.getCategorizationJoins().findVoteId(question_id, iteration);
     };
 
-    public func getVoterInterestHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, InterestBallot)> {
-      let vote_ids = Utils.setScanLimit<VoteId>(_model.getInterestVotes().getVoterHistory(principal), Map.nhash, #BWD, limit, previous_id);
-      Utils.mapScanLimitResult<VoteId, (VoteId, InterestBallot)>(vote_ids, func(vote_id: VoteId) : (VoteId, InterestBallot){
-        (vote_id, _model.getInterestVotes().getBallot(principal, vote_id));
-      });
+    public func revealInterestBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?InterestBallot, ?TransactionsRecord)> {
+      _model.getInterestVotes().revealBallots(principal, direction, limit, previous_id);
     };
 
-    public func getVoterOpinionHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, OpinionBallot)> {
-      let vote_ids = Utils.setScanLimit<VoteId>(_model.getOpinionVotes().getVoterHistory(principal), Map.nhash, #BWD, limit, previous_id);
-      Utils.mapScanLimitResult<VoteId, (VoteId, OpinionBallot)>(vote_ids, func(vote_id: VoteId) : (VoteId, OpinionBallot) {
-        (vote_id, _model.getOpinionVotes().getBallot(principal, vote_id));
-      });
+    public func revealOpinionBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?OpinionBallot, ?TransactionsRecord)> {
+      _model.getOpinionVotes().revealBallots(principal, direction, limit, previous_id);
     };
 
-    public func getVoterCategorizationHistory(principal: Principal, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, CategorizationBallot)> {
-      let vote_ids = Utils.setScanLimit<VoteId>(_model.getCategorizationVotes().getVoterHistory(principal), Map.nhash, #BWD, limit, previous_id);
-      Utils.mapScanLimitResult<VoteId, (VoteId, CategorizationBallot)>(vote_ids, func(vote_id: VoteId) : (VoteId, CategorizationBallot){
-        (vote_id, _model.getCategorizationVotes().getBallot(principal, vote_id));
-      });
+    public func revealCategorizationBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?CategorizationBallot, ?TransactionsRecord)> {
+      _model.getCategorizationVotes().revealBallots(principal, direction, limit, previous_id);
     };
 
     public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
@@ -281,8 +272,14 @@ module {
       });
     };
 
-    public func getQuestionIdsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
-      Utils.setScanLimit<VoteId>(_model.getQuestions().getQuestionIdsFromAuthor(principal), Map.nhash, direction, limit, previous_id);
+    // @todo: should filter based on the question status in order to properly hide the author ?
+    // This requires to remove the author from the Question type
+    // @todo: we should be able to query the reopened questions too
+    public func getQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
+      let question_ids = Utils.setScanLimit<QuestionId>(_model.getQuestions().getQuestionIdsFromAuthor(principal), Map.nhash, direction, limit, previous_id);
+      Utils.mapScanLimitResult<QuestionId, (QuestionId, ?Question, ?TransactionsRecord)>(question_ids, func(question_id: QuestionId) : (QuestionId, ?Question, ?TransactionsRecord){
+        (question_id, _model.getQuestions().findQuestion(question_id), _model.getInterestVotes().findOpenVoteTransactions(principal, _model.getInterestJoins().getVoteId(question_id, 0)));
+      });
     };
 
     public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)])> {
@@ -292,28 +289,18 @@ module {
       // then get the last OPEN iteration from the history
       // and finally get the vote id from the join
       Map.mapFilter(
-        _model.getOpinionVotes().getVoterBallots(principal, _model.getOpinionVotes().getVoterHistory(principal)),
+        _model.getOpinionVotes().getVoterBallots(principal),
         Map.nhash,
         func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)]) {
-          ?(ballot, Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(vote_id).aggregate)));
+          let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
+          switch(opinion_vote.status){
+            case(#OPEN){ null; };
+            case(#CLOSED) {
+              ?(ballot, Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(vote_id).aggregate)));
+            };
+          };
         }
       );
-    };
-
-    public func findOpenInterestVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
-      _model.getInterestVotes().findOpenVoteTransactions(principal, id);
-    };
-    
-    public func findInterestBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
-      _model.getInterestVotes().findBallotTransactions(principal, id);
-    };
-
-    public func findOpinionBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
-      _model.getOpinionVotes().findBallotTransactions(principal, id);
-    };
-
-    public func findCategorizationBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
-      _model.getCategorizationVotes().findBallotTransactions(principal, id);
     };
 
     public func run(time: Time) : async* () {

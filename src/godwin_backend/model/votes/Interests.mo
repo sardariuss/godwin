@@ -6,11 +6,12 @@ import PayToVote           "PayToVote";
 import Polarization        "representation/Polarization";
 import Cursor              "representation/Cursor";
 import PayForNew           "../token/PayForNew";
-import PayInterface        "../token/PayInterface";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
 import QuestionTypes       "../questions/Types";
 import QuestionQueries     "../questions/QuestionQueries";
+
+import UtilsTypes          "../../utils/Types";
 
 import Set                 "mo:map/Set";
 import Map                 "mo:map/Map";
@@ -40,9 +41,12 @@ module {
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
-  type PayInterface           = PayInterface.PayInterface;
+  type IPayInterface          = PayTypes.IPayInterface;
   type PayForNew              = PayForNew.PayForNew;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
+
+  type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
+  type Direction              = UtilsTypes.Direction;
   
   public type Register        = Votes.Register<Cursor, Polarization>;
 
@@ -58,7 +62,7 @@ module {
   public func build(
     vote_register: Votes.Register<Cursor, Polarization>,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
-    pay_interface: PayInterface,
+    pay_interface: IPayInterface,
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries
@@ -131,10 +135,6 @@ module {
       });
     };
 
-    public func getBallot(principal: Principal, vote_id: VoteId) : Ballot {
-      _votes.getBallot(principal, vote_id);
-    };
-
     public func findBallot(principal: Principal, vote_id: VoteId) : Result<Ballot, FindBallotError> {
       _votes.findBallot(principal, vote_id);
     };
@@ -143,16 +143,16 @@ module {
       _votes.revealVote(vote_id);
     };
 
-    public func getVoterHistory(principal: Principal) : Set<VoteId> {
-      _votes.getVoterHistory(principal);
-    };
-
     public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
       _votes.findBallotTransactions(principal, id);
     };
 
     public func findOpenVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
       _pay_for_new.findTransactionsRecord(principal, id);
+    };
+
+    public func revealBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?Ballot, ?TransactionsRecord)> {
+      _votes.revealBallots(principal, direction, limit, previous_id);
     };
 
   };

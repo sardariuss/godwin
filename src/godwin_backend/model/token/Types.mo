@@ -1,12 +1,17 @@
 import MasterTypes "../../../godwin_master/Types";
 import TokenTypes "../../../godwin_token/Types";
 
+import Map "mo:map/Map";
+
 import Result "mo:base/Result";
 import Error "mo:base/Error";
+import Buffer "mo:base/Buffer";
 
 module {
 
   type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Buffer<T>       = Buffer.Buffer<T>;
+  type Map<K, V>       = Map.Map<K, V>;
 
   public type MasterInterface = MasterTypes.MasterInterface;
   public let { toSubaccount; toBaseResult; } = MasterTypes;
@@ -63,6 +68,13 @@ module {
         reward: ?PayoutResult;
       };
     };
+  };
+
+  public type IPayInterface = {
+    payin: (subaccount: Blob, from: Principal, amount: Balance) -> async* PayinResult;
+    payout: (subaccount: Blob, to: Principal, amount: Nat) -> async* PayoutResult;
+    batchPayout: (subaccount: Blob, recipients: Buffer<PayoutRecipient>, results: Map<Principal, PayoutResult>) -> async* ();
+    mint: (recipients: Buffer<MintRecipient>) -> async* MintResult;
   };
 
 };

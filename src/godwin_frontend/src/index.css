@@ -11,11 +11,11 @@
 }
 
 @layer components {
-  .icon-svg {
-    @apply fill-gray-700 dark:fill-gray-300;
-  }
-  .icon-svg-hover {
-    @apply cursor-pointer fill-black dark:fill-white;
+  .button-svg {
+    @apply 
+      fill-gray-700 dark:fill-gray-300
+      hover:enabled:cursor-pointer hover:fill-black dark:hover:fill-white 
+      disabled:fill-gray-300 dark:disabled:fill-gray-700 hover:disabled:fill-gray-300 dark:hover:disabled:fill-gray-700;
   }
 }
 
@@ -86,6 +86,26 @@ input {
     cursor: var(--cursor-type);
     background-image: var(--slider-image);
   }
+
+  /*
+  @todo: try to fix sub banner for chrome, not successful yet
+
+  input[type='range'].categories {
+    background: transparent;
+  }
+
+  input[type='range'].categories::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0;
+    background-color: transparent;
+  }
+  
+  input[type='range'].categories::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    background: transparent;
+  }
+  */
 
 }
 

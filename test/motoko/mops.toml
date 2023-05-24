@@ -1,6 +1,8 @@
 [dependencies]
 base = "0.7.3"
 stableRBT = "https://github.com/canscale/StableRBTree#v0.6.0"
+stablebuffer = "https://github.com/canscale/StableBuffer#v1.2.0"
 map = "8.1.0"
 fuzz = "0.1.0"
+icrc1 = "https://github.com/NatLabs/icrc1/"
 testing = "https://github.com/sardariuss/testing.mo#main"

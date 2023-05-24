@@ -16,7 +16,7 @@ const CONSTANTS = {
     right: {
       symbol: '🤓',
       color: '#1D4ED8',
-      name: 'INTERESTING',
+      name: 'LEGIT',
     }
   },
   DUPLICATE: {

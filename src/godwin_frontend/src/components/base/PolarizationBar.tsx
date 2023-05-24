@@ -1,11 +1,9 @@
 import { CategorySide, Polarization, Ballot } from "./../../../declarations/godwin_backend/godwin_backend.did";
 import { ScatterChart } from "../ScatterChart";
 
-import { PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
+import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
 
 import { Bar }          from 'react-chartjs-2'
-
-import { ChartTypeEnum } from "../../utils";
 
 import {
   Chart as ChartJS,
@@ -66,14 +64,12 @@ const getDataSets = (input_ballots: [string, Ballot, number][], polarizationInfo
   let points : { x : number, y: number }[]= [];
   let colors : string[] = [];
   for (let i = 0; i < input_ballots.length; i++){
-    labels.push("Vote Id: " + input_ballots[i][0] + "\nCursor: " + input_ballots[i][1].answer.toPrecision(2) + "\nCoef:" + input_ballots[i][2].toPrecision(2));
     let coef = input_ballots[i][2];
     let cursor = input_ballots[i][1].answer * coef;
     let date = input_ballots[i][1].date;
     points.push({ x: cursor, y: Number(date) });
-    var alpha = Math.trunc(Math.abs(coef) * 255).toString(16);
-    alpha = alpha.length == 1 ? "0" + alpha : alpha;
-    colors.push(cursorToColor(cursor, polarizationInfo) + Math.trunc(Math.abs(coef) * 255).toString(16));
+    colors.push(cursorToColor(cursor, polarizationInfo, Math.abs(coef)));
+    labels.push("Vote Id: " + input_ballots[i][0] + "\nCursor: " + input_ballots[i][1].answer.toPrecision(2) + "\nCoef:" + input_ballots[i][2].toPrecision(2) );
   }
   return {
     datasets: [{

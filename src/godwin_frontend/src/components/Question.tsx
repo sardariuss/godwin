@@ -2,13 +2,13 @@ import InterestVote from "./votes/InterestVote";
 import StatusHistoryComponent from "./StatusHistory";
 import OpenVotes from "./votes/OpenVotes";
 import CONSTANTS from "../Constants";
+import DivSlider from "./DivSlider";
 
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
 import { useEffect, useState } from "react";
 import { ActorSubclass } from "@dfinity/agent";
-import { VoteType } from "../utils";
-import InterestColumn from "./InterestColumn";
+import { VoteKind } from "../utils";
 
 type Props = {
 	actor: ActorSubclass<_SERVICE>,
@@ -23,7 +23,7 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 	const [iterationHistory, setIterationHistory] = useState<StatusInfo[][]>([]);
 	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
 	const [currentStatus, setCurrentStatus] = useState<StatusInfo | undefined>(undefined);
-	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteType, bigint>>(new Map<VoteType, bigint>());
+	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
 
 	const fetchQuestion = async () => {
 		const question = await actor.getQuestion(questionId);
@@ -54,21 +54,21 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 
 	const fetchQuestionVoteJoins = async (iteration_index: number, status_info: StatusInfo) => {
 
-		var joins = new Map<VoteType, bigint>();
+		var joins = new Map<VoteKind, bigint>();
 				
 		if (status_info.status['CANDIDATE'] !== undefined) {
 			let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(iteration_index)))['ok'];
 			if (interest_vote_id !== undefined) {
-				joins.set(VoteType.INTEREST, interest_vote_id);
+				joins.set(VoteKind.INTEREST, interest_vote_id);
 			}
 		} else if (status_info.status['OPEN'] !== undefined) {
 			let opinion_vote_id = (await actor.findOpinionVoteId(questionId, BigInt(iteration_index)))['ok'];
 			if (opinion_vote_id !== undefined) {
-				joins.set(VoteType.OPINION, opinion_vote_id);
+				joins.set(VoteKind.OPINION, opinion_vote_id);
 			}
 			let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(iteration_index)))['ok'];
 			if (categorization_vote_id !== undefined) {
-				joins.set(VoteType.CATEGORIZATION, categorization_vote_id);
+				joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
 			}
 		}
 
@@ -84,16 +84,17 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 		if (iterationHistory.length > 0 && currentStatus !== undefined) {
 			fetchQuestionVoteJoins(iterationHistory.length - 1, currentStatus);
 		} else {
-			setQuestionVoteJoins(new Map<VoteType, bigint>());
+			setQuestionVoteJoins(new Map<VoteKind, bigint>());
 		}
 	}, [iterationHistory, currentStatus]);
 
 	return (
-		<div className="grid grid-cols-10 text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
-			<div className="w-full col-span-1 items-center justify-center">
-				<InterestColumn>
-					😴
-				</InterestColumn>
+		<div className="group grid grid-cols-11 text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
+			<div className="w-full flex flex-col col-span-2 items-center justify-center content-center">
+				{
+					questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
+						<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/> : <></>
+				}
 			</div>
 			<div className="col-span-9 flex flex-col py-1 px-1 justify-start w-full space-y-2">
 				{
@@ -110,41 +111,29 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 				}
 				{
 					currentStatus === undefined ? <></> :
-						questionVoteJoins.get(VoteType.INTEREST) !== undefined ?
-							<InterestVote 
-								countdownDurationMs={5000} 
-								polarizationInfo={CONSTANTS.INTEREST_INFO} 
-								asToggle={true}
-								voteId={questionVoteJoins.get(VoteType.INTEREST)}
-								allowUpdateBallot={false}
-								putBallot={actor.putInterestBallot}
-								getBallot={actor.getInterestBallot}
-							>
-								{ question.text }
-							</InterestVote> : 
-						questionVoteJoins.get(VoteType.OPINION) !== undefined && questionVoteJoins.get(VoteType.CATEGORIZATION) !== undefined?
+						questionVoteJoins.get(VoteKind.OPINION) !== undefined && questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
 							<OpenVotes 
 								actor={actor}
-								opinionVoteId={questionVoteJoins.get(VoteType.OPINION)}
-								categorizationVoteId={questionVoteJoins.get(VoteType.CATEGORIZATION)}
+								opinionVoteId={questionVoteJoins.get(VoteKind.OPINION)}
+								categorizationVoteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
 								categories={categories}
-							/> :
-							currentStatus.status['CANDIDATE'] !== undefined || currentStatus.status['OPEN'] !== undefined ?
-							<div role="status">
-								<svg className="inline w-6 h-6 text-gray-200 animate-spin dark:text-gray-600 fill-gray-600 dark:fill-gray-300" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
-									<path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
-								</svg>
-							</div> :
-							<></>
+							/> : <></>
 				}
 				{
 					currentStatus !== undefined && showHistory ?
 						<div className="border-y dark:border-gray-700">
-							<StatusHistoryComponent actor={actor} categories={categories} questionId={questionId} statusInfo={currentStatus} statusHistory={statusHistory.slice(0, statusHistory.length - 1)}/>
+							<StatusHistoryComponent 
+								actor={actor}
+								categories={categories}
+								questionId={questionId}
+								statusInfo={currentStatus}
+								statusHistory={statusHistory.slice(0, statusHistory.length - 1)}
+								iteration={BigInt(0)}
+							/>
 						</div> :
 						<></>
 				}
+				{
 				<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
 					<div className="flex w-1/3 justify-center items-center">
 						<div className="h-4 w-4 hover:cursor-pointer hover:dark:dark:fill-white" onClick={(e) => setShowHistory(!showHistory)}>
@@ -162,6 +151,7 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 						</div>
 					</div>
 				</div>
+				}
 			</div>
 		</div>
 	);

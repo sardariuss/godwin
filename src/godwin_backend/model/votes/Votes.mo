@@ -3,6 +3,9 @@ import VotePolicy "VotePolicy";
 import PayToVote  "PayToVote";
 import PayTypes   "../token/Types";
 
+import Utils      "../../utils/Utils";
+import UtilsTypes "../../utils/Types";
+
 import Map        "mo:map/Map";
 import Set        "mo:map/Set";
 
@@ -13,7 +16,9 @@ import Nat        "mo:base/Nat";
 import Int        "mo:base/Int";
 import Option     "mo:base/Option";
 import Nat32      "mo:base/Nat32";
+import Array      "mo:base/Array";
 import Prim       "mo:prim";
+
 
 module {
 
@@ -31,6 +36,9 @@ module {
   type FindBallotError    = Types.FindBallotError;
   type RevealVoteError    = Types.RevealVoteError;
   type PutBallotError     = Types.PutBallotError;
+
+  type ScanLimitResult<K> = UtilsTypes.ScanLimitResult<K>;
+  type Direction          = UtilsTypes.Direction;
   
   type TransactionsRecord = PayTypes.TransactionsRecord;
 
@@ -66,6 +74,15 @@ module {
     func() = (Principal.fromText("2vxsx-fae"), 0)
   );
 
+  public func initVote<T, A>(vote_id: VoteId, empty_aggregate: A) : Vote<T, A> {
+    {
+      id = vote_id;
+      var status = #OPEN;
+      ballots = Map.new<Principal, Ballot<T>>(Map.phash);
+      var aggregate = empty_aggregate; 
+    };
+  };
+
   public class Votes<T, A>(
     _register: Register<T, A>,
     _policy: VotePolicy<T, A>,
@@ -76,12 +93,7 @@ module {
 
     public func newVote() : VoteId {
       let index = _register.index;
-      let vote : Vote<T, A> = {
-        id = index;
-        var status = #OPEN;
-        ballots = Map.new<Principal, Ballot<T>>(Map.phash);
-        var aggregate = _policy.emptyAggregate(); 
-      };
+      let vote : Vote<T, A> = initVote(index, _policy.emptyAggregate());
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;
@@ -143,12 +155,10 @@ module {
           let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
           // Update the aggregate
           vote.aggregate := _policy.updateAggregate(vote.aggregate, ?ballot, old_ballot);
-          // Link the vote to the voters
-          for (principal in Map.keys(vote.ballots)){
-            let history = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
-            Set.add(history, Map.nhash, id);
-            Map.set(_register.voters_history, Map.phash, principal, history);
-          };
+          // Link the vote to the voter
+          let history = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
+          Set.add(history, Map.nhash, id);
+          Map.set(_register.voters_history, Map.phash, principal, history);
           #ok;
         };
       };
@@ -166,13 +176,6 @@ module {
       };
     };
 
-    public func getBallot(principal: Principal, id: VoteId) : Ballot<T> {
-      switch(Map.get(getVote(id).ballots, Map.phash, principal)){
-        case(null) { Debug.trap("Could not find a ballot for principal '" # Principal.toText(principal) # "' for vote ID '" # Nat.toText(id) # "'"); };
-        case(?ballot) { ballot; };
-      };
-    };
-
     public func findBallot(principal: Principal, id: VoteId) : Result<Ballot<T>, FindBallotError> {
       let vote = switch(findVote(id)){
         case(#err(err)) { return #err(err); };
@@ -181,15 +184,18 @@ module {
       Result.fromOption(Map.get(vote.ballots, Map.phash, principal), #BallotNotFound);
     };
 
-    public func getVoterBallots(principal: Principal, vote_ids: Set<VoteId>) : Map<VoteId, Ballot<T>> {
-      // @todo: one shall rather iterate over the vote_ids
-      Map.mapFilter(_register.votes, Map.nhash, func(id: VoteId, vote: Vote<T, A>) : ?Ballot<T> {
-        if(Set.has(vote_ids, Map.nhash, id)){
-          Map.get(vote.ballots, Map.phash, principal);
-        } else {
-          null;
+    // @todo: used to compute the convictions only
+    public func getVoterBallots(principal: Principal) : Map<VoteId, Ballot<T>> {
+      let vote_ids = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
+      let voter_ballots = Map.new<VoteId, Ballot<T>>(Map.nhash);
+      for (vote_id in Set.keys(vote_ids)){
+        let vote = getVote(vote_id);
+        switch(Map.get(vote.ballots, Map.phash, principal)){
+          case(null) { Debug.trap("Could not find a ballot for vote with ID '" # Nat.toText(vote_id) # "'"); };
+          case(?ballot) { Map.set(voter_ballots, Map.nhash, vote_id, ballot); };
         };
-      });
+      };
+      voter_ballots;
     };
 
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
@@ -201,8 +207,26 @@ module {
       });
     };
 
-    public func getVoterHistory(principal: Principal) : Set<VoteId> {
-      Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
+    public func revealBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?Ballot<T>, ?TransactionsRecord)> {
+      let history_ids = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
+      let filtered_ids = Utils.setScanLimit<VoteId>(history_ids, Map.nhash, direction, limit, previous_id);
+
+      Utils.mapScanLimitResult<VoteId, (VoteId, ?Ballot<T>, ?TransactionsRecord)>(filtered_ids, func(vote_id: VoteId) : (VoteId, ?Ballot<T>, ?TransactionsRecord){
+        (vote_id, revealBallot(principal, vote_id), findBallotTransactions(principal, vote_id));
+      });
+    };
+
+    func revealBallot(principal: Principal, id: VoteId) : ?Ballot<T> {
+      let vote = getVote(id);
+      switch(Map.get(vote.ballots, Map.phash, principal)){
+        case(null) { Debug.trap("Could not find a ballot for principal '" # Principal.toText(principal) # "' for vote ID '" # Nat.toText(id) # "'"); };
+        case(?ballot) {
+          switch(vote.status){
+            case(#OPEN) { null; };
+            case(#CLOSED) { ?ballot; };
+          };
+        };
+      };
     };
 
     public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {

@@ -116,7 +116,7 @@ module {
     #ChangeBallotNotAllowed;
   };
 
-  public type PutBallotError = PrincipalError or AddBallotError or {
+  public type PutBallotError = AddBallotError or {
     #VoteLocked;
     #VoteNotFound;
     #ChangeBallotNotAllowed;

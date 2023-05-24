@@ -1,5 +1,4 @@
-import { AuthClient, IdbStorage } from "@dfinity/auth-client";
-import { DelegationChain, isDelegationValid } from "@dfinity/identity";
+import { AuthClient } from "@dfinity/auth-client";
 
 import { _SERVICE as MasterService } from "../declarations/godwin_master/godwin_master.did";
 import { _SERVICE as SubService, CategoryArray__1 } from "../declarations/godwin_backend/godwin_backend.did";
@@ -33,7 +32,7 @@ export const ActorContext = React.createContext<{
   token: ActorSubclass<TokenService>;
   master: ActorSubclass<MasterService>;
   subs: Map<string, Sub>;
-  hasLoggedIn: boolean;
+  hasLoggedIn: boolean; // @todo: use it usefull ? what's the difference with isAuthenticated ?
 }>({
   login: () => {},
   logout: () => {},

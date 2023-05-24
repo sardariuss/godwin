@@ -1,7 +1,7 @@
 import Types         "../../../src/godwin_backend/model/questions/Types";
-import Queries "../../../src/godwin_backend/model/questions/QuestionQueries";
+import Queries       "../../../src/godwin_backend/model/questions/QuestionQueries";
 
-import TestifyTypes  "testifyTypes";
+import TestifyTypes  "../testifyTypes";
 
 import Testify       "mo:testing/Testify";
 import SuiteState    "mo:testing/SuiteState";
@@ -9,8 +9,8 @@ import Status        "mo:testing/Status";
 
 import Principals    "../Principals";
 
-import Principal "mo:base/Principal";
-import Array "mo:base/Array";
+import Principal     "mo:base/Principal";
+import Array         "mo:base/Array";
 
 module {
 

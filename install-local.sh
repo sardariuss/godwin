@@ -37,10 +37,10 @@ dfx canister call godwin_master createSubGodwin '("classic6", record {
     convictions_half_life = null;
   };
   scheduler = record {
-    interest_pick_rate = variant { HOURS = 1 };
-    interest_duration = variant { HOURS = 4 };
-    opinion_duration = variant { HOURS = 1 };
-    rejected_duration = variant { HOURS = 6 };
+    interest_pick_rate = variant { HOURS = 2 };
+    interest_duration = variant { HOURS = 8 };
+    opinion_duration = variant { HOURS = 4 };
+    rejected_duration = variant { HOURS = 8 };
   };
   questions = record {
     character_limit = 240;

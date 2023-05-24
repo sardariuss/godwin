@@ -1,14 +1,15 @@
 import Types            "../../../src/godwin_backend/model/questions/Types";
 import Questions        "../../../src/godwin_backend/model/questions/Questions";
 
-import TestifyTypes     "testifyTypes";
+import TestifyTypes     "../testifyTypes";
 import Principals       "../Principals";
 
 import Map              "mo:map/Map";
+import Set              "mo:map/Set";
 
 import Testify          "mo:testing/Testify";
 import SuiteState       "mo:testing/SuiteState";
-import Status           "mo:testing/Status";
+import TestStatus       "mo:testing/Status";
 
 import Principal        "mo:base/Principal";
 import Array            "mo:base/Array";
@@ -23,19 +24,20 @@ module {
   // For convenience: from types module
   type Question = Types.Question;
   type OpenQuestionError = Types.OpenQuestionError;
+  type QuestionId = Types.QuestionId;
   type Questions = Questions.Questions;
 
   type NamedTest<T> = SuiteState.NamedTest<T>;
   type Test<T> = SuiteState.Test<T>;
   type Suite<T> = SuiteState.Suite<T>;
-  type Status = Status.Status;
+  type TestStatus = TestStatus.Status;
 
   let { testifyElement; optionalTestify; } = Testify;
   let { describe; itp; equal; } = SuiteState;
 
-  let { testify_question; testify_open_question_error; } = TestifyTypes;
+  let { testify_question; testify_open_question_error; testify_nat; } = TestifyTypes;
 
-  public func run(test_status: Status) : async* () {
+  public func run(test_status: TestStatus) : async* () {
 
     let principals = Principals.init();
 
@@ -54,11 +56,10 @@ module {
 
     let max_num_characters : Nat = 140;
 
-    let questions = Questions.build(Map.new<Nat, Question>(Map.nhash), { var v : Nat = 0; }, { var v = max_num_characters; });
+    let questions = Questions.Questions(Questions.initRegister(max_num_characters));
 
     let s = SuiteState.Suite<Questions>(questions);
 
-    // Test the creation of questions
     await* s.run([
       describe("Test the created questions are faithfull to the original parameters", 
         Array.tabulate(array_questions.size(), func(index: Nat) : NamedTest<Questions.Questions> {
@@ -127,9 +128,24 @@ module {
             }
           )
         )
-      ])
+      ]),
+      describe("Test that retrieving the questions from the author works", 
+        Array.tabulate(array_questions.size(), func(index: Nat) : NamedTest<Questions.Questions> {
+          let question_id = array_questions[index].id;
+          itp(
+            "Get author's question " # Nat.toText(index),
+            equal(
+              testifyElement(optionalTestify(testify_nat), ?question_id),
+              func (questions: Questions) : ?QuestionId { 
+                Set.peekFront(questions.getQuestionIdsFromAuthor(principals[index]));
+              }
+            )
+          );
+        })
+      ),
     ]);
 
+    // @todo: test removal of a question
     // @todo: for some reason the test on iteration does not work separatly (maybe because the questions class is put into the state?)
     //await* s.run([
     //  describe("Test iterating on the questions", 
