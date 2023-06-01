@@ -48,7 +48,8 @@ const CONSTANTS = {
       name: 'N/A'
     }
   },
-  DEFAULT_USER_NAME: 'New user'
+  DEFAULT_USER_NAME: 'New user',
+  COIN_EMOJI: '🪙'
 };
 
 export default CONSTANTS;

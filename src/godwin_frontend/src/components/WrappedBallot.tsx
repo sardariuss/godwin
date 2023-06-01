@@ -11,6 +11,7 @@ import { ActorContext } from "../ActorContext";
 import { fromNullable } from "@dfinity/utils";
 
 import { Sub } from "../ActorContext";
+import CONSTANTS from "../Constants";
 
 export type BallotInfo = {
   vote_kind: VoteKind,
@@ -117,7 +118,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
       <div>
         { payin !== undefined ?
           <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
-            <div>{ "Payin: 🪙 " + payin.toString()}</div>
+            <div>{ "Payin: " + payin.toString() + " " + CONSTANTS.COIN_EMOJI }</div>
           </div> :
           <></>
         }
@@ -125,7 +126,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
       <div>
         { refund !== undefined ?
           <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
-            <div> { "Refund: 🪙 " + refund.toString()} </div>
+            <div> { "Refund: " + refund.toString() + " " + CONSTANTS.COIN_EMOJI } </div>
           </div> :
           <></>
         }
@@ -133,7 +134,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
       <div>
         { reward !== undefined ?
           <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
-            <div> { "Reward: 🪙 " + reward.toString()} </div>
+            <div> { "Reward: " + reward.toString() + " " + CONSTANTS.COIN_EMOJI } </div>
           </div> :
           <></>
         }

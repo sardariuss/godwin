@@ -1,6 +1,6 @@
 import { AuthClient } from "@dfinity/auth-client";
 
-import { _SERVICE as MasterService } from "../declarations/godwin_master/godwin_master.did";
+import { _SERVICE as MasterService, Account } from "../declarations/godwin_master/godwin_master.did";
 import { _SERVICE as SubService, CategoryArray__1 } from "../declarations/godwin_backend/godwin_backend.did";
 import { _SERVICE as TokenService } from "../declarations/godwin_token/godwin_token.did";
 import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
@@ -32,14 +32,17 @@ export const ActorContext = React.createContext<{
   token: ActorSubclass<TokenService>;
   master: ActorSubclass<MasterService>;
   subs: Map<string, Sub>;
-  hasLoggedIn: boolean; // @todo: use it usefull ? what's the difference with isAuthenticated ?
+  userAccount?: Account | null;
+  balance: bigint | null;
+  refreshBalance: () => void;
 }>({
   login: () => {},
   logout: () => {},
   token: godwin_token,
   master: godwin_master,
   subs: new Map(),
-  hasLoggedIn: false
+  balance: null,
+  refreshBalance: () => {},
 });
 
 export function useAuthClient() {
@@ -47,11 +50,12 @@ export function useAuthClient() {
 
   const [authClient, setAuthClient] = useState<AuthClient>();
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
-  const [hasLoggedIn, setHasLoggedIn] = useState(false);
   const [token] = useState<ActorSubclass<TokenService>>(godwin_token);
   const [master, setMaster] = useState<ActorSubclass<MasterService>>(godwin_master);
   const [subs, setSubs] = useState<Map<string, Sub>>(new Map());
   const [subsFetched, setSubsFetched] = useState<boolean | null>(true);
+  const [userAccount, setUserAccount] = useState<Account | null>(null);
+  const [balance, setBalance] = useState<bigint | null>(null);
 
   const login = () => {
     authClient?.login({
@@ -64,9 +68,6 @@ export function useAuthClient() {
       onSuccess: () => {
         initActor();
         setIsAuthenticated(true);
-        setTimeout(() => {
-          setHasLoggedIn(true);
-        }, 100);
       },
     });
   };
@@ -105,6 +106,16 @@ export function useAuthClient() {
     setSubsFetched(true);
   }
 
+  const refreshBalance = () => {
+    if (userAccount !== null) {
+      token.icrc1_balance_of(userAccount).then((balance) => {;
+        setBalance(balance);
+      });
+    } else {
+      setBalance(null);
+    }
+  }
+
   useEffect(() => {
     AuthClient.create({
       idleOptions: {
@@ -133,6 +144,23 @@ export function useAuthClient() {
     if (isAuthenticated) { initActor() };
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      let principal = authClient?.getIdentity().getPrincipal();
+      if (principal !== undefined && !principal.isAnonymous()){
+        master.getUserAccount(principal).then((account) => {
+          setUserAccount(account);
+        });
+        return;
+      }
+    }
+    setUserAccount(null);
+  }, [master, isAuthenticated]);
+
+  useEffect(() => {
+    refreshBalance();
+  }, [userAccount]);
+
   return {
     authClient,
     setAuthClient,
@@ -145,6 +173,8 @@ export function useAuthClient() {
     token,
     master,
     subs,
-    hasLoggedIn,
+    userAccount,
+    balance,
+    refreshBalance,
   };
 }

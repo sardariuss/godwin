@@ -26,7 +26,9 @@ function App() {
     token,
     master,
     subs,
-    hasLoggedIn,
+    userAccount,
+    balance,
+    refreshBalance,
   } = useAuthClient();
 
   if (!authClient) return null;
@@ -46,7 +48,9 @@ function App() {
           token,
           master,
           subs,
-          hasLoggedIn,
+          userAccount,
+          balance,
+          refreshBalance
         }}>
           <div className="flex flex-col">
             <Header login={login} setShowAskQuestion={setShowAskQuestion}/>

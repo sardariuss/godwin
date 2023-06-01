@@ -1,22 +1,14 @@
-import { ActorContext } from "../../ActorContext"
+import Ballot                                                            from "./Ballot";
+import { CursorSlider }                                                  from "../base/CursorSlider";
+import ResetButton                                                       from "../base/ResetButton";
+import UpdateProgress                                                    from "../UpdateProgress";
+import { ActorContext }                                                  from "../../ActorContext"
+import { putBallotErrorToString, toMap, getStrongestCategoryCursorInfo } from "../../utils";
+import CONSTANTS                                                         from "../../Constants";
+import { CursorArray, Category, CategoryInfo, Result_9, _SERVICE }       from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { CursorArray, Category, CategoryInfo, Result_9, _SERVICE } from "./../../../declarations/godwin_backend/godwin_backend.did";
-
-import { CursorSlider } from "../base/CursorSlider";
-
-import { nsToStrDate, putBallotErrorToString, toMap, getStrongestCategoryCursorInfo } from "../../utils";
-
-import Ballot from "./Ballot";
-
-import CONSTANTS from "../../Constants";
-
-import { ActorSubclass } from "@dfinity/agent";
-
-import ResetButton from "../base/ResetButton";
-
-import UpdateProgress from "../UpdateProgress";
-
-import React, { useContext, useState, useEffect } from "react";
+import { ActorSubclass }                                                 from "@dfinity/agent";
+import { useContext, useState, useEffect }                               from "react";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>,
@@ -32,16 +24,15 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   return categorization;
 }
 
-// @todo: add a button to perform the vote
 const CategorizationVote = ({actor, categories, voteId}: Props) => {
 
   const countdownDurationMs = 8000;
 
-	const {isAuthenticated} = useContext(ActorContext);
-  const [countdownVote, setCountdownVote] = useState<boolean>(false);
-  const [triggerVote, setTriggerVote] = useState<boolean>(false);
+	const {isAuthenticated, refreshBalance}   = useContext(ActorContext);
+  const [countdownVote, setCountdownVote]   = useState<boolean>(false);
+  const [triggerVote, setTriggerVote]       = useState<boolean>(false);
   const [categorization, setCategorization] = useState<CursorArray | undefined>(undefined);
-  const [voteDate, setVoteDate] = useState<bigint | null>(null);
+  const [voteDate, setVoteDate]             = useState<bigint | null>(null);
 
   const resetCategorization = () => {
     setCategorization(initCategorization(categories));
@@ -72,6 +63,7 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
     if (result['ok'] !== undefined) {
       setCategorization(result['ok'].answer);
       setVoteDate(result['ok'].date);
+      refreshBalance();
       return "";
     } else {
       setVoteDate(null);

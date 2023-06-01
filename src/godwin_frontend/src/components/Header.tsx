@@ -4,6 +4,8 @@ import { ActorContext } from "../ActorContext"
 
 import { useContext, useEffect } from "react";
 
+import CONSTANTS from "../Constants";
+
 type Props = {
   login: () => (void),
   setShowAskQuestion: (boolean) => (void)
@@ -11,7 +13,7 @@ type Props = {
 
 function Header({login, setShowAskQuestion}: Props) {
 
-  const {isAuthenticated, authClient} = useContext(ActorContext);
+  const {isAuthenticated, authClient, balance} = useContext(ActorContext);
 
   useEffect(() => {
 
@@ -96,6 +98,9 @@ function Header({login, setShowAskQuestion}: Props) {
                     Log in
                   </button>
                 }
+              </li>
+              <li className="text-sm font-normal text-black dark:text-white">
+                { balance !== null ? balance.toString() + " " + CONSTANTS.COIN_EMOJI : "" }
               </li>
             </ul>
           </div>

@@ -67,7 +67,6 @@ const UserComponent = () => {
       setUserName(undefined);
     } else {
       let user_name = fromNullable(await master.getUserName(principal));
-      console.log(user_name);
       setUserName(user_name === undefined ? CONSTANTS.DEFAULT_USER_NAME : user_name);
     }
   }

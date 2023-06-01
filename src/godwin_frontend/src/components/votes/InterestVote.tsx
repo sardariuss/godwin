@@ -5,9 +5,11 @@ import UpdateProgress from "../UpdateProgress";
 import Ballot from "../votes/Ballot";
 import { ActorSubclass } from "@dfinity/agent";
 
+import { ActorContext } from "../../ActorContext"
+
 import CONSTANTS from "../../Constants";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>,
@@ -15,6 +17,8 @@ type Props = {
 };
 
 const InterestVote = ({actor, voteId}: Props) => {
+
+  const {refreshBalance} = useContext(ActorContext);
 
   const COUNTDOWN_DURATION_MS = 3000;
 
@@ -39,6 +43,7 @@ const InterestVote = ({actor, voteId}: Props) => {
     if (result['ok'] !== undefined) {
       refreshCursorInfo(result['ok'].answer);
       setVoteDate(result['ok'].date);
+      refreshBalance();
       return "";
     } else {
       setVoteDate(null);

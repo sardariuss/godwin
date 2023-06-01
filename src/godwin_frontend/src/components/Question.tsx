@@ -1,8 +1,6 @@
 import InterestVote from "./votes/InterestVote";
 import StatusHistoryComponent from "./StatusHistory";
 import OpenVotes from "./votes/OpenVotes";
-import CONSTANTS from "../Constants";
-import DivSlider from "./DivSlider";
 
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
