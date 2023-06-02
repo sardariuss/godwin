@@ -1,8 +1,35 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, Interest } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
 import Color from 'colorjs.io';
+
+export enum InterestEnum {
+  Up,
+  Down,
+}
+
+export const interestToEnum = (interest: Interest) : InterestEnum => {
+  if (interest['UP'] !== undefined) return InterestEnum.Up;
+  if (interest['DOWN'] !== undefined) return InterestEnum.Down;
+  throw new Error('Invalid interest');
+}
+
+export const enumToInterest = (interestEnum: InterestEnum) : Interest => {
+  if (interestEnum === InterestEnum.Up) return { 'UP' : null };
+  if (interestEnum === InterestEnum.Down) return { 'DOWN' : null };
+  throw new Error('Invalid interestEnum');
+}
+
+// @todo: temporary
+export const interestToCursorInfo = (interest: InterestEnum | null) : CursorInfo => {
+  if (interest === InterestEnum.Up) {
+    return toCursorInfo(1.0, CONSTANTS.INTEREST_INFO);
+  } if (interest === InterestEnum.Down) {
+    return toCursorInfo(-1.0, CONSTANTS.INTEREST_INFO);
+  }
+  return toCursorInfo(0.0, CONSTANTS.INTEREST_INFO);
+}
 
 export enum ChartTypeEnum {
   Bar,

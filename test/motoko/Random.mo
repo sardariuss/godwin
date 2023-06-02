@@ -1,20 +1,21 @@
-import Types "../../src/godwin_backend/model/Types";
+import Types     "../../src/godwin_backend/model/Types";
 
 import Principal "mo:base/Principal";
-import Buffer "mo:base/Buffer";
-import Iter "mo:base/Iter";
+import Buffer    "mo:base/Buffer";
+import Iter      "mo:base/Iter";
 
-import Fuzz "mo:fuzz";
-import Array "mo:base/Array";
+import Fuzz      "mo:fuzz";
+import Array     "mo:base/Array";
 
 module {
 
-  type Principal = Principal.Principal;
-  type Fuzzer = Fuzz.Fuzzer;
-  type Cursor = Types.Cursor;
-  type Category = Types.Category;
-  type CursorArray = Types.CursorArray;
+  type Principal     = Principal.Principal;
+  type Fuzzer        = Fuzz.Fuzzer;
+  type Cursor        = Types.Cursor;
+  type Category      = Types.Category;
+  type CursorArray   = Types.CursorArray;
   type CategoryArray = Types.CategoryArray;
+  type Interest      = Types.Interest;
 
    let list_questions = [
     "One is not born, but rather becomes, a woman.",
@@ -140,8 +141,8 @@ module {
     fuzzer.float.randomRange(0.0, 1.0);
   };
 
-  public func randomInterest(fuzzer: Fuzzer) : Cursor {
-    fuzzer.float.randomRange(-1.0, 1.0);
+  public func randomInterest(fuzzer: Fuzzer) : Interest {
+    if (fuzzer.bool.random()){ #UP; } else { #DOWN; };
   };
 
   public func randomOpinion(fuzzer: Fuzzer) : Cursor {

@@ -1,13 +1,11 @@
-import { Result_7, Result_15 } from "../../../declarations/godwin_backend/godwin_backend.did";
+import CursorBallot                                                            from "./CursorBallot";
+import ResetButton                                                             from "../base/ResetButton";
+import { CursorSlider }                                                        from "../base/CursorSlider";
+import UpdateProgress                                                          from "../UpdateProgress";
+import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo }  from "../../utils";
+import { Result_7, Result_15 }                                                 from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo, nsToStrDate } from "../../utils";
-import ResetButton from "./ResetButton";
-import { CursorSlider } from "./CursorSlider";
-import UpdateProgress from "../UpdateProgress";
-import Ballot from "../votes/Ballot";
-
-import { useState, useEffect } from "react";
-import { Sub } from "../../ActorContext";
+import { useState, useEffect }                                                 from "react";
 
 type Props = {
   countdownDurationMs: number;
@@ -58,7 +56,7 @@ const CursorVote = ({countdownDurationMs, polarizationInfo, voteId, putBallot, g
       cursorInfo === undefined ? <></> :
       voteDate !== null ?
       <div className="mb-3">
-        <Ballot cursorInfo={cursorInfo} dateNs={voteDate}/>
+        <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/>
       </div> :
       <div className="grid grid-cols-8 items-center w-full justify-items-center">
         <div className={`col-start-2 col-span-1 justify-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>

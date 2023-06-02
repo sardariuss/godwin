@@ -1,4 +1,4 @@
-import Ballot                                                            from "./Ballot";
+import CursorBallot                                                      from "./CursorBallot";
 import { CursorSlider }                                                  from "../base/CursorSlider";
 import ResetButton                                                       from "../base/ResetButton";
 import UpdateProgress                                                    from "../UpdateProgress";
@@ -81,7 +81,7 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
       categorization === undefined ? <></> :
       voteDate !== null ?
       <div className="mb-3">
-        <Ballot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), categories)} dateNs={voteDate}/>
+        <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), categories)} dateNs={voteDate}/>
       </div> :
       <div className="flex flex-col items-center space-y-2 mb-2">
         <div className="justify-center items-center text-xs font-extralight italic">

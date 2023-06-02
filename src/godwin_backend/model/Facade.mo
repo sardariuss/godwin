@@ -33,6 +33,8 @@ module {
   type Duration                   = Types.Duration;
   type QuestionOrderBy            = Types.QuestionOrderBy;
   type Decay                      = Types.Decay; // @todo
+  type Interest                   = Types.Interest;
+  type Appeal                     = Types.Appeal;
   type CursorArray                = Types.CursorArray;
   type PolarizationArray          = Types.PolarizationArray;
   type CategoryInfo               = Types.CategoryInfo;
@@ -141,11 +143,11 @@ module {
       await* _controller.reopenQuestion(caller, question_id, date);
     };
 
-    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<Ballot<Cursor>, FindBallotError> {
+    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<InterestBallot, FindBallotError> {
       _controller.getInterestBallot(caller, vote_id);
     };
 
-    public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Cursor) : async* Result<InterestBallot, PutBallotError> {
+    public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<InterestBallot, PutBallotError> {
       Result.mapOk<(), InterestBallot, PutBallotError>(await* _controller.putInterestBallot(principal, vote_id, date, interest), func() : InterestBallot {
         { date = date; answer = interest; }
       });
@@ -181,7 +183,7 @@ module {
     };
 
     public func revealInterestVote(vote_id: VoteId) : Result<InterestVote, RevealVoteError> {
-      Result.mapOk<Vote<Cursor, Polarization>, InterestVote, RevealVoteError>(_controller.revealInterestVote(vote_id), func(vote: Vote<Cursor, Polarization>) : InterestVote {
+      Result.mapOk<Vote<Interest, Appeal>, InterestVote, RevealVoteError>(_controller.revealInterestVote(vote_id), func(vote: Vote<Interest, Appeal>) : InterestVote {
         toShareableVote(vote);
       });
     };

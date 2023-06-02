@@ -11,6 +11,7 @@ import Random    "Random";
 import Principal "mo:base/Principal";
 import Debug     "mo:base/Debug";
 import Nat       "mo:base/Nat";
+import Result    "mo:base/Result";
 
 import Fuzz      "mo:fuzz";
 import Array     "mo:base/Array";
@@ -52,7 +53,7 @@ module {
         let iteration_history = Utils.unwrapOk(facade.getIterationHistory(question_id));
         let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, interest_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(interest_vote_id));
             switch(await* facade.putInterestBallot(principal, interest_vote_id, time, Random.randomInterest(fuzzer))){
               case(#ok(_)){};
@@ -67,7 +68,7 @@ module {
         let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration_history.size() - 1));
         let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration_history.size() - 1));
         for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, opinion_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(opinion_vote_id));
             switch(await* facade.putOpinionBallot(principal, opinion_vote_id, time, Random.randomOpinion(fuzzer))){
               case(#ok(_)){};
@@ -75,7 +76,7 @@ module {
             };
             
           };
-          if (Random.random(fuzzer) < 0.1){
+          if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, categorization_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(categorization_vote_id));
             switch(await* facade.putCategorizationBallot(principal, categorization_vote_id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
               case(#ok(_)){};

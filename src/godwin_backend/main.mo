@@ -10,6 +10,7 @@ import Scenario        "../../test/motoko/Scenario"; // @todo
 import Result          "mo:base/Result";
 import Principal       "mo:base/Principal";
 import Time            "mo:base/Time";
+import Interest "model/votes/representation/Interest";
 
 shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
@@ -45,6 +46,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type InterestVote               = Types.InterestVote;
   type OpinionVote                = Types.OpinionVote;
   type CategorizationVote         = Types.CategorizationVote;
+  type Interest                   = Types.Interest;
   type Cursor                     = Types.Cursor;
   type Polarization               = Types.Polarization;
   type CursorArray                = Types.CursorArray;
@@ -137,7 +139,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.getInterestBallot(caller, vote_id);
   };
 
-  public shared({caller}) func putInterestBallot(vote_id: VoteId, interest: Cursor) : async Result<InterestBallot, PutBallotError> {
+  public shared({caller}) func putInterestBallot(vote_id: VoteId, interest: Interest) : async Result<InterestBallot, PutBallotError> {
     await* _facade.putInterestBallot(caller, vote_id, Time.now(), interest);
   };
 

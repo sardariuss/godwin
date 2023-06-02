@@ -4,7 +4,7 @@ import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo } fr
 import ResetButton from "./ResetButton";
 import { CursorSlider } from "./CursorSlider";
 import UpdateProgress from "../UpdateProgress";
-import Ballot from "../votes/Ballot";
+import CursorBallot from "../votes/CursorBallot";
 
 import { useState, useEffect } from "react";
 
@@ -56,7 +56,7 @@ const CursorVote = ({countdownDurationMs, polarizationInfo, voteId, putBallot, g
       cursorInfo === undefined ? <></> :
       voteDate !== null ?
       <div className="mb-3">
-        <Ballot cursorInfo={cursorInfo} dateNs={voteDate}/>
+        <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/>
       </div> :
       <div className="grid grid-cols-8 items-center w-full justify-items-center">
         <div className={`col-start-2 col-span-1 justify-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>

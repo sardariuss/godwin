@@ -1,12 +1,13 @@
-import { _SERVICE, Status, Category, CategoryInfo, PublicVote, PublicVote_1 } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, Status, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "./../../declarations/godwin_backend/godwin_backend.did";
 import { nsToStrDate, statusToString, toMap, VoteKind } from "../utils";
 
-import InterestAggregate from "./aggregates/InterestAggregate";
-import OpinionAggregate from "./aggregates/OpinionAggregate";
-import CategorizationAggregate from "./aggregates/CategorizationAggregate";
-import SinglePolarizationBar from "./base/SinglePolarizationBar";
+import InterestAggregate              from "./aggregates/InterestAggregate";
+import OpinionAggregate               from "./aggregates/OpinionAggregate";
+import AppealBar                      from "./base/AppealBar";
+import CategorizationAggregate        from "./aggregates/CategorizationAggregate";
+import SinglePolarizationBar          from "./base/SinglePolarizationBar";
 import CategorizationPolarizationBars from "./base/CategorizationPolarizationBars";
-import CONSTANTS from "../Constants";
+import CONSTANTS                      from "../Constants";
 
 import { ActorSubclass } from "@dfinity/agent";
 import { useEffect, useState } from "react";
@@ -34,10 +35,10 @@ type Props = {
 
 const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
-  const [selectedVote, setSelectedVote] = useState<VoteKind | undefined>(undefined);
-  const [interestVote, setInterestVote] = useState<PublicVote | undefined>(undefined);
-  const [opinionVote, setOpinionVote] = useState<PublicVote | undefined>(undefined);
-  const [categorizationVote, setCategorizationVote] = useState<PublicVote_1 | undefined>(undefined);
+  const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
+  const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
+  const [opinionVote,        setOpinionVote       ] = useState<       OpinionVote | undefined>(undefined);
+  const [categorizationVote, setCategorizationVote] = useState<CategorizationVote | undefined>(undefined);
 
   const fetchRevealedVotes = async () => {
   
@@ -114,7 +115,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               {
                 // @todo: ad vote id
                 selectedVote === VoteKind.INTEREST && interestVote !== undefined ?
-                  <SinglePolarizationBar
+                  <AppealBar
                     name={"INTEREST"}
                     showName={false}
                     polarizationInfo={CONSTANTS.INTEREST_INFO}

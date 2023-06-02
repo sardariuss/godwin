@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import { CursorInfo, VoteKind, voteKindToCandidVariant } from "../utils";
 
-import Ballot from "./votes/Ballot";
+import CursorBallot from "./votes/CursorBallot";
 
 import { Question, TransactionsRecord, PayoutResult } from "../../declarations/godwin_backend/godwin_backend.did";
 
@@ -100,7 +100,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
         </div>
         {
           ballot_info.cursor !== undefined && ballot_info.date !==undefined ?
-          <Ballot cursorInfo={ballot_info.cursor} dateNs={ballot_info.date} /> : <></>
+          <CursorBallot cursorInfo={ballot_info.cursor} dateNs={ballot_info.date} /> : <></>
         }
       </div>
       <div>

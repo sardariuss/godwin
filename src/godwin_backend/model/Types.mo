@@ -35,6 +35,8 @@ module {
 
   // @todo: are all these types required in the canister interface?
   public type VoteId                     = VoteTypes.VoteId;
+  public type Interest                   = VoteTypes.Interest;
+  public type Appeal                     = VoteTypes.Appeal;
   public type Cursor                     = VoteTypes.Cursor;
   public type Polarization               = VoteTypes.Polarization;
   public type CursorArray                = [(VoteTypes.Category, VoteTypes.Cursor)];
@@ -48,7 +50,7 @@ module {
     ballots: [(Principal, VoteTypes.Ballot<T>)];
     aggregate: A;
   };
-  public type InterestVote               = Vote<Cursor, Polarization>;
+  public type InterestVote               = Vote<Interest, Appeal>;
   public type OpinionVote                = Vote<Cursor, Polarization>;
   public type CategorizationVote         = Vote<CursorArray, PolarizationArray>;
 
@@ -58,7 +60,7 @@ module {
   public type GetVoteError               = VoteTypes.GetVoteError;
   public type RevealVoteError            = VoteTypes.RevealVoteError;
   public type CloseVoteError             = VoteTypes.CloseVoteError;
-  public type FindBallotError             = VoteTypes.FindBallotError;
+  public type FindBallotError            = VoteTypes.FindBallotError;
   public type AddBallotError             = VoteTypes.AddBallotError;
   public type PutBallotError             = VoteTypes.PutBallotError;
 

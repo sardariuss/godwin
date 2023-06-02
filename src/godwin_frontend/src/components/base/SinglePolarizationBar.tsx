@@ -1,6 +1,6 @@
 import PolarizationBar from "./PolarizationBar";
 import ChartTypeToggle from "./ChartTypeToggle";
-import { PublicVote } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { OpinionVote } from "../../../declarations/godwin_backend/godwin_backend.did";
 import { ChartTypeEnum, PolarizationInfo } from "../../utils";
 
 import { useState } from "react";
@@ -9,7 +9,7 @@ type SinglePolarizationBarProps = {
   name: string;
   showName: boolean;
   polarizationInfo: PolarizationInfo;
-  vote: PublicVote;
+  vote: OpinionVote;
 }
 
 const SinglePolarizationBar = ({name, showName, polarizationInfo, vote}: SinglePolarizationBarProps) => {

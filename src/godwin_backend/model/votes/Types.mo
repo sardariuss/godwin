@@ -23,6 +23,8 @@ module {
   public type Polarization    = RepresentationTypes.Polarization;
   public type CursorMap       = RepresentationTypes.CursorMap;
   public type PolarizationMap = RepresentationTypes.PolarizationMap;
+  public type Interest        = RepresentationTypes.Interest;
+  public type Appeal          = RepresentationTypes.Appeal;
 
   public type VoteId = Nat;
   public let voteHash = Map.nhash;
@@ -47,11 +49,11 @@ module {
     answer: T;
   };
 
-  public type InterestBallot = Ballot<Cursor>;
+  public type InterestBallot = Ballot<Interest>;
   public type OpinionBallot = Ballot<Cursor>;
   public type CategorizationBallot = Ballot<CursorMap>;
 
-  public type InterestVote = Vote<Cursor, Polarization>;
+  public type InterestVote = Vote<Interest, Appeal>;
   public type OpinionVote = Vote<Cursor, Polarization>;
   public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
 

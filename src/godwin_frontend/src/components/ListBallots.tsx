@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { CursorInfo, ScanResults, VoteKind, voteKindToString, toCursorInfo, fromScanLimitResult, getStrongestCategoryCursorInfo, toMap } from "../utils";
+import { CursorInfo, ScanResults, VoteKind, voteKindToString, toCursorInfo, fromScanLimitResult, getStrongestCategoryCursorInfo, toMap, interestToCursorInfo, interestToEnum } from "../utils";
 
 import { TransactionsRecord, VoteId, InterestBallot, OpinionBallot, CategorizationBallot, CategoryArray__1 } from "../../declarations/godwin_backend/godwin_backend.did";
 
@@ -16,7 +16,7 @@ import CONSTANTS from "../Constants";
 
 const interestBallotToBallotInfo = (interest_ballot: [VoteId, [] | [InterestBallot], [] | [TransactionsRecord]]) : BallotInfo => {
   let [vote_id, ballot, tx_rec] = interest_ballot;
-  let cursor = ballot[0] !== undefined ? toCursorInfo(ballot[0].answer, CONSTANTS.INTEREST_INFO) : undefined;
+  let cursor = ballot[0] !== undefined ? interestToCursorInfo(interestToEnum(ballot[0].answer)) : undefined;
   let date = fromNullable(ballot)?.date;
   let tx_record = fromNullable(tx_rec);
   return { vote_kind: VoteKind.INTEREST, vote_id, cursor, date, tx_record };

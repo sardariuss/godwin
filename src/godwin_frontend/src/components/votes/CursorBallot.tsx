@@ -1,12 +1,12 @@
 import { CursorInfo, timeAgo } from "../../utils";
 
-type BallotProps = {
+type CursorBallotProps = {
   cursorInfo: CursorInfo;
   dateNs: bigint;
   children?: React.ReactNode;
 };
 
-const Ballot = ({cursorInfo, dateNs, children} : BallotProps) => {
+const CursorBallot = ({cursorInfo, dateNs, children} : CursorBallotProps) => {
 
   return (
     <div className="flex flex-row items-center w-full">
@@ -36,4 +36,4 @@ const Ballot = ({cursorInfo, dateNs, children} : BallotProps) => {
   );
 };
 
-export default Ballot;
+export default CursorBallot;

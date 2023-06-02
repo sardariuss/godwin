@@ -3,8 +3,8 @@ import Votes               "Votes";
 import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
-import Polarization        "representation/Polarization";
-import Cursor              "representation/Cursor";
+import Appeal              "representation/Appeal";
+import Interest            "representation/Interest";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
@@ -27,14 +27,14 @@ module {
   type Map<K, V>              = Map.Map<K, V>;
   
   type VoteId                 = Types.VoteId;
-  type Cursor                 = Types.Cursor;
-  type Polarization           = Types.Polarization;
-  type Vote                   = Types.Vote<Cursor, Polarization>;
-  type Ballot                 = Types.Ballot<Cursor>;
+  type Vote                   = Types.Vote<Interest, Appeal>;
+  type Ballot                 = Types.Ballot<Interest>;
   type PutBallotError         = Types.PutBallotError;
   type FindBallotError        = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
+  type Interest               = Types.Interest;
+  type Appeal                 = Types.Appeal;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -48,7 +48,7 @@ module {
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
   
-  public type Register        = Votes.Register<Cursor, Polarization>;
+  public type Register        = Votes.Register<Interest, Appeal>;
 
   let { toInterestScore; } = QuestionQueries;
 
@@ -56,11 +56,11 @@ module {
   let PRICE_PUT_BALLOT = 1000; // @todo
 
   public func initRegister() : Register {
-    Votes.initRegister<Cursor, Polarization>();
+    Votes.initRegister<Interest, Appeal>();
   };
 
   public func build(
-    vote_register: Votes.Register<Cursor, Polarization>,
+    vote_register: Votes.Register<Interest, Appeal>,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     pay_interface: IPayInterface,
     pay_for_new: PayForNew,
@@ -70,14 +70,14 @@ module {
     Interests(
       Votes.Votes(
         vote_register,
-        VotePolicy.VotePolicy<Cursor, Polarization>(
+        VotePolicy.VotePolicy<Interest, Appeal>(
           #BALLOT_CHANGE_FORBIDDEN,
-          Cursor.isValid,
-          Polarization.addCursor,
-          Polarization.subCursor,
-          Polarization.nil()
+          Interest.isValid,
+          Appeal.addInterest,
+          Appeal.subInterest,
+          Appeal.nil()
         ),
-        ?PayToVote.PayToVote<Cursor>(
+        ?PayToVote.PayToVote<Interest>(
           PayForElement.build(
             transactions_register,
             pay_interface,
@@ -93,7 +93,7 @@ module {
   };
 
   public class Interests(
-    _votes: Votes<Cursor, Polarization>,
+    _votes: Votes<Interest, Appeal>,
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries
@@ -108,7 +108,7 @@ module {
       // Add a join between the question and the vote
       _joins.addJoin(question.id, iteration, vote_id);
       // Update the associated key for the #INTEREST_SCORE order_by
-      _queries.add(toInterestScore(question.id, computeScore(_votes.getVote(vote_id).aggregate)));
+      _queries.add(toInterestScore(question.id, _votes.getVote(vote_id).aggregate.score));
       #ok(question);
     };
 
@@ -116,22 +116,19 @@ module {
       // Close the vote
       await* _votes.closeVote(vote_id);
       // Remove the vote from the interest query
-      _queries.remove(toInterestScore(
-        _joins.getQuestionIteration(vote_id).0,
-        computeScore(_votes.getVote(vote_id).aggregate))
-      );
+      _queries.remove(toInterestScore(_joins.getQuestionIteration(vote_id).0, _votes.getVote(vote_id).aggregate.score));
       // Pay out the buyer
       await* _pay_for_new.refund(vote_id, PRICE_OPENING_VOTE); // @todo: share;
     };
 
-    public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {    
+    public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {    
       
-      let old_appeal = _votes.getVote(vote_id).aggregate;
+      let old_appeal = _votes.getVote(vote_id).aggregate.score;
 
       Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
-        let new_appeal = _votes.getVote(vote_id).aggregate;
+        let new_appeal = _votes.getVote(vote_id).aggregate.score;
         let question_id = _joins.getQuestionIteration(vote_id).0;
-        _queries.replace(?toInterestScore(question_id, computeScore(old_appeal)), ?toInterestScore(question_id, computeScore(new_appeal)));
+        _queries.replace(?toInterestScore(question_id, old_appeal), ?toInterestScore(question_id, new_appeal));
       });
     };
 
@@ -155,19 +152,6 @@ module {
       _votes.revealBallots(principal, direction, limit, previous_id);
     };
 
-  };
-
-  func computeScore(polarization: Polarization) : Float {
-    let { left; right; } = polarization;
-    let total = left + right;
-    if (total == 0.0) { return 0.0; };
-    let x = right / total;
-    let growth_rate = 20.0;
-    let mid_point = 0.5;
-    // https://stackoverflow.com/a/3787645: this will underflow to 0 for large negative values of x,
-    // but that may be OK depending on your context since the exact result is nearly zero in that case.
-    let sigmoid = (2.0 / (1.0 + Float.exp(-1.0 * growth_rate * (x - mid_point)))) - 1.0;
-    total * sigmoid;
   };
 
 };

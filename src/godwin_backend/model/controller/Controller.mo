@@ -68,6 +68,8 @@ module {
   type Ballot<T>              = VoteTypes.Ballot<T>;
   type Vote<T, A>             = VoteTypes.Vote<T, A>;
   type Cursor                 = VoteTypes.Cursor;
+  type Interest               = VoteTypes.Interest;
+  type Appeal                 = VoteTypes.Appeal;
   type Polarization           = VoteTypes.Polarization;
   type CursorMap              = VoteTypes.CursorMap;
   type PolarizationMap        = VoteTypes.PolarizationMap;
@@ -188,11 +190,11 @@ module {
       };
     };
 
-    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<Ballot<Cursor>, FindBallotError> {
+    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<Ballot<Interest>, FindBallotError> {
       _model.getInterestVotes().findBallot(caller, vote_id);
     };
 
-    public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Cursor) : async* Result<(), PutBallotError> {
+    public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
       await* _model.getInterestVotes().putBallot(principal, vote_id, date, interest);
     };
 
@@ -219,7 +221,7 @@ module {
       };
     };
 
-    public func revealInterestVote(vote_id: VoteId) : Result<Vote<Cursor, Polarization>, RevealVoteError> {
+    public func revealInterestVote(vote_id: VoteId) : Result<Vote<Interest, Appeal>, RevealVoteError> {
       _model.getInterestVotes().revealVote(vote_id);
     };
 
