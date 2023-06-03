@@ -43,7 +43,7 @@ module {
   type TransactionsRecord = PayTypes.TransactionsRecord;
 
   type VotePolicy<T, A>   = VotePolicy.VotePolicy<T, A>;
-  type PayToVote<T>       = PayToVote.PayToVote<T>;
+  type PayToVote<T, A>    = PayToVote.PayToVote<T, A>;
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
@@ -86,7 +86,7 @@ module {
   public class Votes<T, A>(
     _register: Register<T, A>,
     _policy: VotePolicy<T, A>,
-    _pay_to_vote: ?PayToVote<T>
+    _pay_to_vote: ?PayToVote<T, A>
   ) {
 
     let _ballot_locks = Set.new<(Principal, VoteId)>(pnhash);
@@ -113,7 +113,7 @@ module {
           // Payout if any
           switch(_pay_to_vote){
             case(null) {};
-            case(?pay_to_vote) { await* pay_to_vote.payout(id, vote.ballots); };
+            case(?pay_to_vote) { await* pay_to_vote.payout(vote); };
           };
         };
       };

@@ -18,19 +18,19 @@ module {
 
   type Result<Ok, Err>  = Result.Result<Ok, Err>;
 
-  type Ref<T>              = Ref.Ref<T>;
-  type WRef<T>             = WRef.WRef<T>;
-  type WMap<K, V>          = WMap.WMap<K, V>;
-  type Map<K, V>           = Map.Map<K, V>;
+  type Ref<T>                  = Ref.Ref<T>;
+  type WRef<T>                 = WRef.WRef<T>;
+  type WMap<K, V>              = WMap.WMap<K, V>;
+  type Map<K, V>               = Map.Map<K, V>;
 
-  type IPayInterface       = Types.IPayInterface;
-  type Subaccount          = Types.Subaccount;
-  type Balance             = Types.Balance;
-  type PayinError          = Types.PayinError;
-  type PayoutError         = Types.PayoutError;
-  type SubaccountPrefix    = Types.SubaccountPrefix;
-  type TransactionsRecord  = Types.TransactionsRecord;
-  type TransactionsRecords = TransactionsRecords.TransactionsRecords;
+  type IPayInterface           = Types.IPayInterface;
+  type Subaccount              = Types.Subaccount;
+  type Balance                 = Types.Balance;
+  type TransferFromMasterError = Types.TransferFromMasterError;
+  type ReapAccountError        = Types.ReapAccountError;
+  type SubaccountPrefix        = Types.SubaccountPrefix;
+  type TransactionsRecord      = Types.TransactionsRecord;
+  type TransactionsRecords     = TransactionsRecords.TransactionsRecords;
   
   type Id = Nat;
 
@@ -60,9 +60,9 @@ module {
     _user_transactions: TransactionsRecords
   ){
 
-    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, PayinError>{
+    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, TransferFromMasterError>{
       let subaccount = getNextSubaccount();
-      switch(await* _pay_interface.payin(subaccount, buyer, price)) {
+      switch(await* _pay_interface.transferFromMaster(buyer, subaccount, price)) {
         case (#err(err)) { #err(err); };
         case (#ok(tx_index)) {
           let id = create_new();
@@ -78,7 +78,7 @@ module {
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      let result = await* _pay_interface.payout(subaccount, principal, price);
+      let result = await* _pay_interface.transferToMaster(subaccount, principal, price);
       _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
       _lock_register.delete(id);
     };

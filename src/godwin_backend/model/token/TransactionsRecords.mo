@@ -17,7 +17,8 @@ module {
   type Id                 = Nat;
   type TransactionsRecord = Types.TransactionsRecord;
   type TxIndex            = Types.TxIndex;
-  type PayoutResult       = Types.PayoutResult;
+  type ReapAccountResult  = Types.ReapAccountResult;
+  type MintResult         = Types.MintResult;
 
   public class TransactionsRecords(
     _register: Map<Principal, Map<Id, TransactionsRecord>>,
@@ -36,7 +37,7 @@ module {
       Map.set(_register, Map.phash, principal, transactions);
     };
 
-    public func setPayout(principal: Principal, id: Id, refund: ?PayoutResult, reward: ?PayoutResult){
+    public func setPayout(principal: Principal, id: Id, refund: ?ReapAccountResult, reward: ?MintResult){
       let error_prefix = "Cannot update the transaction record for principal '" # Principal.toText(principal) # "' and element '" # Nat.toText(id) # "'";
       // Get the transactions from this user
       let transactions = getRecords(principal);

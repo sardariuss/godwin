@@ -1,11 +1,11 @@
 import MasterTypes "../../../godwin_master/Types";
-import TokenTypes "../../../godwin_token/Types";
+import TokenTypes  "../../../godwin_token/Types";
 
-import Map "mo:map/Map";
+import Map         "mo:map/Map";
 
-import Result "mo:base/Result";
-import Error "mo:base/Error";
-import Buffer "mo:base/Buffer";
+import Result      "mo:base/Result";
+import Error       "mo:base/Error";
+import Buffer      "mo:base/Buffer";
 
 module {
 
@@ -30,18 +30,23 @@ module {
   public type TransferResult = TokenTypes.TransferResult;
   public type TransferArgs   = TokenTypes.TransferArgs;
   public type TransferError  = TokenTypes.TransferError;
+  public type Mint           = TokenTypes.Mint;
 
   public type CanisterCallError = {
     #CanisterCallError: Error.ErrorCode;
   };
 
-  // PayIn types
-  public type PayinError       = MasterTypes.TransferError or CanisterCallError;
-  public type PayinResult      = Result<TxIndex, PayinError>;
-  // Payout types
-  public type PayoutRecipient  = { to: Principal; share: Float; };
-  //public type SinglePayoutInfo = (TokenTypes.TransferArgs, TokenTypes.TransferResult);
-  public type PayoutError = TokenTypes.TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
+  // Transfer from master types
+  public type TransferFromMasterError  = MasterTypes.TransferError or CanisterCallError;
+  public type TransferFromMasterResult = Result<TxIndex, TransferFromMasterError>;
+
+  // Transfer to master types
+  public type TransferToMasterResult = Result<TxIndex, TransferError or CanisterCallError>;
+  
+  // Reap account types
+  public type ReapAccountRecipient  = { to: Principal; share: Float; };
+  public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
+  public type ReapAccountError = TokenTypes.TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
     #SingleReapLost: {
       share: Float;
       subgodwin_subaccount: Subaccount;
@@ -51,30 +56,36 @@ module {
       error: TransferError;
     };
   };
-  public type PayoutResult = Result<TxIndex, PayoutError>;
+
   // Mint types
-  public type MintRecipient    = { to: Principal; amount: Balance;};
-  public type MintArgs         = TokenTypes.MintBatchArgs;
-  public type SingleMintInfo   = (TokenTypes.Mint, TokenTypes.TransferResult);
-  public type MintError        = MasterTypes.TransferError or CanisterCallError or { #BatchError : [SingleMintInfo]; };
-  public type MintResult       = Result<(), MintError>;
+  public type MintRecipient    = { to: Principal; amount: Balance; };
+  public type MintResult       = Result<TxIndex, MintError>;
+  public type MintError        = MasterTypes.TransferError or CanisterCallError or { 
+    #SingleMintLost: {
+      amount: Balance;
+    };
+    #SingleMintError: {
+      args: Mint;
+      error: TransferError;
+    };
+  };
 
   public type TransactionsRecord = {
     payin: TxIndex;
     payout: {
       #PENDING;
       #PROCESSED: {
-        refund: ?PayoutResult;
-        reward: ?PayoutResult;
+        refund: ?ReapAccountResult;
+        reward: ?MintResult;
       };
     };
   };
 
   public type IPayInterface = {
-    payin: (subaccount: Blob, from: Principal, amount: Balance) -> async* PayinResult;
-    payout: (subaccount: Blob, to: Principal, amount: Nat) -> async* PayoutResult;
-    batchPayout: (subaccount: Blob, recipients: Buffer<PayoutRecipient>, results: Map<Principal, PayoutResult>) -> async* ();
-    mint: (recipients: Buffer<MintRecipient>) -> async* MintResult;
+    transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
+    transferToMaster: (from_subaccount: Blob, to: Principal, amount: Balance) -> async* ReapAccountResult;
+    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>, results: Map<Principal, ReapAccountResult>) -> async* ();
+    mintBatch: (recipients: Buffer<MintRecipient>, results: Map<Principal, MintResult>) -> async* ();
   };
 
 };

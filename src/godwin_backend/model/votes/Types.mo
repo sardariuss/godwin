@@ -49,6 +49,11 @@ module {
     answer: T;
   };
 
+  public type BallotPayout = {
+    refund_share: Float;
+    reward_tokens: PayTypes.Balance;
+  };
+
   public type InterestBallot = Ballot<Interest>;
   public type OpinionBallot = Ballot<Cursor>;
   public type CategorizationBallot = Ballot<CursorMap>;
@@ -82,7 +87,7 @@ module {
   };
 
   public type OpenVoteError = {
-    #PayinError: PayTypes.PayinError;
+    #PayinError: PayTypes.TransferFromMasterError;
   };
 
   public type GetVoteError = {
@@ -123,7 +128,7 @@ module {
     #VoteNotFound;
     #ChangeBallotNotAllowed;
     #NoSubacountLinked;
-    #PayinError: PayTypes.PayinError;
+    #PayinError: PayTypes.TransferFromMasterError;
   };
 
 };

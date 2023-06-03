@@ -22,10 +22,11 @@ module {
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
+  type BallotPayout           = Types.BallotPayout;
 
   type TransactionsRecord     = PayTypes.TransactionsRecord;
 
-  public type Register    = Votes.Register<CursorMap, PolarizationMap>;
+  public type Register        = Votes.Register<CursorMap, PolarizationMap>;
 
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
 
@@ -50,15 +51,24 @@ module {
         PolarizationMap.subCursorMap,
         PolarizationMap.nil(categories)
       ),
-      ?PayToVote.PayToVote<CursorMap>(
+      ?PayToVote.PayToVote<CursorMap, PolarizationMap>(
         PayForElement.build(
           transactions_register,
           pay_interface,
           #PUT_CATEGORIZATION_BALLOT,
-          PRICE_PUT_BALLOT,
-        )
+        ),
+        PRICE_PUT_BALLOT,
+        computePayout
       )
     );
+  };
+
+  // @todo
+  func computePayout(answer: CursorMap, aggregate: PolarizationMap) : BallotPayout {
+    {
+      refund_share = 1.0;
+      reward_tokens = 0;
+    };
   };
 
 };

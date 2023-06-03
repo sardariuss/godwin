@@ -20,30 +20,35 @@ module {
   type VoteId                 = Types.VoteId;
   type PutBallotError         = Types.PutBallotError;
   type Ballot<T>              = Types.Ballot<T>;
+  type Vote<T, A>             = Types.Vote<T, A>;
+  type BallotPayout           = Types.BallotPayout;
 
-  type PayoutRecipient        = PayTypes.PayoutRecipient;
+  type ReapAccountRecipient   = PayTypes.ReapAccountRecipient;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
+  type Balance                = PayTypes.Balance;
 
-  public class PayToVote<T>(
-    _pay_for_element: PayForElement.PayForElement
+  public class PayToVote<T, A>(
+    _pay_for_element: PayForElement.PayForElement,
+    _payin_price: Balance,
+    _compute_payout: (T, A) -> BallotPayout
   ) {
 
     public func payin(vote_id: VoteId, principal: Principal) : async* Result<(), PutBallotError> {
-      switch(await* _pay_for_element.payin(vote_id, principal)){
+      switch(await* _pay_for_element.payin(vote_id, principal, _payin_price)){
         case(#err(err)) { #err(#PayinError(err)); };
         case(#ok(tx_index)) { #ok; };
       };
     };
 
-    public func payout(vote_id: VoteId, ballots: Map<Principal, Ballot<T>>) : async* () {
+    public func payout(vote: Vote<T, A>) : async* () {
       // Compute the recipients with their share
-      let recipients = Buffer.Buffer<PayoutRecipient>(0);
-      let number_ballots = Map.size(ballots);
-      for ((principal, ballot) in Map.entries(ballots)) {
-        recipients.add({ to = principal; share = 1.0 / Float.fromInt(number_ballots); }); // @todo: share
+      let recipients = Buffer.Buffer<ReapAccountRecipient>(0);
+      let number_ballots = Map.size(vote.ballots);
+      for ((principal, ballot) in Map.entries(vote.ballots)) {
+        recipients.add({ to = principal; share = _compute_payout(ballot.answer, vote.aggregate).refund_share; });
       };
       // Payout the recipients
-      await* _pay_for_element.payout(vote_id, recipients);
+      await* _pay_for_element.payout(vote.id, recipients);
     };
 
     public func findTransactionsRecord(principal: Principal, id: VoteId) : ?TransactionsRecord {

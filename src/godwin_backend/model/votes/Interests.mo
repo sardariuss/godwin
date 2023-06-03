@@ -35,6 +35,7 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
+  type BallotPayout           = Types.BallotPayout;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -77,13 +78,14 @@ module {
           Appeal.subInterest,
           Appeal.nil()
         ),
-        ?PayToVote.PayToVote<Interest>(
+        ?PayToVote.PayToVote<Interest, Appeal>(
           PayForElement.build(
             transactions_register,
             pay_interface,
             #PUT_INTEREST_BALLOT,
-            PRICE_PUT_BALLOT,
-          )
+          ),
+          PRICE_PUT_BALLOT,
+          computePayout
         )
       ),
       pay_for_new,
@@ -152,6 +154,14 @@ module {
       _votes.revealBallots(principal, direction, limit, previous_id);
     };
 
+  };
+
+  // @todo
+  func computePayout(answer: Interest, appeal: Appeal) : BallotPayout {
+    {
+      refund_share = 1.0;
+      reward_tokens = 0;
+    };
   };
 
 };

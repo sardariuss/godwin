@@ -4,7 +4,7 @@ import { CursorInfo, VoteKind, voteKindToCandidVariant } from "../utils";
 
 import CursorBallot from "./votes/CursorBallot";
 
-import { Question, TransactionsRecord, PayoutResult } from "../../declarations/godwin_backend/godwin_backend.did";
+import { Question, TransactionsRecord, ReapAccountResult } from "../../declarations/godwin_backend/godwin_backend.did";
 
 import { ActorContext } from "../ActorContext";
 
@@ -61,7 +61,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
   const refreshRefund = async () => {
     setRefund(old => { return undefined; });
     if (ballot_info.tx_record !== undefined && ballot_info.tx_record.payout['PROCESSED'] !== undefined) {
-      let refund : PayoutResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].refund);
+      let refund : ReapAccountResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].refund);
       if (refund !== undefined && refund['ok'] !== undefined){
         let tx = fromNullable(await token.get_transaction(refund['ok']));
         if (tx !== undefined){
@@ -75,7 +75,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
   const refreshReward = async () => {
     setReward(old => { return undefined; });
     if (ballot_info.tx_record !== undefined && ballot_info.tx_record.payout['PROCESSED'] !== undefined) {
-      let reward : PayoutResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].reward);
+      let reward : ReapAccountResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].reward);
       if (reward !== undefined && reward['ok'] !== undefined){
         let tx = fromNullable(await token.get_transaction(reward['ok']));
         if (tx !== undefined){
