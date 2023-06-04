@@ -1,29 +1,44 @@
-import Types     "../../../src/godwin_backend/model/votes/Types";
-import Interests "../../../src/godwin_backend/model/votes/Interests";
+import VoteTypes          "../../../src/godwin_backend/model/votes/Types";
+import Interests          "../../../src/godwin_backend/model/votes/Interests";
+import PayTypes           "../../../src/godwin_backend/model/token/Types";
+import PayForNew          "../../../src/godwin_backend/model/token/PayForNew";
+import QuestionVoteJoins  "../../../src/godwin_backend/model/votes/QuestionVoteJoins";
+import QuestionQueries    "../../../src/godwin_backend/model/questions/QuestionQueries";
 
-//import WSet "../../../src/godwin_backend/utils/wrappers/WSet";
+import Ref                "../../../src/godwin_backend/utils/Ref";
 
-import TestifyTypes   "../testifyTypes";
-import Principals "../Principals";
+import MockTokenInterface "../MockTokenInterface";
+import TestifyTypes       "../testifyTypes";
+import Principals         "../Principals";
 
-import Principal "mo:base/Principal";
-import Nat "mo:base/Nat";
+import Testify            "mo:testing/Testify";
+import SuiteState         "mo:testing/SuiteState";
+import TestStatus         "mo:testing/Status";
+
+import Map                "mo:map/Map";
+
+import Principal          "mo:base/Principal";
+import Nat                "mo:base/Nat";
 
 module {
 
-  type NamedTest<T> = SuiteState.NamedTest<T>;
-  type Suite<T> = SuiteState.Suite<T>;
-  type TestStatus = TestStatus.Status;
-  type TestAsync<T> = SuiteState.TestAsync<T>;
+  type InterestBallot     = VoteTypes.InterestBallot;
+  type InterestVote       = VoteTypes.InterestVote;
+  type Polarization       = VoteTypes.Polarization;
+  type VoteId             = VoteTypes.VoteId;
+  type Cursor             = VoteTypes.Cursor;
+  type TransactionsRecord = PayTypes.TransactionsRecord;
+  type Interests          = Interests.Interests;
+
+  type NamedTest<T>       = SuiteState.NamedTest<T>;
+  type Suite<T>           = SuiteState.Suite<T>;
+  type TestStatus         = TestStatus.Status;
+  type TestAsync<T>       = SuiteState.TestAsync<T>;
+
+  type Map<K, V>          = Map.Map<K, V>;
 
   // For convenience: from base module
-  type Time = Int;
-
-  type InterestBallot = Types.InterestBallot;
-  type InterestVote   = Types.InterestVote;
-  type Polarization  = Types.Polarization;
-  type VoteId        = Types.VoteId;
-  type Cursor        = Types.Cursor;
+  type Time               = Int;
 
   let { testifyElement; optionalTestify; } = Testify;
   let { describe; itp; equal; itsp; } = SuiteState;
@@ -33,10 +48,23 @@ module {
   public func run(test_status: TestStatus) : async* () {
     
     let principals = Principals.init();
-//    let interests = Interests.build(
-//      Interests.initRegister(),
-//      Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash),
-//      );
+
+    let token_interface = MockTokenInterface.MockTokenInterface();
+
+    let interests = Interests.build(
+      Interests.initRegister(),
+      Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash),
+      token_interface,
+      PayForNew.build(
+        token_interface,
+        #OPEN_QUESTION,
+        Map.new<Nat, (Principal, Blob)>(Map.nhash),
+        Ref.init<Nat>(0),
+        Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash)
+      ),
+      QuestionVoteJoins.build(QuestionVoteJoins.initRegister()),
+      QuestionQueries.build(QuestionQueries.initRegister())
+    );
 
     let s = SuiteState.Suite<Interests>(interests);
     //let interests = Interests.build(Interests.initRegister());

@@ -6,12 +6,14 @@ import Map         "mo:map/Map";
 import Result      "mo:base/Result";
 import Error       "mo:base/Error";
 import Buffer      "mo:base/Buffer";
+import Trie        "mo:base/Trie";
 
 module {
 
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Buffer<T>       = Buffer.Buffer<T>;
   type Map<K, V>       = Map.Map<K, V>;
+  type Trie<K, V>      = Trie.Trie<K, V>;
 
   public type MasterInterface = MasterTypes.MasterInterface;
   public let { toSubaccount; toBaseResult; } = MasterTypes;
@@ -46,7 +48,7 @@ module {
   // Reap account types
   public type ReapAccountRecipient  = { to: Principal; share: Float; };
   public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
-  public type ReapAccountError = TokenTypes.TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
+  public type ReapAccountError = TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
     #SingleReapLost: {
       share: Float;
       subgodwin_subaccount: Subaccount;
@@ -70,6 +72,16 @@ module {
     };
   };
 
+  public type PayoutRecipient = { 
+    to: Principal;
+    args: PayoutArgs; 
+  };
+
+  public type PayoutArgs = {
+    refund_share: Float;
+    reward_tokens: ?Balance;
+  };
+
   public type TransactionsRecord = {
     payin: TxIndex;
     payout: {
@@ -81,11 +93,11 @@ module {
     };
   };
 
-  public type IPayInterface = {
+  public type ITokenInterface = {
     transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
     transferToMaster: (from_subaccount: Blob, to: Principal, amount: Balance) -> async* ReapAccountResult;
-    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>, results: Map<Principal, ReapAccountResult>) -> async* ();
-    mintBatch: (recipients: Buffer<MintRecipient>, results: Map<Principal, MintResult>) -> async* ();
+    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) -> async* Trie<Principal, ReapAccountResult>;
+    mintBatch: (recipients: Buffer<MintRecipient>) -> async* Trie<Principal, MintResult>;
   };
 
 };

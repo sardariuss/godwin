@@ -1,5 +1,6 @@
 import TestQueries "questions/testQueries";
 import TestQuestions "questions/testQuestions";
+//import TestInterests "votes/testInterests";
 import TestOpinions "votes/testOpinions";
 
 import Status "mo:testing/Status";

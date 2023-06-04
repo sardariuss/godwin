@@ -13,6 +13,8 @@ import Debug               "mo:base/Debug";
 import Nat                 "mo:base/Nat";
 import Buffer              "mo:base/Buffer";
 import Iter                "mo:base/Iter";
+import Trie                "mo:base/Trie";
+import Principal           "mo:base/Principal";
 
 module {
 
@@ -22,29 +24,33 @@ module {
   type WRef<T>                 = WRef.WRef<T>;
   type WMap<K, V>              = WMap.WMap<K, V>;
   type Map<K, V>               = Map.Map<K, V>;
+  type Principal               = Principal.Principal;
+  type Key<K>                  = Trie.Key<K>;
+  func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
-  type IPayInterface           = Types.IPayInterface;
+  type ITokenInterface         = Types.ITokenInterface;
   type Subaccount              = Types.Subaccount;
   type Balance                 = Types.Balance;
   type TransferFromMasterError = Types.TransferFromMasterError;
   type ReapAccountError        = Types.ReapAccountError;
   type SubaccountPrefix        = Types.SubaccountPrefix;
   type TransactionsRecord      = Types.TransactionsRecord;
+  type MintResult              = Types.MintResult;
   type TransactionsRecords     = TransactionsRecords.TransactionsRecords;
   
   type Id = Nat;
 
-  // \note: Use the IPayInterface to not link with the actual PayInterface which uses
+  // \note: Use the ITokenInterface to not link with the actual TokenInterface which uses
   // the canister:godwin_token. This is required to be able to build the tests.
   public func build(
-    pay_interface: IPayInterface,
+    token_interface: ITokenInterface,
     subaccount_prefix: SubaccountPrefix,
     lock_register: Map<Id, (Principal, Subaccount)>,
     subaccount_index: Ref<Nat>,
     user_transactions: Map<Principal, Map<Id, TransactionsRecord>>
   ) : PayForNew {
     PayForNew(
-      pay_interface,
+      token_interface,
       subaccount_prefix,
       WMap.WMap(lock_register, Map.nhash),
       WRef.WRef(subaccount_index),
@@ -53,16 +59,16 @@ module {
   };
 
   public class PayForNew(
-    _pay_interface: IPayInterface,
+    _token_interface: ITokenInterface,
     _subaccount_prefix: SubaccountPrefix,
     _lock_register: WMap<Id, (Principal, Subaccount)>,
     _subaccount_index: WRef<Nat>,
     _user_transactions: TransactionsRecords
   ){
 
-    public func payNew(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, TransferFromMasterError>{
+    public func payin(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, TransferFromMasterError>{
       let subaccount = getNextSubaccount();
-      switch(await* _pay_interface.transferFromMaster(buyer, subaccount, price)) {
+      switch(await* _token_interface.transferFromMaster(buyer, subaccount, price)) {
         case (#err(err)) { #err(err); };
         case (#ok(tx_index)) {
           let id = create_new();
@@ -73,13 +79,22 @@ module {
       };
     };
 
-    public func refund(id: Id, price: Balance) : async* () {
+    public func payout(id: Id, refund: Balance, reward: ?Balance) : async* () {
       let (principal, subaccount) = switch(_lock_register.getOpt(id)){
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      let result = await* _pay_interface.transferToMaster(subaccount, principal, price);
-      _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
+      let transfer_result = await* _token_interface.transferToMaster(subaccount, principal, refund);
+      
+      // @todo: have a function for single mint
+      let rewards = switch(reward){
+        case(null) { Trie.empty<Principal, MintResult>(); };
+        case(?amount){
+          await* _token_interface.mintBatch(Buffer.fromArray([{ to = principal; amount; }]));
+        };
+      };
+      
+      _user_transactions.setPayout(principal, id, ?transfer_result, Trie.get(rewards, key(principal), Principal.equal));
       _lock_register.delete(id);
     };
 

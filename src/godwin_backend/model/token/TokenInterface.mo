@@ -11,12 +11,17 @@ import Buffer    "mo:base/Buffer";
 import Error     "mo:base/Error";
 import Array     "mo:base/Array";
 import Debug     "mo:base/Debug";
+import Trie      "mo:base/Trie";
 
 module {
 
   type Result<Ok, Err>                = Result.Result<Ok, Err>;
   type Buffer<T>                      = Buffer.Buffer<T>;
   type Map<K, V>                      = Map.Map<K, V>;
+  type Trie<K, V>                     = Trie.Trie<K, V>;
+  type Key<K>                         = Trie.Key<K>;
+  type Principal                      = Principal.Principal;
+  func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
   let { toSubaccount; toBaseResult; } = Types;
   type MasterInterface                = Types.MasterInterface;
@@ -37,12 +42,12 @@ module {
   type MintResult                     = Types.MintResult;
   type Mint                           = Types.Mint;
 
-  public func build(principal: Principal) : PayInterface {
+  public func build(principal: Principal) : TokenInterface {
     let master : MasterInterface = actor(Principal.toText(principal));
-    PayInterface(master);
+    TokenInterface(master);
   };
 
-  public class PayInterface(_master: MasterInterface) {
+  public class TokenInterface(_master: MasterInterface) {
 
     public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async* TransferFromMasterResult {
       try {
@@ -67,11 +72,11 @@ module {
         #err(#CanisterCallError(Error.code(e)));
       };
     };
-
+    
     // @todo: double ReapAccountRecipient types is confusing
-    public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>, results: Map<Principal, ReapAccountResult>) : async* () {
+    public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) : async* Trie<Principal, ReapAccountResult> {
 
-      Map.clear(results);
+      var results : Trie<Principal, ReapAccountResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
       let to_accounts = Buffer.Buffer<Token.ReapAccountRecipient>(recipients.size());
@@ -82,7 +87,7 @@ module {
         // Keep the mapping of subaccount <-> principal
         Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
         // Initialize the results map in case no error is found
-        Map.set(results, Map.phash, to, #err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; })));
+        results := Trie.put(results, key(to), Principal.equal, #err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; }))).0;
       };
 
       let reap_result = try {
@@ -99,23 +104,25 @@ module {
       switch(reap_result) {
         case(#Err(err)) {    
           for (recipient in recipients.vals()){
-            Map.set(results, Map.phash, recipient.to, #err(err));
+            results := Trie.put(results, key(recipient.to), Principal.equal, #err(err)).0;
           };
         };
         case(#Ok(transfer_results)){
           for ((args, result) in Array.vals(transfer_results)){
-            Option.iterate(transferToReapAccountResult(map_recipients, args, result), func(payout: (Principal, ReapAccountResult)){
-              Map.set(results, Map.phash, payout.0, payout.1);
+            Option.iterate(transferToReapAccountResult(map_recipients, args, result), func((principal, result): (Principal, ReapAccountResult)){
+              results := Trie.put(results, key(principal), Principal.equal, result).0;
             });
           };
         };
       };
+
+      results;
     };
 
     // @todo: double MintRecipient types is confusing
-    public func mintBatch(recipients: Buffer<MintRecipient>, results: Map<Principal, MintResult>) : async* () {
+    public func mintBatch(recipients: Buffer<MintRecipient>) : async* Trie<Principal, MintResult> {
 
-      Map.clear(results);
+      var results : Trie<Principal, MintResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
       let to_accounts = Buffer.Buffer<Token.MintRecipient>(recipients.size());
@@ -126,7 +133,7 @@ module {
         // Keep the mapping of subaccount <-> principal
         Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
         // Initialize the results map in case no error is found
-        Map.set(results, Map.phash, to, #err(#SingleMintLost({ amount; })));
+        results := Trie.put(results, key(to), Principal.equal, #err(#SingleMintLost({ amount; }))).0;
       };
 
       let mint_batch = try {
@@ -142,17 +149,19 @@ module {
       switch(mint_batch) {
         case(#err(err)) {    
           for (recipient in recipients.vals()){
-            Map.set(results, Map.phash, recipient.to, #err(err));
+            results := Trie.put(results, key(recipient.to), Principal.equal, #err(err)).0;
           };
         };
         case(#ok(transfer_results)){
           for ((args, result) in Array.vals(transfer_results)){
-            Option.iterate(transferToMintResult(map_recipients, args, result), func(mint: (Principal, MintResult)){
-              Map.set(results, Map.phash, mint.0, mint.1);
+            Option.iterate(transferToMintResult(map_recipients, args, result), func((principal, result): (Principal, MintResult)){
+              results := Trie.put(results, key(principal), Principal.equal, result).0;
             });
           };
         };
       };
+
+      results;
     };
 
     func getMasterAccount(principal: ?Principal) : Account {

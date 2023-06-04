@@ -21,16 +21,16 @@ module {
   type PutBallotError         = Types.PutBallotError;
   type Ballot<T>              = Types.Ballot<T>;
   type Vote<T, A>             = Types.Vote<T, A>;
-  type BallotPayout           = Types.BallotPayout;
 
-  type ReapAccountRecipient   = PayTypes.ReapAccountRecipient;
+  type PayoutRecipient        = PayTypes.PayoutRecipient;
+  type PayoutArgs             = PayTypes.PayoutArgs;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type Balance                = PayTypes.Balance;
 
   public class PayToVote<T, A>(
     _pay_for_element: PayForElement.PayForElement,
     _payin_price: Balance,
-    _compute_payout: (T, A) -> BallotPayout
+    _compute_payout: (T, A) -> PayoutArgs
   ) {
 
     public func payin(vote_id: VoteId, principal: Principal) : async* Result<(), PutBallotError> {
@@ -42,10 +42,10 @@ module {
 
     public func payout(vote: Vote<T, A>) : async* () {
       // Compute the recipients with their share
-      let recipients = Buffer.Buffer<ReapAccountRecipient>(0);
+      let recipients = Buffer.Buffer<PayoutRecipient>(0);
       let number_ballots = Map.size(vote.ballots);
       for ((principal, ballot) in Map.entries(vote.ballots)) {
-        recipients.add({ to = principal; share = _compute_payout(ballot.answer, vote.aggregate).refund_share; });
+        recipients.add({ to = principal; args = _compute_payout(ballot.answer, vote.aggregate); });
       };
       // Payout the recipients
       await* _pay_for_element.payout(vote.id, recipients);

@@ -5,7 +5,6 @@ import PayToVote           "PayToVote";
 
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
-import PayInterface        "../token/PayInterface";
 import PayForElement       "../token/PayForElement";
 import PayTypes            "../token/Types";
 import Categories          "../Categories";
@@ -17,14 +16,14 @@ module {
   type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
-  type PayInterface           = PayInterface.PayInterface;
   
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-  type BallotPayout           = Types.BallotPayout;
 
   type TransactionsRecord     = PayTypes.TransactionsRecord;
+  type ITokenInterface        = PayTypes.ITokenInterface;
+  type PayoutArgs             = PayTypes.PayoutArgs;
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
 
@@ -39,7 +38,7 @@ module {
   public func build(
     vote_register: Votes.Register<CursorMap, PolarizationMap>,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
-    pay_interface: PayInterface,
+    token_interface: ITokenInterface,
     categories: Categories
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
@@ -54,7 +53,7 @@ module {
       ?PayToVote.PayToVote<CursorMap, PolarizationMap>(
         PayForElement.build(
           transactions_register,
-          pay_interface,
+          token_interface,
           #PUT_CATEGORIZATION_BALLOT,
         ),
         PRICE_PUT_BALLOT,
@@ -64,10 +63,10 @@ module {
   };
 
   // @todo
-  func computePayout(answer: CursorMap, aggregate: PolarizationMap) : BallotPayout {
+  func computePayout(answer: CursorMap, aggregate: PolarizationMap) : PayoutArgs {
     {
       refund_share = 1.0;
-      reward_tokens = 0;
+      reward_tokens = ?0;
     };
   };
 

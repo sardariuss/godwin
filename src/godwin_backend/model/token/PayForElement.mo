@@ -11,6 +11,7 @@ import Float               "mo:base/Float";
 import Option              "mo:base/Option";
 import Debug               "mo:base/Debug";
 import Nat                 "mo:base/Nat";
+import Trie                "mo:base/Trie";
 
 module {
 
@@ -20,6 +21,8 @@ module {
   type Buffer<T>                = Buffer.Buffer<T>;
 
   type Map<K, V>                = Map.Map<K, V>;
+  type Key<K>                   = Trie.Key<K>;
+  func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
   
   type SubaccountPrefix         = Types.SubaccountPrefix;
   type ReapAccountRecipient     = Types.ReapAccountRecipient;
@@ -27,33 +30,36 @@ module {
   type ReapAccountResult        = Types.ReapAccountResult;
   type TransferFromMasterResult = Types.TransferFromMasterResult;
   type TransactionsRecord       = Types.TransactionsRecord;
-  type IPayInterface            = Types.IPayInterface;
+  type ITokenInterface          = Types.ITokenInterface;
   type Balance                  = Types.Balance;
+  type PayoutRecipient          = Types.PayoutRecipient;
+  type MintResult               = Types.MintResult;
+  type MintRecipient            = Types.MintRecipient;
 
   type Id                       = Nat;
 
-  // \note: Use the IPayInterface to not link with the actual PayInterface which uses
+  // \note: Use the ITokenInterface to not link with the actual TokenInterface which uses
   // the canister:godwin_token. This is required to be able to build the tests.
   public func build(
     transactions_register: Map<Principal, Map<Id, TransactionsRecord>>,
-    pay_interface: IPayInterface,
+    token_interface: ITokenInterface,
     subaccount_prefix: SubaccountPrefix
   ) : PayForElement {
     PayForElement(
       TransactionsRecords.TransactionsRecords(transactions_register),
-      pay_interface,
+      token_interface,
       subaccount_prefix
     );
   };
 
   public class PayForElement(
     _user_transactions: TransactionsRecords.TransactionsRecords,
-    _pay_interface: IPayInterface,
+    _token_interface: ITokenInterface,
     _subaccount_prefix: SubaccountPrefix
   ) {
 
     public func payin(id: Id, principal: Principal, amount: Balance) : async* TransferFromMasterResult {
-      switch(await* _pay_interface.transferFromMaster(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
+      switch(await* _token_interface.transferFromMaster(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
         case(#err(err)) { #err(err); };
         case(#ok(tx_index)) { 
           _user_transactions.initWithPayin(principal, id, tx_index);
@@ -62,15 +68,25 @@ module {
       };
     };
 
-    public func payout(id: Id, recipients: Buffer<ReapAccountRecipient>) : async* () {
-
-      let results = Map.new<Principal, ReapAccountResult>(Map.phash);
-      await* _pay_interface.reapSubaccount(SubaccountGenerator.getSubaccount(_subaccount_prefix, id), recipients, results);
-      
-      for ((principal, result) in Map.entries(results)) {
-        _user_transactions.setPayout(principal, id, ?result, null); // @todo: add the reward
+    public func payout(id: Id, recipients: Buffer<PayoutRecipient>) : async* () {
+      // Refund the users
+      let refunds = await* _token_interface.reapSubaccount(
+        SubaccountGenerator.getSubaccount(_subaccount_prefix, id), 
+        Buffer.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountRecipient { { to; share = args.refund_share; }; })
+      );
+      // Reward the users
+      let rewards = await* _token_interface.mintBatch(
+        Buffer.mapFilter(recipients, func({to; args;} : PayoutRecipient): ?MintRecipient {
+          Option.map(args.reward_tokens, func(amount: Nat) : MintRecipient { { to; amount; }; });
+        })
+      );
+      // Watchout, this loop only iterates on the refunds, not the rewards.
+      // It is assumed that if for a user there is no refund, there is no reward.
+      // @todo: should do a Trie.disj to get the union of both tries.
+      for ((principal, result) in Trie.iter(refunds)) {
+        let reward = Trie.get(rewards, key(principal), Principal.equal);
+        _user_transactions.setPayout(principal, id, ?result, reward);
       };
-
     };
 
     public func findTransactionsRecord(principal: Principal, id: Id) : ?TransactionsRecord {

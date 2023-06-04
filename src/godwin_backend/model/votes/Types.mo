@@ -49,11 +49,6 @@ module {
     answer: T;
   };
 
-  public type BallotPayout = {
-    refund_share: Float;
-    reward_tokens: PayTypes.Balance;
-  };
-
   public type InterestBallot = Ballot<Interest>;
   public type OpinionBallot = Ballot<Cursor>;
   public type CategorizationBallot = Ballot<CursorMap>;

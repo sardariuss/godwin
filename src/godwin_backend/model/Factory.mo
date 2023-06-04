@@ -16,7 +16,7 @@ import Opinions            "votes/Opinions";
 import Polarization        "votes/representation/Polarization";
 import PolarizationMap     "votes/representation/PolarizationMap";
 import SubaccountGenerator "token/SubaccountGenerator";
-import PayInterface        "token/PayInterface";
+import TokenInterface      "token/TokenInterface";
 import PayForNew           "token/PayForNew";
 
 module {
@@ -42,9 +42,9 @@ module {
 
     let queries = QuestionQueries.build(state.queries.register);
 
-    let pay_interface = PayInterface.build(state.master.v);
+    let token_interface = TokenInterface.build(state.master.v);
     let pay_to_open_question = PayForNew.build(
-      pay_interface,
+      token_interface,
       #OPEN_QUESTION,
       state.opened_questions.register,
       state.opened_questions.index,
@@ -56,7 +56,7 @@ module {
     let interests = Interests.build(
       state.votes.interest.register,
       state.votes.interest.transactions,
-      pay_interface,
+      token_interface,
       pay_to_open_question,
       interest_join,
       queries
@@ -73,7 +73,7 @@ module {
     let categorizations = Categorizations.build(
       state.votes.categorization.register,
       state.votes.categorization.transactions,
-      pay_interface,
+      token_interface,
       categories
     );
 

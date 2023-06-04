@@ -35,16 +35,16 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
-  type BallotPayout           = Types.BallotPayout;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
   type QuestionQueries        = QuestionQueries.QuestionQueries;
-  type IPayInterface          = PayTypes.IPayInterface;
+  type ITokenInterface        = PayTypes.ITokenInterface;
   type PayForNew              = PayForNew.PayForNew;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
+  type PayoutArgs             = PayTypes.PayoutArgs;
 
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
@@ -63,7 +63,7 @@ module {
   public func build(
     vote_register: Votes.Register<Interest, Appeal>,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
-    pay_interface: IPayInterface,
+    token_interface: ITokenInterface,
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries
@@ -81,11 +81,11 @@ module {
         ?PayToVote.PayToVote<Interest, Appeal>(
           PayForElement.build(
             transactions_register,
-            pay_interface,
+            token_interface,
             #PUT_INTEREST_BALLOT,
           ),
           PRICE_PUT_BALLOT,
-          computePayout
+          computePutBallotPayout
         )
       ),
       pay_for_new,
@@ -102,7 +102,7 @@ module {
   ) {
     
     public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
-      let vote_id = switch(await* _pay_for_new.payNew(principal, PRICE_OPENING_VOTE, _votes.newVote)){
+      let vote_id = switch(await* _pay_for_new.payin(principal, PRICE_OPENING_VOTE, _votes.newVote)){
         case (#err(err)) { return #err(#PayinError(err)); };
         case (#ok(id)) { id; };
       };
@@ -117,10 +117,12 @@ module {
     public func closeVote(vote_id: Nat) : async* () {
       // Close the vote
       await* _votes.closeVote(vote_id);
+      let appeal = _votes.getVote(vote_id).aggregate;
       // Remove the vote from the interest query
-      _queries.remove(toInterestScore(_joins.getQuestionIteration(vote_id).0, _votes.getVote(vote_id).aggregate.score));
+      _queries.remove(toInterestScore(_joins.getQuestionIteration(vote_id).0, appeal.score));
       // Pay out the buyer
-      await* _pay_for_new.refund(vote_id, PRICE_OPENING_VOTE); // @todo: share;
+      let (refund_amount, reward_amount) = computeOpenVotePayout(appeal);
+      await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
     };
 
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {    
@@ -157,10 +159,18 @@ module {
   };
 
   // @todo
-  func computePayout(answer: Interest, appeal: Appeal) : BallotPayout {
+  func computeOpenVotePayout(appeal: Appeal) : (Nat, ?Nat) {
+    (
+      PRICE_OPENING_VOTE, 
+      ?0
+    );
+  };
+
+  // @todo
+  func computePutBallotPayout(answer: Interest, appeal: Appeal) : PayoutArgs {
     {
       refund_share = 1.0;
-      reward_tokens = 0;
+      reward_tokens = ?0;
     };
   };
 
