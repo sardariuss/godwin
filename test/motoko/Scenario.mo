@@ -46,7 +46,10 @@ module {
 
       if (Random.random(fuzzer) < 0.3) {
         Debug.print("Open question!");
-        ignore await* facade.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time);
+        switch(await* facade.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time)){
+          case(#ok(_)){};
+          case(#err(err)) { Debug.print("Fail to open question: " # openQuestionErrorToString(err)); };
+        };
       };
 
       for (question_id in Array.vals(facade.getQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
@@ -101,14 +104,39 @@ module {
 
   func putBallotErrorToString(putBallotError: Types.PutBallotError) : Text {
     switch(putBallotError){
-      case(#VoteLocked) { "VoteLocked"; };
-      case(#VoteNotFound) { "VoteNotFound"; };
-      case(#ChangeBallotNotAllowed) { "ChangeBallotNotAllowed"; };
-      case(#NoSubacountLinked) { "NoSubacountLinked"; };
-      case(#PayinError(_)) { "PayinError"; };
-      case(#PrincipalIsAnonymous) { "PrincipalIsAnonymous"; };
-      case(#VoteClosed) { "VoteClosed"; };
-      case(#InvalidBallot) { "InvalidBallot"; };
+      case(#VoteLocked)                     { "VoteLocked";             };
+      case(#VoteNotFound)                   { "VoteNotFound";           };
+      case(#ChangeBallotNotAllowed)         { "ChangeBallotNotAllowed"; };
+      case(#NoSubacountLinked)              { "NoSubacountLinked";      };
+      case(#PayinError(_))                  { "PayinError";             };
+      case(#PrincipalIsAnonymous)           { "PrincipalIsAnonymous";   };
+      case(#VoteClosed)                     { "VoteClosed";             };
+      case(#InvalidBallot)                  { "InvalidBallot";          };
+    };
+  };
+
+  func openQuestionErrorToString(openQuestionError: Types.OpenQuestionError) : Text {
+    switch(openQuestionError){
+      case(#TextTooLong)                    { "TextTooLong";            };
+      case(#PrincipalIsAnonymous)           { "PrincipalIsAnonymous";   };
+      case(#OpenInterestVoteFailed(openVoteError)){
+        switch(openVoteError){
+          case(#PayinError(transferFromMasterError)){
+            switch(transferFromMasterError){
+              case(#CanisterCallError(_))   { "CanisterCallError";      };
+              case(#TooOld)                 { "TooOld";                 };
+              case(#CreatedInFuture(_))     { "CreatedInFuture";        };
+              case(#BadFee(_))              { "BadFee";                 };
+              case(#BadBurn(_))             { "BadBurn";                };
+              case(#InsufficientFunds(_))   { "InsufficientFunds";      };
+              case(#Duplicate(_))           { "Duplicate";              };
+              case(#TemporarilyUnavailable) { "TemporarilyUnavailable"; };
+              case(#GenericError(_))        { "GenericError";           };
+              case(#NotAllowed)             { "NotAllowed";             };
+            };
+          };
+        };
+      };
     };
   };
 

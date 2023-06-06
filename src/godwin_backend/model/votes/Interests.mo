@@ -53,8 +53,8 @@ module {
 
   let { toInterestScore; } = QuestionQueries;
 
-  let PRICE_OPENING_VOTE = 1000; // @todo
-  let PRICE_PUT_BALLOT = 1000; // @todo
+  let PRICE_OPENING_VOTE = 1_000_000_000; // @todo
+  let PRICE_PUT_BALLOT   = 100_000_000; // @todo
 
   public func initRegister() : Register {
     Votes.initRegister<Interest, Appeal>();
@@ -170,7 +170,7 @@ module {
   func computePutBallotPayout(answer: Interest, appeal: Appeal) : PayoutArgs {
     {
       refund_share = 1.0;
-      reward_tokens = ?0;
+      reward_tokens = ?PRICE_PUT_BALLOT;
     };
   };
 

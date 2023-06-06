@@ -4,7 +4,7 @@ import { CursorInfo, VoteKind, voteKindToCandidVariant } from "../utils";
 
 import CursorBallot from "./votes/CursorBallot";
 
-import { Question, TransactionsRecord, ReapAccountResult } from "../../declarations/godwin_backend/godwin_backend.did";
+import { Question, TransactionsRecord, ReapAccountResult, MintResult } from "../../declarations/godwin_backend/godwin_backend.did";
 
 import { ActorContext } from "../ActorContext";
 
@@ -39,7 +39,6 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
   const refreshQuestionIteration = async () => {
     setQuestion(old => { return undefined; });
     setIteration(old => { return undefined; });
-    setIteration(undefined);
     let question_iteration = await await sub.actor.getQuestionIteration(voteKindToCandidVariant(ballot_info.vote_kind), ballot_info.vote_id)
     if (question_iteration['ok'] !== undefined){
       setQuestion(old => { return question_iteration['ok'][0] });
@@ -75,13 +74,17 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
   const refreshReward = async () => {
     setReward(old => { return undefined; });
     if (ballot_info.tx_record !== undefined && ballot_info.tx_record.payout['PROCESSED'] !== undefined) {
-      let reward : ReapAccountResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].reward);
-      if (reward !== undefined && reward['ok'] !== undefined){
+      let reward : MintResult | undefined = fromNullable(ballot_info.tx_record.payout['PROCESSED'].reward);
+      if (reward === undefined){
+      } else if (reward['ok'] !== undefined){
         let tx = fromNullable(await token.get_transaction(reward['ok']));
         if (tx !== undefined){
-          let transfer = fromNullable(tx.transfer);
-          setReward(old => { return transfer !== undefined ? transfer.amount : undefined; });
+          console.log("there is a tx: " + tx.toString());
+          let mint = fromNullable(tx.mint);
+          setReward(old => { return mint !== undefined ? mint.amount : undefined; });
         }
+      } else {
+        console.log(reward);
       }
     }
   }
@@ -90,6 +93,7 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
     refreshQuestionIteration();
     refreshPayin();
     refreshRefund();
+    refreshReward();
   }, [ballot_info]);
 
 	return (
@@ -104,13 +108,13 @@ export const WrappedBallot = ({sub, ballot_info}: WrappedBallotInput) => {
         }
       </div>
       <div>
-        { refund !== undefined && payin !== undefined ? 
-            (refund - payin) > 0 ?
-              <div className="text-xs text-green-500"> {"⬆🪙 " + (refund - payin).toString() } </div> :
-            (refund - payin) <= 0 ?
-              <div className="text-xs text-red-500"> {"⬇🪙 " + (refund - payin).toString() } </div>
+        { refund !== undefined && reward !== undefined && payin !== undefined ? 
+            (refund + reward - payin) > 0 ?
+              <div className="text-xs text-green-500"> {"⬆🪙 " + (refund + reward- payin).toString() } </div> :
+            (refund + reward - payin) <= 0 ?
+              <div className="text-xs text-red-500"> {"⬇🪙 " + (refund + reward- payin).toString() } </div>
             : 
-              <div className="text-xs text-red-500"> {"≈🪙 " + (refund - payin).toString() } </div> 
+              <div className="text-xs text-red-500"> {"≈🪙 " + (refund + reward - payin).toString() } </div> 
           :
           <></>
         }

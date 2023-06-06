@@ -5,6 +5,7 @@ import Buffer "mo:base/Buffer";
 import Int "mo:base/Int";
 import Array "mo:base/Array";
 import Float "mo:base/Float";
+import Nat8 "mo:base/Nat8";
 
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
@@ -35,15 +36,20 @@ actor Token {
   type MintBatchArgs           = Types.MintBatchArgs;
   type MintBatchResult         = Types.MintBatchResult;
 
+  let DECIMALS : Nat = 8;
+  let TOKEN_UNIT : Nat = 10 ** DECIMALS;
+  let TOKEN_SUPPLY : Nat = 1_000_000_000 * TOKEN_UNIT;
+  let FEE : Nat = 10_000;
+
   // @todo: fix args
   let token_args : InitArgs = {
     name = "Godwin";
     symbol = "GDW";
-    decimals = 6;
-    fee = 666;
-    max_supply = 1_000_000_000_000_000;
-    initial_balances = [({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 100_000_000_000_000)];
-    min_burn_amount = 1_000_000_000;
+    decimals = Nat8.fromNat(DECIMALS);
+    fee = FEE;
+    max_supply = TOKEN_SUPPLY;
+    initial_balances = [({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 500_000_000 * TOKEN_UNIT)];
+    min_burn_amount = FEE;
     minting_account = { owner = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"); subaccount = null; };
     advanced_settings = null;
   };

@@ -29,7 +29,7 @@ module {
 
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
 
-  let PRICE_PUT_BALLOT = 1000; // @todo
+  let PRICE_PUT_BALLOT = 350_000_000; // @todo
 
   public func initRegister() : Register {
     Votes.initRegister<CursorMap, PolarizationMap>();
@@ -66,7 +66,7 @@ module {
   func computePayout(answer: CursorMap, aggregate: PolarizationMap) : PayoutArgs {
     {
       refund_share = 1.0;
-      reward_tokens = ?0;
+      reward_tokens = ?PRICE_PUT_BALLOT;
     };
   };
 

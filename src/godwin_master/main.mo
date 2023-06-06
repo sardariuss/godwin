@@ -51,9 +51,11 @@ actor Master {
 
   stable let _user_names = Map.new<Principal, Text>(Map.phash);
 
-  stable var _airdrop_supply = 1_000_000_000;
+  // 0.1% of the total supply
+  stable var _airdrop_supply = 1_000_000 * 100_000_000;
 
-  stable let _airdrop_user_amount = 1_000_000;
+  // 1000 tokens to 1000 users
+  stable let _airdrop_amount_per_user = 1_000 * 100_000_000;
 
   public query func getCyclesBalance() : async Nat {
     ExperimentalCycles.balance();
@@ -114,7 +116,7 @@ actor Master {
           owner = Principal.fromActor(Master);
           subaccount = ?toSubaccount(principal);
         };
-        amount = _airdrop_user_amount;
+        amount = _airdrop_amount_per_user;
         memo = null;
         created_at_time = ?time_now;
       }));
@@ -141,12 +143,13 @@ actor Master {
         owner = Principal.fromActor(Master);
         subaccount = ?toSubaccount(caller);
       };
-      amount = _airdrop_user_amount;
+      amount = _airdrop_amount_per_user;
       memo = null;
       created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
     }));
 
     Result.iterate(mint_result, func(tx_index: Token.TxIndex){
+      _airdrop_supply -= _airdrop_amount_per_user;
       ignore Set.put(_airdropped_users, Map.phash, caller);
     });
 
@@ -163,7 +166,7 @@ actor Master {
       await Token.icrc1_transfer({
         amount;
         created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-        fee = ?666; // @todo: null is supposed to work according to the Token standard, but it doesn't...
+        fee = ?10_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
         from_subaccount = ?toSubaccount(user);
         memo = null;
         to = {
