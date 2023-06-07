@@ -1,71 +1,62 @@
-import CursorBallot                                                            from "./CursorBallot";
-import ResetButton                                                             from "../base/ResetButton";
-import { CursorSlider }                                                        from "../base/CursorSlider";
-import UpdateProgress                                                          from "../UpdateProgress";
-import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo }  from "../../utils";
-import { Result_7, Result_15 }                                                 from "../../../declarations/godwin_backend/godwin_backend.did";
+import CursorBallot                                                           from "../ballots/CursorBallot";
+import { CursorSlider }                                                       from "../base/CursorSlider";
+import UpdateProgress                                                         from "../UpdateProgress";
+import SvgButton                                                              from "../base/SvgButton";
+import ReturnIcon                                                             from "../icons/ReturnIcon";
+import PutBallotIcon                                                          from "../icons/PutBallotIcon";
+import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo } from "../../utils";
+import { PutBallotError, _SERVICE }                                           from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { useState, useEffect }                                                 from "react";
+import { useState, useEffect }                                                from "react";
+
+import { ActorSubclass }                                                      from "@dfinity/agent";
 
 type Props = {
-  countdownDurationMs: number;
   polarizationInfo: PolarizationInfo;
   voteId: bigint;
-  allowUpdateBallot: boolean;
-  putBallot: (args_0: bigint, args_1: number) => Promise<Result_7>;
-  getBallot: (args_0: bigint) => Promise<Result_15>;
+  actor: ActorSubclass<_SERVICE>,
 };
 
-const CursorVote = ({countdownDurationMs, polarizationInfo, voteId, putBallot, getBallot}: Props) => {
+const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
 
-  const [countdownVote, setCountdownVote] = useState<boolean>(false);
-  const [triggerVote, setTriggerVote] = useState<boolean>(false);
-  const [voteDate, setVoteDate] = useState<bigint | null>(null);
-  const [cursorInfo, setCursorInfo] = useState<CursorInfo | undefined>(undefined);
+  const COUNTDOWN_DURATION_MS = 2000;
 
-  useEffect(() => {
-    getBallot(voteId).then((result: Result_15) => {
-      if (result['ok'] !== undefined) {
-        refreshCursorInfo(result['ok'].answer);
-        setVoteDate(result['ok'].date);
-      } else {
-        refreshCursorInfo(0.0);
-        setVoteDate(null);
-      }
+  const [countdownVote, setCountdownVote] = useState<boolean>          (false);
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>          (false);
+  const [voteDate,      setVoteDate     ] = useState<bigint | null>    (null);
+  const [cursorInfo,    setCursorInfo   ] = useState<CursorInfo | null>(null);
+
+  const refreshBallot = () : Promise<void> => {
+    return actor.getOpinionBallot(voteId).then((result) => {
+      setCursorInfo(toCursorInfo((result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? result['ok'].answer[0] : 0.0), polarizationInfo));
+      setVoteDate(result['ok'] !== undefined ? result['ok'].date : null);
     });
-  }, []);
+  }
 
-  const refreshBallotResult = (result: Result_7) : string => {
-    if (result['ok'] !== undefined) {
-      refreshCursorInfo(result['ok'].answer);
-      setVoteDate(result['ok'].date);
-      return "";
-    } else {
-      setVoteDate(null);
-      return putBallotErrorToString(result['err']);
-    }
+  const putBallot = () : Promise<PutBallotError | null> => {
+    if (cursorInfo === null) return Promise.resolve(null);
+    return actor.putOpinionBallot(voteId, cursorInfo.value).then((result) => {
+      return result['err'] ?? null;
+    });
   }
 
   const refreshCursorInfo = (value: number) => {
     setCursorInfo(toCursorInfo(value, polarizationInfo));
   };
 
+  useEffect(() => {
+    refreshBallot();
+  }, []);
+
 	return (
-    <div className="w-full">
+    <div>
     {
-      cursorInfo === undefined ? <></> :
-      voteDate !== null ?
-      <div className="mb-3">
-        <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/>
-      </div> :
-      <div className="grid grid-cols-8 items-center w-full justify-items-center">
-        <div className={`col-start-2 col-span-1 justify-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-          <ResetButton 
-            reset={ () => { refreshCursorInfo(0.0); setCountdownVote(false); }}
-            disabled={ triggerVote }
-          />
-        </div>
-        <div className={`col-span-4 justify-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+      cursorInfo === null ? <></> :
+      <div className={`grid grid-cols-6 items-center w-full justify-items-center grow transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+        <div className={`col-span-5 justify-center`}>
+        {
+          voteDate !== null ?
+          <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/> :
           <CursorSlider
             cursor = { cursorInfo.value }
             polarizationInfo={ polarizationInfo }
@@ -74,23 +65,33 @@ const CursorVote = ({countdownDurationMs, polarizationInfo, voteId, putBallot, g
             onMouseUp={ () => { setCountdownVote(true)} }
             onMouseDown={ () => { setCountdownVote(false)} }
           />
+        }
         </div>
         <div className="col-span-1 justify-center">
-          <UpdateProgress<Result_7> 
-            delay_duration_ms={countdownDurationMs}
-            update_function={() => putBallot(voteId, cursorInfo.value)}
-            callback_function={(res: Result_7) => { return refreshBallotResult(res); } }
-            run_countdown={countdownVote}
-            set_run_countdown={setCountdownVote}
-            trigger_update={triggerVote}
-            set_trigger_update={setTriggerVote}
-          >
-            <div className="flex flex-col items-center justify-center w-full">
-              <button className="w-full button-svg" onClick={(e) => setTriggerVote(true)} disabled={triggerVote}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M180 976q-24 0-42-18t-18-42V718l135-149 43 43-118 129h600L669 615l43-43 128 146v198q0 24-18 42t-42 18H180Zm0-60h600V801H180v115Zm262-245L283 512q-19-19-17-42.5t20-41.5l212-212q16.934-16.56 41.967-17.28Q565 198 583 216l159 159q17 17 17.5 40.5T740 459L528 671q-17 17-42 18t-44-18Zm249-257L541 264 333 472l150 150 208-208ZM180 916V801v115Z"/></svg>
-              </button>
-            </div>
-          </UpdateProgress>
+          {
+            voteDate !== null ?
+            <div className="w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
+              <SvgButton onClick={() => setVoteDate(null)} disabled={false} hidden={false}>
+                <ReturnIcon/>
+              </SvgButton>
+            </div> :
+            <UpdateProgress<PutBallotError> 
+              delay_duration_ms={COUNTDOWN_DURATION_MS}
+              update_function={putBallot}
+              error_to_string={putBallotErrorToString}
+              callback_function={refreshBallot}
+              run_countdown={countdownVote}
+              set_run_countdown={setCountdownVote}
+              trigger_update={triggerVote}
+              set_trigger_update={setTriggerVote}
+            >
+              <div className="flex flex-col items-center justify-center w-full">
+                <SvgButton onClick={() => setTriggerVote(true)} disabled={triggerVote} hidden={false}>
+                  <PutBallotIcon/>
+                </SvgButton>
+              </div>
+            </UpdateProgress>
+          }
         </div>
       </div>
     }
@@ -98,4 +99,4 @@ const CursorVote = ({countdownDurationMs, polarizationInfo, voteId, putBallot, g
 	);
 };
 
-export default CursorVote;
+export default OpinionVote;

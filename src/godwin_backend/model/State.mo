@@ -1,22 +1,22 @@
-import Types           "Types";
-import VoteTypes       "votes/Types";
-import QuestionTypes   "questions/Types";
-import Questions       "questions/Questions";	
-import QuestionQueries "questions/QuestionQueries";
-import Categories      "Categories";
-import Interests       "votes/Interests";
-import Categorizations "votes/Categorizations";
-import Opinions        "votes/Opinions";
-import Joins           "votes/QuestionVoteJoins";
-import PayTypes        "token/Types";
+import Types                  "Types";
+import VoteTypes              "votes/Types";
+import QuestionTypes          "questions/Types";
+import Questions              "questions/Questions";	
+import QuestionQueriesFactory "questions/QueriesFactory";
+import Categories             "Categories";
+import Interests              "votes/Interests";
+import Categorizations        "votes/Categorizations";
+import Opinions               "votes/Opinions";
+import Joins                  "votes/QuestionVoteJoins";
+import PayTypes               "token/Types";
 
-import Duration        "../utils/Duration";
-import Ref             "../utils/Ref";
+import Duration                "../utils/Duration";
+import Ref                     "../utils/Ref";
 
-import Set             "mo:map/Set";
-import Map             "mo:map/Map";
+import Set                    "mo:map/Set";
+import Map                    "mo:map/Map";
 
-import Principal       "mo:base/Principal";
+import Principal              "mo:base/Principal";
 
 module {
 
@@ -50,7 +50,7 @@ module {
       register           : Map<Nat, IterationHistory>;
     };
     queries           : {
-      register           : QuestionQueries.Register;
+      register           : QuestionQueriesFactory.Register;
     };
     controller        : {
       model              : {
@@ -94,7 +94,7 @@ module {
       };
       questions                     = Questions.initRegister(parameters.questions.character_limit);
       queries       = {
-        register                    = QuestionQueries.initRegister();
+        register                    = QuestionQueriesFactory.initRegister();
       };
       controller    = {
         model = {

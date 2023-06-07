@@ -3,19 +3,16 @@ const CONSTANTS = {
   CURSOR_DECIMALS: 2,
   CURSOR_SIDE_THRESHOLD: 0.1,
   INTEREST_INFO: {
-    left: {
+    down: {
       symbol: '🤡',
-      color: '#DB4437',
       name: 'TROLL',
     },
-    center: {
+    neutral: {
       symbol: '😴',
-      color: '#EEEEEE',
       name: 'BORING',
     },
-    right: {
+    up: {
       symbol: '🤓',
-      color: '#1D4ED8',
       name: 'LEGIT',
     }
   },
@@ -49,7 +46,10 @@ const CONSTANTS = {
     }
   },
   DEFAULT_USER_NAME: 'New user',
-  COIN_EMOJI: '🪙'
+  COIN_EMOJI: '🪙',
+  HELP_MESSAGE: {
+    CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...'
+  }
 };
 
 export default CONSTANTS;

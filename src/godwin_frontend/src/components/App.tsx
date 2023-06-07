@@ -29,6 +29,7 @@ function App() {
     userAccount,
     balance,
     refreshBalance,
+    getPrincipal
   } = useAuthClient();
 
   if (!authClient) return null;
@@ -50,7 +51,8 @@ function App() {
           subs,
           userAccount,
           balance,
-          refreshBalance
+          refreshBalance,
+          getPrincipal
         }}>
           <div className="flex flex-col">
             <Header login={login} setShowAskQuestion={setShowAskQuestion}/>

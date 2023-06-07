@@ -18,7 +18,7 @@ type VoterQuestionsProps = {
 export const VoterQuestions = ({principal, sub}: VoterQuestionsProps) => {
 
   const query_questions = (next: bigint | undefined) : Promise<ScanResults<[bigint, [] | [Question], [] | [TransactionsRecord]]>> => {
-    return sub.actor.getQuestionsFromAuthor(principal, { 'BWD' : null }, BigInt(10), toNullable(next)).then(
+    return sub.actor.queryQuestionsFromAuthor(principal, { 'BWD' : null }, BigInt(10), toNullable(next)).then(
       fromScanLimitResult
     );
   };

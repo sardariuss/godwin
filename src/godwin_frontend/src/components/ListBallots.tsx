@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 
 import { CursorInfo, ScanResults, VoteKind, voteKindToString, toCursorInfo, fromScanLimitResult, getStrongestCategoryCursorInfo, toMap, interestToCursorInfo, interestToEnum } from "../utils";
 
-import { TransactionsRecord, VoteId, InterestBallot, OpinionBallot, CategorizationBallot, CategoryArray__1 } from "../../declarations/godwin_backend/godwin_backend.did";
+import { TransactionsRecord, VoteId, InterestBallot, OpinionBallot, CategorizationBallot, CategoryArray__1, Direction, _SERVICE } from "../../declarations/godwin_backend/godwin_backend.did";
 
 import WrappedBallot from "./WrappedBallot";
 
 import { Sub } from "../ActorContext";
 
 import { toNullable, fromNullable } from "@dfinity/utils";
+import { ActorSubclass } from "@dfinity/agent";
 
 import { Principal } from "@dfinity/principal";
 
@@ -38,43 +39,50 @@ const categorizationBallotToBallotInfo = (categories: CategoryArray__1, categori
   return { vote_kind: VoteKind.CATEGORIZATION, vote_id, cursor, date, tx_record };
 };
 
-export type BallotInfo = {
-  vote_kind: VoteKind,
-  vote_id: bigint,
-  cursor: CursorInfo | undefined,
-  date: bigint | undefined,
-  tx_record: TransactionsRecord | undefined,
+//export type BallotInfo = {
+//  vote_kind: VoteKind,
+//  vote_id: bigint,
+//  cursor: CursorInfo | undefined,
+//  date: bigint | undefined,
+//  tx_record: TransactionsRecord | undefined,
+//};
+
+export type RevealedBallot<T> = {
+  vote_id  : bigint,
+  answer   : [] | [T],
+  date     : bigint,
+  tx_record: [] | [TransactionsRecord],
 };
 
-export type ListBallotsInput = {
-  vote_kind: VoteKind,
-  sub: Sub,
-  principal: Principal,
+export type ListBallotsInput<T> = {
+  query_ballots: (voter: Principal, dir: Direction, limit: bigint, next: [] | [bigint]) => Promise<ScanResults<RevealedBallot<T>>>,
+  categories   : CategoryArray__1,
+  voter        : Principal,
 };
 
-export const ListBallots = ({sub, principal, vote_kind}: ListBallotsInput) => {
-
-  const [results, setResults] = useState<ScanResults<BallotInfo>>({ ids : [], next: undefined});
-  const [trigger_next, setTriggerNext] = useState<boolean>(false);
+export const ListBallots = <T,>({categories, voter, query_ballots}: ListBallotsInput<T>) => {
 
   const direction = { 'BWD' : null };
   const limit = BigInt(10);
 
-  const queryBallots = async (previous: bigint | undefined) : Promise<ScanResults<BallotInfo>> => {
-    switch(vote_kind){
-      case VoteKind.INTEREST:
-        return await queryInterestBallots(previous);
-      case VoteKind.OPINION:
-        return await queryOpinionBallots(previous);
-      case VoteKind.CATEGORIZATION:
-        return await queryCategorizationBallots(previous);
-      default:
-        throw new Error("Invalid vote kind");
-    }
-  };
+  const [results,      setResults]     = useState<ScanResults<RevealedBallot<T>>>({ ids : [], next: undefined});
+  const [trigger_next, setTriggerNext] = useState<boolean>                       (false);
+
+//  const queryBallots = (previous: bigint | undefined) : Promise<ScanResults<BallotInfo>> => {
+//    switch(vote_kind){
+//      case VoteKind.INTEREST:
+//        return queryInterestBallots(previous);
+//      case VoteKind.OPINION:
+//        return queryOpinionBallots(previous);
+//      case VoteKind.CATEGORIZATION:
+//        return queryCategorizationBallots(previous);
+//      default:
+//        throw new Error("Invalid vote kind");
+//    }
+//  };
   
   const queryInterestBallots = async (previous: bigint | undefined) : Promise<ScanResults<BallotInfo>> => {
-    let interest_history = fromScanLimitResult(await sub.actor.revealInterestBallots(principal, direction, limit, toNullable(previous)));
+    let interest_history = fromScanLimitResult(await actor.queryInterestBallots(voter, direction, limit, toNullable(previous)));
     let interest_ballots : BallotInfo[] = [];
     for (let interest_ballot of interest_history.ids){
       interest_ballots.push(interestBallotToBallotInfo(interest_ballot));
@@ -85,7 +93,7 @@ export const ListBallots = ({sub, principal, vote_kind}: ListBallotsInput) => {
   
 
   const queryOpinionBallots = async (previous: bigint | undefined) : Promise<ScanResults<BallotInfo>> => {
-    let opinion_history = fromScanLimitResult(await sub.actor.revealOpinionBallots(principal, direction, limit, toNullable(previous)));
+    let opinion_history = fromScanLimitResult(await actor.queryOpinionBallots(voter, direction, limit, toNullable(previous)));
     let opinion_ballots : BallotInfo[] = [];
     for (let opinion_ballot of opinion_history.ids){
       opinion_ballots.push(opinionBallotToBallotInfo(opinion_ballot));
@@ -95,22 +103,22 @@ export const ListBallots = ({sub, principal, vote_kind}: ListBallotsInput) => {
   };
   
   const queryCategorizationBallots = async (previous: bigint | undefined) : Promise<ScanResults<BallotInfo>> => {
-    let categorization_history = fromScanLimitResult(await sub.actor.revealCategorizationBallots(principal, direction, limit, toNullable(previous)));
+    let categorization_history = fromScanLimitResult(await actor.queryCategorizationBallots(voter, direction, limit, toNullable(previous)));
     let categorization_ballots : BallotInfo[] = [];
     for (let categorization_ballot of categorization_history.ids){
-      categorization_ballots.push(categorizationBallotToBallotInfo(sub.categories, categorization_ballot));
+      categorization_ballots.push(categorizationBallotToBallotInfo(categories, categorization_ballot));
     }
-    let next = categorization_history.next !== undefined ? categorizationBallotToBallotInfo(sub.categories, categorization_history.next) : undefined;
+    let next = categorization_history.next !== undefined ? categorizationBallotToBallotInfo(categories, categorization_history.next) : undefined;
     return { ids: categorization_ballots, next };
   };
 	
   const refreshBallots = async () => {
-    setResults(await queryBallots(undefined));
+    setResults(await query_ballots(voter, direction, limit, results.next === undefined ? [] : [results.next.vote_id]));
   };
 
   const getNextBallots = async () => {
     if (results.next !== undefined){
-      let query_result = await queryBallots(results.next.vote_id);
+      let query_result = await query_ballots(voter, direction, limit, results.next === undefined ? [] : [results.next.vote_id]);
       setResults({ 
         ids: [...new Set([...results.ids, ...Array.from(query_result.ids)])],
         next: query_result.next 
@@ -135,7 +143,7 @@ export const ListBallots = ({sub, principal, vote_kind}: ListBallotsInput) => {
     return () => {
       window.removeEventListener('scroll', scrolling);
     };
-  }, [vote_kind]);
+  }, []);
 
   useEffect(() => {
     if (trigger_next){

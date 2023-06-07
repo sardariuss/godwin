@@ -4,8 +4,8 @@ import Types               "../Types";
 import Model               "../Model";
 import Categories          "../Categories";
 import QuestionTypes       "../questions/Types";
-import QuestionQueries     "../questions/QuestionQueries";
 import Questions           "../questions/Questions";
+import KeyConverter        "../questions/KeyConverter";
 import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
@@ -35,7 +35,6 @@ module {
   type Model                  = Model.Model;
   type Event                  = Event.Event;
   type Schema                 = Schema.Schema;
-  let { toStatusEntry }       = QuestionQueries;
 
   // For convenience: from base module
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
@@ -67,6 +66,7 @@ module {
   type VoterHistory           = VoteTypes.VoterHistory;
   type Ballot<T>              = VoteTypes.Ballot<T>;
   type Vote<T, A>             = VoteTypes.Vote<T, A>;
+  type RevealedBallot<T>      = VoteTypes.RevealedBallot<T>;
   type Cursor                 = VoteTypes.Cursor;
   type Interest               = VoteTypes.Interest;
   type Appeal                 = VoteTypes.Appeal;
@@ -156,10 +156,6 @@ module {
       Result.fromOption(_model.getQuestions().findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func getQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?Nat) : ScanLimitResult<VoteId> {
-      _model.getQueries().select(order_by, direction, limit, previous_id);
-    };
-
     public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<Question, OpenQuestionError> {
       // Verify if the arguments are valid
       switch(_model.getQuestions().canCreateQuestion(caller, date, text)){
@@ -169,7 +165,7 @@ module {
       // Callback on create question if opening the interest vote succeeds
       let open_question = func() : (Question, Nat) {
         let question = _model.getQuestions().createQuestion(caller, date, text);
-        _model.getQueries().add(toStatusEntry(question.id, #CANDIDATE, date));
+        _model.getQueries().add(KeyConverter.toStatusKey(question.id, #CANDIDATE, date));
         let iteration = _model.getStatusManager().newIteration(question.id);
         _model.getStatusManager().setCurrentStatus(question.id, #CANDIDATE, date);
         (question, iteration);
@@ -190,24 +186,24 @@ module {
       };
     };
 
-    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<Ballot<Interest>, FindBallotError> {
-      _model.getInterestVotes().findBallot(caller, vote_id);
+    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<Interest>, FindBallotError> {
+      _model.getInterestVotes().revealBallot(caller, caller, vote_id);
     };
 
     public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
       await* _model.getInterestVotes().putBallot(principal, vote_id, date, interest);
     };
 
-    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<Ballot<Cursor>, FindBallotError> {
-      _model.getOpinionVotes().findBallot(caller, vote_id);
+    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<Cursor>, FindBallotError> {
+      _model.getOpinionVotes().revealBallot(caller, caller, vote_id);
     };
 
     public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
       await* _model.getOpinionVotes().putBallot(principal, vote_id, { answer = cursor; date; });
     };
       
-    public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<CategorizationBallot, FindBallotError> {
-      _model.getCategorizationVotes().findBallot(caller, vote_id);
+    public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<CursorMap>, FindBallotError> {
+      _model.getCategorizationVotes().revealBallot(caller, caller, vote_id);
     };
       
     public func putCategorizationBallot(principal: Principal, vote_id: VoteId, date: Time, cursors: CursorMap) : async* Result<(), PutBallotError> {
@@ -245,18 +241,6 @@ module {
       _model.getCategorizationJoins().findVoteId(question_id, iteration);
     };
 
-    public func revealInterestBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?InterestBallot, ?TransactionsRecord)> {
-      _model.getInterestVotes().revealBallots(principal, direction, limit, previous_id);
-    };
-
-    public func revealOpinionBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?OpinionBallot, ?TransactionsRecord)> {
-      _model.getOpinionVotes().revealBallots(principal, direction, limit, previous_id);
-    };
-
-    public func revealCategorizationBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?CategorizationBallot, ?TransactionsRecord)> {
-      _model.getCategorizationVotes().revealBallots(principal, direction, limit, previous_id);
-    };
-
     public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
       let result = switch(vote_kind){
         case(#INTEREST){
@@ -274,14 +258,33 @@ module {
       });
     };
 
+    public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?Nat) : ScanLimitResult<VoteId> {
+      _model.getQueries().select(order_by, direction, limit, previous_id);
+    };
+
     // @todo: should filter based on the question status in order to properly hide the author ?
     // This requires to remove the author from the Question type
     // @todo: we should be able to query the reopened questions too
-    public func getQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
+    public func queryQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
       let question_ids = Utils.setScanLimit<QuestionId>(_model.getQuestions().getQuestionIdsFromAuthor(principal), Map.nhash, direction, limit, previous_id);
       Utils.mapScanLimitResult<QuestionId, (QuestionId, ?Question, ?TransactionsRecord)>(question_ids, func(question_id: QuestionId) : (QuestionId, ?Question, ?TransactionsRecord){
         (question_id, _model.getQuestions().findQuestion(question_id), _model.getInterestVotes().findOpenVoteTransactions(principal, _model.getInterestJoins().getVoteId(question_id, 0)));
       });
+    };
+
+    public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
+    ) : ScanLimitResult<RevealedBallot<Interest>> {
+      _model.getInterestVotes().revealBallots(caller, voter, direction, limit, previous_id);
+    };
+
+    public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
+    ) : ScanLimitResult<RevealedBallot<Cursor>> {
+      _model.getOpinionVotes().revealBallots(caller, voter, direction, limit, previous_id);
+    };
+
+    public func queryCategorizationBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
+    ) : ScanLimitResult<RevealedBallot<CursorMap>> {
+      _model.getCategorizationVotes().revealBallots(caller, voter, direction, limit, previous_id);
     };
 
     public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)])> {
@@ -327,8 +330,8 @@ module {
         case(#ok(new)) {
           // When the question status changes, update the associated key for the #STATUS order_by
           _model.getQueries().replace(
-            ?toStatusEntry(question_id, current.status, current.date),
-            Option.map(new, func(status: Status) : Key { toStatusEntry(question_id, status, date); })
+            ?KeyConverter.toStatusKey(question_id, current.status, current.date),
+            Option.map(new, func(status: Status) : Key { KeyConverter.toStatusKey(question_id, status, date); })
           );
           // Close vote(s) if any
           switch(current.status){

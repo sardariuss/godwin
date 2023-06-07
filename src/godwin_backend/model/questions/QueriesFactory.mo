@@ -1,16 +1,17 @@
-import Types      "Types";
-import Queries    "../../utils/Queries";
+import Types        "Types";
+import KeyConverter "KeyConverter";
 
-import Map        "mo:map/Map";
+import Queries       "../../utils/Queries";
 
-import Order      "mo:base/Order";
-import Int        "mo:base/Int";
-import Nat        "mo:base/Nat";
-import Debug      "mo:base/Debug";
-import Text       "mo:base/Text";
-import Principal  "mo:base/Principal";
-import Option     "mo:base/Option";
-import Float      "mo:base/Float";
+import Map          "mo:map/Map";
+
+import Order        "mo:base/Order";
+import Int          "mo:base/Int";
+import Nat          "mo:base/Nat";
+import Debug        "mo:base/Debug";
+import Text         "mo:base/Text";
+import Principal    "mo:base/Principal";
+import Float        "mo:base/Float";
 
 module {
 
@@ -27,10 +28,9 @@ module {
   type AuthorEntry           = Types.AuthorEntry;
   type StatusEntry           = Types.StatusEntry;
   type InterestScore         = Types.InterestScore;
+  type QuestionQueries       = Types.QuestionQueries;
 
   public type Register = Queries.Register<OrderBy, Key>;
-  
-  public type QuestionQueries = Queries.Queries<OrderBy, Key>;
 
   public func initRegister() : Register {
     Queries.initRegister<OrderBy, Key>(orderByHash);
@@ -140,7 +140,7 @@ module {
       case(_) { Debug.trap("Failed to unwrap appeal score"); };
     };
   };
-  public func unwrapQuestionId(key: Key) : Nat {
+  func unwrapQuestionId(key: Key) : Nat {
     switch(key){
       case(#AUTHOR(entry))         { entry.question_id; };
       case(#TEXT(entry))           { entry.question_id; };
@@ -167,37 +167,6 @@ module {
   func compareInterestScores(a: InterestScore, b: InterestScore) : Order {
     strictCompare<Float>(a.score, b.score, Float.compare, 
       Nat.compare(a.question_id, b.question_id));
-  };
-
-  public func toAuthorEntry(question: Question) : Key {
-    #AUTHOR({
-      question_id = question.id;
-      author = question.author;
-      date = question.date;
-    });
-  };
-  public func toTextEntry(question: Question) : Key {
-    #TEXT({
-      question_id = question.id;
-      text = question.text;
-      date = question.date;
-    });
-  };
-  public func toDateEntry(question: Question) : Key {
-    #DATE({
-      question_id = question.id;
-      date = question.date;
-    });
-  };
-  public func toStatusEntry(question_id: Nat, status: Status, date: Time) : Key {
-    #STATUS({question_id; status; date;});
-  };
-
-  public func toInterestScore(question_id: Nat, score: Float) : Key {
-    #INTEREST_SCORE({
-      question_id;
-      score;
-    });
   };
 
   func strictCompare<T>(a: T, b: T, compare: (T, T) -> Order, on_equality: Order) : Order {

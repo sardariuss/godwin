@@ -1,23 +1,23 @@
-import VoteTypes           "votes/Types";
-import QuestionTypes       "questions/Types";
-import State               "State";
-import Model               "Model";
-import Categories          "Categories";
-import Facade              "Facade";
-import StatusManager       "questions/StatusManager";
-import Questions           "questions/Questions";
-import QuestionQueries     "questions/QuestionQueries";
-import Controller          "controller/Controller";
-import Votes               "votes/Votes";
-import QuestionVoteJoins   "votes/QuestionVoteJoins";
-import Interests           "votes/Interests";
-import Categorizations     "votes/Categorizations";
-import Opinions            "votes/Opinions";
-import Polarization        "votes/representation/Polarization";
-import PolarizationMap     "votes/representation/PolarizationMap";
-import SubaccountGenerator "token/SubaccountGenerator";
-import TokenInterface      "token/TokenInterface";
-import PayForNew           "token/PayForNew";
+import VoteTypes              "votes/Types";
+import QuestionTypes          "questions/Types";
+import State                  "State";
+import Model                  "Model";
+import Categories             "Categories";
+import Facade                 "Facade";
+import StatusManager          "questions/StatusManager";
+import Questions              "questions/Questions";
+import QuestionQueriesFactory "questions/QueriesFactory";
+import Controller             "controller/Controller";
+import Votes                  "votes/Votes";
+import QuestionVoteJoins      "votes/QuestionVoteJoins";
+import Interests              "votes/Interests";
+import Categorizations        "votes/Categorizations";
+import Opinions               "votes/Opinions";
+import Polarization           "votes/representation/Polarization";
+import PolarizationMap        "votes/representation/PolarizationMap";
+import SubaccountGenerator    "token/SubaccountGenerator";
+import TokenInterface         "token/TokenInterface";
+import PayForNew              "token/PayForNew";
 
 module {
 
@@ -40,7 +40,7 @@ module {
 
     let status_manager = StatusManager.build(state.status.register);
 
-    let queries = QuestionQueries.build(state.queries.register);
+    let queries = QuestionQueriesFactory.build(state.queries.register);
 
     let token_interface = TokenInterface.build(state.master.v);
     let pay_to_open_question = PayForNew.build(

@@ -1,5 +1,6 @@
 import Types         "../../../src/godwin_backend/model/questions/Types";
 import Queries       "../../../src/godwin_backend/model/questions/QuestionQueries";
+import KeyConverter  "../../../src/godwin_backend/model/questions/KeyConverter";
 
 import TestifyTypes  "../testifyTypes";
 
@@ -22,7 +23,7 @@ module {
 
   type QuestionQueries   = Queries.QuestionQueries;
 
-  let { toAuthorEntry; toTextEntry; toDateEntry; toStatusEntry; toInterestScore; } = Queries;
+  let { toAuthorKey; toTextKey; toDateKey; toStatusKey; toInterestScoreKey; } = KeyConverter;
 
   type NamedTest<T> = SuiteState.NamedTest<T>;
   type Test<T> = SuiteState.Test<T>;
@@ -69,10 +70,10 @@ module {
 
     let queries = Queries.build(register);
     for ((question, status_info, score) in Array.vals(questions)){
-      queries.add(toTextEntry(question));
-      queries.add(toDateEntry(question));
-      queries.add(toStatusEntry(question.id, status_info.status, status_info.date));
-      queries.add(toInterestScore(question.id, score));
+      queries.add(toTextKey(question));
+      queries.add(toDateKey(question));
+      queries.add(toStatusKey(question.id, status_info.status, status_info.date));
+      queries.add(toInterestScoreKey(question.id, score));
     };
 
     do {
@@ -151,8 +152,8 @@ module {
     // Update the status and score
     for ((question, status_info, score) in Array.vals(questions)){
       let update = updated_status[question.id];
-      queries.replace(?toStatusEntry(question.id, status_info.status, status_info.date), ?toStatusEntry(question.id, update.status, update.date));
-      queries.replace(?toInterestScore(question.id, score), ?toInterestScore(question.id, updated_scores[question.id]));
+      queries.replace(?toStatusKey(question.id, status_info.status, status_info.date), ?toStatusKey(question.id, update.status, update.date));
+      queries.replace(?toInterestScoreKey(question.id, score), ?toInterestScoreKey(question.id, updated_scores[question.id]));
     };
 
     do {
@@ -211,10 +212,10 @@ module {
 
     // Remove a question
     let (question_3, status_info_3, score_3) = (questions[2].0, updated_status[2], updated_scores[2]);
-    queries.remove(toTextEntry(question_3));
-    queries.remove(toDateEntry(question_3));
-    queries.remove(toStatusEntry(question_3.id, status_info_3.status, status_info_3.date));
-    queries.remove(toInterestScore(question_3.id, score_3));
+    queries.remove(toTextKey(question_3));
+    queries.remove(toDateKey(question_3));
+    queries.remove(toStatusKey(question_3.id, status_info_3.status, status_info_3.date));
+    queries.remove(toInterestScoreKey(question_3.id, score_3));
 
     do {
       let s = SuiteState.Suite<QuestionQueries>(queries);

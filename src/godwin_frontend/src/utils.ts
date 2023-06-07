@@ -6,18 +6,33 @@ import Color from 'colorjs.io';
 
 export enum InterestEnum {
   Up,
+  Neutral,
   Down,
 }
 
+type InterestInfo = {
+  name: string;
+  symbol: string;
+};
+
 export const interestToEnum = (interest: Interest) : InterestEnum => {
-  if (interest['UP'] !== undefined) return InterestEnum.Up;
-  if (interest['DOWN'] !== undefined) return InterestEnum.Down;
+  if (interest['UP'] !== undefined)      return InterestEnum.Up;
+  if (interest['NEUTRAL'] !== undefined) return InterestEnum.Neutral;
+  if (interest['DOWN'] !== undefined)    return InterestEnum.Down;
   throw new Error('Invalid interest');
 }
 
+export const getInterestInfo = (interest: InterestEnum) : InterestInfo => {
+  if (interest === InterestEnum.Up)      { return CONSTANTS.INTEREST_INFO.up; }
+  if (interest === InterestEnum.Neutral) { return CONSTANTS.INTEREST_INFO.neutral; }
+  if (interest === InterestEnum.Down)    { return CONSTANTS.INTEREST_INFO.down; }
+  throw new Error('Invalid interestEnum');
+}
+
 export const enumToInterest = (interestEnum: InterestEnum) : Interest => {
-  if (interestEnum === InterestEnum.Up) return { 'UP' : null };
-  if (interestEnum === InterestEnum.Down) return { 'DOWN' : null };
+  if (interestEnum === InterestEnum.Up)      return { 'UP' : null };
+  if (interestEnum === InterestEnum.Neutral) return { 'NEUTRAL' : null };
+  if (interestEnum === InterestEnum.Down)    return { 'DOWN' : null };
   throw new Error('Invalid interestEnum');
 }
 
@@ -120,6 +135,7 @@ export const statusToEnum = (status: Status) => {
 };
 
 export const putBallotErrorToString = (error: PutBallotError) => {
+  if (error['ChangeBallotNotAllowed']!== undefined) return 'ChangeBallotNotAllowed';
   if (error['AlreadyVoted']         !== undefined) return 'AlreadyVoted';
   if (error['NoSubacountLinked']    !== undefined) return 'NoSubacountLinked';
   if (error['InvalidBallot']        !== undefined) return 'InvalidBallot';

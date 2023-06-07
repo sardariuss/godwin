@@ -53,6 +53,9 @@ module {
   public type InterestVote               = Vote<Interest, Appeal>;
   public type OpinionVote                = Vote<Cursor, Polarization>;
   public type CategorizationVote         = Vote<CursorArray, PolarizationArray>;
+  public type RevealedInterestBallot     = VoteTypes.RevealedBallot<Interest>;
+  public type RevealedOpinionBallot      = VoteTypes.RevealedBallot<Cursor>;
+  public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
 
   public type FindVoteError              = VoteTypes.FindVoteError;
   public type FindQuestionIterationError = VoteTypes.FindQuestionIterationError;

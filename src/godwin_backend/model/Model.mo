@@ -1,10 +1,10 @@
 import Types               "Types";
-import QuestionQueries     "questions/QuestionQueries";
 import Categorizations     "votes/Categorizations";
 import Votes               "votes/Votes";
 import Joins               "votes/QuestionVoteJoins";
 import Categories          "Categories";
 import SubaccountGenerator "token/SubaccountGenerator";
+import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
 import StatusManager       "questions/StatusManager";
 import Interests           "votes/Interests";
@@ -27,7 +27,7 @@ module {
   type SchedulerParameters = Types.SchedulerParameters;
   type Categories          = Categories.Categories;
   type Questions           = Questions.Questions;
-  type QuestionQueries     = QuestionQueries.QuestionQueries;
+  type QuestionQueries     = QuestionTypes.QuestionQueries;
   type StatusManager       = StatusManager.StatusManager;
   type InterestVotes       = Interests.Interests;
   type OpinionVotes        = Opinions.Opinions;

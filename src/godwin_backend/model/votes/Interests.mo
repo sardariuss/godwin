@@ -9,7 +9,7 @@ import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
 import QuestionTypes       "../questions/Types";
-import QuestionQueries     "../questions/QuestionQueries";
+import KeyConverter        "../questions/KeyConverter";
 
 import UtilsTypes          "../../utils/Types";
 
@@ -35,12 +35,13 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
+  type RevealedBallot         = Types.RevealedBallot<Interest>;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
-  type QuestionQueries        = QuestionQueries.QuestionQueries;
+  type QuestionQueries        = QuestionTypes.QuestionQueries;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayForNew              = PayForNew.PayForNew;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
@@ -50,8 +51,6 @@ module {
   type Direction              = UtilsTypes.Direction;
   
   public type Register        = Votes.Register<Interest, Appeal>;
-
-  let { toInterestScore; } = QuestionQueries;
 
   let PRICE_OPENING_VOTE = 1_000_000_000; // @todo
   let PRICE_PUT_BALLOT   = 100_000_000; // @todo
@@ -110,7 +109,7 @@ module {
       // Add a join between the question and the vote
       _joins.addJoin(question.id, iteration, vote_id);
       // Update the associated key for the #INTEREST_SCORE order_by
-      _queries.add(toInterestScore(question.id, _votes.getVote(vote_id).aggregate.score));
+      _queries.add(KeyConverter.toInterestScoreKey(question.id, _votes.getVote(vote_id).aggregate.score));
       #ok(question);
     };
 
@@ -119,7 +118,7 @@ module {
       await* _votes.closeVote(vote_id);
       let appeal = _votes.getVote(vote_id).aggregate;
       // Remove the vote from the interest query
-      _queries.remove(toInterestScore(_joins.getQuestionIteration(vote_id).0, appeal.score));
+      _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, appeal.score));
       // Pay out the buyer
       let (refund_amount, reward_amount) = computeOpenVotePayout(appeal);
       await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
@@ -132,12 +131,12 @@ module {
       Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
         let new_appeal = _votes.getVote(vote_id).aggregate.score;
         let question_id = _joins.getQuestionIteration(vote_id).0;
-        _queries.replace(?toInterestScore(question_id, old_appeal), ?toInterestScore(question_id, new_appeal));
+        _queries.replace(?KeyConverter.toInterestScoreKey(question_id, old_appeal), ?KeyConverter.toInterestScoreKey(question_id, new_appeal));
       });
     };
 
-    public func findBallot(principal: Principal, vote_id: VoteId) : Result<Ballot, FindBallotError> {
-      _votes.findBallot(principal, vote_id);
+    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot, FindBallotError> {
+      _votes.revealBallot(caller, voter, vote_id);
     };
 
     public func revealVote(vote_id: VoteId) : Result<Vote, RevealVoteError> {
@@ -152,8 +151,8 @@ module {
       _pay_for_new.findTransactionsRecord(principal, id);
     };
 
-    public func revealBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?Ballot, ?TransactionsRecord)> {
-      _votes.revealBallots(principal, direction, limit, previous_id);
+    public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot> {
+      _votes.revealBallots(caller, voter, direction, limit, previous_id);
     };
 
   };

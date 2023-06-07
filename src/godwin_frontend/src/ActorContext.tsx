@@ -7,6 +7,7 @@ import { canisterId, createActor as createMaster, godwin_master } from "../decla
 import { godwin_token } from "../declarations/godwin_token";
 import { createActor as createSub } from "../declarations/godwin_backend";
 import { ActorSubclass } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 
 import { useState, useEffect } from "react";
 
@@ -35,6 +36,7 @@ export const ActorContext = React.createContext<{
   userAccount?: Account | null;
   balance: bigint | null;
   refreshBalance: () => void;
+  getPrincipal: () => Principal;
 }>({
   login: () => {},
   logout: () => {},
@@ -43,6 +45,7 @@ export const ActorContext = React.createContext<{
   subs: new Map(),
   balance: null,
   refreshBalance: () => {},
+  getPrincipal: () => Principal.anonymous()
 });
 
 export function useAuthClient() {
@@ -116,6 +119,10 @@ export function useAuthClient() {
     }
   }
 
+  const getPrincipal = () => {
+    return authClient?.getIdentity().getPrincipal() ?? Principal.anonymous();
+  };
+
   useEffect(() => {
     AuthClient.create({
       idleOptions: {
@@ -176,5 +183,6 @@ export function useAuthClient() {
     userAccount,
     balance,
     refreshBalance,
+    getPrincipal
   };
 }

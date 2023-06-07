@@ -17,6 +17,7 @@ module {
   // For convenience: from other modules
   type Map<K, V> = Map.Map<K, V>;
   type Set<K> = Set.Set<K>;
+  type Time = Int;
 
   public type Category        = RepresentationTypes.Category;
   public type Cursor          = RepresentationTypes.Cursor;
@@ -61,6 +62,13 @@ module {
     interests: Set<VoteId>;
     opinions: Set<VoteId>;
     categorizations: Set<VoteId>;
+  };
+
+  public type RevealedBallot<T> = {
+    vote_id: VoteId;
+    date: Time;
+    answer: ?T;
+    transactions_record: ?PayTypes.TransactionsRecord;
   };
 
   public type BallotChangeAuthorization = {

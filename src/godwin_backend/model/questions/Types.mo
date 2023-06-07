@@ -1,4 +1,5 @@
 import UtilsTypes "../../utils/Types";
+import Queries    "../../utils/Queries";
 
 import Buffer "mo:stablebuffer/StableBuffer";
 import Map "mo:map/Map";
@@ -33,6 +34,7 @@ module {
   public type StatusHistory = Buffer<StatusInfo>;
   public type IterationHistory = Buffer<StatusHistory>;
 
+  public type QuestionQueries = Queries.Queries<OrderBy, Key>;
   
   // @todo: AUTHOR, TEXT and DATE are not used
   public type OrderBy = {

@@ -82,7 +82,7 @@ const MainQuestions = () => {
     if (sub === undefined) {
       setQueryQuestions(() => () => Promise.resolve({ ids : [], next: undefined}));
     } else {
-      setQueryQuestions(() => (next: bigint | undefined) => sub.actor.getQuestions(getQueryParams(currentBrowseFilter)[0], getQueryParams(currentBrowseFilter)[1], BigInt(10), next? [next] : []).then(
+      setQueryQuestions(() => (next: bigint | undefined) => sub.actor.queryQuestions(getQueryParams(currentBrowseFilter)[0], getQueryParams(currentBrowseFilter)[1], BigInt(10), next? [next] : []).then(
         fromScanLimitResult
       ));
     }

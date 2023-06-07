@@ -1,16 +1,20 @@
 import { Category, CategoryInfo, _SERVICE } from "../../../declarations/godwin_backend/godwin_backend.did";
-import { ActorSubclass } from "@dfinity/agent";
-import CategorizationVote from "../votes/CategorizationVote";
-import CursorVote from "../base/CursorVote";
+import SvgButton                            from "../base/SvgButton";
+import ArrowLeftIcon                        from "../icons/ArrowLeftIcon";
+import ArrowRightIcon                       from "../icons/ArrowRightIcon";
+import CategorizationVote                   from "../votes/CategorizationVote";
+import OpinionVote                          from "../votes/OpinionVote";
 
-import CONSTANTS from "../../Constants";
+import CONSTANTS                            from "../../Constants";
 
-import { useState } from "react";
+import { ActorSubclass }                    from "@dfinity/agent";
+
+import { useState }                         from "react";
 
 type Props = {
-	actor: ActorSubclass<_SERVICE>,
-	categories: Map<Category, CategoryInfo>,
-  opinionVoteId: bigint | undefined,
+	actor               : ActorSubclass<_SERVICE>,
+	categories          : Map<Category, CategoryInfo>,
+  opinionVoteId       : bigint | undefined,
   categorizationVoteId: bigint | undefined
 };
 
@@ -22,28 +26,30 @@ const OpenVotes = ({actor, categories, opinionVoteId, categorizationVoteId}: Pro
     <div className="flex flex-col items-center w-full">
       <div className="grid grid-cols-10 items-center w-full">
         { showCategorization ?
-          <div className="dark:fill-gray-400 w-2/3 place-self-center hover:cursor-pointer hover:dark:fill-white" onClick={(e) => setShowCategorization(false)}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M561 816 320 575l241-241 43 43-198 198 198 198-43 43Z"/></svg>
-          </div> : <></>
+            <div className="w-2/3 place-self-center">
+              <SvgButton onClick={() => setShowCategorization(false)} disabled={false} hidden={false}>
+                <ArrowLeftIcon/>
+              </SvgButton>
+            </div> : <></>
         }
         <div className="col-start-2 col-span-8 place-self-center grow">
         { showCategorization ?
-          categorizationVoteId !== undefined ?
-            <CategorizationVote actor={actor} categories={categories} voteId={categorizationVoteId}/> :
-            <></> :
-            <CursorVote
-              countdownDurationMs={0} 
-              polarizationInfo={CONSTANTS.OPINION_INFO} 
-              voteId={opinionVoteId} 
-              putBallot={actor.putOpinionBallot} 
-              getBallot={actor.getOpinionBallot}
-            />
+            categorizationVoteId !== undefined ?
+              <CategorizationVote actor={actor} categories={categories} voteId={categorizationVoteId}/> : <></> :
+            opinionVoteId !== undefined ?
+              <OpinionVote
+                polarizationInfo={CONSTANTS.OPINION_INFO} 
+                voteId={opinionVoteId} 
+                actor={actor} 
+              /> : <></>
         }
         </div>
-        { showCategorization ? <></> :
-          <div className="dark:fill-gray-400 w-2/3 place-self-center hover:cursor-pointer hover:dark:fill-white" onClick={(e) => setShowCategorization(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="m375 816-43-43 198-198-198-198 43-43 241 241-241 241Z"/></svg>
-          </div>
+        { !showCategorization ?
+            <div className="w-2/3 place-self-center">
+              <SvgButton onClick={() => setShowCategorization(true)} disabled={false} hidden={false}>
+                <ArrowRightIcon/>
+              </SvgButton>
+            </div> : <></>
         }
       </div>
     </div>

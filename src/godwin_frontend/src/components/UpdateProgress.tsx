@@ -54,18 +54,19 @@ function useInterval(callback, delay) {
   }, [delay]);
 }
 
-type Props<T> = {
-  delay_duration_ms: number;
-  update_function: () => Promise<T>;
-  callback_function: (T) => string;
-  run_countdown: boolean;
-  set_run_countdown: (boolean) => void;
-  trigger_update: boolean;
+type Props<Error> = {
+  delay_duration_ms : number;
+  run_countdown     : boolean;
+  trigger_update    : boolean;
+  children?         : React.ReactNode;
+  update_function   : ()        => Promise<Error | null>;
+  callback_function : ()        => Promise<void>;
+  error_to_string   : (Error)   => string;
+  set_run_countdown : (boolean) => void;
   set_trigger_update: (boolean) => void;
-  children?: React.ReactNode;
 }
 
-const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_function, run_countdown, set_run_countdown, trigger_update, set_trigger_update, children}: Props<T>) => {
+const UpdateProgress = <Error,>({delay_duration_ms, update_function, callback_function, error_to_string, run_countdown, set_run_countdown, trigger_update, set_trigger_update, children}: Props<Error>) => {
 
   const interval_duration_ms = 50;
 
@@ -106,10 +107,12 @@ const UpdateProgress = <T,>({delay_duration_ms, update_function, callback_functi
     stopCountdown();
     setUpdateProgress(true);
     set_trigger_update(true);
-    update_function().then((result) => {
-      setUpdateProgress(false);
-      setError(callback_function(result));
-      set_trigger_update(false);
+    update_function().then((err) => {
+      callback_function().then(() => {
+        setUpdateProgress(false);
+        setError(err === null ? null : error_to_string(err));
+        set_trigger_update(false);
+      });
     });
   }
 

@@ -31,6 +31,7 @@ module {
 
   type VoteId             = Types.VoteId;
   type Ballot<T>          = Types.Ballot<T>;
+  type RevealedBallot<T>  = Types.RevealedBallot<T>;
   type Vote<T, A>         = Types.Vote<T, A>;
   type GetVoteError       = Types.GetVoteError;
   type FindBallotError    = Types.FindBallotError;
@@ -207,26 +208,33 @@ module {
       });
     };
 
-    public func revealBallots(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<(VoteId, ?Ballot<T>, ?TransactionsRecord)> {
-      let history_ids = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
-      let filtered_ids = Utils.setScanLimit<VoteId>(history_ids, Map.nhash, direction, limit, previous_id);
-
-      Utils.mapScanLimitResult<VoteId, (VoteId, ?Ballot<T>, ?TransactionsRecord)>(filtered_ids, func(vote_id: VoteId) : (VoteId, ?Ballot<T>, ?TransactionsRecord){
-        (vote_id, revealBallot(principal, vote_id), findBallotTransactions(principal, vote_id));
+    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot<T>, FindBallotError> {
+      let vote = switch(findVote(vote_id)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(v)) { v; };
+      };
+      let ballot = switch(Map.get(vote.ballots, Map.phash, voter)){
+        case(null) { return #err(#BallotNotFound); };
+        case(?b) { b; };
+      };
+      #ok({
+        vote_id;
+        date = ballot.date;
+        answer = if (Principal.equal(caller, voter) or vote.status == #CLOSED) { ?ballot.answer; } else { null; };
+        transactions_record = findBallotTransactions(voter, vote_id);
       });
     };
 
-    func revealBallot(principal: Principal, id: VoteId) : ?Ballot<T> {
-      let vote = getVote(id);
-      switch(Map.get(vote.ballots, Map.phash, principal)){
-        case(null) { Debug.trap("Could not find a ballot for principal '" # Principal.toText(principal) # "' for vote ID '" # Nat.toText(id) # "'"); };
-        case(?ballot) {
-          switch(vote.status){
-            case(#OPEN) { null; };
-            case(#CLOSED) { ?ballot; };
-          };
+    public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot<T>> {
+      let history_ids = Option.get(Map.get(_register.voters_history, Map.phash, voter), Set.new<VoteId>(Map.nhash));
+      let filtered_ids = Utils.setScanLimit<VoteId>(history_ids, Map.nhash, direction, limit, previous_id);
+
+      Utils.mapScanLimitResult<VoteId, RevealedBallot<T>>(filtered_ids, func(vote_id: VoteId) : RevealedBallot<T>{
+        switch(revealBallot(caller, voter, vote_id)){
+          case(#err(err)) { Debug.trap("@todo: error to text"); };
+          case(#ok(ballot)) { ballot; };
         };
-      };
+      });
     };
 
     public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {

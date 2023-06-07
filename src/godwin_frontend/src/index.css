@@ -17,6 +17,10 @@
       hover:enabled:cursor-pointer hover:fill-black dark:hover:fill-white 
       disabled:fill-gray-300 dark:disabled:fill-gray-700 hover:disabled:fill-gray-300 dark:hover:disabled:fill-gray-700;
   }
+  .icon-svg {
+    @apply
+      fill-gray-700 dark:fill-gray-300
+  }
 }
 
 textarea {

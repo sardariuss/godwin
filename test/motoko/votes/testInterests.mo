@@ -1,9 +1,9 @@
-import VoteTypes          "../../../src/godwin_backend/model/votes/Types";
-import Interests          "../../../src/godwin_backend/model/votes/Interests";
-import PayTypes           "../../../src/godwin_backend/model/token/Types";
-import PayForNew          "../../../src/godwin_backend/model/token/PayForNew";
-import QuestionVoteJoins  "../../../src/godwin_backend/model/votes/QuestionVoteJoins";
-import QuestionQueries    "../../../src/godwin_backend/model/questions/QuestionQueries";
+import VoteTypes              "../../../src/godwin_backend/model/votes/Types";
+import Interests              "../../../src/godwin_backend/model/votes/Interests";
+import PayTypes               "../../../src/godwin_backend/model/token/Types";
+import PayForNew              "../../../src/godwin_backend/model/token/PayForNew";
+import QuestionVoteJoins      "../../../src/godwin_backend/model/votes/QuestionVoteJoins";
+import QuestionQueriesFactory "../../../src/godwin_backend/model/questions/QueriesFactory";
 
 import Ref                "../../../src/godwin_backend/utils/Ref";
 
@@ -63,7 +63,7 @@ module {
         Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash)
       ),
       QuestionVoteJoins.build(QuestionVoteJoins.initRegister()),
-      QuestionQueries.build(QuestionQueries.initRegister())
+      QuestionQueriesFactory.build(QuestionQueriesFactory.initRegister())
     );
 
     let s = SuiteState.Suite<Interests>(interests);
