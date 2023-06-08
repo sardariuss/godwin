@@ -1,7 +1,7 @@
-import { Appeal } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Appeal }      from "./../../../declarations/godwin_backend/godwin_backend.did";
 
 import AggregateDigest from "../base/AggregateDigest";
-import CONSTANTS from "../../Constants";
+import CONSTANTS       from "../../Constants";
 
 type Props = {
   aggregate: Appeal | undefined,
@@ -9,7 +9,7 @@ type Props = {
   setSelected: (selected: boolean) => void
 };
 
-const InterestAggregate = ({ aggregate, selected, setSelected }: Props) => {
+const AppealDigest = ({ aggregate, selected, setSelected }: Props) => {
 
 	return (
     <AggregateDigest
@@ -21,4 +21,4 @@ const InterestAggregate = ({ aggregate, selected, setSelected }: Props) => {
 	);
 };
 
-export default InterestAggregate;
+export default AppealDigest;

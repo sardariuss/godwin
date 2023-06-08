@@ -5,6 +5,7 @@ import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
 import Appeal              "representation/Appeal";
 import Interest            "representation/Interest";
+import PayRules            "../PayRules";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
@@ -17,7 +18,6 @@ import Set                 "mo:map/Set";
 import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
-import Float               "mo:base/Float";
 
 module {
 
@@ -49,11 +49,13 @@ module {
 
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
+
+  type PayRules               = PayRules.PayRules;
   
   public type Register        = Votes.Register<Interest, Appeal>;
 
-  let PRICE_OPENING_VOTE = 1_000_000_000; // @todo
-  let PRICE_PUT_BALLOT   = 100_000_000; // @todo
+  let PRICE_OPENING_VOTE = 1_000_000_000; // @todo: make this a parameter
+  let PRICE_PUT_BALLOT   = 100_000_000; // @todo: make this a parameter
 
   public func initRegister() : Register {
     Votes.initRegister<Interest, Appeal>();
@@ -65,7 +67,8 @@ module {
     token_interface: ITokenInterface,
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
-    queries: QuestionQueries
+    queries: QuestionQueries,
+    pay_rules: PayRules
   ) : Interests {
     Interests(
       Votes.Votes(
@@ -83,13 +86,14 @@ module {
             token_interface,
             #PUT_INTEREST_BALLOT,
           ),
-          PRICE_PUT_BALLOT,
-          computePutBallotPayout
+          pay_rules.getInterestVotePrice(),
+          pay_rules.computeInterestVotePayout
         )
       ),
       pay_for_new,
       joins,
-      queries
+      queries,
+      pay_rules
     );
   };
 
@@ -97,11 +101,12 @@ module {
     _votes: Votes<Interest, Appeal>,
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
-    _queries: QuestionQueries
+    _queries: QuestionQueries,
+    _pay_rules: PayRules
   ) {
     
     public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
-      let vote_id = switch(await* _pay_for_new.payin(principal, PRICE_OPENING_VOTE, _votes.newVote)){
+      let vote_id = switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), _votes.newVote)){
         case (#err(err)) { return #err(#PayinError(err)); };
         case (#ok(id)) { id; };
       };
@@ -120,7 +125,7 @@ module {
       // Remove the vote from the interest query
       _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, appeal.score));
       // Pay out the buyer
-      let (refund_amount, reward_amount) = computeOpenVotePayout(appeal);
+      let (refund_amount, reward_amount) = _pay_rules.computeOpenVotePayout(appeal);
       await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
     };
 
@@ -156,21 +161,4 @@ module {
     };
 
   };
-
-  // @todo
-  func computeOpenVotePayout(appeal: Appeal) : (Nat, ?Nat) {
-    (
-      PRICE_OPENING_VOTE, 
-      ?0
-    );
-  };
-
-  // @todo
-  func computePutBallotPayout(answer: Interest, appeal: Appeal) : PayoutArgs {
-    {
-      refund_share = 1.0;
-      reward_tokens = ?PRICE_PUT_BALLOT;
-    };
-  };
-
 };

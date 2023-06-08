@@ -1,11 +1,11 @@
-import { Category, CategoryInfo, _SERVICE } from "../../../declarations/godwin_backend/godwin_backend.did";
-import SvgButton                            from "../base/SvgButton";
-import ArrowLeftIcon                        from "../icons/ArrowLeftIcon";
-import ArrowRightIcon                       from "../icons/ArrowRightIcon";
-import CategorizationVote                   from "../votes/CategorizationVote";
-import OpinionVote                          from "../votes/OpinionVote";
+import { Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import SvgButton                            from "./base/SvgButton";
+import ArrowLeftIcon                        from "./icons/ArrowLeftIcon";
+import ArrowRightIcon                       from "./icons/ArrowRightIcon";
+import CategorizationVote                   from "./categorization/CategorizationVote";
+import OpinionVote                          from "./opinion/OpinionVote";
 
-import CONSTANTS                            from "../../Constants";
+import CONSTANTS                            from "../Constants";
 
 import { ActorSubclass }                    from "@dfinity/agent";
 

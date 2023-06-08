@@ -3,6 +3,7 @@ import Votes               "Votes";
 import VotePolicy          "VotePolicy";
 import PayToVote           "PayToVote";
 
+import PayRules            "../PayRules";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
 import PayForElement       "../token/PayForElement";
@@ -25,11 +26,11 @@ module {
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
 
+  type PayRules               = PayRules.PayRules;
+
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
 
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
-
-  let PRICE_PUT_BALLOT = 350_000_000; // @todo
 
   public func initRegister() : Register {
     Votes.initRegister<CursorMap, PolarizationMap>();
@@ -39,7 +40,8 @@ module {
     vote_register: Votes.Register<CursorMap, PolarizationMap>,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
-    categories: Categories
+    categories: Categories,
+    pay_rules: PayRules
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
@@ -56,18 +58,10 @@ module {
           token_interface,
           #PUT_CATEGORIZATION_BALLOT,
         ),
-        PRICE_PUT_BALLOT,
-        computePayout
+        pay_rules.getCategorizationVotePrice(),
+        pay_rules.computeCategorizationPayout
       )
     );
-  };
-
-  // @todo
-  func computePayout(answer: CursorMap, aggregate: PolarizationMap) : PayoutArgs {
-    {
-      refund_share = 1.0;
-      reward_tokens = ?PRICE_PUT_BALLOT;
-    };
   };
 
 };

@@ -1,15 +1,9 @@
 import Types      "Types";
-import UtilsTypes "../../utils/Types";
-import Utils      "../../utils/Utils";
 
 import Map        "mo:map/Map";
-import Set        "mo:map/Set";
 
 import Principal  "mo:base/Principal";
 import Result     "mo:base/Result";
-import Debug      "mo:base/Debug";
-import Nat        "mo:base/Nat";
-import Int        "mo:base/Int";
 import Option     "mo:base/Option";
 
 module {
@@ -19,18 +13,11 @@ module {
   type Result <Ok, Err>          = Result.Result<Ok, Err>;
     
   type Map<K, V>                 = Map.Map<K, V>;
-  type Set<K>                    = Set.Set<K>;
-
-  type ScanLimitResult<T>        = UtilsTypes.ScanLimitResult<T>;
 
   type VoteId                    = Types.VoteId;
   type Ballot<T>                 = Types.Ballot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
-  type GetVoteError              = Types.GetVoteError;
-  type FindBallotError           = Types.FindBallotError;
-  type RevealVoteError           = Types.RevealVoteError;
   type PutBallotError            = Types.PutBallotError;
-  type RemoveBallotError         = Types.RemoveBallotError;
   type BallotChangeAuthorization = Types.BallotChangeAuthorization;
 
   public class VotePolicy<T, A>(

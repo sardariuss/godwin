@@ -1,10 +1,10 @@
-import PolarizationBar from "./PolarizationBar";
-import ChartTypeToggle from "./ChartTypeToggle";
+import PolarizationBar                                             from "../base/PolarizationBar";
+import ChartTypeToggle                                             from "../base/ChartTypeToggle";
+import { ChartTypeEnum, toPolarizationInfo }                       from "../../utils";
+import CONSTANTS                                                   from "../../Constants";
 import { PublicVote_1, Category, CategoryInfo, Principal, Ballot } from "../../../declarations/godwin_backend/godwin_backend.did";
-import { ChartTypeEnum, toPolarizationInfo } from "../../utils";
-import CONSTANTS from "../../Constants";
 
-import { useState } from "react";
+import { useState }                                                from "react";
 
 type CategorizationPolarizationBarsProps = {
   showName: boolean;

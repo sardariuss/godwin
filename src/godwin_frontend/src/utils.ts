@@ -1,55 +1,13 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, Interest } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
 
 import Color from 'colorjs.io';
 
-export enum InterestEnum {
-  Up,
-  Neutral,
-  Down,
-}
-
-type InterestInfo = {
-  name: string;
-  symbol: string;
-};
-
-export const interestToEnum = (interest: Interest) : InterestEnum => {
-  if (interest['UP'] !== undefined)      return InterestEnum.Up;
-  if (interest['NEUTRAL'] !== undefined) return InterestEnum.Neutral;
-  if (interest['DOWN'] !== undefined)    return InterestEnum.Down;
-  throw new Error('Invalid interest');
-}
-
-export const getInterestInfo = (interest: InterestEnum) : InterestInfo => {
-  if (interest === InterestEnum.Up)      { return CONSTANTS.INTEREST_INFO.up; }
-  if (interest === InterestEnum.Neutral) { return CONSTANTS.INTEREST_INFO.neutral; }
-  if (interest === InterestEnum.Down)    { return CONSTANTS.INTEREST_INFO.down; }
-  throw new Error('Invalid interestEnum');
-}
-
-export const enumToInterest = (interestEnum: InterestEnum) : Interest => {
-  if (interestEnum === InterestEnum.Up)      return { 'UP' : null };
-  if (interestEnum === InterestEnum.Neutral) return { 'NEUTRAL' : null };
-  if (interestEnum === InterestEnum.Down)    return { 'DOWN' : null };
-  throw new Error('Invalid interestEnum');
-}
-
-// @todo: temporary
-export const interestToCursorInfo = (interest: InterestEnum | null) : CursorInfo => {
-  if (interest === InterestEnum.Up) {
-    return toCursorInfo(1.0, CONSTANTS.INTEREST_INFO);
-  } if (interest === InterestEnum.Down) {
-    return toCursorInfo(-1.0, CONSTANTS.INTEREST_INFO);
-  }
-  return toCursorInfo(0.0, CONSTANTS.INTEREST_INFO);
-}
-
 export enum ChartTypeEnum {
   Bar,
   Scatter,
-} 
+}
 
 export type PolarizationInfo = {
   left: CategorySide;
@@ -159,41 +117,6 @@ export const payInErrorToString = (error: PayinError) => {
   if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
   if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
   throw new Error('Invalid PayinError');
-};
-
-
-const getMonthStr = (month: number) => {
-  // months are zero indexed
-  switch (month) {
-    case 0: return 'Jan';
-    case 1: return 'Feb';
-    case 2: return 'Mar';
-    case 3: return 'Apr';
-    case 4: return 'May';
-    case 5: return 'Jun';
-    case 6: return 'Jul';
-    case 7: return 'Aug';
-    case 8: return 'Sep';
-    case 9: return 'Oct';
-    case 10: return 'Nov';
-    default: return 'Dec';
-  }
-};
-
-export const nsToStrDate = (ns: bigint) => {
-  let date = new Date(Date.now());//(Number(ns) / 1000000);
-  //11:09 PM · Feb 18, 2023
-
-  var year = date.getFullYear(),
-      month = date.getMonth(),
-      day = date.getDate(),
-      hour = date.getHours(),
-      minute = date.getMinutes(),
-      hourFormatted = hour % 12 || 12, // hour returned in 24 hour format
-      minuteFormatted = minute < 10 ? "0" + minute : minute,
-      ampm = hour < 12 ? "am" : "pm";
-
-  return hourFormatted + ":" + minuteFormatted + " " + ampm + " · " + getMonthStr(month) + " " + day + ", " + year;
 };
 
 export const toMap = (arr: any[]) => {
@@ -314,12 +237,6 @@ export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo
   }
 }
 
-export const testcolor = () : string => {
-  const white = new Color("white");
-  const leftColorRange = white.range("red", { space: "lch", outputSpace: "lch"});
-  return new Color(leftColorRange(0.00000001).toString()).to("srgb").toString({format: "hex"});
-}
-
 export type PolarizationColorRanges = {
   left: any,
   center: Color,
@@ -354,28 +271,6 @@ export const fromScanLimitResult = <T,>(query_result: ScanLimitResult<T>) : Scan
   let ids = Array.from(query_result.keys);
   let [next] = query_result.next;
   return { ids, next };
-}
-
-export const timeAgo = (input) => {
-  const date = (input instanceof Date) ? input : new Date(input);
-  const formatter = new Intl.RelativeTimeFormat('en', { style: 'narrow' });
-  const ranges = {
-    years: 3600 * 24 * 365,
-    months: 3600 * 24 * 30,
-    weeks: 3600 * 24 * 7,
-    days: 3600 * 24,
-    hours: 3600,
-    minutes: 60,
-    seconds: 1
-  };
-  const secondsElapsed = (date.getTime() - Date.now()) / 1000;
-  for (let key in ranges) {
-    if (ranges[key] < Math.abs(secondsElapsed)) {
-      if (key == 'seconds') return "now";
-      const delta = secondsElapsed / ranges[key];
-      return formatter.format(Math.round(delta), key as keyof typeof ranges);
-    }
-  }
 }
 
 export const getStrongestCategory = (ballot: Map<Category, number>) : [Category, number] => {

@@ -44,7 +44,6 @@ module {
 
   public type Interest = {
     #UP;
-    #NEUTRAL;
     #DOWN;
   };
 

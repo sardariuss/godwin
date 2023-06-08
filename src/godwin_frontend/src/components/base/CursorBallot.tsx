@@ -1,4 +1,5 @@
-import { CursorInfo, timeAgo } from "../../utils";
+import { CursorInfo, } from "../../utils";
+import { timeAgo } from "../../utils/DateUtils";
 
 type CursorBallotProps = {
   cursorInfo: CursorInfo | null;

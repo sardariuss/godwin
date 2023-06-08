@@ -39,13 +39,13 @@ module {
 
   public func mulCursorMap(polarization_trie: PolarizationMap, cursor_trie: CursorMap) : PolarizationMap {
     Utils.leftJoin(polarization_trie, cursor_trie, Categories.key, Categories.equal, func(polarization: Polarization, cursor: ?Cursor) : Polarization {
-      Polarization.mul(polarization, Option.get(cursor, 0.0)); // 0 because if the cursor does not have this category, the resulting polarization shall be nil
+      Polarization.mulCoef(polarization, Option.get(cursor, 0.0)); // 0 because if the cursor does not have this category, the resulting polarization shall be nil
     });
   };
 
-  public func mul(polarization_trie: PolarizationMap, coef: Float) : PolarizationMap {
+  public func mulCoef(polarization_trie: PolarizationMap, coef: Float) : PolarizationMap {
     Trie.mapFilter(polarization_trie, func(category: Category, polarization: Polarization) : ?Polarization {
-      ?Polarization.mul(polarization, coef);
+      ?Polarization.mulCoef(polarization, coef);
     });
   };
 

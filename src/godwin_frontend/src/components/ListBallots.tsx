@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { CursorInfo, ScanResults, VoteKind, voteKindToString, toCursorInfo, fromScanLimitResult, getStrongestCategoryCursorInfo, toMap, interestToCursorInfo, interestToEnum } from "../utils";
+import { CursorInfo, ScanResults, VoteKind, voteKindToString, toCursorInfo, fromScanLimitResult, getStrongestCategoryCursorInfo, toMap } from "../utils";
+
+import { interestToCursorInfo, interestToEnum } from "./interest/InterestTypes";
 
 import { TransactionsRecord, VoteId, InterestBallot, OpinionBallot, CategorizationBallot, CategoryArray__1, Direction, _SERVICE } from "../../declarations/godwin_backend/godwin_backend.did";
 

@@ -31,6 +31,7 @@ module {
   type Duration            = Types.Duration;
   type Parameters          = Types.Parameters;
   type SchedulerParameters = Types.SchedulerParameters;
+  type PriceParameters     = Types.PriceParameters;
   type VoteId              = VoteTypes.VoteId;
   type Cursor              = VoteTypes.Cursor;
   type Category            = VoteTypes.Category;
@@ -46,6 +47,7 @@ module {
     creation_date     : Time;
     categories        : Categories.Register;
     questions         : Questions.Register;
+    price_parameters  : Ref<PriceParameters>;
     status            : {
       register           : Map<Nat, IterationHistory>;
     };
@@ -85,29 +87,30 @@ module {
 
   public func initState(master: Principal, creation_date: Time, parameters: Parameters) : State {
     {
-      name                          = Ref.init<Text>(parameters.name);
-      master                        = Ref.init<Principal>(master);
-      creation_date                 = creation_date;
-      categories                    = Categories.initRegister(parameters.categories);
-      status        = {
+      name              = Ref.init<Text>(parameters.name);
+      master            = Ref.init<Principal>(master);
+      creation_date     = creation_date;
+      categories        = Categories.initRegister(parameters.categories);
+      price_parameters  = Ref.init<PriceParameters>(parameters.prices);
+      status            = {
         register                    = Map.new<Nat, IterationHistory>(Map.nhash);
       };
       questions                     = Questions.initRegister(parameters.questions.character_limit);
-      queries       = {
+      queries           = {
         register                    = QuestionQueriesFactory.initRegister();
       };
-      controller    = {
+      controller        = {
         model = {
           last_pick_date            = Ref.init<Time>(creation_date);
           params                    = Ref.init<SchedulerParameters>(parameters.scheduler);
         };
       };
-      opened_questions = {
+      opened_questions  = {
         register                    = Map.new<Nat, (Principal, Blob)>(Map.nhash);
         index                       = Ref.init<Nat>(0);
         transactions                = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
       };
-      votes         = {
+      votes             = {
         interest                    = {
           register                      = Interests.initRegister();
           transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
@@ -120,7 +123,7 @@ module {
           transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
         };
       };
-      joins         = {
+      joins             = {
         interests                   = Joins.initRegister();
         opinions                    = Joins.initRegister();
         categorizations             = Joins.initRegister();

@@ -1,5 +1,5 @@
-import PolarizationBar from "./PolarizationBar";
-import { InterestVote } from "../../../declarations/godwin_backend/godwin_backend.did";
+import PolarizationBar                     from "../base/PolarizationBar";
+import { InterestVote }                    from "../../../declarations/godwin_backend/godwin_backend.did";
 import { ChartTypeEnum, PolarizationInfo } from "../../utils";
 
 type AppealBarProps = {

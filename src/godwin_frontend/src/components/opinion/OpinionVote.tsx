@@ -1,4 +1,4 @@
-import CursorBallot                                                           from "../ballots/CursorBallot";
+import CursorBallot                                                           from "../base/CursorBallot";
 import { CursorSlider }                                                       from "../base/CursorSlider";
 import UpdateProgress                                                         from "../UpdateProgress";
 import SvgButton                                                              from "../base/SvgButton";

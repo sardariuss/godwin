@@ -1,16 +1,17 @@
-import UpdateProgress                                                           from "../UpdateProgress";
-import InterestBallot                                                           from "../ballots/InterestBallot";
-import SvgButton                                                                from "../base/SvgButton";
-import LockIcon                                                                 from "../icons/LockIcon";
-import PutBallotIcon                                                            from "../icons/PutBallotIcon";
-import ArrowDownIcon                                                            from "../icons/ArrowDownIcon";
-import ArrowUpIcon                                                              from "../icons/ArrowUpIcon";
-import { ActorContext }                                                         from "../../ActorContext"
-import { putBallotErrorToString, InterestEnum, interestToEnum, enumToInterest } from "../../utils";
-import { PutBallotError, _SERVICE }                                             from "../../../declarations/godwin_backend/godwin_backend.did";
+import { InterestEnum, interestToEnum, enumToInterest } from "./InterestTypes";
+import UpdateProgress                                   from "../UpdateProgress";
+import InterestBallot                                   from "../interest/InterestBallot";
+import SvgButton                                        from "../base/SvgButton";
+import LockIcon                                         from "../icons/LockIcon";
+import PutBallotIcon                                    from "../icons/PutBallotIcon";
+import ArrowDownIcon                                    from "../icons/ArrowDownIcon";
+import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
+import { ActorContext }                                 from "../../ActorContext"
+import { putBallotErrorToString }                       from "../../utils";
+import { PutBallotError, _SERVICE }                     from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { ActorSubclass }                                                        from "@dfinity/agent";
-import { useState, useEffect, useContext }                                      from "react";
+import { ActorSubclass }                                from "@dfinity/agent";
+import { useState, useEffect, useContext }              from "react";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>,
@@ -56,7 +57,7 @@ const InterestVote = ({actor, voteId}: Props) => {
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (interest === null) return Promise.resolve(null);
+    if (interest === null || interest === InterestEnum.Neutral) throw new Error("Invalid interest");
     return actor.putInterestBallot(voteId, enumToInterest(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;

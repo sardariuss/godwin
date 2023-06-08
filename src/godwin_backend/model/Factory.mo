@@ -1,5 +1,6 @@
 import VoteTypes              "votes/Types";
 import QuestionTypes          "questions/Types";
+import PayRules               "PayRules";
 import State                  "State";
 import Model                  "Model";
 import Categories             "Categories";
@@ -42,6 +43,8 @@ module {
 
     let queries = QuestionQueriesFactory.build(state.queries.register);
 
+    let pay_rules = PayRules.build(state.price_parameters);
+
     let token_interface = TokenInterface.build(state.master.v);
     let pay_to_open_question = PayForNew.build(
       token_interface,
@@ -59,7 +62,8 @@ module {
       token_interface,
       pay_to_open_question,
       interest_join,
-      queries
+      queries,
+      pay_rules
     );
     
     let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
@@ -74,7 +78,8 @@ module {
       state.votes.categorization.register,
       state.votes.categorization.transactions,
       token_interface,
-      categories
+      categories,
+      pay_rules
     );
 
     let model = Model.build(

@@ -1,6 +1,6 @@
-import InterestVote from "./votes/InterestVote";
+import InterestVote from "./interest/InterestVote";
 import StatusHistoryComponent from "./StatusHistory";
-import OpenVotes from "./votes/OpenVotes";
+import OpenVotes from "./OpenVotes";
 
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 

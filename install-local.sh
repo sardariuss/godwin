@@ -45,6 +45,11 @@ dfx canister call godwin_master createSubGodwin '("classic6", record {
   questions = record {
     character_limit = 240;
   };
+  prices = record {
+    open_vote_price_e8s = 1_000_000_000;
+    interest_vote_price_e8s = 100_000_000;
+    categorization_vote_price_e8s =  350_000_000;
+  };
 })'
 # Run the scenario @todo for some reason this does not work, one shall use ic-repl instead
 #export SUB_6_VALUES_PRINCIPAL=${SUB_6_VALUES_ID:1:29}
@@ -71,6 +76,11 @@ dfx canister call godwin_master createSubGodwin '("uspolitics", record {
   };
   questions = record {
     character_limit = 240;
+  };
+  prices = record {
+    open_vote_price_e8s = 1_000_000_000;
+    interest_vote_price_e8s = 100_000_000;
+    categorization_vote_price_e8s =  350_000_000;
   };
 })'
 

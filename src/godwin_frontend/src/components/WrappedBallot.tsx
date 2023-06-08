@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import { CursorInfo, VoteKind, voteKindToCandidVariant } from "../utils";
 
-import CursorBallot from "./ballots/CursorBallot";
+import CursorBallot from "./base/CursorBallot";
 
 import { Question, TransactionsRecord, ReapAccountResult, MintResult } from "../../declarations/godwin_backend/godwin_backend.did";
 

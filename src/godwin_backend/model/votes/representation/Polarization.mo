@@ -12,9 +12,9 @@ module {
   type Cursor = Types.Cursor;
 
   public func isValid(polarization: Polarization) : Bool {
-    return Float.abs(polarization.left) >= 0.0
+    return Float.abs(polarization.left)   >= 0.0
        and Float.abs(polarization.center) >= 0.0
-       and Float.abs(polarization.right) >= 0.0;
+       and Float.abs(polarization.right)  >= 0.0;
   };
 
   public func nil() : Polarization {
@@ -31,18 +31,26 @@ module {
 
   public func add(polarization_1: Polarization, polarization_2: Polarization) : Polarization {
     {
-      left    = polarization_1.left + polarization_2.left;
+      left    = polarization_1.left   + polarization_2.left;
       center  = polarization_1.center + polarization_2.center;
-      right   = polarization_1.right + polarization_2.right;
+      right   = polarization_1.right  + polarization_2.right;
     };
   };
 
   public func sub(polarization_1: Polarization, polarization_2: Polarization) : Polarization {
     // @todo: Should assert that the result is valid, i.e. polarization2 < polarization1
     {
-      left    = polarization_1.left - polarization_2.left;
+      left    = polarization_1.left   - polarization_2.left;
       center  = polarization_1.center - polarization_2.center;
-      right   = polarization_1.right - polarization_2.right;
+      right   = polarization_1.right  - polarization_2.right;
+    };
+  };
+
+  public func mul(polarization_1: Polarization, polarization_2: Polarization) : Polarization {
+    {
+      left    = polarization_1.left   * polarization_2.left;
+      center  = polarization_1.center * polarization_2.center;
+      right   = polarization_1.right  * polarization_2.right;
     };
   };
 
@@ -54,18 +62,18 @@ module {
     sub(polarization_1, Option.get(polarization_2, nil()));
   };
 
-  public func mul(polarization: Polarization, coef: Float) : Polarization {
+  public func mulCoef(polarization: Polarization, coef: Float) : Polarization {
     if (coef >= 0.0){
       {
-        left    = polarization.left * coef;
+        left    = polarization.left   * coef;
         center  = polarization.center * coef;
-        right   = polarization.right * coef;
+        right   = polarization.right  * coef;
       };
     } else {
       {
-        left    = polarization.right * -coef;
+        left    = polarization.right  * -coef;
         center  = polarization.center * -coef;
-        right   = polarization.left * -coef;
+        right   = polarization.left   * -coef;
       };
     }
   };
@@ -74,9 +82,9 @@ module {
   /// One could normalize before doing the comparison, but then comparing nil polarization
   /// would trap.
   public func equal(polarization_1: Polarization, polarization_2: Polarization) : Bool {
-    polarization_1.left == polarization_2.left and 
+    polarization_1.left   == polarization_2.left   and 
     polarization_1.center == polarization_2.center and 
-    polarization_1.right == polarization_2.right;
+    polarization_1.right  == polarization_2.right;
   };
 
   public func addCursor(polarization: Polarization, cursor: Cursor) : Polarization {
@@ -105,9 +113,9 @@ module {
   };
 
   public func toText(polarization: Polarization) : Text {
-    "{ left = " # Float.toText(polarization.left) #
+    "{ left   = " # Float.toText(polarization.left)   #
     ", center = " # Float.toText(polarization.center) #
-    ", right = " # Float.toText(polarization.right) #
+    ", right  = " # Float.toText(polarization.right)  #
     " }";
   };
 

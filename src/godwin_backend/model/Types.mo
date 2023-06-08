@@ -78,6 +78,12 @@ module {
     rejected_duration: Duration;
   };
 
+  public type PriceParameters = {
+    open_vote_price_e8s: Nat;
+    interest_vote_price_e8s: Nat;
+    categorization_vote_price_e8s: Nat;
+  };
+
   public type QuestionsParameters = {
     character_limit: Nat;
   };
@@ -88,6 +94,7 @@ module {
     history: HistoryParameters;
     scheduler: SchedulerParameters;
     questions: QuestionsParameters;
+    prices: PriceParameters;
   };
 
   public type Decay = {

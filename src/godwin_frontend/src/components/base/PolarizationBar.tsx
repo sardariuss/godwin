@@ -1,9 +1,9 @@
-import { CategorySide, Polarization, Ballot } from "./../../../declarations/godwin_backend/godwin_backend.did";
-import { ScatterChart } from "../ScatterChart";
+import { CategorySide, Polarization, Ballot }                                        from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { ScatterChart }                                                              from "../ScatterChart";
 
 import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
 
-import { Bar }          from 'react-chartjs-2'
+import { Bar }                                                                       from 'react-chartjs-2'
 
 import {
   Chart as ChartJS,
@@ -13,7 +13,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+}                                                                                    from 'chart.js';
 
 ChartJS.register(
   CategoryScale,

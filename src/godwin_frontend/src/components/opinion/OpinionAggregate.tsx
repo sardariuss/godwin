@@ -1,10 +1,10 @@
-import { Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Polarization }                                   from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-import AggregateDigest from "../base/AggregateDigest";
-import CONSTANTS from "../../Constants";
+import AggregateDigest                                    from "../base/AggregateDigest";
+import CONSTANTS                                          from "../../Constants";
 import { polarizationToCursor, toCursorInfo, CursorInfo } from "../../utils";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect }                            from "react";
 
 type Props = {
   aggregate: Polarization | undefined,

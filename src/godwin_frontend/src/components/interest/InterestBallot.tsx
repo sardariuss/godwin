@@ -1,4 +1,5 @@
-import { InterestEnum, timeAgo, getInterestInfo } from "../../utils";
+import { timeAgo } from "../../utils/DateUtils";
+import { InterestEnum, getInterestInfo } from "./InterestTypes";
 
 type InterestBallotProps = {
   answer: InterestEnum | null;

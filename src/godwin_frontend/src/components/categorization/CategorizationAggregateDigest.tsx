@@ -1,10 +1,9 @@
-import { Category, CategoryInfo, Polarization } from "./../../../declarations/godwin_backend/godwin_backend.did";
-
-import AggregateDigest from "../base/AggregateDigest";
-import CONSTANTS from "../../Constants";
+import AggregateDigest                                                        from "../base/AggregateDigest";
+import CONSTANTS                                                              from "../../Constants";
 import { polarizationToCursor, CursorInfo, toCursorInfo, toPolarizationInfo } from "../../utils";
+import { Category, CategoryInfo, Polarization }                               from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect }                                                from "react";
 
 type Props = {
   aggregate: Map<Category, Polarization> | undefined,
@@ -13,7 +12,7 @@ type Props = {
   setSelected: (selected: boolean) => void
 };
 
-const CategorizationAggregate = ({ aggregate, categories, selected, setSelected }: Props) => {
+const CategorizationAggregateDigest = ({ aggregate, categories, selected, setSelected }: Props) => {
 
   const [cursorInfo, setCursorInfo] = useState<CursorInfo | undefined>(undefined);
 
@@ -48,4 +47,4 @@ const CategorizationAggregate = ({ aggregate, categories, selected, setSelected 
 	);
 };
 
-export default CategorizationAggregate;
+export default CategorizationAggregateDigest;

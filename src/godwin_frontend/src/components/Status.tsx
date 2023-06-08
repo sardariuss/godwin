@@ -1,16 +1,17 @@
 import { _SERVICE, Status, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { nsToStrDate, statusToString, toMap, VoteKind } from "../utils";
+import { statusToString, toMap, VoteKind }                                            from "../utils";
+import { nsToStrDate }                                                                 from "../utils/DateUtils";
 
-import InterestAggregate              from "./aggregates/InterestAggregate";
-import OpinionAggregate               from "./aggregates/OpinionAggregate";
-import AppealBar                      from "./base/AppealBar";
-import CategorizationAggregate        from "./aggregates/CategorizationAggregate";
-import SinglePolarizationBar          from "./base/SinglePolarizationBar";
-import CategorizationPolarizationBars from "./base/CategorizationPolarizationBars";
-import CONSTANTS                      from "../Constants";
+import AppealDigest                                                                                from "./interest/AppealDigest";
+import OpinionAggregate                                                                            from "./opinion/OpinionAggregate";
+import AppealBar                                                                                   from "./interest/AppealBar";
+import CategorizationAggregateDigest                                                               from "./categorization/CategorizationAggregateDigest";
+import SinglePolarizationBar                                                                       from "./base/SinglePolarizationBar";
+import CategorizationPolarizationBars                                                              from "./categorization/CategorizationPolarizationBars";
+import CONSTANTS                                                                                   from "../Constants";
 
-import { ActorSubclass } from "@dfinity/agent";
-import { useEffect, useState } from "react";
+import { ActorSubclass }                                                                           from "@dfinity/agent";
+import { useEffect, useState }                                                                     from "react";
 
 // @todo: put the SVGs into the assets directory
 const statusToPath = (status: Status) => {
@@ -84,7 +85,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               {
                 isHistory ? 
                   status['CANDIDATE'] !== undefined ?
-                    <InterestAggregate 
+                    <AppealDigest 
                       aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
                       setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
                       selected={ selectedVote === VoteKind.INTEREST}
@@ -97,7 +98,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
                       selected={ selectedVote === VoteKind.OPINION}
                     />
                     {" · "}
-                    <CategorizationAggregate 
+                    <CategorizationAggregateDigest 
                       aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
                       categories={categories}
                       setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.CATEGORIZATION : undefined) }}

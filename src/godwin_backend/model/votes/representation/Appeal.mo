@@ -16,7 +16,6 @@ module {
     let { ups; downs; } = appeal;
     switch(interest){
       case(#UP)        { { appeal with ups   = Nat.add(ups, 1);   score = computeScore(ups + 1, downs    ); } };
-      case(#NEUTRAL)   { appeal; };
       case(#DOWN)      { { appeal with downs = Nat.add(downs, 1); score = computeScore(ups    , downs + 1); } };
     };
   };
@@ -25,7 +24,6 @@ module {
     let { ups; downs; } = appeal;
     switch(interest){
       case(#UP)      { { appeal with ups   = Nat.sub(ups, 1);   score = computeScore(ups - 1, downs    ); } };
-      case(#NEUTRAL) { appeal; };
       case(#DOWN)    { { appeal with downs = Nat.sub(downs, 1); score = computeScore(ups    , downs - 1); } };
     };
   };
