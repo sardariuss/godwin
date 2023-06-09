@@ -8,13 +8,13 @@ import { useEffect, useState } from "react";
 import { ActorSubclass } from "@dfinity/agent";
 import { VoteKind } from "../utils";
 
-type Props = {
+export type QuestionInput = {
 	actor: ActorSubclass<_SERVICE>,
 	categories: Map<Category, CategoryInfo>,
   questionId: bigint
 };
 
-const QuestionBody = ({actor, categories, questionId}: Props) => {
+const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [showHistory, setShowHistory] = useState<boolean>(false);
@@ -155,4 +155,4 @@ const QuestionBody = ({actor, categories, questionId}: Props) => {
 	);
 };
 
-export default QuestionBody;
+export default QuestionComponent;

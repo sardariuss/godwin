@@ -8,7 +8,7 @@ export enum InterestEnum {
   Down,
 }
 
-type InterestInfo = {
+export type InterestInfo = {
   name: string;
   symbol: string;
 }

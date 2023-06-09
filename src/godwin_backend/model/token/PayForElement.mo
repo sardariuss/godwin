@@ -76,16 +76,17 @@ module {
       );
       // Reward the users
       let rewards = await* _token_interface.mintBatch(
-        Buffer.mapFilter(recipients, func({to; args;} : PayoutRecipient): ?MintRecipient {
-          Option.map(args.reward_tokens, func(amount: Nat) : MintRecipient { { to; amount; }; });
-        })
+        Buffer.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = args.reward_tokens; }; })
       );
       // Watchout, this loop only iterates on the refunds, not the rewards.
       // It is assumed that if for a user there is no refund, there is no reward.
       // @todo: should do a Trie.disj to get the union of both tries.
       for ((principal, result) in Trie.iter(refunds)) {
-        let reward = Trie.get(rewards, key(principal), Principal.equal);
-        _user_transactions.setPayout(principal, id, ?result, reward);
+        let reward = switch(Trie.get(rewards, key(principal), Principal.equal)){
+          case(null) { Debug.trap("@todo: No reward for user"); };
+          case(?r) { r; };
+        };
+        _user_transactions.setPayout(principal, id, result, reward);
       };
     };
 

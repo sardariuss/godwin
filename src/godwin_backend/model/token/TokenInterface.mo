@@ -57,10 +57,13 @@ module {
       };
     };
 
-    public func transferToMaster(from_subaccount: Blob, to: Principal, amount: Balance) : async* TransferToMasterResult {
+    public func transferToMaster(from_subaccount: Blob, to: Principal, amount: Balance) : async* ?TransferToMasterResult {
+      if (amount == 0) {
+        return null;
+      };
       try {
         // Call the token reap_account method
-        toBaseResult(await Token.icrc1_transfer({
+        ?toBaseResult(await Token.icrc1_transfer({
           from_subaccount = ?from_subaccount;
           to = getMasterAccount(?to);
           amount;
@@ -69,25 +72,29 @@ module {
           memo = null; // @todo: memo
         }));
       } catch(e) {
-        #err(#CanisterCallError(Error.code(e)));
+        ?#err(#CanisterCallError(Error.code(e)));
       };
     };
     
     // @todo: double ReapAccountRecipient types is confusing
-    public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) : async* Trie<Principal, ReapAccountResult> {
+    public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) : async* Trie<Principal, ?ReapAccountResult> {
 
-      var results : Trie<Principal, ReapAccountResult> = Trie.empty();
+      var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
       let to_accounts = Buffer.Buffer<Token.ReapAccountRecipient>(recipients.size());
 
       for ({ to; share; }  in recipients.vals()){
-        // Add to the recipients 
-        to_accounts.add({ account = getMasterAccount(?to); share; });
-        // Keep the mapping of subaccount <-> principal
-        Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
-        // Initialize the results map in case no error is found
-        results := Trie.put(results, key(to), Principal.equal, #err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; }))).0;
+        if (share > 0.0) {
+          // Add to the recipients 
+          to_accounts.add({ account = getMasterAccount(?to); share; });
+          // Keep the mapping of subaccount <-> principal
+          Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
+          // Initialize the results map in case no error is found
+          results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; }))).0;
+        } else {
+          results := Trie.put(results, key(to), Principal.equal, null).0;
+        };
       };
 
       let reap_result = try {
@@ -104,13 +111,13 @@ module {
       switch(reap_result) {
         case(#Err(err)) {    
           for (recipient in recipients.vals()){
-            results := Trie.put(results, key(recipient.to), Principal.equal, #err(err)).0;
+            results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
           };
         };
         case(#Ok(transfer_results)){
           for ((args, result) in Array.vals(transfer_results)){
             Option.iterate(transferToReapAccountResult(map_recipients, args, result), func((principal, result): (Principal, ReapAccountResult)){
-              results := Trie.put(results, key(principal), Principal.equal, result).0;
+              results := Trie.put(results, key(principal), Principal.equal, ?result).0;
             });
           };
         };
@@ -120,20 +127,24 @@ module {
     };
 
     // @todo: double MintRecipient types is confusing
-    public func mintBatch(recipients: Buffer<MintRecipient>) : async* Trie<Principal, MintResult> {
+    public func mintBatch(recipients: Buffer<MintRecipient>) : async* Trie<Principal, ?MintResult> {
 
-      var results : Trie<Principal, MintResult> = Trie.empty();
+      var results : Trie<Principal, ?MintResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
       let to_accounts = Buffer.Buffer<Token.MintRecipient>(recipients.size());
 
       for ({ to; amount; } in recipients.vals()){
+        if (amount > 0) {
         // Add to the recipients 
         to_accounts.add({ account = getMasterAccount(?to); amount; });
         // Keep the mapping of subaccount <-> principal
         Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
         // Initialize the results map in case no error is found
-        results := Trie.put(results, key(to), Principal.equal, #err(#SingleMintLost({ amount; }))).0;
+        results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleMintLost({ amount; }))).0;
+        } else {
+          results := Trie.put(results, key(to), Principal.equal, null).0;
+        };
       };
 
       let mint_batch = try {
@@ -149,13 +160,13 @@ module {
       switch(mint_batch) {
         case(#err(err)) {    
           for (recipient in recipients.vals()){
-            results := Trie.put(results, key(recipient.to), Principal.equal, #err(err)).0;
+            results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
           };
         };
         case(#ok(transfer_results)){
           for ((args, result) in Array.vals(transfer_results)){
             Option.iterate(transferToMintResult(map_recipients, args, result), func((principal, result): (Principal, MintResult)){
-              results := Trie.put(results, key(principal), Principal.equal, result).0;
+              results := Trie.put(results, key(principal), Principal.equal, ?result).0;
             });
           };
         };

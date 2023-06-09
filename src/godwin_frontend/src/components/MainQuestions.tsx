@@ -2,8 +2,8 @@ import { QuestionOrderBy, Direction } from "../../declarations/godwin_backend/go
 import { ActorContext, Sub } from "../ActorContext";
 import { TabButton } from "./TabButton";
 import { MainTabButton } from "./MainTabButton";
-import { ListQuestions } from "./ListQuestions";
-import { ScanResults, fromScanLimitResult, toMap } from "../utils";
+import ListQuestions from "./ListQuestions";
+import { ScanResults, fromScanLimitResult } from "../utils";
 import OpenQuestion from "./OpenQuestion";
 import SubBanner from "./SubBanner";
 
@@ -48,20 +48,20 @@ const filterToText = (filter: BrowseFilter) => {
 
 const filters = [BrowseFilter.CANDIDATE, BrowseFilter.OPEN, BrowseFilter.ARCHIVED, BrowseFilter.REJECTED];
 
-const getQueryParams = (filter: BrowseFilter) : [QuestionOrderBy, Direction] => {
+const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   switch (filter) {
     case BrowseFilter.CANDIDATE:
-      return [{ 'INTEREST_SCORE' : null          }, { 'BWD' : null }];
+      return { 'INTEREST_SCORE' : null          };
     case BrowseFilter.OPEN:
-      return [{ 'STATUS' : { 'OPEN' : null     } }, { 'FWD' : null }];
+      return { 'STATUS' : { 'OPEN' : null     } };
     case BrowseFilter.ARCHIVED:
-      return [{ 'STATUS' : { 'CLOSED' : null   } }, { 'FWD' : null }];
+      return { 'STATUS' : { 'CLOSED' : null   } };
     case BrowseFilter.REJECTED:
-      return [{ 'STATUS' : { 'REJECTED' : null } }, { 'FWD' : null }];
+      return { 'STATUS' : { 'REJECTED' : null } };
   }
 }
 
-type QueryFunction = (next: bigint | undefined) => Promise<ScanResults<bigint>>;
+type QueryFunction = (direction: Direction, limit: bigint, next: bigint | undefined) => Promise<ScanResults<bigint>>;
 
 const MainQuestions = () => {
 
@@ -82,7 +82,7 @@ const MainQuestions = () => {
     if (sub === undefined) {
       setQueryQuestions(() => () => Promise.resolve({ ids : [], next: undefined}));
     } else {
-      setQueryQuestions(() => (next: bigint | undefined) => sub.actor.queryQuestions(getQueryParams(currentBrowseFilter)[0], getQueryParams(currentBrowseFilter)[1], BigInt(10), next? [next] : []).then(
+      setQueryQuestions(() => (direction: Direction, limit: bigint, next: bigint | undefined) => sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next] : []).then(
         fromScanLimitResult
       ));
     }
@@ -125,7 +125,7 @@ const MainQuestions = () => {
             </div>
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
-            <ListQuestions sub={sub}  query_questions={queryQuestions}/>
+            <ListQuestions sub={sub} query_questions={queryQuestions}/>
           </div>
         </div>
     )

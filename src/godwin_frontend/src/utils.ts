@@ -1,6 +1,7 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
 import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
 import CONSTANTS from "./Constants";
+import { fromNullable } from "@dfinity/utils";
 
 import Color from 'colorjs.io';
 
@@ -269,7 +270,7 @@ export type ScanResults<T> = {
 
 export const fromScanLimitResult = <T,>(query_result: ScanLimitResult<T>) : ScanResults<T> => {
   let ids = Array.from(query_result.keys);
-  let [next] = query_result.next;
+  let next = fromNullable(query_result.next);
   return { ids, next };
 }
 

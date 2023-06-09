@@ -51,10 +51,10 @@ module {
       _price_parameters.get().categorization_vote_price_e8s;
     };
 
-    public func computeOpenVotePayout(appeal: Appeal) : (Nat, ?Nat) {
+    public func computeOpenVotePayout(appeal: Appeal) : (Nat, Nat) {
       (
         if (appeal.score >= 0) { getOpenVotePrice(); } else { 0; },
-        ?0 // @todo: _price_parameters.open_vote_price if question is selected!
+        0 // @todo: _price_parameters.open_vote_price if question is selected!
       );
     };
 
@@ -65,7 +65,7 @@ module {
       };
       {
         refund_share = share;
-        reward_tokens = if (share > 0.0) { ?(Int.abs(Float.toInt(share)) * getInterestVotePrice()); } else { null };
+        reward_tokens = Int.abs(Float.toInt(share * Float.fromInt(getInterestVotePrice())));
       };
     };
 
@@ -98,7 +98,7 @@ module {
 
       {
         refund_share = payout.refund;
-        reward_tokens = if (payout.reward == 0.0) { null; } else { ?(Int.abs(Float.toInt(payout.reward)) * getCategorizationVotePrice()); };
+        reward_tokens = Int.abs(Float.toInt(payout.reward * Float.fromInt(getCategorizationVotePrice())));
       };
     };
 

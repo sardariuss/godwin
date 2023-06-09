@@ -79,7 +79,7 @@ module {
       };
     };
 
-    public func payout(id: Id, refund: Balance, reward: ?Balance) : async* () {
+    public func payout(id: Id, refund: Balance, reward: Balance) : async* () {
       let (principal, subaccount) = switch(_lock_register.getOpt(id)){
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
@@ -87,14 +87,13 @@ module {
       let transfer_result = await* _token_interface.transferToMaster(subaccount, principal, refund);
       
       // @todo: have a function for single mint
-      let rewards = switch(reward){
-        case(null) { Trie.empty<Principal, MintResult>(); };
-        case(?amount){
-          await* _token_interface.mintBatch(Buffer.fromArray([{ to = principal; amount; }]));
-        };
+      let mint_result = await* _token_interface.mintBatch(Buffer.fromArray([{ to = principal; amount = reward; }]));
+      let reward_result = switch(Trie.get(mint_result, key(principal), Principal.equal)){
+        case(null) { Debug.trap("@todo: No reward for user") };
+        case(?r) { r; };
       };
       
-      _user_transactions.setPayout(principal, id, ?transfer_result, Trie.get(rewards, key(principal), Principal.equal));
+      _user_transactions.setPayout(principal, id, transfer_result, reward_result);
       _lock_register.delete(id);
     };
 

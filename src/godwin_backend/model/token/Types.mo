@@ -79,7 +79,7 @@ module {
 
   public type PayoutArgs = {
     refund_share: Float;
-    reward_tokens: ?Balance;
+    reward_tokens: Balance;
   };
 
   public type TransactionsRecord = {
@@ -95,9 +95,9 @@ module {
 
   public type ITokenInterface = {
     transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
-    transferToMaster: (from_subaccount: Blob, to: Principal, amount: Balance) -> async* ReapAccountResult;
-    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) -> async* Trie<Principal, ReapAccountResult>;
-    mintBatch: (recipients: Buffer<MintRecipient>) -> async* Trie<Principal, MintResult>;
+    transferToMaster: (from_subaccount: Blob, to: Principal, amount: Balance) -> async* ?TransferToMasterResult;
+    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) -> async* Trie<Principal, ?ReapAccountResult>;
+    mintBatch: (recipients: Buffer<MintRecipient>) -> async* Trie<Principal, ?MintResult>;
   };
 
 };
