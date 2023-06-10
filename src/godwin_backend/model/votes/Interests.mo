@@ -121,11 +121,11 @@ module {
     public func closeVote(vote_id: Nat) : async* () {
       // Close the vote
       await* _votes.closeVote(vote_id);
-      let appeal = _votes.getVote(vote_id).aggregate;
+      let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
-      _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, appeal.score));
+      _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.score));
       // Pay out the buyer
-      let (refund_amount, reward_amount) = _pay_rules.computeOpenVotePayout(appeal);
+      let (refund_amount, reward_amount) = _pay_rules.computeOpenVotePayout(vote.aggregate, Map.size(vote.ballots));
       await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
     };
 

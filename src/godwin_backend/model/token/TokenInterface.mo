@@ -67,7 +67,7 @@ module {
           from_subaccount = ?from_subaccount;
           to = getMasterAccount(?to);
           amount;
-          fee = null;
+          fee = ?10_000; // @todo: fee
           created_at_time = null;
           memo = null; // @todo: memo
         }));

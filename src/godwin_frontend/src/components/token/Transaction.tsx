@@ -32,16 +32,20 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
     <div>
     {
       tx === null ? <></> :
-      <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
-        <div>
-          { "Index: " + tx.index.toString() }
+      <div className="flex flex-col text-md text-sm text-black dark:text-white">
+        <div className="self-center">
+          <Balance amount={tx.amount}/>
         </div>
-        <div>
-          { "Type: " + transactionKindToString(tx.kind) }
-        </div>
-        <Balance amount={tx.amount}/>
-        <div>
-          { "Timestamp: " + nsToStrDate(tx.timestamp) }
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div>
+            { "Type: " + transactionKindToString(tx.kind) }
+          </div>
+          <div>
+            { "Date: " + nsToStrDate(tx.timestamp) }
+          </div>
+          <div>
+            { "Index: " + tx.index.toString() }
+          </div>
         </div>
       </div>
     }

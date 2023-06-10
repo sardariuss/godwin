@@ -41,13 +41,12 @@ const filterToText = (filter: UserFilter) => {
 const UserComponent = () => {
 
   const {user} = useParams<string>();
-  const {subs, isAuthenticated, authClient, master, token, logout} = useContext(ActorContext);
+  const {subs, isAuthenticated, authClient, master, token, logout, balance, refreshBalance} = useContext(ActorContext);
 
   const [principal, setPrincipal] = useState<Principal | undefined>(undefined);
   const [isLoggedUser, setIsLoggedUser] = useState<boolean>(false);
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [account, setAccount] = useState<Account | undefined>(undefined);
-  const [balance, setBalance] = useState<bigint | undefined>(undefined);
 
   const [currentUserFilter, setCurrentUserFilter] = useState<UserFilter>(UserFilter.CONVICTIONS);
 
@@ -80,16 +79,6 @@ const UserComponent = () => {
     }
   }
 
-  const refreshBalance = async () => {
-    // Hide the balance of the user if it's not a logged user
-    if (account === undefined || !isLoggedUser) {
-      setBalance(undefined);
-    } else {
-      let balance = await token.icrc1_balance_of(account);
-      setBalance(balance);
-    }
-  }
-
   // @todo: use a timer to not update the name at each character change
   const editUserName = (name: string) => {
     master.setUserName(name);
@@ -102,10 +91,6 @@ const UserComponent = () => {
     });
   }
 
-	useEffect(() => {
-		refreshUser();
-  }, []);
-
   useEffect(() => {
 		refreshUser();
   }, [subs, isAuthenticated, user]);
@@ -116,8 +101,10 @@ const UserComponent = () => {
   }, [principal, isLoggedUser]);
 
   useEffect(() => {
-    refreshBalance();
-  }, [account]);
+    if (isAuthenticated) {
+      refreshBalance();
+    }
+  }, [isAuthenticated]);
 
 	return (
     <div className="flex flex-col items-center">
@@ -197,11 +184,11 @@ const UserComponent = () => {
                   </div>
                   {
                     currentUserFilter === UserFilter.CONVICTIONS ?
-                    <Convictions sub={sub} principal={principal}/> :
+                      <Convictions sub={sub} principal={principal}/> :
                     currentUserFilter === UserFilter.VOTES ?
-                    <VoterHistory sub={sub} principal={principal}/> :
+                      <VoterHistory sub={sub} principal={principal}/> :
                     currentUserFilter === UserFilter.QUESTIONS ?
-                    <VoterQuestions sub={sub} principal={principal}/> :
+                      <VoterQuestions sub={sub} principal={principal}/> :
                     <></>
                   }
                 </div>

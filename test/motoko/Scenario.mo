@@ -45,9 +45,9 @@ module {
       time := time + Duration.toTime(tick_duration);
 
       if (Random.random(fuzzer) < 0.3) {
-        Debug.print("Open question!");
-        switch(await* facade.openQuestion(Random.randomUser(fuzzer, principals), Random.randomQuestion(fuzzer), time)){
-          case(#ok(_)){};
+        let principal = Random.randomUser(fuzzer, principals);
+        switch(await* facade.openQuestion(principal, Random.randomQuestion(fuzzer), time)){
+          case(#ok(question)){ Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question.id));};
           case(#err(err)) { Debug.print("Fail to open question: " # openQuestionErrorToString(err)); };
         };
       };

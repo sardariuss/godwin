@@ -1,26 +1,40 @@
-import { Sub }                              from "../../ActorContext";
-import ListQuestions                        from "../ListQuestions";
-import { ScanResults, fromScanLimitResult } from "../../utils";
-import { Question, TransactionsRecord }     from "../../../declarations/godwin_backend/godwin_backend.did";
+import ListComponents                                           from "../base/ListComponents";
+import TransactionsRecordComponent, { TransactionsRecordInput } from "../token/TransactionsRecord";
+import { Sub }                                                  from "../../ActorContext";
+import { ScanResults, fromScanLimitResult }                     from "../../utils";
+import { Question, TransactionsRecord, Direction }              from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { Principal }                        from "@dfinity/principal";
-import { toNullable }                       from "@dfinity/utils";
+import { Principal }                                            from "@dfinity/principal";
+import { fromNullable }                                         from "@dfinity/utils";
+import React                                                    from "react";
 
 type VoterQuestionsProps = {
   principal: Principal;
   sub: Sub;
 };
 
+type QueryResult = [bigint, [] | [Question], [] | [TransactionsRecord]];
+
 export const VoterQuestions = ({principal, sub}: VoterQuestionsProps) => {
 
-  const query_questions = (next: bigint | undefined) : Promise<ScanResults<[bigint, [] | [Question], [] | [TransactionsRecord]]>> => {
-    return sub.actor.queryQuestionsFromAuthor(principal, { 'BWD' : null }, BigInt(10), toNullable(next)).then(
+  const query_questions = (direction: Direction, limit: bigint, next: QueryResult | undefined) : Promise<ScanResults<QueryResult>> => {
+    console.log("query_questions");
+    return sub.actor.queryQuestionsFromAuthor(principal, direction, limit, next === undefined ? [] : [next[0]]).then(
       fromScanLimitResult
     );
   };
 
   return (
-    <ListQuestions sub={sub} query_questions={query_questions}/>
-  );
+    <>
+    {
+      React.createElement(ListComponents<QueryResult, TransactionsRecordInput>, {
+        query_components: query_questions,
+        generate_input: (result: QueryResult) => { return { tx_record : fromNullable(result[2]) } },
+        build_component: TransactionsRecordComponent,
+        generate_key: (result: QueryResult) => { return result[0].toString() }
+      })
+    }
+    </>
+  )
 
 };
