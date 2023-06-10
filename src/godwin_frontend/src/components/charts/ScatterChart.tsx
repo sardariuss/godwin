@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Chart as ChartJS,
   LinearScale,
@@ -6,7 +5,7 @@ import {
   LineElement,
   Tooltip,
   Legend,
-} from 'chart.js';
+}                  from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
@@ -53,8 +52,3 @@ export const ScatterChart = ({ chartData }: any) => {
       />
   );
 };
-
-export type ScatterData = {
-  x: number,
-  y: number
-}

@@ -1,65 +1,14 @@
-import { CategorySide, Polarization, Ballot }                                        from "./../../../declarations/godwin_backend/godwin_backend.did";
-import { ScatterChart }                                                              from "../ScatterChart";
-
+import { ScatterChart }                                                              from "../charts/ScatterChart";
+import { BarChart }                                                                  from "../charts/BarChart";
+import CONSTANTS                                                                     from "../../Constants";
 import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
 
-import { Bar }                                                                       from 'react-chartjs-2'
+import { Polarization, Ballot }                                                      from "./../../../declarations/godwin_backend/godwin_backend.did";
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-}                                                                                    from 'chart.js';
+import { useState, useEffect }                                                       from "react";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
-const options = {
-  indexAxis: 'y' as const,
-  responsive: true,
-  plugins: {
-    tooltip: {
-      enabled: true,
-      callbacks: {
-        label: function(ctx) {
-          return ctx.dataset.labels[ctx.dataIndex] + (ctx.parsed.x * 100).toFixed(2) + " %";
-        },
-        title: function(ctx) {
-          return "";
-        }
-      }
-    },
-    legend: {
-      display: false
-    }
-  },
-  animation:{
-    duration: 0
-  },
-  maintainAspectRatio: false,
-  scales: {
-    x: {
-      stacked: true,
-      display: false,
-    },
-    y: {
-      stacked: true,
-      display: false,
-    }
-  },
-};
-
-const getDataSets = (input_ballots: [string, Ballot, number][], polarizationInfo: PolarizationInfo) => {
+const getScatterChartData = (input_ballots: [string, Ballot, number][], polarizationInfo: PolarizationInfo) => {
   let labels : string[] = [];
   let points : { x : number, y: number }[]= [];
   let colors : string[] = [];
@@ -82,39 +31,18 @@ const getDataSets = (input_ballots: [string, Ballot, number][], polarizationInfo
   }
 }
 
-type Props = {
-  name: string;
-  showName: boolean;
-  polarizationInfo: {
-    left: CategorySide;
-    center: CategorySide;
-    right: CategorySide;
-  };
-  polarizationValue: Polarization;
-  ballots: [string, Ballot, number][];
-  chartType: ChartTypeEnum;
-};
-
-const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots, chartType}: Props) => {
-
+const getBarChartData = (name: string, polarizationValue: Polarization, polarizationInfo: PolarizationInfo) => {
   const labels = [name];
+
+  const border_color =  document.documentElement.classList.contains('dark') ? CONSTANTS.BAR_CHART_BORDER_COLOR_DARK : CONSTANTS.BAR_CHART_BORDER_COLOR_LIGHT;
+
   const normedPolarization = getNormalizedPolarization(polarizationValue);
 
-  const getBorderColor = () : string => {
-    if (document.documentElement.classList.contains('dark')){
-      return '#333333';
-    } else {
-      return '#bbbbbb';
-    }
-  };
-
-  //document.documentElement.classList.contains('dark')
-
-  const data = {
+  return {
     labels,
     datasets: [
       {
-        borderColor: getBorderColor(),
+        borderColor: border_color,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.left.symbol],
@@ -122,7 +50,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
         backgroundColor: polarizationInfo.left.color,
       },
       {
-        borderColor: getBorderColor(),
+        borderColor: border_color,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.center.symbol],
@@ -130,7 +58,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
         backgroundColor: polarizationInfo.center.color,
       },
       {
-        borderColor: getBorderColor(),
+        borderColor: border_color,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.right.symbol],
@@ -139,37 +67,62 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
       },
     ],
   };
-   
-	return (
-      <div className="grid grid-cols-5 w-full">
-        <div className="flex flex-col items-center z-10 grow place-self-center">
-          <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
-          <div className="text-xs font-extralight">{ polarizationInfo.left.name }</div>
-        </div>
-        <div className="col-span-3 z-0 grow">
-          <div className={"max-h-16 w-full"}>
-          {
-            chartType === ChartTypeEnum.Scatter ? 
-              <div className="max-h-16">
-                <ScatterChart chartData={getDataSets(ballots, polarizationInfo)}></ScatterChart>
-              </div> :
-            chartType === ChartTypeEnum.Bar ?
-              <Bar data={data} options={options}/> :
-              <></>
-          }
-          </div>
-        </div>
-        <div className="flex flex-col items-center z-10 grow place-self-center">
-          <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
-          <div className="text-xs font-extralight">{ polarizationInfo.right.name }</div>
-        </div>
+}
+
+type Props = {
+  name: string;
+  showName: boolean;
+  polarizationInfo: PolarizationInfo;
+  polarizationValue: Polarization;
+  ballots: [string, Ballot, number][];
+  chartType: ChartTypeEnum;
+};
+
+// @todo: bug: when switching principal, the charts are not updated
+const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots, chartType}: Props) => {
+
+  const [scatterData, setScatterData] = useState<any>(getScatterChartData(ballots, polarizationInfo));
+  const [barData    , setBarData    ] = useState<any>(getBarChartData(name, polarizationValue, polarizationInfo));
+
+  const refreshData = () => {
+    setScatterData(getScatterChartData(ballots, polarizationInfo));
+    setBarData(getBarChartData(name, polarizationValue, polarizationInfo));
+  }
+
+  useEffect(() => {
+    refreshData();
+  }, [ballots, polarizationInfo, polarizationValue]);
+
+  return (
+    <div className="grid grid-cols-5 w-full">
+      <div className="flex flex-col items-center z-10 grow place-self-center">
+        <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
+        <div className="text-xs font-extralight">{ polarizationInfo.left.name }</div>
+      </div>
+      <div className="col-span-3 z-0 grow">
+        <div className={"max-h-16 w-full"}>
         {
-          showName ? 
-          <div className="col-start-1 col-end-6 text-center text-xs align-top font-light">
-              {name /*+ ": " + polarizationValue.left.toPrecision(2) + " / " + polarizationValue.center.toPrecision(2) + " / " + polarizationValue.right.toPrecision(2)*/}
-          </div> :
-          <> </>
+          chartType === ChartTypeEnum.Scatter ? 
+            <div className="max-h-16">
+              <ScatterChart chartData={scatterData}/>
+            </div> :
+          chartType === ChartTypeEnum.Bar ?
+            <BarChart chartData={barData} /> :
+            <></>
         }
+        </div>
+      </div>
+      <div className="flex flex-col items-center z-10 grow place-self-center">
+        <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
+        <div className="text-xs font-extralight">{ polarizationInfo.right.name }</div>
+      </div>
+      {
+        showName ? 
+        <div className="col-start-1 col-end-6 text-center text-xs align-top font-light">
+            {name /*+ ": " + polarizationValue.left.toPrecision(2) + " / " + polarizationValue.center.toPrecision(2) + " / " + polarizationValue.right.toPrecision(2)*/}
+        </div> :
+        <> </>
+      }
     </div>
 	);
 };

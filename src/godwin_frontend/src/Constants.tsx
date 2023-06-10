@@ -46,7 +46,12 @@ const CONSTANTS = {
     }
   },
   DEFAULT_USER_NAME: 'New user',
-  COIN_EMOJI: '🪙',
+  TOKEN_DECIMALS: 2,
+  CHART: {
+    BAR_CHART_BORDER_COLOR_LIGHT: '#bbbbbb',
+    BAR_CHART_BORDER_COLOR_DARK: '#333333',
+    BAR_CHART_BORDER_WIDTH: 1.2,
+  },
   HELP_MESSAGE: {
     CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...'
   }

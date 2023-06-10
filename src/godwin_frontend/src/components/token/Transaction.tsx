@@ -1,18 +1,11 @@
-import { Transaction } from "./TokenTypes"
+import { transactionFromIdlType, transactionKindToString } from "./TokenUtils"
+import { Transaction }                                     from "./TokenTypes"
+import Balance                                             from "../base/Balance"
+import { nsToStrDate }                                     from "../../utils/DateUtils"
+import { ActorContext }                                    from "../../ActorContext"
 
-import CONSTANTS from "../../Constants"
-
-import { frome8s, transactionKindToString } from "./TokenUtils"
-
-import { nsToStrDate } from "../../utils/DateUtils"
-
-import { useState, useEffect, useContext } from "react"
-
-import { ActorContext } from "../../ActorContext"
-
-import { transactionFromIdlType } from "./TokenUtils"
-
-import { fromNullable } from "@dfinity/utils"
+import { fromNullable }                                    from "@dfinity/utils"
+import { useState, useEffect, useContext }                 from "react"
 
 type TransactionComponentInput = {
   tx_index: bigint;
@@ -46,9 +39,7 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
         <div>
           { "Type: " + transactionKindToString(tx.kind) }
         </div>
-        <div> 
-          { "Amount: " + frome8s(tx.amount).toFixed(2) + " " + CONSTANTS.COIN_EMOJI } 
-        </div>
+        <Balance amount={tx.amount}/>
         <div>
           { "Timestamp: " + nsToStrDate(tx.timestamp) }
         </div>

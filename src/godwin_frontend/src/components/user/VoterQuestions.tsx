@@ -1,14 +1,10 @@
-import { Sub } from "./../ActorContext";
+import { Sub }                              from "../../ActorContext";
+import ListQuestions                        from "../ListQuestions";
+import { ScanResults, fromScanLimitResult } from "../../utils";
+import { Question, TransactionsRecord }     from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { Principal } from "@dfinity/principal";
-
-import { ScanResults, fromScanLimitResult } from "../utils";
-
-import { toNullable } from "@dfinity/utils";
-
-import ListQuestions from "./ListQuestions";
-
-import { Question, TransactionsRecord } from "../../declarations/godwin_backend/godwin_backend.did";
+import { Principal }                        from "@dfinity/principal";
+import { toNullable }                       from "@dfinity/utils";
 
 type VoterQuestionsProps = {
   principal: Principal;

@@ -1,14 +1,14 @@
-import Header from "./Header";
-import Footer from "./Footer";
-import OpenQuestionPopup from "./OpenQuestionPopup";
-import MainQuestions from "./MainQuestions";
+import Header                          from "./Header";
+import Footer                          from "./Footer";
+import OpenQuestionPopup               from "./OpenQuestionPopup";
+import MainQuestions                   from "./MainQuestions";
+import UserComponent                   from "./user/User";
+import ListSubs                        from "./ListSubs";
 import { ActorContext, useAuthClient } from "../ActorContext";
-import ListSubs from "./ListSubs";
-import UserComponent from "./User";
 
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes }               from "react-router-dom";
 
-import { useState } from "react";
+import { useState }                    from "react";
 
 function App() {
 

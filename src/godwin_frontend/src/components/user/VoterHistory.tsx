@@ -1,13 +1,13 @@
-import CONSTANTS                                                                                  from "../Constants";
-import { ListComponents }                                                                         from "./base/ListComponents";
-import { TabButton }                                                                              from "./TabButton";
-import InterestBallot, { InterestBallotInput }                                                    from "./interest/InterestBallot";
-import { interestToEnum }                                                                         from "./interest/InterestTypes";
-import CursorBallot, { CursorBallotProps }                                                        from "./base/CursorBallot";
+import { ListComponents }                                                                         from "../base/ListComponents";
+import { TabButton }                                                                              from "../TabButton";
+import InterestBallot, { InterestBallotInput }                                                    from "../interest/InterestBallot";
+import { interestToEnum }                                                                         from "../interest/InterestTypes";
+import CursorBallot, { CursorBallotProps }                                                        from "../base/CursorBallot";
+import CONSTANTS                                                                                  from "../../Constants";
 import { toMap, getStrongestCategoryCursorInfo, fromScanLimitResult, ScanResults,
-  VoteKind, VoteKinds, voteKindToString, toCursorInfo }                                           from "../utils";
-import { Sub }                                                                                    from "./../ActorContext";
-import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../declarations/godwin_backend/godwin_backend.did";
+  VoteKind, VoteKinds, voteKindToString, toCursorInfo }                                           from "../../utils";
+import { Sub }                                                                                    from "./../../ActorContext";
+import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import { fromNullable }                                                                           from "@dfinity/utils";
 import { Principal }                                                                              from "@dfinity/principal";

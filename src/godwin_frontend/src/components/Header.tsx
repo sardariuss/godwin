@@ -1,10 +1,8 @@
-import { Link } from "react-router-dom";
+import Balance                   from "./base/Balance";
+import { ActorContext }          from "../ActorContext"
 
-import { ActorContext } from "../ActorContext"
-
+import { Link }                  from "react-router-dom";
 import { useContext, useEffect } from "react";
-
-import CONSTANTS from "../Constants";
 
 type Props = {
   login: () => (void),
@@ -99,9 +97,11 @@ function Header({login, setShowAskQuestion}: Props) {
                   </button>
                 }
               </li>
-              <li className="text-sm font-normal text-black dark:text-white">
-                { balance !== null ? balance.toString() + " " + CONSTANTS.COIN_EMOJI : "" }
-              </li>
+              { isAuthenticated ? 
+                <li className="text-black dark:text-white">
+                  <Balance amount={ balance !== null ? balance : undefined } />
+                </li> : <></>
+              }
             </ul>
           </div>
         </div>

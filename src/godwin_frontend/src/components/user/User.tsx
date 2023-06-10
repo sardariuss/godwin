@@ -1,20 +1,20 @@
-import { Account } from "./../../declarations/godwin_master/godwin_master.did";
-import { ActorContext } from "../ActorContext"
-import { Principal } from "@dfinity/principal";
-import { fromNullable } from "@dfinity/utils";
-import Convictions from "./Convictions";
-import Copy from "./Copy";
-import { MainTabButton } from "./MainTabButton";
-import SubNameBanner from "./SubNameBanner";
-import {VoterHistory} from "./VoterHistory";
-import {VoterQuestions} from "./VoterQuestions";
-import { getEncodedAccount } from "../utils/LedgerUtils";
+import Convictions                         from "./Convictions";
+import {VoterHistory}                      from "./VoterHistory";
+import {VoterQuestions}                    from "./VoterQuestions";
+import Copy                                from "../Copy";
+import { MainTabButton }                   from "../MainTabButton";
+import SubNameBanner                       from "../SubNameBanner";
+import Balance                             from "../base/Balance";
+import CONSTANTS                           from "../../Constants";
+import { getEncodedAccount }               from "../../utils/LedgerUtils";
+import { ActorContext }                    from "../../ActorContext"
+import { Account }                         from "../../../declarations/godwin_master/godwin_master.did";
 
 import { useEffect, useState, useContext } from "react";
+import { useParams }                       from "react-router-dom";
 
-import CONSTANTS from "../Constants";
-
-import { useParams } from "react-router-dom";
+import { Principal }                       from "@dfinity/principal";
+import { fromNullable }                    from "@dfinity/utils";
 
 export enum UserFilter {
   CONVICTIONS,
@@ -72,7 +72,7 @@ const UserComponent = () => {
   }
 
   const refreshAccount = async () => {
-    if (principal === undefined || !isLoggedUser) {
+    if (principal === undefined) {
       setAccount(undefined);
     } else {
       let account = await master.getUserAccount(principal);
@@ -81,7 +81,8 @@ const UserComponent = () => {
   }
 
   const refreshBalance = async () => {
-    if (account === undefined) {
+    // Hide the balance of the user if it's not a logged user
+    if (account === undefined || !isLoggedUser) {
       setBalance(undefined);
     } else {
       let balance = await token.icrc1_balance_of(account);
@@ -150,19 +151,15 @@ const UserComponent = () => {
                   </div>
                 }
                 {
-                  balance !== undefined ?
+                  isLoggedUser ? 
                   <div className="flex flex-row gap-x-2">
                     <div>
-                    { "Balance" }
+                      { "Balance: " }
                     </div>
-                    <div>
-                      { balance.toString() }
-                    </div>
-                  </div>
-                  :
-                  <></>
+                    <Balance amount={balance}/>
+                  </div> : <></>
                 }
-                 {
+                {
                   // @todo: should have a minimum length, and a visual indicator if min/max is reached
                   isLoggedUser ?
                   <button type="button" onClick={(e) => airdrop()} className="w-1/2 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm py-2.5 text-center">Airdrop</button>

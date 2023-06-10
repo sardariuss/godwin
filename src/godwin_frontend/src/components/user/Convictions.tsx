@@ -1,16 +1,12 @@
-import { Category, Polarization, Ballot } from "./../../declarations/godwin_backend/godwin_backend.did";
-import { Principal } from "@dfinity/principal";
-import ChartTypeToggle from "./base/ChartTypeToggle";
+import ChartTypeToggle                                                                    from "../base/ChartTypeToggle";
+import PolarizationBar                                                                    from "../base/PolarizationBar";
+import { Sub }                                                                            from "../../ActorContext";
+import CONSTANTS                                                                          from "../../Constants";
+import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap } from "../../utils";
+import { Category, Polarization, Ballot }                                                 from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { Sub } from "./../ActorContext";
-
-import { useEffect, useState } from "react";
-
-import CONSTANTS from "../Constants";
-
-import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap } from "../utils";
-
-import PolarizationBar from "./base/PolarizationBar";
+import { Principal }                                                                      from "@dfinity/principal";
+import { useEffect, useState }                                                            from "react";
 
 type ConvictionsProps = {
   principal: Principal;
@@ -43,7 +39,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
 
     sub.categories.forEach(([category, info]) => {
       for (let i = 0; i < queryConvictions.length; i++){
-        // Get the opinion and category weight from the query
+        // Get the opinion and category weight                                            from the query
         let [vote_id, [opinion, categorization]] = queryConvictions[i];
         let weight = toMap(categorization).get(category) ?? 0;
         // Add the weighted ballot to the ballots array
@@ -63,6 +59,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
   }
 
   useEffect(() => {
+    console.log("Refreshing convictions...")
     refreshConvictions();
   }, [principal, sub]);
 
