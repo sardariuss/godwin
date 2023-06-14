@@ -100,7 +100,8 @@ const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
 						<span className="sr-only">Loading...</span>
 					</div> :
 					<div className={`w-full justify-start text-sm font-normal 
-						${currentStatus !== undefined && currentStatus.status['REJECTED']['CENSORED'] !== undefined ? "blurry-text-black dark:blurry-text-white" : ""}`}>
+						${currentStatus !== undefined && currentStatus.status['REJECTED'] !== undefined
+							&& currentStatus.status['REJECTED']['CENSORED'] !== undefined ? "blurry-text-black dark:blurry-text-white" : ""}`}>
           	{question.text}
         	</div>
 				}
