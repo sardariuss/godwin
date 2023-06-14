@@ -23,8 +23,8 @@ module {
   public class VotePolicy<T, A>(
     _ballot_change_authorization: BallotChangeAuthorization,
     _is_valid_answer: (T) -> Bool,
-    _add_to_aggregate: (A, T) -> A,
-    _remove_from_aggregate: (A, T) -> A,
+    _add_to_aggregate: (A, Ballot<T>) -> A,
+    _remove_from_aggregate: (A, Ballot<T>) -> A,
     _empty_aggregate: A
   ) {
 
@@ -61,11 +61,11 @@ module {
       var new_aggregate = aggregate;
       // If there is a new ballot, add it to the aggregate
       Option.iterate(new_ballot, func(ballot: Ballot<T>) {
-        new_aggregate := _add_to_aggregate(new_aggregate, ballot.answer);
+        new_aggregate := _add_to_aggregate(new_aggregate, ballot);
       });
       // If there was an old ballot, remove it from the aggregate
       Option.iterate(old_ballot, func(ballot: Ballot<T>) {
-        new_aggregate := _remove_from_aggregate(new_aggregate, ballot.answer);
+        new_aggregate := _remove_from_aggregate(new_aggregate, ballot);
       });
       new_aggregate;
     };

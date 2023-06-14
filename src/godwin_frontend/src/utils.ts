@@ -68,11 +68,11 @@ export const directionToString = (direction: Direction) => {
 };
 
 export const statusToString = (status: Status) => {
-  if (status['CANDIDATE'] !== undefined) return 'Candidate';
-  if (status['OPEN'] !== undefined) return 'Open';
-  if (status['CLOSED'] !== undefined) return 'Closed';
-  if (status['REJECTED'] !== undefined) return 'Timed out';
-  if (status['TRASH'] !== undefined) return 'Trash';
+  if (status['CANDIDATE'] !== undefined            ) return 'Candidate';
+  if (status['OPEN'] !== undefined                 ) return 'Open';
+  if (status['CLOSED'] !== undefined               ) return 'Closed';
+  if (status['REJECTED']['TIMED_OUT'] !== undefined) return 'Timed out';
+  if (status['REJECTED']['CENSORED'] !== undefined ) return 'Censored';
   throw new Error('Invalid status');
 };
 
@@ -80,16 +80,16 @@ export enum StatusEnum {
   CANDIDATE,
   OPEN,
   CLOSED,
-  REJECTED,
-  TRASH,
+  TIMED_OUT,
+  CENSORED
 };
 
 export const statusToEnum = (status: Status) => {
-  if (status['CANDIDATE'] !== undefined) return StatusEnum.CANDIDATE;
-  if (status['OPEN'] !== undefined) return StatusEnum.OPEN;
-  if (status['CLOSED'] !== undefined) return StatusEnum.CLOSED;
-  if (status['REJECTED'] !== undefined) return StatusEnum.REJECTED;
-  if (status['TRASH'] !== undefined) return StatusEnum.TRASH;
+  if (status['CANDIDATE'] !== undefined            ) return StatusEnum.CANDIDATE;
+  if (status['OPEN'] !== undefined                 ) return StatusEnum.OPEN;
+  if (status['CLOSED'] !== undefined               ) return StatusEnum.CLOSED;
+  if (status['REJECTED']['TIMED_OUT'] !== undefined) return StatusEnum.TIMED_OUT;
+  if (status['REJECTED']['CENSORED'] !== undefined ) return StatusEnum.CENSORED;
   throw new Error('Invalid status');
 };
 

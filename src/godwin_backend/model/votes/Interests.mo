@@ -3,8 +3,6 @@ import Votes               "Votes";
 import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
-import Appeal              "representation/Appeal";
-import Interest            "representation/Interest";
 import PayRules            "../PayRules";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
@@ -18,6 +16,8 @@ import Set                 "mo:map/Set";
 import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
+import Float               "mo:base/Float";
+import Nat                 "mo:base/Nat";
 
 module {
 
@@ -35,6 +35,7 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
+  type InterestBallot         = Types.InterestBallot;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
@@ -75,10 +76,10 @@ module {
         vote_register,
         VotePolicy.VotePolicy<Interest, Appeal>(
           #BALLOT_CHANGE_FORBIDDEN,
-          Interest.isValid,
-          Appeal.addInterest,
-          Appeal.subInterest,
-          Appeal.nil()
+          func (interest: Interest) : Bool { true; }, // A variant is always valid.
+          addInterest,
+          subInterest,
+          initInterest()
         ),
         ?PayToVote.PayToVote<Interest, Appeal>(
           PayForElement.build(
@@ -140,6 +141,10 @@ module {
       });
     };
 
+    public func getVote(vote_id: VoteId) : Vote {
+      _votes.getVote(vote_id);
+    };
+
     public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot, FindBallotError> {
       _votes.revealBallot(caller, voter, vote_id);
     };
@@ -161,4 +166,49 @@ module {
     };
 
   };
+
+  func initInterest() : Appeal {
+    { ups = 0; downs = 0; score = 0.0; last_score_switch = null; };
+  };
+
+  func addInterest(appeal: Appeal, ballot: InterestBallot) : Appeal {
+    let ups   = if (ballot.answer == #UP)   { Nat.add(appeal.ups, 1);   } else { appeal.ups;   };
+    let downs = if (ballot.answer == #DOWN) { Nat.add(appeal.downs, 1); } else { appeal.downs; };
+    let score = computeScore(ups, downs);
+
+    let last_score_switch = if (appeal.last_score_switch == null or ups == downs){
+      ?ballot.date;
+      } else {
+      appeal.last_score_switch;
+    };
+
+    { ups; downs; score; last_score_switch; };
+  };
+
+  func subInterest(appeal: Appeal, ballot: InterestBallot) : Appeal {
+    let ups   = if (ballot.answer == #UP)   { Nat.sub(appeal.ups, 1);   } else { appeal.ups;   };
+    let downs = if (ballot.answer == #DOWN) { Nat.sub(appeal.downs, 1); } else { appeal.downs; };
+    let score = computeScore(ups, downs);
+
+    let last_score_switch = if (appeal.last_score_switch == null or ups == downs){
+      ?ballot.date;
+      } else {
+      appeal.last_score_switch;
+    };
+
+    { ups; downs; score; last_score_switch; };
+  };
+
+  func computeScore(ups: Nat, downs: Nat) : Float {
+    let total = Float.fromInt(ups + downs);
+    if (total == 0.0) { return 0.0; };
+    let x = Float.fromInt(ups) / total;
+    let growth_rate = 20.0;
+    let mid_point = 0.5;
+    // https://stackoverflow.com/a/3787645: this will underflow to 0 for large negative values of x,
+    // but that may be OK depending on your context since the exact result is nearly zero in that case.
+    let sigmoid = (2.0 / (1.0 + Float.exp(-1.0 * growth_rate * (x - mid_point)))) - 1.0;
+    total * sigmoid;
+  };
+  
 };

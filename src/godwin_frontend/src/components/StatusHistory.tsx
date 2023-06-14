@@ -1,66 +1,46 @@
+import StatusComponent                                  from "./Status";
+
 import { StatusInfo, _SERVICE, Category, CategoryInfo } from "./../../declarations/godwin_backend/godwin_backend.did";
 
-import StatusComponent from "./Status";
-
-import { useState } from "react";
-import { ActorSubclass } from "@dfinity/agent";
+import { useState }                                     from "react";
+import { ActorSubclass }                                from "@dfinity/agent";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>,
   questionId: bigint;
   categories: Map<Category, CategoryInfo>
-  statusInfo: StatusInfo,
   iteration: bigint,
   statusHistory: StatusInfo[]
 };
 
-const StatusHistoryComponent = ({actor, questionId, categories, statusInfo, iteration, statusHistory}: Props) => {
+const StatusHistoryComponent = ({actor, questionId, categories, iteration, statusHistory}: Props) => {
 
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
 	return (
     <div className="text-gray-500 dark:border-gray-700 dark:text-gray-400">
-      {
-        statusInfo !== undefined ? (
-          <div className={statusHistory.length > 0 ? "hover:cursor-pointer" : ""} onClick={(e) => { if (statusHistory.length > 0) setHistoryVisible(!historyVisible)}}>
-            <StatusComponent 
-              actor={actor}
-              questionId={questionId}
-              categories={categories}
-              status={statusInfo.status}
-              date={statusInfo.date}
-              isHistory={false}
-              iteration={iteration}
-              showBorder={statusHistory.length > 0}
-              borderDashed={!historyVisible}>
-            </StatusComponent>
-          </div>
-        ) : (
-          <></>
-        )
-      }
       <ol>
       {
-        true ? (
-          statusHistory.map((status, index) => {
-            return (
-              <li key={index.toString()}>
+        statusHistory.slice(0).reverse().map((status, index) => {
+          return (
+            <li key={index.toString()} className={index === 0 && statusHistory.length > 1 ? "hover:cursor-pointer" : ""} onClick={(e) => { if (index === 0 && statusHistory.length > 1) setHistoryVisible(!historyVisible)}}>
+              {
+                index === 0 || historyVisible ?
                 <StatusComponent 
                   actor={actor}
                   questionId={questionId}
                   categories={categories}
                   status={status.status}
                   date={status.date}
-                  isHistory={true}
+                  isHistory={index !== 0}
                   iteration={iteration}
-                  showBorder={index < (statusHistory.length - 1)}
-                  borderDashed={false}>
-                </StatusComponent>
-              </li>
-            )})
-        ) : (
-          <></>
-        )
+                  showBorder={index !== 0 ? (index < statusHistory.length - 1) : (statusHistory.length > 1) }
+                  borderDashed={index !== 0 ? false : !historyVisible}>
+                </StatusComponent> :
+                <></>
+              }
+            </li>
+          )})
       }
 		  </ol>
     </div>

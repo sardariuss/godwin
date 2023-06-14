@@ -2,7 +2,6 @@ import { InterestEnum, interestToEnum, enumToInterest } from "./InterestTypes";
 import UpdateProgress                                   from "../UpdateProgress";
 import InterestBallot                                   from "../interest/InterestBallot";
 import SvgButton                                        from "../base/SvgButton";
-import LockIcon                                         from "../icons/LockIcon";
 import PutBallotIcon                                    from "../icons/PutBallotIcon";
 import ArrowDownIcon                                    from "../icons/ArrowDownIcon";
 import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
@@ -22,7 +21,7 @@ const InterestVote = ({actor, voteId}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
-  const countdownDurationMs = 3000;
+  const countdownDurationMs = 5000;
 
   const [countdownVote, setCountdownVote] = useState<boolean>             (false);
   const [triggerVote,   setTriggerVote  ] = useState<boolean>             (false);
@@ -72,15 +71,15 @@ const InterestVote = ({actor, voteId}: Props) => {
     <div>
     {
       interest === null ? <></> :
-      <div className="grid grid-cols-3 items-center w-full justify-items-center">
+      <div className="grid grid-cols-3 w-full py-2 content-center items-center">
         <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-          <div className={`w-full flex justify-center -m-1.5 ${voteDate !== null ? "hidden" : ""}`}>
+          <div className={`w-full flex -m-4 justify-center ${voteDate !== null ? "hidden" : ""}`}>
             <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
               <ArrowUpIcon/>
             </SvgButton>
           </div>
           <InterestBallot answer={interest} dateNs={voteDate}/>
-          <div className={`w-full flex justify-center -m-1.5 ${voteDate !== null ? "hidden" : ""}`}>
+          <div className={`w-full flex -m-4 justify-center ${voteDate !== null ? "hidden" : ""}`}>
             <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
               <ArrowDownIcon/>
             </SvgButton>
@@ -89,9 +88,7 @@ const InterestVote = ({actor, voteId}: Props) => {
         <div className={`col-span-1 justify-center`}>
           {
             voteDate !== null ? 
-              <div className="w-1/2 icon-svg">
-                <LockIcon/>
-              </div> :
+              <></> :
               <UpdateProgress<PutBallotError> 
                 delay_duration_ms={countdownDurationMs}
                 update_function={putBallot}

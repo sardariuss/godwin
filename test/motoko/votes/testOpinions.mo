@@ -129,7 +129,7 @@ module {
             equal(
               testifyElement(testify_nat, if (index == 0) 2 else 1),
               func (opinions: Opinions) : Nat { 
-                opinions.revealBallots(voter, #FWD, 10, null).keys.size();
+                opinions.revealBallots(voter, voter, #FWD, 10, null).keys.size();
               }
             )
           );

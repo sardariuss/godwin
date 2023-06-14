@@ -55,9 +55,9 @@ const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
     case BrowseFilter.OPEN:
       return { 'STATUS' : { 'OPEN' : null     } };
     case BrowseFilter.ARCHIVED:
-      return { 'STATUS' : { 'CLOSED' : null   } };
+      return { 'ARCHIVE' : null };
     case BrowseFilter.REJECTED:
-      return { 'STATUS' : { 'REJECTED' : null } };
+      return { 'STATUS' : { 'REJECTED' : null  } } ;
   }
 }
 

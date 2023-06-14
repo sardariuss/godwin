@@ -21,11 +21,10 @@ module {
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-
+  type CategorizationBallot   = Types.CategorizationBallot;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
-
   type PayRules               = PayRules.PayRules;
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
@@ -48,8 +47,8 @@ module {
       VotePolicy.VotePolicy<CursorMap, PolarizationMap>(
         #BALLOT_CHANGE_FORBIDDEN,
         func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
-        PolarizationMap.addCursorMap,
-        PolarizationMap.subCursorMap,
+        addCategorizationBallot,
+        removeCategorizationBallot,
         PolarizationMap.nil(categories)
       ),
       ?PayToVote.PayToVote<CursorMap, PolarizationMap>(
@@ -62,6 +61,14 @@ module {
         pay_rules.computeCategorizationPayout
       )
     );
+  };
+
+  func addCategorizationBallot(polarization: PolarizationMap, ballot: CategorizationBallot) : PolarizationMap {
+    PolarizationMap.addCursorMap(polarization, ballot.answer);
+  };
+
+  func removeCategorizationBallot(polarization: PolarizationMap, ballot: CategorizationBallot) : PolarizationMap {
+    PolarizationMap.subCursorMap(polarization, ballot.answer);
   };
 
 };

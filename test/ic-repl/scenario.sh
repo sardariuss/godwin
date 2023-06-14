@@ -8,10 +8,10 @@ load "common/install.sh";
 //let arguments = record {
 //  scheduler = record {
 //    selection_rate = variant { SECONDS = 0 };
-//    interest_duration = variant { DAYS = 1 };
-//    opinion_duration = variant { SECONDS = 0 };
+//    candidate_status_duration = variant { DAYS = 1 };
+//    open_status_duration = variant { SECONDS = 0 };
 //    categorization_duration = variant { SECONDS = 0 };
-//    rejected_duration = variant { SECONDS = 0 };
+//    rejected_status_duration = variant { SECONDS = 0 };
 //  };
 //  categories = vec {
 //    "IDENTITY";

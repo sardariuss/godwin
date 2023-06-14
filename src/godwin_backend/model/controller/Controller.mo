@@ -6,6 +6,7 @@ import Categories          "../Categories";
 import QuestionTypes       "../questions/Types";
 import Questions           "../questions/Questions";
 import KeyConverter        "../questions/KeyConverter";
+import StatusManager       "../questions/StatusManager";
 import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
@@ -27,72 +28,71 @@ import Array               "mo:base/Array";
 
 module {
 
-  type Map<K, V>              = Map.Map<K, V>;
-  type Buffer<T>              = Buffer.Buffer<T>;
+  type Map<K, V>                   = Map.Map<K, V>;
+  type Buffer<T>                   = Buffer.Buffer<T>;
 
   // For convenience: from other modules
-  type Questions              = Questions.Questions;
-  type Model                  = Model.Model;
-  type Event                  = Event.Event;
-  type Schema                 = Schema.Schema;
+  type Questions                   = Questions.Questions;
+  type Model                       = Model.Model;
+  type Event                       = Event.Event;
+  type Schema                      = Schema.Schema;
 
   // For convenience: from base module
-  type Result<Ok, Err>        = Result.Result<Ok, Err>;
-  type Principal              = Principal.Principal;
-  type Time                   = Int;
+  type Result<Ok, Err>             = Result.Result<Ok, Err>;
+  type Principal                   = Principal.Principal;
+  type Time                        = Int;
 
   // For convenience: from types module
-  type QuestionId             = QuestionTypes.QuestionId;
-  type Question               = QuestionTypes.Question;
-  type Status                 = QuestionTypes.Status;
-  type StatusHistory          = QuestionTypes.StatusHistory; // @todo
-  type StatusInfo             = QuestionTypes.StatusInfo;
-  type Key                    = QuestionTypes.Key;
-  type OrderBy                = QuestionTypes.OrderBy;
-  type IterationHistory       = QuestionTypes.IterationHistory;
-  type OpenQuestionError      = Types.OpenQuestionError; // @todo
-
-  type TransactionsRecord     = Types.TransactionsRecord;
-  
-  type Category               = VoteTypes.Category;
-  type Decay                  = Types.Decay; // @todo
-  type PolarizationArray      = Types.PolarizationArray;
-  type CategoryInfo           = Types.CategoryInfo;
-  type CursorArray            = Types.CursorArray;
-  type Direction              = Types.Direction;
-  type ScanLimitResult<K>     = Types.ScanLimitResult<K>;
-  type Duration               = Types.Duration;
-  type VoteKind               = Types.VoteKind;
-  type VoterHistory           = VoteTypes.VoterHistory;
-  type Ballot<T>              = VoteTypes.Ballot<T>;
-  type Vote<T, A>             = VoteTypes.Vote<T, A>;
-  type RevealedBallot<T>      = VoteTypes.RevealedBallot<T>;
-  type Cursor                 = VoteTypes.Cursor;
-  type Interest               = VoteTypes.Interest;
-  type Appeal                 = VoteTypes.Appeal;
-  type Polarization           = VoteTypes.Polarization;
-  type CursorMap              = VoteTypes.CursorMap;
-  type PolarizationMap        = VoteTypes.PolarizationMap;
-  type InterestBallot         = VoteTypes.InterestBallot;
-  type OpinionBallot          = VoteTypes.OpinionBallot;
-  type CategorizationBallot   = VoteTypes.CategorizationBallot;
-  type VoteId                 = VoteTypes.VoteId;
-  type FindVoteError          = VoteTypes.FindVoteError;
-  type FindQuestionIterationError = VoteTypes.FindQuestionIterationError;
+  type TransactionsRecord          = Types.TransactionsRecord;
+  type Decay                       = Types.Decay; // @todo
+  type PolarizationArray           = Types.PolarizationArray;
+  type CategoryInfo                = Types.CategoryInfo;
+  type CursorArray                 = Types.CursorArray;
+  type Direction                   = Types.Direction;
+  type ScanLimitResult<K>          = Types.ScanLimitResult<K>;
+  type Duration                    = Types.Duration;
+  type VoteKind                    = Types.VoteKind;
+  type SchedulerParameters         = Types.SchedulerParameters;
+  type QuestionId                  = QuestionTypes.QuestionId;
+  type Question                    = QuestionTypes.Question;
+  type Status                      = QuestionTypes.Status;
+  type StatusHistory               = QuestionTypes.StatusHistory; // @todo
+  type StatusInfo                  = QuestionTypes.StatusInfo;
+  type Key                         = QuestionTypes.Key;
+  type OrderBy                     = QuestionTypes.OrderBy;
+  type IterationHistory            = QuestionTypes.IterationHistory;
+  type Category                    = VoteTypes.Category;
+  type VoterHistory                = VoteTypes.VoterHistory;
+  type Ballot<T>                   = VoteTypes.Ballot<T>;
+  type Vote<T, A>                  = VoteTypes.Vote<T, A>;
+  type RevealedBallot<T>           = VoteTypes.RevealedBallot<T>;
+  type Cursor                      = VoteTypes.Cursor;
+  type Interest                    = VoteTypes.Interest;
+  type Appeal                      = VoteTypes.Appeal;
+  type Polarization                = VoteTypes.Polarization;
+  type CursorMap                   = VoteTypes.CursorMap;
+  type PolarizationMap             = VoteTypes.PolarizationMap;
+  type InterestBallot              = VoteTypes.InterestBallot;
+  type OpinionBallot               = VoteTypes.OpinionBallot;
+  type CategorizationBallot        = VoteTypes.CategorizationBallot;
+  type VoteId                      = VoteTypes.VoteId;
+  type FindVoteError               = VoteTypes.FindVoteError;
+  type FindQuestionIterationError  = VoteTypes.FindQuestionIterationError;
   // Errors
-  type AddCategoryError       = Types.AddCategoryError;
-  type RemoveCategoryError    = Types.RemoveCategoryError;
-  type GetQuestionError       = Types.GetQuestionError;
-  type ReopenQuestionError    = Types.ReopenQuestionError;
-  type VerifyCredentialsError = Types.VerifyCredentialsError;
-  type SetPickRateError       = Types.SetPickRateError;
-  type SetDurationError       = Types.SetDurationError;
-  type FindBallotError        = Types.FindBallotError;
-  type PutBallotError         = Types.PutBallotError;
-  type GetVoteError           = Types.GetVoteError;
-  type OpenVoteError          = Types.OpenVoteError;
-  type RevealVoteError        = Types.RevealVoteError;
-  type TransitionError        = Types.TransitionError;
+  type AddCategoryError            = Types.AddCategoryError;
+  type RemoveCategoryError         = Types.RemoveCategoryError;
+  type GetQuestionError            = Types.GetQuestionError;
+  type ReopenQuestionError         = Types.ReopenQuestionError;
+  type VerifyCredentialsError      = Types.VerifyCredentialsError;
+  type SetPickRateError            = Types.SetPickRateError;
+  type SetSchedulerParametersError = Types.SetSchedulerParametersError;
+  type FindBallotError             = Types.FindBallotError;
+  type PutBallotError              = Types.PutBallotError;
+  type GetVoteError                = Types.GetVoteError;
+  type OpenVoteError               = Types.OpenVoteError;
+  type RevealVoteError             = Types.RevealVoteError;
+  type TransitionError             = Types.TransitionError;
+  type OpenQuestionError           = Types.OpenQuestionError; // @todo
 
   public func build(model: Model) : Controller {
     Controller(Schema.SchemaBuilder(model).build(), model);
@@ -128,23 +128,13 @@ module {
       });
     };
 
-    public func getInterestPickRate() : Duration {
-      _model.getInterestPickRate();
+    public func getSchedulerParameters() : SchedulerParameters {
+      _model.getSchedulerParameters();
     };
 
-    public func setInterestPickRate(caller: Principal, rate: Duration) : Result<(), SetPickRateError> {
-      Result.mapOk<(), (), SetPickRateError>(verifyCredentials(caller), func () {
-        _model.setInterestPickRate(rate);
-      });
-    };
-
-    public func getStatusDuration(status: Status) : Duration {
-      _model.getStatusDuration(status);
-    };
-
-    public func setStatusDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
-      Result.mapOk<(), (), SetDurationError>(verifyCredentials(caller), func () {
-        _model.setStatusDuration(status, duration);
+    public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
+      Result.mapOk<(), (), SetSchedulerParametersError>(verifyCredentials(caller), func () {
+        _model.setSchedulerParameters(params);
       });
     };
 
@@ -359,7 +349,17 @@ module {
                   _model.getOpinionJoins().addJoin(question_id, iteration, _model.getOpinionVotes().newVote());
                   _model.getCategorizationJoins().addJoin(question_id, iteration, _model.getCategorizationVotes().newVote());
                 };
-                case(_) {};
+                case(#CLOSED) {
+                  // Add the question to the archive queries
+                  let previous_key = if (iteration == 0) { null; } else {
+                    switch(StatusManager.findStatusInfo(_model.getStatusManager().getIterationHistory(question_id), #CLOSED, iteration - 1)){
+                      case(null) { null; };
+                      case(?status_info) { ?KeyConverter.toStatusKey(question_id, #CLOSED, status_info.date); };
+                    };
+                  };
+                  _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, current.date));
+                };
+                case(#REJECTED(_)) {};
               };
               // Finally set the status as current
               _model.getStatusManager().setCurrentStatus(question_id, status, date);

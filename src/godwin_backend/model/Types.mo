@@ -72,10 +72,11 @@ module {
   };
 
   public type SchedulerParameters = {
-    interest_pick_rate: Duration;
-    interest_duration: Duration;
-    opinion_duration: Duration;
-    rejected_duration: Duration;
+    question_pick_rate        : Duration;
+    censor_timeout            : Duration;
+    candidate_status_duration : Duration;
+    open_status_duration      : Duration;
+    rejected_status_duration  : Duration;
   };
 
   public type PriceParameters = {
@@ -150,7 +151,7 @@ module {
 
   public type SetPickRateError = VerifyCredentialsError;
 
-  public type SetDurationError = VerifyCredentialsError;
+  public type SetSchedulerParametersError = VerifyCredentialsError;
 
   public type GetUserConvictionsError = PrincipalError;
 
@@ -163,6 +164,7 @@ module {
     #TooSoon;
     #PrincipalIsAnonymous;
     #QuestionNotFound;
+    #PositiveAppeal;
   };
 
 };

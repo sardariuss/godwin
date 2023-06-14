@@ -141,8 +141,9 @@ module {
     fuzzer.float.randomRange(0.0, 1.0);
   };
 
+  // Make the up vote more likely than the down vote
   public func randomInterest(fuzzer: Fuzzer) : Interest {
-    if (fuzzer.bool.random()){ #UP; } else { #DOWN; };
+    if (fuzzer.float.randomRange(0.0, 1.0) > 0.4){ #UP; } else { #DOWN; };
   };
 
   public func randomOpinion(fuzzer: Fuzzer) : Cursor {

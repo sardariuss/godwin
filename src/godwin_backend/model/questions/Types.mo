@@ -23,7 +23,10 @@ module {
     #CANDIDATE;
     #OPEN;
     #CLOSED;
-    #REJECTED;
+    #REJECTED: {
+      #TIMED_OUT;
+      #CENSORED;
+    };
   };
 
   public type StatusInfo = {
@@ -41,22 +44,29 @@ module {
     #AUTHOR;
     #TEXT;
     #DATE;
-    #STATUS: Status;
+    #STATUS: {
+      #CANDIDATE;
+      #OPEN;
+      #CLOSED;
+      #REJECTED;
+    };
     #INTEREST_SCORE;
+    #ARCHIVE;
   };
-
+  
   public type Key = {
     #AUTHOR: AuthorEntry;
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
     #INTEREST_SCORE: InterestScore;
+    #ARCHIVE: DateEntry;
   };
 
   public type DateEntry     = { question_id: Nat; date: Time; };
-  public type TextEntry     = { question_id: Nat; text: Text; date: Time; };
-  public type AuthorEntry   = { question_id: Nat; author: Principal; date: Time; };
-  public type StatusEntry   = { question_id: Nat; status: Status; date: Int; };
+  public type TextEntry     = DateEntry and { text: Text; };
+  public type AuthorEntry   = DateEntry and { author: Principal; };
+  public type StatusEntry   = DateEntry and { status: Status; };
   public type InterestScore = { question_id: Nat; score: Float; };
 
   public type OpenQuestionError = {

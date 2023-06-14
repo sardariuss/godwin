@@ -14,6 +14,7 @@ import Principal     "mo:base/Principal";
 module {
 
   type Time            = Int;
+  type Duration        = Types.Duration;
   type Question        = Types.Question;
   type Status          = Types.Status;
   type Model           = Model.Model;
@@ -23,34 +24,76 @@ module {
   
   public type Schema           = StateMachine.Schema<Status, Event, TransitionError, QuestionId>;
   public type TransitionResult = StateMachine.TransitionResult<TransitionError>;
-  public type EventResult      = StateMachine.EventResult<Status, TransitionError>;
 
   public class SchemaBuilder(_model: Model) {
 
     public func build() : Schema {
       let schema = StateMachine.init<Status, Event, TransitionError, QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
-      StateMachine.addTransition(schema, #CANDIDATE, ?#REJECTED,  timedOut,               [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #REJECTED,  null,        timedOutFirstIteration, [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #CANDIDATE, ?#OPEN,      tickMostInteresting,    [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #OPEN,      ?#CLOSED,    timedOut,               [#TIME_UPDATE(#id)]);
-      StateMachine.addTransition(schema, #CLOSED,    ?#CANDIDATE, reopenQuestion,         [#REOPEN_QUESTION(#id)]);
-      StateMachine.addTransition(schema, #REJECTED,  ?#CANDIDATE, reopenQuestion,         [#REOPEN_QUESTION(#id)]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#TIMED_OUT),  candidateStatusEnded, [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#CENSORED),   censored,             [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#OPEN,                  selected,             [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #OPEN,                 ?#CLOSED,                openStatusEnded,      [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #CLOSED,               ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION(#id)]);
+      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION(#id)]);
+      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), null,                    rejectedStatusEnded,  [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #REJECTED(#CENSORED),  null,                    rejectedStatusEnded,  [#TIME_UPDATE(#id)    ]);
       schema;
     };
 
-    func timedOutFirstIteration(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      if (_model.getStatusManager().getCurrentStatus(question_id).0 != 1){
+    // @todo: dangereous, the result can still be altered after the function returns
+    func passedDuration(duration: Duration, question_id: Nat, event: Event, result: TransitionResult) {
+      // Get the date of the current status
+      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
+      // If enough time has passed (candidate_status_duration), perform the transition
+      if (unwrapTime(event) < status_info.date + Duration.toTime(duration)){
+        result.set(#err(#TooSoon)); return;
+      };
+      result.set(#ok);
+    };
+
+    func candidateStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
+      passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, event, result);
+    };
+  
+    func openStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
+      passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, event, result);
+    };
+
+    func rejectedStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {  
+      // Do not delete questions that had been opened at least once
+      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
+      if (iteration > 1){
         result.set(#err(#WrongStatusIteration));
         return;
       };
-      await* timedOut(question_id, event, result);
+      passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, event, result);
     };
 
-    func tickMostInteresting(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let time = switch(event){
-        case(#TIME_UPDATE(#data({time;}))) { time; };
-        case(_) { Debug.trap("Invalid event type"); };
+    func censored(question_id: Nat, event: Event, result: TransitionResult) : async* () {
+      let time = unwrapTime(event);
+      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
+
+      let vote_id = _model.getInterestJoins().getVoteId(question_id, iteration);
+      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
+
+      if (appeal.score >= 0.0) {
+        result.set(#err(#PositiveAppeal)); return;
       };
+
+      let time_score_switch = switch(appeal.last_score_switch){
+        case(null){ result.set(#err(#PositiveAppeal)); return; };
+        case(?time_switch) { time_switch; };
+      };
+
+      if (time < time_score_switch + Duration.toTime(_model.getSchedulerParameters().censor_timeout)){
+        result.set(#err(#TooSoon)); return;
+      };
+
+      result.set(#ok);
+    };
+
+    func selected(question_id: Nat, event: Event, result: TransitionResult) : async* () {
+      let time = unwrapTime(event);
       // Get the most interesting question
       let most_interesting = switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
         case (null) { result.set(#err(#EmptyQueryInterestScore)); return; };
@@ -61,26 +104,13 @@ module {
         result.set(#err(#NotMostInteresting)); return;
       };
       // Verify the time is greater than the last pick date
-      if (time < _model.getLastPickDate() + Duration.toTime(_model.getInterestPickRate())){
+      if (time < _model.getLastPickDate() + Duration.toTime(_model.getSchedulerParameters().question_pick_rate)){
         result.set(#err(#TooSoon)); return;
       };
       // Perform the transition
       result.set(#ok);
       // Update the last pick date
       _model.setLastPickDate(time);
-    };
-
-    func timedOut(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let time = switch(event){
-        case(#TIME_UPDATE(#data({time}))) { time; };
-        case(_) { Debug.trap("Invalid event type"); };
-      };
-      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
-      if (time < status_info.date + Duration.toTime(_model.getStatusDuration(status_info.status))){
-        result.set(#err(#TooSoon)); return;
-      };
-      // Perform the transition
-      result.set(#ok);
     };
 
     func reopenQuestion(question_id: Nat, event: Event, result: TransitionResult) : async* () {
@@ -104,6 +134,13 @@ module {
         })){
         case(#err(err)) { result.set(#err(err)); return; };
         case(#ok(_)) { result.set(#ok); };
+      };
+    };
+
+    func unwrapTime(event: Event) : Time {
+      switch(event){
+        case(#TIME_UPDATE(#data({time;}))) { time; };
+        case(_) { Debug.trap("Invalid event type"); };
       };
     };
 

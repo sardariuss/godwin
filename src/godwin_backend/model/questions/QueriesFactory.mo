@@ -42,11 +42,13 @@ module {
 
   public func build(register: Register) : QuestionQueries {
 
+    addOrderBy(register, #INTEREST_SCORE);
+    // @todo: #STATUS(#CANDIDATE) and #STATUS(#CLOSED) could be removed when the scenario is removed
     addOrderBy(register, #STATUS(#CANDIDATE));
     addOrderBy(register, #STATUS(#OPEN));
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
-    addOrderBy(register, #INTEREST_SCORE);
+    addOrderBy(register, #ARCHIVE);
 
     let queries = Queries.build<OrderBy, Key>(
       register,
@@ -61,18 +63,15 @@ module {
 
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
-      case(#AUTHOR)         { "AUTHOR"; };
-      case(#TEXT)           { "TEXT"; };
-      case(#DATE)           { "DATE"; };
-      case(#STATUS(status)){ 
-        switch(status){
-          case(#CANDIDATE)  { "CANDIDATE"; };
-          case(#OPEN)       { "OPEN"; };
-          case(#CLOSED)     { "CLOSED"; };
-          case(#REJECTED)   { "REJECTED"; };
-        };
-      };
-      case(#INTEREST_SCORE) { "INTEREST_SCORE"; };
+      case(#AUTHOR)                       { "AUTHOR";              };
+      case(#TEXT)                         { "TEXT";                };
+      case(#DATE)                         { "DATE";                };
+      case(#STATUS(#CANDIDATE)           ){ "STATUS(CANDIDATE)";   };
+      case(#STATUS(#OPEN)                ){ "STATUS(OPEN)";        };
+      case(#STATUS(#CLOSED)              ){ "STATUS(CLOSED)";      };
+      case(#STATUS(#REJECTED))            { "STATUS(REJECTED)";    };
+      case(#INTEREST_SCORE)               { "INTEREST_SCORE";      };
+      case(#ARCHIVE)                      { "ARCHIVE";             };
     };
   };
 
@@ -82,31 +81,41 @@ module {
 
   func toOrderBy(key: Key) : OrderBy {
     switch(key){
-      case(#AUTHOR(_)){ #AUTHOR; };
-      case(#TEXT(_)){ #TEXT; };
-      case(#DATE(_)){ #DATE; };
-      case(#STATUS(entry)) { #STATUS(entry.status); };
-      case(#INTEREST_SCORE(_)) { #INTEREST_SCORE; };
+      case(#AUTHOR(_))         { #AUTHOR;             };
+      case(#TEXT(_))           { #TEXT;               };
+      case(#DATE(_))           { #DATE;               };
+      case(#STATUS(entry))     { 
+        switch(entry.status){
+          case(#CANDIDATE)     { #STATUS(#CANDIDATE); };
+          case(#OPEN)          { #STATUS(#OPEN);      };
+          case(#CLOSED)        { #STATUS(#CLOSED);    };
+          case(#REJECTED(_))   { #STATUS(#REJECTED);  };
+        };
+      };
+      case(#INTEREST_SCORE(_)) { #INTEREST_SCORE;     };
+      case(#ARCHIVE(_))        { #ARCHIVE;            };
     };
   };
 
   func compareKeys(a: Key, b: Key) : Order {
     switch(toOrderBy(a)){
-      case(#AUTHOR){ compareAuthorEntries(unwrapAuthor(a), unwrapAuthor(b)); };
-      case(#TEXT){ compareTextEntries(unwrapText(a), unwrapText(b)); };
-      case(#DATE){ compareDateEntries(unwrapDateEntry(a), unwrapDateEntry(b)); };
-      case(#STATUS(_)){ compareDateEntries(unwrapStatusEntry(a), unwrapStatusEntry(b)); }; // @todo: Status entries could be of different types (but should not happen anyway)
+      case(#AUTHOR)         { compareAuthorEntries (unwrapAuthor(a),        unwrapAuthor(b)       ); };
+      case(#TEXT)           { compareTextEntries   (unwrapText(a),          unwrapText(b)         ); };
+      case(#DATE)           { compareDateEntries   (unwrapDateEntry(a),     unwrapDateEntry(b)    ); };
+      case(#STATUS(_))      { compareDateEntries   (unwrapStatusEntry(a),   unwrapStatusEntry(b)  ); };
       case(#INTEREST_SCORE) { compareInterestScores(unwrapInterestScore(a), unwrapInterestScore(b)); };
+      case(#ARCHIVE)        { compareDateEntries   (unwrapDateEntry(a),     unwrapDateEntry(b)    ); };
     };
   };
 
   func getKeyIdentifier(key: Key) : Nat {
     switch(key){
-      case(#AUTHOR(entry)) { entry.question_id; };
-      case(#TEXT(entry)) { entry.question_id; };
-      case(#DATE(entry)) { entry.question_id; };
-      case(#STATUS(entry)) { entry.question_id; };
+      case(#AUTHOR(entry))         { entry.question_id; };
+      case(#TEXT(entry))           { entry.question_id; };
+      case(#DATE(entry))           { entry.question_id; };
+      case(#STATUS(entry))         { entry.question_id; };
       case(#INTEREST_SCORE(entry)) { entry.question_id; };
+      case(#ARCHIVE(entry))        { entry.question_id; };
     };
   };
 
@@ -125,6 +134,7 @@ module {
   func unwrapDateEntry(key: Key) : DateEntry {
     switch(key){
       case(#DATE(entry)) { entry; };
+      case(#ARCHIVE(entry)) { entry; };
       case(_) { Debug.trap("Failed to unwrap date entry"); };
     };
   };
@@ -138,15 +148,6 @@ module {
     switch(key){
       case(#INTEREST_SCORE(interest_score)) { interest_score; };
       case(_) { Debug.trap("Failed to unwrap appeal score"); };
-    };
-  };
-  func unwrapQuestionId(key: Key) : Nat {
-    switch(key){
-      case(#AUTHOR(entry))         { entry.question_id; };
-      case(#TEXT(entry))           { entry.question_id; };
-      case(#DATE(entry))           { entry.question_id; };
-      case(#STATUS(entry))         { entry.question_id; };
-      case(#INTEREST_SCORE(entry)) { entry.question_id; };
     };
   };
 

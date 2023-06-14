@@ -47,41 +47,37 @@ module {
     creation_date     : Time;
     categories        : Categories.Register;
     questions         : Questions.Register;
+    last_pick_date    : Ref<Time>;
     price_parameters  : Ref<PriceParameters>;
+    scheduler_params  : Ref<SchedulerParameters>;
     status            : {
       register           : Map<Nat, IterationHistory>;
     };
     queries           : {
       register           : QuestionQueriesFactory.Register;
     };
-    controller        : {
-      model              : {
-        last_pick_date   : Ref<Time>;
-        params           : Ref<SchedulerParameters>;
-      };
-    };
     opened_questions  : {
       register           : Map<Nat, (Principal, Blob)>;
       index              : Ref<Nat>;
       transactions       : Map<Principal, Map<VoteId, TransactionsRecord>>;
     };
-    votes          : {
-      interest                : {
-        register                  : Interests.Register;
-        transactions              : Map<Principal, Map<VoteId, TransactionsRecord>>;
+    votes             : {
+      interest           : {
+        register            : Interests.Register;
+        transactions        : Map<Principal, Map<VoteId, TransactionsRecord>>;
        };
-      opinion                 : {
-        register                  : Opinions.Register;
+      opinion            : {
+        register            : Opinions.Register;
       };
-      categorization          : {
-        register                  : Categorizations.Register;
-        transactions              : Map<Principal, Map<VoteId, TransactionsRecord>>;
+      categorization     : {
+        register            : Categorizations.Register;
+        transactions        : Map<Principal, Map<VoteId, TransactionsRecord>>;
        };
     };
-    joins          : {
-      interests               : Joins.Register;
-      opinions                : Joins.Register;
-      categorizations         : Joins.Register;
+    joins             : {
+      interests          : Joins.Register;
+      opinions           : Joins.Register;
+      categorizations    : Joins.Register;
     };
   };
 
@@ -91,42 +87,38 @@ module {
       master            = Ref.init<Principal>(master);
       creation_date     = creation_date;
       categories        = Categories.initRegister(parameters.categories);
+      last_pick_date    = Ref.init<Time>(creation_date);
+      scheduler_params  = Ref.init<SchedulerParameters>(parameters.scheduler);
       price_parameters  = Ref.init<PriceParameters>(parameters.prices);
       status            = {
-        register                    = Map.new<Nat, IterationHistory>(Map.nhash);
+        register            = Map.new<Nat, IterationHistory>(Map.nhash);
       };
-      questions                     = Questions.initRegister(parameters.questions.character_limit);
+      questions             = Questions.initRegister(parameters.questions.character_limit);
       queries           = {
-        register                    = QuestionQueriesFactory.initRegister();
-      };
-      controller        = {
-        model = {
-          last_pick_date            = Ref.init<Time>(creation_date);
-          params                    = Ref.init<SchedulerParameters>(parameters.scheduler);
-        };
+        register            = QuestionQueriesFactory.initRegister();
       };
       opened_questions  = {
-        register                    = Map.new<Nat, (Principal, Blob)>(Map.nhash);
-        index                       = Ref.init<Nat>(0);
-        transactions                = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        register            = Map.new<Nat, (Principal, Blob)>(Map.nhash);
+        index               = Ref.init<Nat>(0);
+        transactions        = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
       };
       votes             = {
-        interest                    = {
-          register                      = Interests.initRegister();
-          transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        interest            = {
+          register              = Interests.initRegister();
+          transactions          = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
         };
-        opinion                     = {
-          register                      = Opinions.initRegister();
+        opinion             = {
+          register              = Opinions.initRegister();
         };
-        categorization              = {
-          register                      = Categorizations.initRegister();
-          transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        categorization      = {
+          register              = Categorizations.initRegister();
+          transactions          = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
         };
       };
       joins             = {
-        interests                   = Joins.initRegister();
-        opinions                    = Joins.initRegister();
-        categorizations             = Joins.initRegister();
+        interests           = Joins.initRegister();
+        opinions            = Joins.initRegister();
+        categorizations     = Joins.initRegister();
       };
     };
   };

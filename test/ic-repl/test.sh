@@ -7,11 +7,11 @@ identity default;
 // Install the backend canister
 let arguments = record {
   scheduler = record {
-    interest_pick_rate = variant { SECONDS = 0 };
-    interest_duration = variant { DAYS = 1 }; // To prevent the questions to be rejected
-    opinion_duration = variant { SECONDS = 0 };
+    question_pick_rate = variant { SECONDS = 0 };
+    candidate_status_duration = variant { DAYS = 1 }; // To prevent the questions to be rejected
+    open_status_duration = variant { SECONDS = 0 };
     categorization_duration = variant { SECONDS = 0 };
-    rejected_duration = variant { SECONDS = 0 };
+    rejected_status_duration = variant { SECONDS = 0 };
   };
   users = record {
     convictions_half_life = null;

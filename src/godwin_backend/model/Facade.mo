@@ -19,74 +19,74 @@ import Buffer              "mo:base/Buffer";
 module {
 
   // For convenience: from base module
-  type Result<Ok, Err>        = Result.Result<Ok, Err>;
-  type Principal              = Principal.Principal;
-  type Time                   = Int;
-  type Buffer<T>              = Buffer.Buffer<T>;
+  type Result<Ok, Err>              = Result.Result<Ok, Err>;
+  type Principal                    = Principal.Principal;
+  type Time                         = Int;
+  type Buffer<T>                    = Buffer.Buffer<T>;
 
   // For convenience: from other modules
-  type Controller             = Controller.Controller;
+  type Controller                   = Controller.Controller;
 
   // For convenience: from types module
-  type QuestionId                 = Types.QuestionId;
-  type Duration                   = Types.Duration;
-  type QuestionOrderBy            = Types.QuestionOrderBy;
-  type Decay                      = Types.Decay; // @todo
-  type Interest                   = Types.Interest;
-  type Appeal                     = Types.Appeal;
-  type CursorArray                = Types.CursorArray;
-  type PolarizationArray          = Types.PolarizationArray;
-  type CategoryInfo               = Types.CategoryInfo;
-  type CategoryArray              = Types.CategoryArray;
-  type InterestVote               = Types.InterestVote;
-  type OpinionVote                = Types.OpinionVote;
-  type CategorizationVote         = Types.CategorizationVote;
-  type InterestBallot             = Types.InterestBallot;
-  type OpinionBallot              = Types.OpinionBallot;
-  type CategorizationBallot       = Types.CategorizationBallot;
-  type ShareableVote<T, A>        = Types.Vote<T, A>;
+  type QuestionId                   = Types.QuestionId;
+  type QuestionOrderBy              = Types.QuestionOrderBy;
+  type Decay                        = Types.Decay; // @todo
+  type Interest                     = Types.Interest;
+  type Appeal                       = Types.Appeal;
+  type CursorArray                  = Types.CursorArray;
+  type PolarizationArray            = Types.PolarizationArray;
+  type CategoryInfo                 = Types.CategoryInfo;
+  type CategoryArray                = Types.CategoryArray;
+  type InterestVote                 = Types.InterestVote;
+  type OpinionVote                  = Types.OpinionVote;
+  type CategorizationVote           = Types.CategorizationVote;
+  type InterestBallot               = Types.InterestBallot;
+  type OpinionBallot                = Types.OpinionBallot;
+  type CategorizationBallot         = Types.CategorizationBallot;
+  type ShareableVote<T, A>          = Types.Vote<T, A>;
   type RevealedInterestBallot       = Types.RevealedInterestBallot;
   type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
   type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
-  type Direction                  = Types.Direction;
-  type ScanLimitResult<K>         = Types.ScanLimitResult<K>;
-  type ShareableStatusHistory     = Types.StatusHistory;   
-  type ShareableIterationHistory  = Types.IterationHistory;
-  type FindQuestionIterationError = Types.FindQuestionIterationError;
-  type VoteKind                   = Types.VoteKind;
-  type TransactionsRecord         = Types.TransactionsRecord;
-  type Question                   = QuestionTypes.Question;
-  type Status                     = QuestionTypes.Status;
-  type StatusHistoryMap           = QuestionTypes.StatusHistory;
-  type StatusInfo                 = QuestionTypes.StatusInfo;
-  type StatusHistory              = QuestionTypes.StatusHistory;
-  type IterationHistory           = QuestionTypes.IterationHistory;
-  type Category                   = VoteTypes.Category;
-  type Ballot<T>                  = VoteTypes.Ballot<T>;
-  type Vote<T, A>                 = VoteTypes.Vote<T, A>;
-  type RevealedBallot<T>          = VoteTypes.RevealedBallot<T>;
-  type Cursor                     = VoteTypes.Cursor;
-  type Polarization               = VoteTypes.Polarization;
-  type CursorMap                  = VoteTypes.CursorMap;
-  type PolarizationMap            = VoteTypes.PolarizationMap;
-  type VoteId                     = VoteTypes.VoteId;
+  type Direction                    = Types.Direction;
+  type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
+  type ShareableStatusHistory       = Types.StatusHistory;   
+  type ShareableIterationHistory    = Types.IterationHistory;
+  type FindQuestionIterationError   = Types.FindQuestionIterationError;
+  type VoteKind                     = Types.VoteKind;
+  type TransactionsRecord           = Types.TransactionsRecord;
+  type SchedulerParameters          = Types.SchedulerParameters;
+  type Question                     = QuestionTypes.Question;
+  type Status                       = QuestionTypes.Status;
+  type StatusHistoryMap             = QuestionTypes.StatusHistory;
+  type StatusInfo                   = QuestionTypes.StatusInfo;
+  type StatusHistory                = QuestionTypes.StatusHistory;
+  type IterationHistory             = QuestionTypes.IterationHistory;
+  type Category                     = VoteTypes.Category;
+  type Ballot<T>                    = VoteTypes.Ballot<T>;
+  type Vote<T, A>                   = VoteTypes.Vote<T, A>;
+  type RevealedBallot<T>            = VoteTypes.RevealedBallot<T>;
+  type Cursor                       = VoteTypes.Cursor;
+  type Polarization                 = VoteTypes.Polarization;
+  type CursorMap                    = VoteTypes.CursorMap;
+  type PolarizationMap              = VoteTypes.PolarizationMap;
+  type VoteId                       = VoteTypes.VoteId;
 
   // Errors
-  type AddCategoryError           = Types.AddCategoryError;
-  type RemoveCategoryError        = Types.RemoveCategoryError;
-  type GetQuestionError           = Types.GetQuestionError;
-  type ReopenQuestionError        = Types.ReopenQuestionError;
-  type VerifyCredentialsError     = Types.VerifyCredentialsError;
-  type SetPickRateError           = Types.SetPickRateError;
-  type SetDurationError           = Types.SetDurationError;
-  type FindBallotError            = Types.FindBallotError;
-  type PutBallotError             = Types.PutBallotError;
-  type GetVoteError               = Types.GetVoteError;
-  type OpenVoteError              = Types.OpenVoteError;
-  type RevealVoteError            = Types.RevealVoteError;
-  type TransitionError            = Types.TransitionError;
-  type OpenQuestionError          = Types.OpenQuestionError; // @todo
-  type FindVoteError              = Types.FindVoteError;
+  type AddCategoryError             = Types.AddCategoryError;
+  type RemoveCategoryError          = Types.RemoveCategoryError;
+  type GetQuestionError             = Types.GetQuestionError;
+  type ReopenQuestionError          = Types.ReopenQuestionError;
+  type VerifyCredentialsError       = Types.VerifyCredentialsError;
+  type SetPickRateError             = Types.SetPickRateError;
+  type SetSchedulerParametersError  = Types.SetSchedulerParametersError;
+  type FindBallotError              = Types.FindBallotError;
+  type PutBallotError               = Types.PutBallotError;
+  type GetVoteError                 = Types.GetVoteError;
+  type OpenVoteError                = Types.OpenVoteError;
+  type RevealVoteError              = Types.RevealVoteError;
+  type TransitionError              = Types.TransitionError;
+  type OpenQuestionError            = Types.OpenQuestionError; // @todo
+  type FindVoteError                = Types.FindVoteError;
 
   public class Facade(_controller: Controller) = {
 
@@ -111,20 +111,12 @@ module {
       _controller.removeCategory(caller, category);
     };
 
-    public func getInterestPickRate() : Duration {
-      _controller.getInterestPickRate();
+    public func getSchedulerParameters() : SchedulerParameters {
+      _controller.getSchedulerParameters();
     };
 
-    public func setInterestPickRate(caller: Principal, rate: Duration) : Result<(), SetPickRateError> {
-      _controller.setInterestPickRate(caller, rate);
-    };
-
-    public func getStatusDuration(status: Status) : Duration {
-      _controller.getStatusDuration(status);
-    };
-
-    public func setStatusDuration(caller: Principal, status: Status, duration: Duration) : Result<(), SetDurationError> {
-      _controller.setStatusDuration(caller, status, duration);
+    public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
+      _controller.setSchedulerParameters(caller, params);
     };
 
     public func searchQuestions(text: Text, limit: Nat) : [Nat] {

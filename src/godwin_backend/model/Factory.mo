@@ -85,8 +85,8 @@ module {
     let model = Model.build(
       state.name,
       state.master,
-      state.controller.model.last_pick_date,
-      state.controller.model.params,
+      state.last_pick_date,
+      state.scheduler_params,
       categories,
       questions,
       status_manager,

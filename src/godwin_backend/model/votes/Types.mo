@@ -24,8 +24,18 @@ module {
   public type Polarization    = RepresentationTypes.Polarization;
   public type CursorMap       = RepresentationTypes.CursorMap;
   public type PolarizationMap = RepresentationTypes.PolarizationMap;
-  public type Interest        = RepresentationTypes.Interest;
-  public type Appeal          = RepresentationTypes.Appeal;
+  
+  public type Interest = {
+    #UP;
+    #DOWN;
+  };
+
+  public type Appeal = {
+    ups: Nat;
+    downs: Nat;
+    score: Float;
+    last_score_switch: ?Time;
+  };
 
   public type VoteId = Nat;
   public let voteHash = Map.nhash;
@@ -46,7 +56,7 @@ module {
   };
 
   public type Ballot<T> = {
-    date: Int;
+    date: Time;
     answer: T;
   };
 

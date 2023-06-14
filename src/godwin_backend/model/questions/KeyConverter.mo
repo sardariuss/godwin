@@ -9,7 +9,6 @@ module {
   type DateEntry             = Types.DateEntry;
   type TextEntry             = Types.TextEntry;
   type AuthorEntry           = Types.AuthorEntry;
-  type StatusEntry           = Types.StatusEntry;
   type InterestScore         = Types.InterestScore;
 
   public func toAuthorKey(question: Question) : Key {
@@ -37,6 +36,10 @@ module {
 
   public func toStatusKey(question_id: Nat, status: Status, date: Time) : Key {
     #STATUS({question_id; status; date;});
+  };
+
+  public func toArchiveKey(question_id: Nat, date: Time) : Key {
+    #ARCHIVE({question_id; date;})
   };
 
   public func toInterestScoreKey(question_id: Nat, score: Float) : Key {

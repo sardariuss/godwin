@@ -63,7 +63,7 @@ module {
       switch(transitions.getOpt(current, next)){
         case(null){ }; // no transition to that state, nothing to do
         case(?condition){
-          let transition_result = WRef.WRef<Result<(), Err>>(Ref.init(#ok));
+          let transition_result = WRef.WRef<Result<(), Err>>(Ref.init(#ok)); // @todo: dangereous to init with ok!
           await* condition(model, event, transition_result); 
           switch(transition_result.get()){
             case(#ok){ 

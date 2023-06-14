@@ -8,7 +8,8 @@ module {
 
   type VoteId              = Types.VoteId;
   type Cursor              = Types.Cursor;
-  type Polarization        = Types.Polarization;  
+  type Polarization        = Types.Polarization;
+  type OpinionBallot       = Types.OpinionBallot;
 
   public type Register     = Votes.Register<Cursor, Polarization>;
 
@@ -26,12 +27,20 @@ module {
       VotePolicy.VotePolicy<Cursor, Polarization>(
         #BALLOT_CHANGE_AUTHORIZED,
         Cursor.isValid,
-        Polarization.addCursor,
-        Polarization.subCursor,
+        addOpinionBallot,
+        removeOpinionBallot,
         Polarization.nil()
       ),
       null
     );
+  };
+
+  func addOpinionBallot(polarization: Polarization, ballot: OpinionBallot) : Polarization {
+    Polarization.addCursor(polarization, ballot.answer);
+  };
+
+  func removeOpinionBallot(polarization: Polarization, ballot: OpinionBallot) : Polarization {
+    Polarization.subCursor(polarization, ballot.answer);
   };
 
 };

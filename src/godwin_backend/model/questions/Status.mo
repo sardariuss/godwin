@@ -9,10 +9,11 @@ module {
 
   public func statusToText(status: Status) : Text {
     switch(status){
-      case(#CANDIDATE)               { "CANDIDATE"; };
-      case(#OPEN)                    { "OPEN"; };
-      case(#CLOSED)                  { "CLOSED"; };
-      case(#REJECTED)                { "REJECTED"; };
+      case(#CANDIDATE)            { "CANDIDATE";           };
+      case(#OPEN)                 { "OPEN";                };
+      case(#CLOSED)               { "CLOSED";              };
+      case(#REJECTED(#TIMED_OUT)) { "REJECTED(TIMED_OUT)"; };
+      case(#REJECTED(#CENSORED))  { "REJECTED(CENSORED)";  };
     };
   };
 

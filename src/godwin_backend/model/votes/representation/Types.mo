@@ -41,15 +41,5 @@ module {
   
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
   public type PolarizationMap = Trie<Category, Polarization>;
-
-  public type Interest = {
-    #UP;
-    #DOWN;
-  };
-
-  public type Appeal = {
-    ups: Nat;
-    downs: Nat;
-    score: Float;
-  };
+  
 }

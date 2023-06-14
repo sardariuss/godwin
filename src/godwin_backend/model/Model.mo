@@ -12,7 +12,6 @@ import Opinions            "votes/Opinions";
 
 import Ref                 "../utils/Ref";
 import WRef                "../utils/wrappers/WRef";
-import Duration            "../utils/Duration";
 
 import Debug               "mo:base/Debug";
 import Principal           "mo:base/Principal";
@@ -21,7 +20,6 @@ module {
 
   type Time                = Int;
   type Status              = Types.Status;
-  type Duration            = Types.Duration;
   type Ref<T>              = Ref.Ref<T>;
   type WRef<T>             = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
@@ -109,30 +107,12 @@ module {
       _last_pick_date.set(last_pick_date);
     };
 
-    public func getStatusDuration(status: Status) : Duration {
-      switch(status){
-        case(#CANDIDATE) { _params.get().interest_duration; };
-        case(#OPEN) { _params.get().opinion_duration; };
-        case(#REJECTED) { _params.get().rejected_duration; };
-        case(_) { Debug.trap("There is no duration for this status"); };
-      };
+    public func getSchedulerParameters() : SchedulerParameters {
+      _params.get();
     };
 
-    public func setStatusDuration(status: Status, duration: Duration) {
-      switch(status){
-        case(#CANDIDATE) {       _params.set({ _params.get() with interest_duration       = duration; }) };
-        case(#OPEN) {        _params.set({ _params.get() with opinion_duration        = duration; }) };
-        case(#REJECTED) {                _params.set({ _params.get() with rejected_duration       = duration; }) };
-        case(_) { Debug.trap("Cannot set a duration for this status"); };
-      };
-    };
-
-    public func getInterestPickRate() : Duration {
-      _params.get().interest_pick_rate;
-    };
-
-    public func setInterestPickRate(rate: Duration) {
-      _params.set({ _params.get() with interest_pick_rate = rate });
+    public func setSchedulerParameters(params: SchedulerParameters) {
+      _params.set(params);
     };
 
     public func getCategories(): Categories {

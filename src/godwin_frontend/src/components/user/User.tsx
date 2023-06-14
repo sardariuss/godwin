@@ -19,11 +19,10 @@ import { fromNullable }                    from "@dfinity/utils";
 export enum UserFilter {
   CONVICTIONS,
   VOTES,
-  QUESTIONS,
-  ACTIVITY
+  QUESTIONS
 };
 
-const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES, UserFilter.QUESTIONS, UserFilter.ACTIVITY];
+const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES, UserFilter.QUESTIONS];
 
 const filterToText = (filter: UserFilter) => {
   switch (filter) {
@@ -31,8 +30,6 @@ const filterToText = (filter: UserFilter) => {
       return "Convictions";
     case UserFilter.QUESTIONS:
       return "Questions";
-    case UserFilter.ACTIVITY:
-      return "Activity";
     case UserFilter.VOTES:
       return "Votes";
   }
@@ -41,7 +38,7 @@ const filterToText = (filter: UserFilter) => {
 const UserComponent = () => {
 
   const {user} = useParams<string>();
-  const {subs, isAuthenticated, authClient, master, token, logout, balance, refreshBalance} = useContext(ActorContext);
+  const {subs, isAuthenticated, authClient, master, logout, balance, refreshBalance} = useContext(ActorContext);
 
   const [principal, setPrincipal] = useState<Principal | undefined>(undefined);
   const [isLoggedUser, setIsLoggedUser] = useState<boolean>(false);
@@ -175,7 +172,7 @@ const UserComponent = () => {
                     <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                     {
                       filters.map((filter, index) => (
-                        <li key={index} className="w-1/4">
+                        <li key={index} className="w-1/3">
                           <MainTabButton label={filterToText(filter)} isCurrent={filter == currentUserFilter} setIsCurrent={() => setCurrentUserFilter(filter)}/>
                         </li>
                       ))

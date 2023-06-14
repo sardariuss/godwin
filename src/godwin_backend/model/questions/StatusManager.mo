@@ -13,7 +13,7 @@ import Nat    "mo:base/Nat";
 module {
 
   // For convenience: from base module
-  type Time          = Int;
+  type Time             = Int;
 
   // For convenience: from map module
   type Map<K, V>        = Map.Map<K, V>;
@@ -82,6 +82,19 @@ module {
       (last_iteration, Buffer.get(iteration_history, last_iteration));
     };
 
+  };
+
+  public func findStatusInfo(iteration_history: IterationHistory, status: Status, iteration: Nat) : ?StatusInfo {
+    if (iteration >= Buffer.size(iteration_history)){
+      return null;
+    };
+    let status_history = Buffer.get(iteration_history, iteration);
+    for (status_info in Buffer.vals(status_history)){
+      if (status_info.status == status){
+        return ?status_info;
+      };
+    };
+    null;
   };
 
 };

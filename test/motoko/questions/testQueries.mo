@@ -1,17 +1,17 @@
-import Types         "../../../src/godwin_backend/model/questions/Types";
-import Queries       "../../../src/godwin_backend/model/questions/QuestionQueries";
-import KeyConverter  "../../../src/godwin_backend/model/questions/KeyConverter";
+import Types          "../../../src/godwin_backend/model/questions/Types";
+import QueriesFactory "../../../src/godwin_backend/model/questions/QueriesFactory";
+import KeyConverter   "../../../src/godwin_backend/model/questions/KeyConverter";
 
-import TestifyTypes  "../testifyTypes";
+import TestifyTypes   "../testifyTypes";
 
-import Testify       "mo:testing/Testify";
-import SuiteState    "mo:testing/SuiteState";
-import Status        "mo:testing/Status";
+import Testify        "mo:testing/Testify";
+import SuiteState     "mo:testing/SuiteState";
+import Status         "mo:testing/Status";
 
-import Principals    "../Principals";
+import Principals     "../Principals";
 
-import Principal     "mo:base/Principal";
-import Array         "mo:base/Array";
+import Principal      "mo:base/Principal";
+import Array          "mo:base/Array";
 
 module {
 
@@ -20,8 +20,7 @@ module {
   type OpenQuestionError = Types.OpenQuestionError;
   type StatusInfo        = Types.StatusInfo;
   type ScanLimitResult   = Types.ScanLimitResult;
-
-  type QuestionQueries   = Queries.QuestionQueries;
+  type QuestionQueries   = Types.QuestionQueries;
 
   let { toAuthorKey; toTextKey; toDateKey; toStatusKey; toInterestScoreKey; } = KeyConverter;
 
@@ -59,16 +58,16 @@ module {
 
     let updated_scores : [Float] = [165, 137, 232, 118, 183];
 
-    let register = Queries.initRegister();
-    Queries.addOrderBy(register, #TEXT);
-    Queries.addOrderBy(register, #DATE);
-    Queries.addOrderBy(register, #STATUS(#CANDIDATE));
-    Queries.addOrderBy(register, #STATUS(#OPEN));
-    Queries.addOrderBy(register, #STATUS(#CLOSED));
-    Queries.addOrderBy(register, #STATUS(#REJECTED));
-    Queries.addOrderBy(register, #INTEREST_SCORE);
+    let register = QueriesFactory.initRegister();
+    QueriesFactory.addOrderBy(register, #TEXT);
+    QueriesFactory.addOrderBy(register, #DATE);
+    QueriesFactory.addOrderBy(register, #STATUS(#CANDIDATE));
+    QueriesFactory.addOrderBy(register, #STATUS(#OPEN));
+    QueriesFactory.addOrderBy(register, #STATUS(#CLOSED));
+    QueriesFactory.addOrderBy(register, #STATUS(#REJECTED));
+    QueriesFactory.addOrderBy(register, #INTEREST_SCORE);
 
-    let queries = Queries.build(register);
+    let queries = QueriesFactory.build(register);
     for ((question, status_info, score) in Array.vals(questions)){
       queries.add(toTextKey(question));
       queries.add(toDateKey(question));
