@@ -109,7 +109,9 @@ const MainQuestions = () => {
               </div>
               {
                 currentMainTab === MainTab.HOME ?
-                <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion> :
+                <div className="border-b dark:border-gray-700">
+                  <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion>
+                </div> :
                 <div className="border-b dark:border-gray-700">
                   <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                   {

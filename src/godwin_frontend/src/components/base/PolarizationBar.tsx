@@ -2,6 +2,7 @@ import { ScatterChart }                                                         
 import { BarChart }                                                                  from "../charts/BarChart";
 import CONSTANTS                                                                     from "../../Constants";
 import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
+import { toPercentage }                                                              from "../charts/ChartUtils";
 
 import { Polarization, Ballot }                                                      from "./../../../declarations/godwin_backend/godwin_backend.did";
 
@@ -104,10 +105,10 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
         {
           chartType === ChartTypeEnum.Scatter ? 
             <div className="max-h-16">
-              <ScatterChart chartData={scatterData}/>
+              <ScatterChart chart_data={scatterData}/>
             </div> :
           chartType === ChartTypeEnum.Bar ?
-            <BarChart chartData={barData} /> :
+            <BarChart chart_data={barData} generate_label={toPercentage} /> :
             <></>
         }
         </div>

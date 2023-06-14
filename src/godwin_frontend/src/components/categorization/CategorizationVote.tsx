@@ -15,7 +15,7 @@ import { useContext, useState, useEffect }                               from "r
 type Props = {
   actor: ActorSubclass<_SERVICE>,
   categories: Map<Category, CategoryInfo>,
-  voteId: bigint
+  voteId: bigint,
 };
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
@@ -82,10 +82,10 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
             <ResetIcon/>
           </SvgButton>
         </div>
-        <ol className="col-span-4 list-none divide-y-4 divide-slate-400/25">
+        <ol className="col-span-4 list-none">
         {
           categorization.map(([category, cursor], index) => (
-            <li key={category}>
+            <li key={category} className="flex flex-col items-center">
               <CursorSlider
                 id={ category + voteId.toString() }
                 cursor={ cursor }
@@ -99,11 +99,15 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
                 onMouseUp={ () => { setCountdownVote(true)} }
                 onMouseDown={ () => { setCountdownVote(false)} }
               />
+              {
+                index !== categorization.length - 1 ?
+                <div className="h-1 w-3/4 bg-slate-400/25"/> : <></>
+              }
             </li>
           ))
         }
         </ol>
-        <div className="col-span-1 justify-center">
+        <div className="col-span-1 justify-center mb-2">
           <UpdateProgress<PutBallotError> 
               delay_duration_ms={countdownDurationMs}
               update_function={putBallot}
@@ -112,7 +116,8 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
               run_countdown={countdownVote}
               set_run_countdown={setCountdownVote}
               trigger_update={triggerVote}
-              set_trigger_update={setTriggerVote}>
+              set_trigger_update={setTriggerVote}
+              cost={BigInt(350_000_000)}>
             <div className="flex flex-col items-center justify-center w-full">
               <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote } hidden={false}>
                 <PutBallotIcon/>

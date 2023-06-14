@@ -129,12 +129,7 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               <div>
               {
                 selectedVote === VoteKind.INTEREST && interestVote !== undefined ?
-                  <AppealBar
-                    name={"INTEREST"}
-                    showName={false}
-                    polarizationInfo={CONSTANTS.INTEREST_INFO}
-                    vote={interestVote}
-                  /> : <></>
+                  <AppealBar vote={interestVote}/> : <></>
               }
               </div>
               <div>

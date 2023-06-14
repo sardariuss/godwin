@@ -50,7 +50,9 @@ const InterestVote = ({actor, voteId}: Props) => {
 
   const refreshBallot = () : Promise<void> => {
     return actor.getInterestBallot(voteId).then((result) => {
-      setInterest(result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? interestToEnum(result['ok'].answer[0]) : InterestEnum.Neutral);
+      setInterest(
+        old => { return result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? 
+          interestToEnum(result['ok'].answer[0]) : old === null ? InterestEnum.Neutral : old});
       setVoteDate(result['ok'] !== undefined ? result['ok'].date : null);
     });
   }
@@ -73,13 +75,13 @@ const InterestVote = ({actor, voteId}: Props) => {
       interest === null ? <></> :
       <div className="grid grid-cols-3 w-full py-2 content-center items-center">
         <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-          <div className={`w-full flex -m-4 justify-center ${voteDate !== null ? "hidden" : ""}`}>
+          <div className={`w-10 flex -m-2 justify-center ${voteDate !== null ? "hidden" : ""}`}>
             <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
               <ArrowUpIcon/>
             </SvgButton>
           </div>
           <InterestBallot answer={interest} dateNs={voteDate}/>
-          <div className={`w-full flex -m-4 justify-center ${voteDate !== null ? "hidden" : ""}`}>
+          <div className={`w-10 flex -m-2 justify-center ${voteDate !== null ? "hidden" : ""}`}>
             <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
               <ArrowDownIcon/>
             </SvgButton>
@@ -87,7 +89,7 @@ const InterestVote = ({actor, voteId}: Props) => {
         </div>
         <div className={`col-span-1 justify-center`}>
           {
-            voteDate !== null ? 
+            voteDate !== null || interest === InterestEnum.Neutral ? 
               <></> :
               <UpdateProgress<PutBallotError> 
                 delay_duration_ms={countdownDurationMs}
@@ -98,12 +100,13 @@ const InterestVote = ({actor, voteId}: Props) => {
                 set_run_countdown={setCountdownVote}
                 trigger_update={triggerVote}
                 set_trigger_update={setTriggerVote}
+                cost={BigInt(100_000_000)}
               >
                 <div className={`flex flex-col items-center justify-center w-full`}>
                   <SvgButton 
                     onClick={() => setTriggerVote(true)}
-                    disabled={interest === InterestEnum.Neutral}
-                    hidden={interest === InterestEnum.Neutral}
+                    disabled={false}
+                    hidden={false}
                   >
                     <PutBallotIcon/>
                   </SvgButton>

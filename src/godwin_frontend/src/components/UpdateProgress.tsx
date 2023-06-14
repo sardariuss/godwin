@@ -1,10 +1,13 @@
+import Balance                                from "./base/Balance";
+import BeggingHand                            from "./icons/BeggingHand";
+
 import React, { useState, useEffect, useRef } from "react";
 
-import CircularProgress                 from '@mui/joy/CircularProgress';
-import { Tooltip }                      from "@mui/material";
-import ErrorOutlineIcon                 from '@mui/icons-material/ErrorOutline';
-import DoneIcon                         from '@mui/icons-material/Done';
-import { CssVarsProvider, extendTheme } from '@mui/joy/styles';
+import CircularProgress                       from '@mui/joy/CircularProgress';
+import { Tooltip }                            from "@mui/material";
+import ErrorOutlineIcon                       from '@mui/icons-material/ErrorOutline';
+import DoneIcon                               from '@mui/icons-material/Done';
+import { CssVarsProvider, extendTheme }       from '@mui/joy/styles';
 
 // This part could be declared in your theme file
 declare module '@mui/joy/CircularProgress' {
@@ -64,9 +67,20 @@ type Props<Error> = {
   error_to_string   : (Error)   => string;
   set_run_countdown : (boolean) => void;
   set_trigger_update: (boolean) => void;
+  cost              : bigint | undefined;
 }
 
-const UpdateProgress = <Error,>({delay_duration_ms, update_function, callback_function, error_to_string, run_countdown, set_run_countdown, trigger_update, set_trigger_update, children}: Props<Error>) => {
+const UpdateProgress = <Error,>({
+  delay_duration_ms, 
+  update_function, 
+  callback_function, 
+  error_to_string, 
+  run_countdown, 
+  set_run_countdown, 
+  trigger_update, 
+  set_trigger_update, 
+  children,
+  cost}: Props<Error>) => {
 
   const interval_duration_ms = 50;
 
@@ -140,7 +154,7 @@ const UpdateProgress = <Error,>({delay_duration_ms, update_function, callback_fu
         </CircularProgress>
         </CssVarsProvider>
       </div>
-      <div className="flex flex-col absolute grow w-full z-10 items-center">
+      <div className="flex flex-col absolute grow w-full z-10 items-center gap-y-1 items-end">
         {
           updateProgress ? 
             <></> :
@@ -152,6 +166,12 @@ const UpdateProgress = <Error,>({delay_duration_ms, update_function, callback_fu
               <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
             </Tooltip> :
             <DoneIcon color="success"></DoneIcon>
+          }
+          {
+            cost !== undefined && error === null && !updateProgress ?
+            <div className="flex flex-col text-xs items-center">
+              <Balance amount={cost}/>
+            </div> : <></>
           }
       </div>
     </div>

@@ -84,7 +84,7 @@ const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
 
 	return (
 		<div className="group grid grid-cols-11 text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
-			<div className="w-full flex flex-col col-span-2 items-center justify-center content-center">
+			<div className="w-full flex flex-col col-span-2 items-center justify-self-center">
 				{
 					questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
 						<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/> : <></>
@@ -99,9 +99,7 @@ const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
-					<div className={`w-full justify-start text-sm font-normal 
-						${currentStatus !== undefined && currentStatus.status['REJECTED'] !== undefined
-							&& currentStatus.status['REJECTED']['CENSORED'] !== undefined ? "blurry-text-black dark:blurry-text-white" : ""}`}>
+					<div className={`w-full justify-start text-sm font-normal`}>
           	{question.text}
         	</div>
 				}

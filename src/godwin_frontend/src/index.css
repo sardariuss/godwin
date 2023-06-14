@@ -37,16 +37,6 @@ input {
   outline: none;
 }
 
-.blurry-text-black {
-  color: transparent;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
-}
-
-.blurry-text-white {
-  color: transparent;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
-}
-
 .bar-result {
   background: linear-gradient(
     to right,

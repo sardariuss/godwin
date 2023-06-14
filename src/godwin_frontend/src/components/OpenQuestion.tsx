@@ -39,7 +39,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
 	return (
     <form>
-      <div className="w-full border-b dark:border-gray-700">
+      <div className="w-full dark:border-gray-700">
         <div className="px-4 py-2">
           <textarea rows={4} onChange={(e) => updateText(e.target.value)} className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400" placeholder={placeholder} required></textarea>
         </div>
@@ -50,7 +50,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
           {
           canSelectSub ? 
             <div>
-              <button onClick={(e)=>{setShowSubsList(!showSubsList)}} className="text-white bg-blue-700 hover:enabled:bg-blue-800 font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex focus:ring-2 focus:ring-blue-200 items-center dark:hover:enabled:bg-blue-700 dark:focus:ring-blue-800 disabled:bg-gray-700" type="button">
+              <button onClick={(e)=>{setShowSubsList(!showSubsList)}} className="text-white bg-blue-700 hover:enabled:bg-blue-800 font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex focus:ring-2 focus:ring-blue-200 items-center dark:focus:ring-blue-800 disabled:bg-gray-700" type="button">
                 {
                   selectedSubId !== null ? subs.get(selectedSubId)?.name : noSubSelected
                 } 

@@ -5,14 +5,17 @@ const CONSTANTS = {
   INTEREST_INFO: {
     down: {
       symbol: '🤡',
+      color: '#DB4437',
       name: 'TROLL',
     },
     neutral: {
       symbol: '😴',
+      color: '#EEEEEE',
       name: 'BORING',
     },
     up: {
       symbol: '🤓',
+      color: '#4285F4',
       name: 'LEGIT',
     }
   },

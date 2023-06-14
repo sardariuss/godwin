@@ -79,8 +79,8 @@ function App() {
               />      
             </Routes>
           </div>
-          <Footer/>
           <OpenQuestionPopup showAskQuestion={showAskQuestion} setShowAskQuestion={setShowAskQuestion}></OpenQuestionPopup>
+          <Footer/>
         </ActorContext.Provider>
       </div>
     </>

@@ -19,43 +19,51 @@ ChartJS.register(
   Legend
 );
 
-const options = {
-  indexAxis: 'y' as const,
-  responsive: true,
-  plugins: {
-    tooltip: {
-      enabled: true,
-      callbacks: {
-        label: function(ctx) {
-          return ctx.dataset.labels[ctx.dataIndex] + (ctx.parsed.x * 100).toFixed(2) + " %";
-        },
-        title: function(ctx) {
-          return "";
+const getOptions = (generate_label: (ctx: any) => string) => {
+  
+  return {
+    indexAxis: 'y' as const,
+    responsive: true,
+    plugins: {
+      tooltip: {
+        enabled: true,
+        callbacks: {
+          label: function(ctx) {
+            return generate_label(ctx);
+          },
+          title: function(ctx) {
+            return "";
+          }
         }
+      },
+      legend: {
+        display: false
       }
     },
-    legend: {
-      display: false
-    }
-  },
-  animation:{
-    duration: 0
-  },
-  maintainAspectRatio: false,
-  scales: {
-    x: {
-      stacked: true,
-      display: false,
+    animation:{
+      duration: 0
     },
-    y: {
-      stacked: true,
-      display: false,
-    }
-  },
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        stacked: true,
+        display: false,
+      },
+      y: {
+        stacked: true,
+        display: false,
+      }
+    },
+  };
 };
 
-export const BarChart = ({ chartData }: any) => {
+type BarChartInput = {
+  chart_data: any;
+  generate_label: (ctx: any) => string;
+};
+
+export const BarChart = ({ chart_data, generate_label }: BarChartInput) => {
   return (
-    <Bar data={chartData} options={options}/>
+    <Bar data={chart_data} options={getOptions(generate_label)}/>
   );
 };

@@ -44,10 +44,10 @@ const options = {
   responsive: true
 };
 
-export const ScatterChart = ({ chartData }: any) => {
+export const ScatterChart = ({ chart_data }: any) => {
   return (
       <Scatter
-        data={chartData}
+        data={chart_data}
         options={options}
       />
   );

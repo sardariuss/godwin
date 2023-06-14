@@ -24,6 +24,7 @@ module {
   
   public type Schema           = StateMachine.Schema<Status, Event, TransitionError, QuestionId>;
   public type TransitionResult = StateMachine.TransitionResult<TransitionError>;
+  public type EventResult      = StateMachine.EventResult<Status, TransitionError>;
 
   public class SchemaBuilder(_model: Model) {
 

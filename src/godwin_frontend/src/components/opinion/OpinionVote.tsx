@@ -19,7 +19,7 @@ type Props = {
 
 const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
 
-  const COUNTDOWN_DURATION_MS = 2000;
+  const COUNTDOWN_DURATION_MS = 0;
 
   const [countdownVote, setCountdownVote] = useState<boolean>          (false);
   const [triggerVote,   setTriggerVote  ] = useState<boolean>          (false);
