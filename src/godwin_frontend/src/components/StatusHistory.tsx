@@ -23,7 +23,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, iteration, statu
       {
         statusHistory.slice(0).reverse().map((status, index) => {
           return (
-            <li key={index.toString()} className={index === 0 && statusHistory.length > 1 ? "hover:cursor-pointer" : ""} onClick={(e) => { if (index === 0 && statusHistory.length > 1) setHistoryVisible(!historyVisible)}}>
+            <li key={index.toString()}>
               {
                 index === 0 || historyVisible ?
                 <StatusComponent 
@@ -31,6 +31,7 @@ const StatusHistoryComponent = ({actor, questionId, categories, iteration, statu
                   questionId={questionId}
                   categories={categories}
                   status={status.status}
+                  onStatusClicked={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => { if (index === 0 && statusHistory.length > 1) setHistoryVisible(!historyVisible) }}
                   date={status.date}
                   isHistory={index !== 0}
                   iteration={iteration}

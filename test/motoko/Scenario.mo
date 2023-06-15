@@ -41,7 +41,8 @@ module {
 
     var time = start_date;
 
-    while (time < end_date) {
+    while (time + Duration.toTime(tick_duration) < end_date) {
+      
       time := time + Duration.toTime(tick_duration);
 
       if (Random.random(fuzzer) < 0.3) {

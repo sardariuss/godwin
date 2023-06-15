@@ -71,7 +71,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
 
   stable var time_now : Time.Time = Time.now();
 
-  let _start_date = Time.now() - Duration.toTime(#HOURS(12));  // @temp
+  let _start_date = Time.now() - Duration.toTime(#MINUTES(830));  // @temp
 
   stable var _state = State.initState(caller, _start_date, parameters);
 

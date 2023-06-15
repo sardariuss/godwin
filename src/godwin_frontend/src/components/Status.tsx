@@ -18,6 +18,7 @@ type Props = {
   actor: ActorSubclass<_SERVICE>,
   questionId: bigint;
   status: Status;
+  onStatusClicked: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   date: bigint;
   iteration: bigint;
   isHistory: boolean;
@@ -26,7 +27,7 @@ type Props = {
   borderDashed: boolean;
 };
 
-const StatusComponent = ({actor, questionId, status, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
+const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
 
   const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
   const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
@@ -39,22 +40,20 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
     setOpinionVote(undefined);
     setCategorizationVote(undefined);
 
-    if (isHistory){
-      if (status['CANDIDATE'] !== undefined) {
-				let interest_vote_id = (await actor.findInterestVoteId(questionId, iteration))['ok'];
-				if (interest_vote_id !== undefined) {
-          setInterestVote((await actor.revealInterestVote(interest_vote_id))['ok']);
-				}
-			} else if (status['OPEN'] !== undefined) {
-				let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
-				if (opinion_vote_id !== undefined) {
-					setOpinionVote((await actor.revealOpinionVote(opinion_vote_id))['ok']);
-				}
-				let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, iteration))['ok'];
-				if (categorization_vote_id !== undefined) {
-					setCategorizationVote((await actor.revealCategorizationVote(categorization_vote_id))['ok']);
-				}
-			}
+    if (status['OPEN'] !== undefined || status['REJECTED'] !== undefined) {
+      let interest_vote_id = (await actor.findInterestVoteId(questionId, iteration))['ok'];
+      if (interest_vote_id !== undefined) {
+        setInterestVote((await actor.revealInterestVote(interest_vote_id))['ok']);
+      }
+    } else if (status['CLOSED'] !== undefined) {
+      let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
+      if (opinion_vote_id !== undefined) {
+        setOpinionVote((await actor.revealOpinionVote(opinion_vote_id))['ok']);
+      }
+      let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, iteration))['ok'];
+      if (categorization_vote_id !== undefined) {
+        setCategorizationVote((await actor.revealCategorizationVote(categorization_vote_id))['ok']);
+      }
     }
   }
 
@@ -63,33 +62,41 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
   }, [status, date, iteration, isHistory]);
 
 	return (
-    <div className={`group/status border-gray-500 pl-2 ml-4
-      ${showBorder? ( borderDashed ? "border-l-2 border-dashed" : "border-l-2 border-solid") : ""}
-      ${ !isHistory && showBorder ? "hover:border-gray-700 hover:dark:border-gray-300" : ""}
-    `}>
-      <div className={`text-gray-700 dark:text-gray-300 -ml-6 ${ !showBorder || borderDashed  ? "pb-3" : "pb-5"}`}>
-        <div className="flex flex-row gap-x-3">
-          <span className={"flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-2 " 
-          + ( isHistory ? "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400" :
-           "                       bg-blue-200                         fill-blue-500                         ring-blue-500 \
-                              dark:bg-blue-800                    dark:fill-blue-500                    dark:ring-blue-500" )
-          + ( !isHistory && showBorder ? 
-              "group-hover/status:bg-blue-300      group-hover/status:fill-blue-600      group-hover/status:ring-blue-600\
-          group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" 
-          : "")}>
-            {
-              status['CANDIDATE'] !== undefined ?
-                <CandidateIcon/> :
-              status['OPEN'] !== undefined ?
-                <OpenIcon/> :
-              status['CLOSED'] !== undefined ?
-                <ClosedIcon/> :
-              status['REJECTED'] !== undefined && status['REJECTED']['TIMED_OUT'] !== undefined ?
-                <TimedOutIcon/> :
-              status['REJECTED'] !== undefined && status['REJECTED']['CENSORED'] !== undefined ?
-                <CensoredIcon/> : <></>
-            }
-          </span>
+    <div>
+      <div className={`text-gray-700 dark:text-gray-300`}>
+        <div className="flex flex-row">
+          <div className={`flex flex-row justify-center px-1 group/status ${!isHistory && showBorder ? "hover:cursor-pointer" : ""}`}
+          onClick={(e) => { (!isHistory && showBorder) ? onStatusClicked(e) : {} }}>
+            <span className={"flex items-center justify-center w-8 h-8 rounded-full ring-2 z-10 " 
+            + ( isHistory ? "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400" :
+            "                       bg-blue-200                         fill-blue-500                         ring-blue-500 \
+                                dark:bg-blue-800                    dark:fill-blue-500                    dark:ring-blue-500" )
+            + ( !isHistory && showBorder ? 
+                "group-hover/status:bg-blue-300      group-hover/status:fill-blue-600      group-hover/status:ring-blue-600\
+            group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" 
+            : "")}>
+              {
+                status['CANDIDATE'] !== undefined ?
+                  <CandidateIcon/> :
+                status['OPEN'] !== undefined ?
+                  <OpenIcon/> :
+                status['CLOSED'] !== undefined ?
+                  <ClosedIcon/> :
+                status['REJECTED'] !== undefined && status['REJECTED']['TIMED_OUT'] !== undefined ?
+                  <TimedOutIcon/> :
+                status['REJECTED'] !== undefined && status['REJECTED']['CENSORED'] !== undefined ?
+                  <CensoredIcon/> : <></>
+              }
+            </span>
+            <div className={`border-gray-500 -ml-[17px] w-5 grow
+              ${ showBorder? "border-l-2" : "" }
+              ${ borderDashed ? "border-dashed" : "border-solid" }
+              ${ !showBorder || borderDashed  ? "pb-5" : "pb-8" }
+              ${ !isHistory && showBorder ? "group-hover/status:border-gray-700 group-hover/status:dark:border-gray-300" : ""}
+            `}>
+              {"." /* Hack to be able to display the border */}
+            </div>
+          </div>
           <div className="flex flex-col grow">
             <div className="flex flex-row items-center gap-x-1">
               <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
@@ -97,29 +104,27 @@ const StatusComponent = ({actor, questionId, status, date, iteration, isHistory,
               </div>
               <div className={`flex flex-row items-center gap-x-3`}>
               {
-                isHistory ? 
-                  status['CANDIDATE'] !== undefined ?
-                    <AppealDigest 
-                      aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
-                      selected={ selectedVote === VoteKind.INTEREST}
-                    />
-                  : status['OPEN'] !== undefined ?
-                  <div className="flex flex-row items-center gap-x-1">
-                    <OpinionAggregate
-                      aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.OPINION : undefined) }}
-                      selected={ selectedVote === VoteKind.OPINION}
-                    />
-                    {" · "}
-                    <CategorizationAggregateDigest 
-                      aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
-                      categories={categories}
-                      setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.CATEGORIZATION : undefined) }}
-                      selected={ selectedVote === VoteKind.CATEGORIZATION}
-                    />
-                  </div>
-                  : <> </>
+                status['OPEN'] !== undefined || status['REJECTED'] !== undefined ?
+                  <AppealDigest 
+                    aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
+                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
+                    selected={ selectedVote === VoteKind.INTEREST}
+                  />
+                : status['CLOSED'] !== undefined ?
+                <div className="flex flex-row items-center gap-x-1">
+                  <OpinionAggregate
+                    aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
+                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.OPINION : undefined) }}
+                    selected={ selectedVote === VoteKind.OPINION}
+                  />
+                  {" · "}
+                  <CategorizationAggregateDigest 
+                    aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
+                    categories={categories}
+                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.CATEGORIZATION : undefined) }}
+                    selected={ selectedVote === VoteKind.CATEGORIZATION}
+                  />
+                </div>
                 : <> </>
               }
               </div>

@@ -1,7 +1,7 @@
 import OpenVotes                                                  from "./OpenVotes";
 import IterationHistory                                           from "./IterationHistory";
 import InterestVote                                               from "./interest/InterestVote";
-import { VoteKind }                                               from "../utils";
+import { VoteKind, StatusEnum }                                   from "../utils";
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
 import { useEffect, useState }                                    from "react";
@@ -10,10 +10,11 @@ import { ActorSubclass }                                          from "@dfinity
 export type QuestionInput = {
 	actor: ActorSubclass<_SERVICE>,
 	categories: Map<Category, CategoryInfo>,
+	preferredStatus: StatusEnum | undefined,
   questionId: bigint
 };
 
-const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
+const QuestionComponent = ({actor, categories, preferredStatus, questionId}: QuestionInput) => {
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [iterationHistory, setIterationHistory] = useState<StatusInfo[][]>([]);
@@ -113,7 +114,7 @@ const QuestionComponent = ({actor, categories, questionId}: QuestionInput) => {
 								categories={categories}
 							/> : <></>
 				}
-				<IterationHistory actor={actor} categories={categories} iterationHistory={iterationHistory} questionId={questionId}/> 
+				<IterationHistory actor={actor} categories={categories} preferredStatus={preferredStatus} iterationHistory={iterationHistory} questionId={questionId}/> 
 				{/*
 					<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
 						<div className="flex w-1/3 justify-center items-center">

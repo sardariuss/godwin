@@ -1,5 +1,4 @@
 import Balance                                from "./base/Balance";
-import BeggingHand                            from "./icons/BeggingHand";
 
 import React, { useState, useEffect, useRef } from "react";
 

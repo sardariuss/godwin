@@ -165,6 +165,7 @@ module {
     #PrincipalIsAnonymous;
     #QuestionNotFound;
     #PositiveAppeal;
+    #NegativeAppeal;
   };
 
 };

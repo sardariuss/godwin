@@ -1,18 +1,20 @@
 import StatusHistoryComponent                                  from "./StatusHistory";
 import { StatusInfo, Category, CategoryInfo, _SERVICE }        from "./../../declarations/godwin_backend/godwin_backend.did";
 import SvgButton                                               from "./base/SvgButton";
+import { StatusEnum, statusToEnum }                            from "../utils";
 
 import React, { useEffect, useState }                          from "react";
 import { ActorSubclass }                                       from "@dfinity/agent";
 
 export type IterationHistoryInput = {
 	actor: ActorSubclass<_SERVICE>,
+  categories: Map<Category, CategoryInfo>,
+  preferredStatus: StatusEnum | undefined,
   iterationHistory: StatusInfo[][],
-	categories: Map<Category, CategoryInfo>,
   questionId: bigint
 };
 
-const IterationHistory = ({actor, categories, iterationHistory, questionId}: IterationHistoryInput) => {
+const IterationHistory = ({actor, categories, preferredStatus, iterationHistory, questionId}: IterationHistoryInput) => {
 
   const [currentIteration, setCurrentIteration] = useState<bigint | undefined>(undefined);
   const [showIterations,   setShowIterations  ] = useState<boolean           >(false);
@@ -24,10 +26,24 @@ const IterationHistory = ({actor, categories, iterationHistory, questionId}: Ite
     }
   };
 
+  const refreshPreferredIteration = () => {
+    var iteration = iterationHistory.length > 0 ? BigInt(iterationHistory.length - 1) : undefined;
+    // If there is a preferred status, find the iteration that has it
+    if (preferredStatus !== undefined) {
+      for(let i = iterationHistory.length - 1; i >= 0; i--) {
+        let status_history = iterationHistory[i];
+        if (status_history.length > 0 && statusToEnum(status_history[status_history.length - 1].status) === preferredStatus) {
+          iteration = (BigInt(i));
+          break;
+        }
+      }
+    }
+    setCurrentIteration(iteration);
+  }
+
 	useEffect(() => {
-    
-		setCurrentIteration(iterationHistory.length > 0 ? BigInt(iterationHistory.length - 1) : undefined);
-  }, [iterationHistory]);
+		refreshPreferredIteration();
+  }, [iterationHistory, preferredStatus]);
 
   useEffect(() => {
     document.addEventListener("click", (e) => {
@@ -76,7 +92,7 @@ const IterationHistory = ({actor, categories, iterationHistory, questionId}: Ite
             <div className={"absolute bg-white divide-y z-50 divide-gray-100 rounded-lg shadow top-4 w-30 dark:bg-gray-700 " + (showIterations ? "" : "hidden")}>
               <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
                 {
-                  [...Array.from(iterationHistory.entries())].reverse().map((elem, index) => (
+                  [...Array.from(iterationHistory.entries())].map((elem, index) => (
                     <li key={index}>
                       <div onClick={(e)=>{setCurrentIteration(BigInt(elem[0])); setShowIterations(false);}} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white hover:cursor-pointer">
                         { "iteration " + (elem[0] + 1).toString()}

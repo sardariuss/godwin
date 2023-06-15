@@ -108,10 +108,17 @@ module {
       if (time < _model.getLastPickDate() + Duration.toTime(_model.getSchedulerParameters().question_pick_rate)){
         result.set(#err(#TooSoon)); return;
       };
-      // Perform the transition
-      result.set(#ok);
+      // Verify the appeal is positive
+      let (iteration, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
+      let vote_id = _model.getInterestJoins().getVoteId(question_id, iteration);
+      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
+      if (appeal.score < 0.0) {
+        result.set(#err(#NegativeAppeal)); return;
+      };
       // Update the last pick date
       _model.setLastPickDate(time);
+      // Perform the transition
+      result.set(#ok);
     };
 
     func reopenQuestion(question_id: Nat, event: Event, result: TransitionResult) : async* () {

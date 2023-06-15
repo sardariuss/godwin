@@ -3,7 +3,7 @@ import { ActorContext, Sub } from "../ActorContext";
 import { TabButton } from "./TabButton";
 import { MainTabButton } from "./MainTabButton";
 import ListQuestions from "./ListQuestions";
-import { ScanResults, fromScanLimitResult } from "../utils";
+import { ScanResults, StatusEnum, fromScanLimitResult } from "../utils";
 import OpenQuestion from "./OpenQuestion";
 import SubBanner from "./SubBanner";
 
@@ -127,7 +127,7 @@ const MainQuestions = () => {
             </div>
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
-            <ListQuestions sub={sub} query_questions={queryQuestions}/>
+            <ListQuestions sub={sub} query_questions={queryQuestions} preferredStatus={ currentBrowseFilter === BrowseFilter.ARCHIVED ? StatusEnum.CLOSED : undefined }/>
           </div>
         </div>
     )
