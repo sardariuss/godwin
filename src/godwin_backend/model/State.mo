@@ -72,7 +72,7 @@ module {
       categorization     : {
         register            : Categorizations.Register;
         transactions        : Map<Principal, Map<VoteId, TransactionsRecord>>;
-       };
+      };
     };
     joins             : {
       interests          : Joins.Register;

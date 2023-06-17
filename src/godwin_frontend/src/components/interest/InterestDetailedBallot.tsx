@@ -4,6 +4,7 @@ import SvgButton                            from "../base/SvgButton";
 import TransactionIcon                      from "../icons/TransactionIcon";
 import TransactionsRecordComponent          from "../token/TransactionsRecord";
 import { Sub }                              from "../../ActorContext";
+import CONSTANTS                            from "../../Constants";
 import { Question, RevealedInterestBallot } from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import { useState, useEffect }              from "react";
@@ -17,14 +18,15 @@ export type InterestDetailedBallotInput = {
 
 const InterestDetailedBallot = ({sub, ballot} : InterestDetailedBallotInput) => {
 
-  const [question, setQuestion] = useState<Question | undefined>(undefined);
+  const [question, setQuestion] = useState<Question | null | undefined>(undefined);
   const [showTransactions, setShowTransactions] = useState<boolean>(false);
 
   const refreshQuestionIteration = async () => {
     setQuestion(old => { return undefined; });
-    let question_iteration = await await sub.actor.getQuestionIteration({ 'INTEREST' : null }, ballot.vote_id)
+    let question_iteration = await sub.actor.getQuestionIteration({ 'INTEREST' : null }, ballot.vote_id)
     if (question_iteration['ok'] !== undefined){
-      setQuestion(old => { return question_iteration['ok'][0] });
+      let q : Question | undefined = fromNullable(question_iteration['ok'][2]);
+      setQuestion(old => { return (q === undefined ? null : q); });
     }
   }
 
@@ -35,7 +37,7 @@ const InterestDetailedBallot = ({sub, ballot} : InterestDetailedBallotInput) => 
   return (
     <div className="flex flex-col items-center w-full grow justify-items-center border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
       <div className="grid grid-cols-10 text-black dark:text-white w-full px-2 items-center">
-        <div className="col-span-8 flex flex-col py-1 justify-between w-full space-y-2">
+        <div className="col-span-8 flex flex-col py-1 justify-between w-full space-y-2 justify-start text-sm font-normal">
         {
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -44,7 +46,11 @@ const InterestDetailedBallot = ({sub, ballot} : InterestDetailedBallotInput) => 
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
-					<div className={`w-full justify-start text-sm font-normal`}>
+          question === null ?
+          <div className="italic text-gray-600 dark:text-gray-400 text-xs">
+            { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
+          </div> :
+					<div>
           	{question.text}
         	</div>
 				}

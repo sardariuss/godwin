@@ -1,5 +1,7 @@
 import Types               "Types";
 import Categorizations     "votes/Categorizations";
+import Interests           "votes/Interests";
+import Opinions            "votes/Opinions";
 import Votes               "votes/Votes";
 import Joins               "votes/QuestionVoteJoins";
 import Categories          "Categories";
@@ -7,10 +9,7 @@ import SubaccountGenerator "token/SubaccountGenerator";
 import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
 import StatusManager       "questions/StatusManager";
-import Interests           "votes/Interests";
-import Opinions            "votes/Opinions";
 
-import Ref                 "../utils/Ref";
 import WRef                "../utils/wrappers/WRef";
 
 import Debug               "mo:base/Debug";
@@ -20,7 +19,6 @@ module {
 
   type Time                = Int;
   type Status              = Types.Status;
-  type Ref<T>              = Ref.Ref<T>;
   type WRef<T>             = WRef.WRef<T>;
   type SchedulerParameters = Types.SchedulerParameters;
   type Categories          = Categories.Categories;
@@ -31,40 +29,6 @@ module {
   type OpinionVotes        = Opinions.Opinions;
   type CategorizationVotes = Categorizations.Categorizations;
   type Joins               = Joins.QuestionVoteJoins;
-
-  public func build(
-    name: Ref<Text>,
-    master: Ref<Principal>,
-    last_pick_date: Ref<Time>,
-    params: Ref<SchedulerParameters>,
-    categories: Categories,
-    questions: Questions,
-    status_manager: StatusManager,
-    queries: QuestionQueries,
-    interest_votes: InterestVotes,
-    opinion_votes: OpinionVotes,
-    categorization_votes: CategorizationVotes,
-    interest_joins: Joins,
-    opinion_joins: Joins,
-    categorization_joins: Joins,
-  ) : Model {
-    Model(
-      WRef.WRef(name),
-      WRef.WRef(master),
-      WRef.WRef(last_pick_date),
-      WRef.WRef(params),
-      categories,
-      questions,
-      status_manager,
-      queries,
-      interest_votes,
-      opinion_votes,
-      categorization_votes,
-      interest_joins,
-      opinion_joins,
-      categorization_joins,
-    );
-  };
 
   public class Model(
     _name: WRef<Text>,

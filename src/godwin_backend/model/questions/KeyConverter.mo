@@ -3,6 +3,7 @@ import Types "Types";
 module {
 
   type Time                  = Int;
+  type QuestionId            = Types.QuestionId;
   type Question              = Types.Question;
   type Status                = Types.Status;
   type Key                   = Types.Key;
@@ -47,6 +48,17 @@ module {
       question_id;
       score;
     });
+  };
+
+  public func getQuestionId(key: Key) : QuestionId {
+    switch(key){
+      case(#AUTHOR        ({question_id})) { question_id; };
+      case(#TEXT          ({question_id})) { question_id; };
+      case(#DATE          ({question_id})) { question_id; };
+      case(#STATUS        ({question_id})) { question_id; };
+      case(#INTEREST_SCORE({question_id})) { question_id; };
+      case(#ARCHIVE       ({question_id})) { question_id; };
+    };
   };
 
 }

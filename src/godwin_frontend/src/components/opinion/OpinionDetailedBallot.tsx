@@ -15,13 +15,14 @@ export type OpinionDetailedBallotInput = {
 
 const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
 
-  const [question, setQuestion] = useState<Question | undefined>(undefined);
+  const [question, setQuestion] = useState<Question | null | undefined>(undefined);
 
   const refreshQuestionIteration = async () => {
     setQuestion(old => { return undefined; });
-    let question_iteration = await await sub.actor.getQuestionIteration({ 'OPINION' : null }, ballot.vote_id)
+    let question_iteration = await sub.actor.getQuestionIteration({ 'OPINION' : null }, ballot.vote_id)
     if (question_iteration['ok'] !== undefined){
-      setQuestion(old => { return question_iteration['ok'][0] });
+      let q : Question | undefined = fromNullable(question_iteration['ok'][2]);
+      setQuestion(old => { return (q === undefined ? null : q); });
     }
   }
 
@@ -41,6 +42,10 @@ const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
+          question === null ?
+          <div className="italic">
+            { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
+          </div> :
 					<div className={`w-full justify-start text-sm font-normal`}>
           	{question.text}
         	</div>

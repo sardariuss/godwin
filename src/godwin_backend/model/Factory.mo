@@ -20,6 +20,8 @@ import SubaccountGenerator    "token/SubaccountGenerator";
 import TokenInterface         "token/TokenInterface";
 import PayForNew              "token/PayForNew";
 
+import WRef                   "../utils/wrappers/WRef";
+
 module {
 
   type Question        = QuestionTypes.Question;
@@ -82,11 +84,11 @@ module {
       pay_rules
     );
 
-    let model = Model.build(
-      state.name,
-      state.master,
-      state.last_pick_date,
-      state.scheduler_params,
+    let model = Model.Model(
+      WRef.WRef(state.name),
+      WRef.WRef(state.master),
+      WRef.WRef(state.last_pick_date),
+      WRef.WRef(state.scheduler_params),
       categories,
       questions,
       status_manager,

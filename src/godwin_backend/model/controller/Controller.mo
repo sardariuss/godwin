@@ -231,7 +231,7 @@ module {
       _model.getCategorizationJoins().findVoteId(question_id, iteration);
     };
 
-    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
+    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
       let result = switch(vote_kind){
         case(#INTEREST){
           _model.getInterestJoins().findQuestionIteration(vote_id);
@@ -243,13 +243,13 @@ module {
           _model.getCategorizationJoins().findQuestionIteration(vote_id);
         };
       };
-      Result.mapOk<(QuestionId, Nat), (Question, Nat), FindQuestionIterationError>(result, func(question_iteration: (QuestionId, Nat)) : (Question, Nat){
-        (_model.getQuestions().getQuestion(question_iteration.0), question_iteration.1);
+      Result.mapOk<(QuestionId, Nat), (QuestionId, Nat, ?Question), FindQuestionIterationError>(result, func((question_id, iteration): (QuestionId, Nat)) : (QuestionId, Nat, ?Question){
+        (question_id, iteration, _model.getQuestions().findQuestion(question_id));
       });
     };
 
-    public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?Nat) : ScanLimitResult<VoteId> {
-      _model.getQueries().select(order_by, direction, limit, previous_id);
+    public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+      _model.getQueries().select(order_by, direction, limit, previous_id, null);
     };
 
     // @todo: should filter based on the question status in order to properly hide the author ?

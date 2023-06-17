@@ -30,13 +30,6 @@ textarea {
   outline: none;
 }
 
-input {
-  border: none;
-  background-color: transparent;
-  resize: none;
-  outline: none;
-}
-
 .bar-result {
   background: linear-gradient(
     to right,

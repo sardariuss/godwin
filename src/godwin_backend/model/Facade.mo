@@ -167,7 +167,7 @@ module {
     };
       
     public func putCategorizationBallot(principal: Principal, vote_id: VoteId, date: Time, cursors: CursorArray) : async* Result<(), PutBallotError> {
-        await* _controller.putCategorizationBallot(principal, vote_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
+      await* _controller.putCategorizationBallot(principal, vote_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
     };
 
     public func getIterationHistory(question_id: Nat) : Result<ShareableIterationHistory, ReopenQuestionError> {
@@ -228,7 +228,7 @@ module {
       );
     };
 
-    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(Question, Nat), FindQuestionIterationError> {
+    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
       _controller.getQuestionIteration(vote_kind, vote_id);
     };
 

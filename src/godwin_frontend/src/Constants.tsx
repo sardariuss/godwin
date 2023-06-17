@@ -48,7 +48,10 @@ const CONSTANTS = {
       name: 'N/A'
     }
   },
-  DEFAULT_USER_NAME: 'New user',
+  USER_NAME: {
+    DEFAULT: 'New user',
+    MAX_LENGTH: 32,
+  },
   TOKEN_DECIMALS: 2,
   CHART: {
     BAR_CHART_BORDER_COLOR_LIGHT: '#bbbbbb',
@@ -56,7 +59,8 @@ const CONSTANTS = {
     BAR_CHART_BORDER_WIDTH: 1.2,
   },
   HELP_MESSAGE: {
-    CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...'
+    CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...',
+    DELETED_QUESTION: 'This question has been deleted.',
   }
 };
 

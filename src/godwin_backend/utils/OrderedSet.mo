@@ -16,6 +16,7 @@ module {
   type Direction          = Types.Direction;
   type ScanLimitResult<K> = Types.ScanLimitResult<K>;
 
+  public type Predicate<K>  = (K) -> Bool;
   public type OrderedSet<K> = RBT.Tree<K, ()>;
 
   public func init<K>() : OrderedSet<K> {
@@ -54,8 +55,19 @@ module {
     Iter.map<(K, ()), K>(RBT.iter(set, toRBTDirection(dir)), func(entry: (K, ())) : K { entry.0; });
   };
 
-  public func scanLimit<K>(set: OrderedSet<K>, compare: (K, K) -> Order.Order, lower_bound: K, upper_bound: K, dir: Direction, limit: Nat) : ScanLimitResult<K> {
-    let scan = RBT.scanLimit(set, compare, lower_bound, upper_bound, toRBTDirection(dir), limit);
+  public func scanLimit<K>(
+    set: OrderedSet<K>,
+    compare: (K, K) -> Order.Order,
+    lower_bound: K,
+    upper_bound: K,
+    dir: Direction,
+    limit: Nat,
+    filter: ?Predicate<K>
+  ) : ScanLimitResult<K> {
+    let scan = switch(filter){
+      case(?f) { RBT.scanLimitWithFilter(set, compare, lower_bound, upper_bound, toRBTDirection(dir), limit, func(k: K, v: ()) : Bool { f(k); }); };
+      case(null) { RBT.scanLimit(set, compare, lower_bound, upper_bound, toRBTDirection(dir), limit); };
+    };
     {
       keys = Array.map<(K, ()), K>(scan.results, func (entry: (K, ())) : K { entry.0; });
       next = scan.nextKey;

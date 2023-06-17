@@ -4,6 +4,7 @@ import TransactionIcon                            from "../icons/TransactionIcon
 import TransactionsRecordComponent                from "../token/TransactionsRecord";
 import { toMap, getStrongestCategoryCursorInfo }  from "../../utils";
 import { Sub }                                    from "../../ActorContext";
+import CONSTANTS                                  from "../../Constants";
 import { Question, RevealedCategorizationBallot } from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import { useState, useEffect }                    from "react";
@@ -17,17 +18,17 @@ export type CategorizationDetailedBallotInput = {
 
 const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBallotInput) => {
 
-  const [question, setQuestion] = useState<Question | undefined>(undefined);
+  const [question, setQuestion] = useState<Question | null | undefined>(undefined);
   const [showTransactions, setShowTransactions] = useState<boolean>(false);
 
   const refreshQuestionIteration = async () => {
     setQuestion(old => { return undefined; });
-    let question_iteration = await await sub.actor.getQuestionIteration({ 'CATEGORIZATION' : null }, ballot.vote_id)
+    let question_iteration = await sub.actor.getQuestionIteration({ 'CATEGORIZATION' : null }, ballot.vote_id)
     if (question_iteration['ok'] !== undefined){
-      setQuestion(old => { return question_iteration['ok'][0] });
+      let q : Question | undefined = fromNullable(question_iteration['ok'][2]);
+      setQuestion(old => { return (q === undefined ? null : q); });
     }
   }
-
   useEffect(() => {
     refreshQuestionIteration();
   }, [ballot]);
@@ -44,6 +45,10 @@ const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBall
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
+          question === null ?
+          <div className="italic">
+            { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
+          </div> :
 					<div className={`w-full justify-start text-sm font-normal`}>
           	{question.text}
         	</div>

@@ -119,8 +119,11 @@ module {
       Utils.has2D(map_, hash1_, key1, hash2_, key);
     };
 
-    public func getAll(key1: K1): ?Map<K2, V> {
-      Map.get(map_, hash1_, key1);
+    public func getAll(key1: K1): Map<K2, V> {
+      switch(Map.get(map_, hash1_, key1)){
+        case(null) { Map.new<K2, V>(hash2_); };
+        case(?m) { m };
+      };
     };
       
     public func put(key1: K1, key2: K2, value: V): ?V {

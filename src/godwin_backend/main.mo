@@ -190,7 +190,7 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.queryCategorizationBallots(caller, voter, direction, limit, previous_id);
   };
 
-  public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(Question, Nat), FindQuestionIterationError> {
+  public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
     _facade.getQuestionIteration(vote_kind, vote_id);
   };
 

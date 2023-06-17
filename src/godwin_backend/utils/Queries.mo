@@ -18,8 +18,9 @@ module {
   // For convenience: from base module
   type Order           = Order.Order;
   type Iter<T>         = Iter.Iter<T>;
-  type OrderedSet<K>   = OrderedSet.OrderedSet<K>;
   
+  type OrderedSet<K>   = OrderedSet.OrderedSet<K>;
+  type Predicate<K>    = OrderedSet.Predicate<K>;
   type WMap<K, V>      = WMap.WMap<K, V>;
   type Map<K, V>       = Map.Map<K, V>;
   
@@ -94,7 +95,8 @@ module {
       lower_bound: ?Nat,
       upper_bound: ?Nat,
       direction: Direction,
-      limit: Nat
+      limit: Nat,
+      filter: ?Predicate<Key>
     ) : ScanLimitResult {
       switch(_register.getOpt(order_by)){
         case(null){ Debug.trap("Cannot find ordered_set for this order_by"); };
@@ -107,7 +109,7 @@ module {
                 case(?last){
                   let lower = Option.getMapped(lower_bound, func(id: Nat) : Key { unwrapKey(id, order_by); }, first);
                   let upper = Option.getMapped(upper_bound, func(id: Nat) : Key { unwrapKey(id, order_by); }, last);
-                  let scan = OrderedSet.scanLimit(inner.ordered_set, _compare_keys, lower, upper, direction, limit);
+                  let scan = OrderedSet.scanLimit(inner.ordered_set, _compare_keys, lower, upper, direction, limit, filter);
                   {
                     keys = Array.map(scan.keys, func(key: Key) : Nat { _get_identifier(key); });
                     next = Option.map(scan.next, func(key: Key) : Nat { _get_identifier(key); });
@@ -124,11 +126,12 @@ module {
       order_by: OrderBy,
       direction: Direction,
       limit: Nat,
-      previous: ?Nat
+      previous: ?Nat,
+      filter: ?Predicate<Key>
     ) : ScanLimitResult {
       switch(direction){
-        case(#FWD){ scan(order_by, previous, null, direction, limit); };
-        case(#BWD){ scan(order_by, null, previous, direction, limit); };
+        case(#FWD){ scan(order_by, previous, null, direction, limit, filter); };
+        case(#BWD){ scan(order_by, null, previous, direction, limit, filter); };
       };
     };
 

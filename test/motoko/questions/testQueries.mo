@@ -3,12 +3,11 @@ import QueriesFactory "../../../src/godwin_backend/model/questions/QueriesFactor
 import KeyConverter   "../../../src/godwin_backend/model/questions/KeyConverter";
 
 import TestifyTypes   "../testifyTypes";
+import Principals     "../Principals";
 
 import Testify        "mo:testing/Testify";
 import SuiteState     "mo:testing/SuiteState";
 import Status         "mo:testing/Status";
-
-import Principals     "../Principals";
 
 import Principal      "mo:base/Principal";
 import Array          "mo:base/Array";
@@ -85,7 +84,7 @@ module {
             equal(
               testifyElement(testify_scan_limit_result, { keys = [4, 3]; next = ?2; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#TEXT, null, null, #FWD, 2);
+                queries.scan(#TEXT, null, null, #FWD, 2, null);
               }
             )
           ),
@@ -94,7 +93,7 @@ module {
             equal(
               testifyElement(testify_scan_limit_result, { keys = [2, 1]; next = ?0; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#TEXT, ?2  , null, #FWD, 2);
+                queries.scan(#TEXT, ?2  , null, #FWD, 2, null);
               }
             )
           ),
@@ -103,7 +102,7 @@ module {
             equal(
               testifyElement(testify_scan_limit_result, { keys = [4, 0]; next = ?3; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#DATE, null, null, #BWD, 2);
+                queries.scan(#DATE, null, null, #BWD, 2, null);
               }
             )
           ),
@@ -112,7 +111,7 @@ module {
             equal(
               testifyElement(testify_scan_limit_result, { keys = [3, 2]; next = ?1; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#DATE, null, ?3  , #BWD, 2);
+                queries.scan(#DATE, null, ?3  , #BWD, 2, null);
               }
             )
           ),
@@ -121,7 +120,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 0]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -130,7 +129,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [2, 1, 4]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -139,7 +138,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0, 4, 1, 2, 3]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#INTEREST_SCORE, null, null, #BWD, 5);
+                queries.scan(#INTEREST_SCORE, null, null, #BWD, 5, null);
               }
             )
           ),
@@ -164,7 +163,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -173,7 +172,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [2]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -182,7 +181,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [1, 4]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5);
+                queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -191,7 +190,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5);
+                queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -200,7 +199,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 1, 0, 4, 2]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#INTEREST_SCORE, null, null, #FWD, 5);
+                queries.scan(#INTEREST_SCORE, null, null, #FWD, 5, null);
               }
             )
           ),
@@ -225,7 +224,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [0]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5);
+                queries.scan(#STATUS(#CANDIDATE), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -234,7 +233,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = []; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5);
+                queries.scan(#STATUS(#OPEN), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -243,7 +242,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [1, 4]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5);
+                queries.scan(#STATUS(#CLOSED), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -252,7 +251,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5);
+                queries.scan(#STATUS(#REJECTED), null, null, #FWD, 5, null);
               }
             )
           ),
@@ -261,7 +260,7 @@ module {
             equal(
               testifyElement<ScanLimitResult>(testify_scan_limit_result, { keys = [3, 1, 0, 4]; next = null; }),
               func (queries: QuestionQueries) : ScanLimitResult {
-                queries.scan(#INTEREST_SCORE, null, null, #FWD, 5);
+                queries.scan(#INTEREST_SCORE, null, null, #FWD, 5, null);
               }
             )
           ),
