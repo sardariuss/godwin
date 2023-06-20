@@ -1,7 +1,9 @@
-import OpenVotes                                                  from "./OpenVotes";
-import IterationHistory                                           from "./IterationHistory";
+import OpinionVote                                                from "./opinion/OpinionVote";
+import CategorizationVote                                         from "./categorization/CategorizationVote";
+import StatusHistoryComponent                                     from "./StatusHistory";
 import InterestVote                                               from "./interest/InterestVote";
-import { VoteKind, StatusEnum }                                   from "../utils";
+import { VoteKind }                                               from "../utils";
+import CONSTANTS                                                  from "../Constants";
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
 
 import { useEffect, useState }                                    from "react";
@@ -10,14 +12,14 @@ import { ActorSubclass }                                          from "@dfinity
 export type QuestionInput = {
 	actor: ActorSubclass<_SERVICE>,
 	categories: Map<Category, CategoryInfo>,
-	preferredStatus: StatusEnum | undefined,
-  questionId: bigint
+  questionId: bigint,
+	vote_kind: VoteKind | undefined
 };
 
-const QuestionComponent = ({actor, categories, preferredStatus, questionId}: QuestionInput) => {
+const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionInput) => {
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
-	const [iterationHistory, setIterationHistory] = useState<StatusInfo[][]>([]);
+	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
 	const [currentStatus, setCurrentStatus] = useState<StatusInfo | undefined>(undefined);
 	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
 
@@ -26,44 +28,46 @@ const QuestionComponent = ({actor, categories, preferredStatus, questionId}: Que
 		setQuestion(question['ok']);
 	}
 
-	const fetchIterationHistory = async () => {
-		var iterations : StatusInfo[][] = [];
+	const fetchStatusHistory = async () => {
 		var statuses : StatusInfo[] = [];
 		var current : StatusInfo | undefined = undefined;
 
-		const history = await actor.getIterationHistory(questionId);
+		const history = await actor.getStatusHistory(questionId);
 		
 		if (history['ok'] !== undefined){
-			iterations = history['ok'];	
-			if (iterations.length !== 0) {
-				statuses = iterations[iterations.length - 1];
-				if (statuses.length !== 0) {
-					current = statuses[statuses.length - 1];
-				}
+			statuses = history['ok'];	
+			if (statuses.length !== 0) {
+				current = statuses[statuses.length - 1];
 			}
 		}
 	
-		setIterationHistory(iterations);
+		setStatusHistory(statuses);
 		setCurrentStatus(current);
 	}
 
-	const fetchQuestionVoteJoins = async (iteration_index: number, status_info: StatusInfo) => {
+	const fetchQuestionVoteJoins = async (status_info: StatusInfo) => {
 
 		var joins = new Map<VoteKind, bigint>();
 				
-		if (status_info.status['CANDIDATE'] !== undefined) {
-			let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(iteration_index)))['ok'];
-			if (interest_vote_id !== undefined) {
-				joins.set(VoteKind.INTEREST, interest_vote_id);
+		if (vote_kind === VoteKind.INTEREST) {
+			if (status_info.status['CANDIDATE'] !== undefined) {
+				let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(status_info.iteration)))['ok'];
+				if (interest_vote_id !== undefined) {
+					joins.set(VoteKind.INTEREST, interest_vote_id);
+				}
 			}
-		} else if (status_info.status['OPEN'] !== undefined) {
-			let opinion_vote_id = (await actor.findOpinionVoteId(questionId, BigInt(iteration_index)))['ok'];
+		} else if (vote_kind === VoteKind.OPINION) {
+			let iteration = status_info.status['OPEN'] !== undefined ? status_info.iteration : status_info.iteration + BigInt(1);
+			let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
 			if (opinion_vote_id !== undefined) {
 				joins.set(VoteKind.OPINION, opinion_vote_id);
 			}
-			let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(iteration_index)))['ok'];
-			if (categorization_vote_id !== undefined) {
-				joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
+		} else if (vote_kind === VoteKind.CATEGORIZATION) {
+			if (status_info.status['OPEN'] !== undefined) {
+				let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(status_info.iteration)))['ok'];
+				if (categorization_vote_id !== undefined) {
+					joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
+				}
 			}
 		}
 
@@ -72,26 +76,22 @@ const QuestionComponent = ({actor, categories, preferredStatus, questionId}: Que
 
 	useEffect(() => {
 		fetchQuestion();
-		fetchIterationHistory();
+		fetchStatusHistory();
   }, []);
 
 	useEffect(() => {
-		if (iterationHistory.length > 0 && currentStatus !== undefined) {
-			fetchQuestionVoteJoins(iterationHistory.length - 1, currentStatus);
+		if (currentStatus !== undefined) {
+			fetchQuestionVoteJoins(currentStatus);
 		} else {
 			setQuestionVoteJoins(new Map<VoteKind, bigint>());
 		}
-	}, [iterationHistory, currentStatus]);
+	}, [currentStatus, vote_kind]);
 
 	return (
-		<div className="group grid grid-cols-11 text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
-			<div className="w-full flex flex-col col-span-2 items-center justify-self-center">
-				{
-					questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
-						<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/> : <></>
-				}
-			</div>
-			<div className="col-span-9 flex flex-col py-1 px-1 justify-between w-full space-y-2">
+		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10
+			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "" : "pr-10"}`}>
+			<div className={`flex flex-col py-1 px-1 justify-between w-full space-y-1
+				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : "w-1/5"}`}>
 				{
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -100,21 +100,33 @@ const QuestionComponent = ({actor, categories, preferredStatus, questionId}: Que
 						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
 						<span className="sr-only">Loading...</span>
 					</div> :
-					<div className={`w-full justify-start text-sm font-normal`}>
+					<div className={`w-full justify-start text-sm font-normal break-words`}>
           	{question.text}
         	</div>
 				}
 				{
-					currentStatus === undefined ? <></> :
-						questionVoteJoins.get(VoteKind.OPINION) !== undefined && questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
-							<OpenVotes 
+						questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
+							<OpinionVote
+								actor={actor} 
+                polarizationInfo={CONSTANTS.OPINION_INFO} 
+                voteId={questionVoteJoins.get(VoteKind.OPINION)} 
+              /> :
+						questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
+							<CategorizationVote 
 								actor={actor}
-								opinionVoteId={questionVoteJoins.get(VoteKind.OPINION)}
-								categorizationVoteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
 								categories={categories}
+								voteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
 							/> : <></>
 				}
-				<IterationHistory actor={actor} categories={categories} preferredStatus={preferredStatus} iterationHistory={iterationHistory} questionId={questionId}/> 
+				{
+					statusHistory.length === 0 ? <></> :
+					<StatusHistoryComponent 
+						actor={actor}
+						categories={categories}
+						questionId={questionId}
+						statusHistory={statusHistory}
+					/>
+				}
 				{/*
 					<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
 						<div className="flex w-1/3 justify-center items-center">
@@ -135,6 +147,12 @@ const QuestionComponent = ({actor, categories, preferredStatus, questionId}: Que
 					</div>
 				*/}
 			</div>
+			{
+				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
+				<div className="w-1/5 flex flex-col col-span-2 items-center justify-self-center">
+					<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
+				</div> : <></>
+			}
 		</div>
 	);
 };

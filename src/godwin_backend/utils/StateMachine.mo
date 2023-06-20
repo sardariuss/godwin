@@ -18,32 +18,36 @@ module {
   type Iter<T> = Iter.Iter<T>;
   type Set<T> = Set.Set<T>;
   type WRef<T> = WRef.WRef<T>;
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Result<Ok> = Result.Result<Ok, Text>;
 
-  public type Condition<M, E, Err> = (M, E, TransitionResult<Err>) -> async* ();
-  public type Transitions<S, E, Err, M> = WMap2D<S, ?S, Condition<M, E, Err>>;
+  public type Condition<M, E, Ok> = (M, E, TransitionResult<Ok>) -> async* ();
+  public type Transitions<S, E, Ok, M> = WMap2D<S, ?S, Condition<M, E, Ok>>;
   public type Events<E, S> = WMap2D<E, S, Set<?S>>;
-  public type Schema<S, E, Err, M> = {
-    transitions: Transitions<S, E, Err, M>;
+  public type Schema<S, E, Ok, M> = {
+    transitions: Transitions<S, E, Ok, M>;
     events: Events<E, S>;
     state_opt_hash: Map.HashUtils<?S>;
   };
-  public type EventResult<S, Err> = WRef<Result<?S, [(?S, Err)]>>;
-  public type TransitionResult<Err> = WRef<Result<(), Err>>;
+  public type OkInfo<S, Ok> = {
+    state: ?S;
+    info: ?Ok;
+  };
+  public type EventResult<S, Ok> = WRef<Result.Result<OkInfo<S, Ok>, [(?S, Text)]>>;
+  public type TransitionResult<Ok> = WRef<Result<?Ok>>;
 
-  public func init<S, E, Err, M>(
+  public func init<S, E, Ok, M>(
     state_hash: Map.HashUtils<S>,
     state_opt_hash: Map.HashUtils<?S>,
-    event_hash: Map.HashUtils<E>,
-  ) : Schema<S, E, Err, M> {
+    event_hash: Map.HashUtils<E>
+  ) : Schema<S, E, Ok, M> {
     {
-      transitions = WMap.new2D<S, ?S, Condition<M, E, Err>>(state_hash, state_opt_hash);
+      transitions = WMap.new2D<S, ?S, Condition<M, E, Ok>>(state_hash, state_opt_hash);
       events = WMap.new2D<E, S, Set<?S>>(event_hash, state_hash);
       state_opt_hash;
     };
   };
 
-  public func addTransition<S, E, Err, M>(schema: Schema<S, E, Err, M>, from: S, to: ?S, condition: Condition<M, E, Err>, events: [E]) {
+  public func addTransition<S, E, Ok, M>(schema: Schema<S, E, Ok, M>, from: S, to: ?S, condition: Condition<M, E, Ok>, events: [E]) {
     ignore schema.transitions.put(from, to, condition);
     for (event in Array.vals<E>(events)) {
       let set = Option.get(schema.events.getOpt(event, from), Set.new<?S>(schema.state_opt_hash));
@@ -52,22 +56,22 @@ module {
     };
   };
 
-  public func initEventResult<S, Err>() : EventResult<S, Err> {
-    WRef.WRef<Result<?S, [(?S, Err)]>>(Ref.init(#err([])));
+  public func initEventResult<S, Ok>() : EventResult<S, Ok> {
+    WRef.WRef<Result.Result<OkInfo<S, Ok>, [(?S, Text)]>>(Ref.init(#err([])));
   };
 
-  public func submitEvent<S, E, Err, M>(schema: Schema<S, E, Err, M>, current: S, model: M, event: E, result: EventResult<S, Err>) : async* () {
+  public func submitEvent<S, E, Ok, M>(schema: Schema<S, E, Ok, M>, current: S, model: M, event: E, result: EventResult<S, Ok>) : async* () {
     let { transitions; events; } = schema;
-    var errors : [(?S, Err)] = [];
+    var errors : [(?S, Text)] = [];
     for(next in getNextStates(events, event, current, schema.state_opt_hash)) {
       switch(transitions.getOpt(current, next)){
         case(null){ }; // no transition to that state, nothing to do
         case(?condition){
-          let transition_result = WRef.WRef<Result<(), Err>>(Ref.init(#ok)); // @todo: dangereous to init with ok!
+          let transition_result = WRef.WRef<Result.Result<?Ok, Text>>(Ref.init(#err("Unset transition result")));
           await* condition(model, event, transition_result); 
           switch(transition_result.get()){
-            case(#ok){ 
-              result.set(#ok(next));
+            case(#ok(info)){ 
+              result.set(#ok({ state = next; info; }));
               return;
             };
             case(#err(err)){ 

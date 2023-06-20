@@ -1,23 +1,23 @@
 import { ListComponents }                                                                         from "../base/ListComponents";
-import { TabButton }                                                                              from "../TabButton";
 import InterestDetailedBallot, { InterestDetailedBallotInput }                                    from "../interest/InterestDetailedBallot";
 import OpinionDetailedBallot, { OpinionDetailedBallotInput }                                      from "../opinion/OpinionDetailedBallot";
 import CategorizationDetailedBallot, { CategorizationDetailedBallotInput }                        from "../categorization/CategorizationDetailedBallot";
-import { fromScanLimitResult, ScanResults, VoteKind, VoteKinds, voteKindToString }                from "../../utils";
+import { fromScanLimitResult, ScanResults, VoteKind, voteKindToString }                           from "../../utils";
 import { Sub }                                                                                    from "./../../ActorContext";
 import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import { Principal }                                                                              from "@dfinity/principal";
-import React, { useState }                                                                        from "react";
+import { useState } from "react";
+
+type QueryFunction<T> = (direction: Direction, limit: bigint, next: T | undefined) => Promise<ScanResults<T>>;
 
 type VoterHistoryProps = {
   principal: Principal;
   sub: Sub;
+  voteKind: VoteKind;
 };
 
-export const VoterHistory = ({principal, sub}: VoterHistoryProps) => {
-
-  const [voteKind, setVoteKind] = useState<VoteKind>(VoteKind.INTEREST);
+export const VoterHistory = ({principal, sub, voteKind, }: VoterHistoryProps) => {
 
   const queryInterestBallots = (direction: Direction, limit: bigint, next: RevealedInterestBallot | undefined) : Promise<ScanResults<RevealedInterestBallot>> => {
     return sub.actor.queryInterestBallots(principal, direction, limit, next? [next.vote_id] : []).then(
@@ -37,51 +37,46 @@ export const VoterHistory = ({principal, sub}: VoterHistoryProps) => {
     )
   };
 
+  // Workaround: Put the functions into state to avoid unwanted refreshes
+  const [queryInterestBallotsState] = useState<QueryFunction<RevealedInterestBallot>>(() => queryInterestBallots);
+  const [queryOpinionBallotsState] = useState<QueryFunction<RevealedOpinionBallot>>(() => queryOpinionBallots);
+  const [queryCategorizationBallotsState] = useState<QueryFunction<RevealedCategorizationBallot>>(() => queryCategorizationBallots);
+
+  // Workaround: put each list into a div to crash when switching voteKind
   return (
-    <div className="flex flex-col w-full">
-      <div className="border-b dark:border-gray-700">
-        <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
-        {
-          VoteKinds.map((type, index) => (
-            <li key={index} className="w-1/3">
-              <TabButton label={voteKindToString(type)} isCurrent={type === voteKind} setIsCurrent={() => setVoteKind(type)}/>
-            </li>
-          ))
-        }
-        </ul>
-      </div>
+    <div className="w-full flex flex-col">
       <div>
       {
         voteKind === VoteKind.INTEREST ?
-          React.createElement(ListComponents<RevealedInterestBallot, InterestDetailedBallotInput>, {
-            query_components: queryInterestBallots,
-            generate_input: (ballot: RevealedInterestBallot) : InterestDetailedBallotInput => { return { ballot, sub} },
-            build_component: InterestDetailedBallot,
-            generate_key: (ballot: RevealedInterestBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }
-          }) : <></>
+          <ListComponents<RevealedInterestBallot, InterestDetailedBallotInput>
+            query_components={queryInterestBallotsState}
+            generate_input={(ballot: RevealedInterestBallot) : InterestDetailedBallotInput => { return { ballot, sub} }}
+            build_component={InterestDetailedBallot}
+            generate_key={(ballot: RevealedInterestBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }}
+          /> : <></>
+      }
+      </div>
+      <div className="w-full flex">
+      {
+        voteKind === VoteKind.OPINION ?
+          <ListComponents<RevealedOpinionBallot, OpinionDetailedBallotInput> 
+            query_components={queryOpinionBallotsState} 
+            generate_input={(ballot: RevealedOpinionBallot) : OpinionDetailedBallotInput => { return { ballot, sub} }}
+            build_component={OpinionDetailedBallot}
+            generate_key={(ballot: RevealedOpinionBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }}
+          /> : <></>
       }
       </div>
       <div>
       {
-        voteKind === VoteKind.OPINION ?
-          React.createElement(ListComponents<RevealedOpinionBallot, OpinionDetailedBallotInput>, {
-            query_components: queryOpinionBallots,
-            generate_input: (ballot: RevealedOpinionBallot) : OpinionDetailedBallotInput => { return { ballot, sub} },
-            build_component: OpinionDetailedBallot,
-            generate_key: (ballot: RevealedOpinionBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }
-          }) : <></>
-        }
-      </div>
-      <div>
-      {
         voteKind === VoteKind.CATEGORIZATION ?
-          React.createElement(ListComponents<RevealedCategorizationBallot, CategorizationDetailedBallotInput>, {
-            query_components: queryCategorizationBallots,
-            generate_input: (ballot: RevealedCategorizationBallot) : CategorizationDetailedBallotInput => { return { ballot, sub} },
-            build_component: CategorizationDetailedBallot,
-            generate_key: (ballot: RevealedCategorizationBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }
-          }) : <></>
-        }
+          <ListComponents<RevealedCategorizationBallot, CategorizationDetailedBallotInput>
+            query_components={queryCategorizationBallotsState}
+            generate_input={(ballot: RevealedCategorizationBallot) : CategorizationDetailedBallotInput => { return { ballot, sub} }}
+            build_component={CategorizationDetailedBallot}
+            generate_key={(ballot: RevealedCategorizationBallot) => { return voteKindToString(voteKind) + "_" + ballot.vote_id.toString() }}
+          /> : <></>
+      }
       </div>
     </div>
   );

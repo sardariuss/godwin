@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ScanResults }         from "../../utils";
 import { Direction, }          from "../../../declarations/godwin_backend/godwin_backend.did";
-import React from "react";
+import React                   from "react";
 
 export type ListComponentsInput<T, Input> = {
   query_components: (direction: Direction, limit: bigint, next: T | undefined) => Promise<ScanResults<T>>,
@@ -63,7 +63,7 @@ export const ListComponents = <T, Input>({query_components, generate_input, buil
   }, [trigger_next]);
   
 	return (
-    <ol className="w-full">
+    <ol className="w-full flex flex-col">
       {[...results.ids].map((element) => (
         <li key={generate_key(element)}>
           {

@@ -86,6 +86,11 @@ module {
     #BALLOT_CHANGE_FORBIDDEN;
   };
 
+  public type RevealBallotAuthorization = {
+    #REVEAL_BALLOT_ALWAYS;
+    #REVEAL_BALLOT_VOTE_CLOSED;
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };
@@ -99,9 +104,7 @@ module {
     #VoteNotFound;
   };
 
-  public type OpenVoteError = {
-    #PayinError: PayTypes.TransferFromMasterError;
-  };
+  public type OpenVoteError = PayTypes.TransferFromMasterError;
 
   public type GetVoteError = {
     #VoteNotFound;

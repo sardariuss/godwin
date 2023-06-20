@@ -77,6 +77,13 @@ module {
       };
     };
 
+    public func getQuestionVotes(question_id: QuestionId) : Map<Nat, VoteId> {
+      switch(_indexed_by_question.getOpt(question_id)){
+        case(null)   { Map.new<Nat, VoteId>(Map.nhash); };
+        case(?votes) { votes;                           };
+      };
+    };
+
     public func getVoteId(question_id: QuestionId, iteration: Nat) : VoteId {
       switch(findVoteId(question_id, iteration)){
         case(#ok(vote_id))                { vote_id                                };

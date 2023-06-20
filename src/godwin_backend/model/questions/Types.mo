@@ -29,13 +29,23 @@ module {
     };
   };
 
+  public type CursorVotes = {
+    opinion_vote_id: Nat;
+    categorization_vote_id: Nat;
+  };
+
+  public type StatusInput = {
+    #INTEREST_VOTE: Nat;
+    #CURSOR_VOTES: CursorVotes;
+  };
+
   public type StatusInfo = {
     status: Status;
     date: Time;
+    iteration: Nat;
   };
 
   public type StatusHistory = Buffer<StatusInfo>;
-  public type IterationHistory = Buffer<StatusHistory>;
 
   public type QuestionQueries = Queries.Queries<OrderBy, Key>;
   
@@ -52,6 +62,7 @@ module {
     };
     #INTEREST_SCORE;
     #ARCHIVE;
+    #OPINION_VOTE;
   };
   
   public type Key = {
@@ -61,17 +72,20 @@ module {
     #STATUS: StatusEntry;
     #INTEREST_SCORE: InterestScore;
     #ARCHIVE: DateEntry;
+    #OPINION_VOTE: OpinionVoteEntry;
   };
 
-  public type DateEntry     = { question_id: Nat; date: Time; };
-  public type TextEntry     = DateEntry and { text: Text; };
-  public type AuthorEntry   = DateEntry and { author: Principal; };
-  public type StatusEntry   = DateEntry and { status: Status; };
-  public type InterestScore = { question_id: Nat; score: Float; };
+  public type DateEntry        = { question_id: Nat; date: Time; };
+  public type TextEntry        = DateEntry and { text: Text; };
+  public type AuthorEntry      = DateEntry and { author: Principal; };
+  public type StatusEntry      = DateEntry and { status: Status; };
+  public type InterestScore    = { question_id: Nat; score: Float; };
+  public type OpinionVoteEntry = DateEntry and { is_early: Bool; };
 
   public type OpenQuestionError = {
     #PrincipalIsAnonymous;
     #TextTooLong;
+
   };
 
   public type ScanLimitResult = UtilsTypes.ScanLimitResult<QuestionId>;

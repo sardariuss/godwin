@@ -52,8 +52,11 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
     <div>
     {
       cursorInfo === null ? <></> :
-      <div className={`grid grid-cols-6 items-center w-full justify-items-center grow transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-        <div className={`col-span-5 justify-center`}>
+      <div className={`grid grid-cols-4 items-center w-full justify-items-center grow transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+        <div className="col-span-1">
+          {/* spacer */}
+        </div>
+        <div className={`col-span-2 justify-center`}>
         {
           voteDate !== null ?
           <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/> :

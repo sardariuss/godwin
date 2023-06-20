@@ -1,7 +1,7 @@
-import { CursorInfo, } from "../../utils";
-import { timeAgo } from "../../utils/DateUtils";
-import HiddenIcon from "../icons/HiddenIcon";
-import { TransactionsRecord } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { CursorInfo, }             from "../../utils";
+import { timeAgo }                 from "../../utils/DateUtils";
+import HiddenIcon                  from "../icons/HiddenIcon";
+import { TransactionsRecord }      from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import TransactionsRecordComponent from "../token/TransactionsRecord";
 
@@ -14,8 +14,8 @@ export type CursorBallotProps = {
 const CursorBallot = ({cursorInfo, dateNs, tx_record} : CursorBallotProps) => {
 
   return (
-    <div className="flex flex-row items-center w-full">
-      <div className="flex flex-col items-center w-full grow justify-items-center">
+    <div className="flex flex-row items-center w-full grow">
+      <div className="flex flex-col items-center w-full justify-items-center">
         {
           cursorInfo === null ? 
           <div className="w-6 h-6 icon-svg">

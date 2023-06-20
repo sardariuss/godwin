@@ -23,28 +23,29 @@ import Prim       "mo:prim";
 module {
 
   // For convenience: from base module
-  type Principal          = Principal.Principal;
-  type Result <Ok, Err>   = Result.Result<Ok, Err>;
+  type Principal                 = Principal.Principal;
+  type Result <Ok, Err>          = Result.Result<Ok, Err>;
     
-  type Map<K, V>          = Map.Map<K, V>;
-  type Set<K>             = Set.Set<K>;
+  type Map<K, V>                 = Map.Map<K, V>;
+  type Set<K>                    = Set.Set<K>;
 
-  type VoteId             = Types.VoteId;
-  type Ballot<T>          = Types.Ballot<T>;
-  type RevealedBallot<T>  = Types.RevealedBallot<T>;
-  type Vote<T, A>         = Types.Vote<T, A>;
-  type GetVoteError       = Types.GetVoteError;
-  type FindBallotError    = Types.FindBallotError;
-  type RevealVoteError    = Types.RevealVoteError;
-  type PutBallotError     = Types.PutBallotError;
+  type VoteId                    = Types.VoteId;
+  type Ballot<T>                 = Types.Ballot<T>;
+  type RevealedBallot<T>         = Types.RevealedBallot<T>;
+  type Vote<T, A>                = Types.Vote<T, A>;
+  type GetVoteError              = Types.GetVoteError;
+  type FindBallotError           = Types.FindBallotError;
+  type RevealVoteError           = Types.RevealVoteError;
+  type PutBallotError            = Types.PutBallotError;
+  type RevealBallotAuthorization = Types.RevealBallotAuthorization;
 
-  type ScanLimitResult<K> = UtilsTypes.ScanLimitResult<K>;
-  type Direction          = UtilsTypes.Direction;
+  type ScanLimitResult<K>        = UtilsTypes.ScanLimitResult<K>;
+  type Direction                 = UtilsTypes.Direction;
   
-  type TransactionsRecord = PayTypes.TransactionsRecord;
+  type TransactionsRecord        = PayTypes.TransactionsRecord;
 
-  type VotePolicy<T, A>   = VotePolicy.VotePolicy<T, A>;
-  type PayToVote<T, A>    = PayToVote.PayToVote<T, A>;
+  type VotePolicy<T, A>          = VotePolicy.VotePolicy<T, A>;
+  type PayToVote<T, A>           = PayToVote.PayToVote<T, A>;
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
     "Ballot: { date = " # Int.toText(ballot.date) # "; answer = " # toText(ballot.answer) # "; }";
@@ -87,7 +88,8 @@ module {
   public class Votes<T, A>(
     _register: Register<T, A>,
     _policy: VotePolicy<T, A>,
-    _pay_to_vote: ?PayToVote<T, A>
+    _pay_to_vote: ?PayToVote<T, A>,
+    _reveal_ballot_authorization: RevealBallotAuthorization
   ) {
 
     let _ballot_locks = Set.new<(Principal, VoteId)>(pnhash);
@@ -217,10 +219,15 @@ module {
         case(null) { return #err(#BallotNotFound); };
         case(?b) { b; };
       };
+      let answer = if (Principal.equal(caller, voter) or _reveal_ballot_authorization == #REVEAL_BALLOT_ALWAYS or vote.status == #CLOSED){
+        ?ballot.answer; 
+      } else {
+        null; 
+      };
       #ok({
         vote_id;
         date = ballot.date;
-        answer = if (Principal.equal(caller, voter) or vote.status == #CLOSED) { ?ballot.answer; } else { null; };
+        answer;
         transactions_record = findBallotTransactions(voter, vote_id);
       });
     };

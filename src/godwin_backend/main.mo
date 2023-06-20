@@ -25,7 +25,6 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type Duration                     = Types.Duration;
   type Status                       = Types.Status;
   type TransactionsRecord           = Types.TransactionsRecord;
-  type StatusHistory                = Types.StatusHistory;
   type PolarizationArray            = Types.PolarizationArray;
   type AddCategoryError             = Types.AddCategoryError;
   type RemoveCategoryError          = Types.RemoveCategoryError;
@@ -56,13 +55,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   type RevealVoteError              = Types.RevealVoteError;
   type FindVoteError                = Types.FindVoteError;
   type StatusInfo                   = Types.StatusInfo;
-  type TransitionError              = Types.TransitionError;
   type QuestionId                   = Types.QuestionId;
   type VoteId                       = Types.VoteId;
   type QuestionOrderBy              = Types.QuestionOrderBy;
   type Direction                    = Types.Direction;
   type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
-  type IterationHistory             = Types.IterationHistory;
   type VoteKind                     = Types.VoteKind;
   type FindQuestionIterationError   = Types.FindQuestionIterationError;
   type RevealedInterestBallot       = Types.RevealedInterestBallot;
@@ -118,11 +115,11 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.getQuestion(question_id);
   };
 
-  public shared({caller}) func openQuestion(text: Text) : async Result<Question, OpenQuestionError> {
+  public shared({caller}) func openQuestion(text: Text) : async Result<QuestionId, OpenQuestionError> {
     await* _facade.openQuestion(caller, text, Time.now());
   };
 
-  public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, TransitionError)]> {
+  public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, Text)]> {
     await* _facade.reopenQuestion(caller, question_id, Time.now());
   };
 
@@ -150,8 +147,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     await* _facade.putCategorizationBallot(caller, vote_id, Time.now(), answer);
   };
 
-  public query func getIterationHistory(question_id: QuestionId) : async Result<IterationHistory, ReopenQuestionError> {
-    _facade.getIterationHistory(question_id);
+  public query func getStatusHistory(question_id: QuestionId) : async Result<[StatusInfo], ReopenQuestionError> {
+    _facade.getStatusHistory(question_id);
   };
 
   public query func revealInterestVote(vote_id: VoteId) : async Result<InterestVote, RevealVoteError>{
@@ -198,12 +195,16 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
-  public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)]))] {
+  public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)], Bool))] {
     _facade.getVoterConvictions(principal);
   };
 
   public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
     _facade.queryQuestions(order_by, direction, limit, previous_id);
+  };
+
+  public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
+    _facade.queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
   };
 
   public shared func run() : async() {

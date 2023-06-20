@@ -23,6 +23,7 @@ module {
   type Principal                    = Principal.Principal;
   type Time                         = Int;
   type Buffer<T>                    = Buffer.Buffer<T>;
+  type StableBuffer<T>              = StableBuffer.StableBuffer<T>;
 
   // For convenience: from other modules
   type Controller                   = Controller.Controller;
@@ -49,8 +50,6 @@ module {
   type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
   type Direction                    = Types.Direction;
   type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
-  type ShareableStatusHistory       = Types.StatusHistory;   
-  type ShareableIterationHistory    = Types.IterationHistory;
   type FindQuestionIterationError   = Types.FindQuestionIterationError;
   type VoteKind                     = Types.VoteKind;
   type TransactionsRecord           = Types.TransactionsRecord;
@@ -60,7 +59,6 @@ module {
   type StatusHistoryMap             = QuestionTypes.StatusHistory;
   type StatusInfo                   = QuestionTypes.StatusInfo;
   type StatusHistory                = QuestionTypes.StatusHistory;
-  type IterationHistory             = QuestionTypes.IterationHistory;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
@@ -84,7 +82,6 @@ module {
   type GetVoteError                 = Types.GetVoteError;
   type OpenVoteError                = Types.OpenVoteError;
   type RevealVoteError              = Types.RevealVoteError;
-  type TransitionError              = Types.TransitionError;
   type OpenQuestionError            = Types.OpenQuestionError; // @todo
   type FindVoteError                = Types.FindVoteError;
 
@@ -131,11 +128,11 @@ module {
       _controller.queryQuestions(order_by, direction, limit, previous_id);
     };
 
-    public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<Question, OpenQuestionError> {
+    public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<QuestionId, OpenQuestionError> {
       await* _controller.openQuestion(caller, text, date);
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, TransitionError)]> {
+    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, Text)]> {
       await* _controller.reopenQuestion(caller, question_id, date);
     };
 
@@ -170,10 +167,11 @@ module {
       await* _controller.putCategorizationBallot(principal, vote_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
     };
 
-    public func getIterationHistory(question_id: Nat) : Result<ShareableIterationHistory, ReopenQuestionError> {
-      Result.mapOk<IterationHistory, ShareableIterationHistory, ReopenQuestionError>(_controller.getIterationHistory(question_id), func(history: IterationHistory) : ShareableIterationHistory {
-        toShareableIterationHistory(history);
-      });
+    public func getStatusHistory(question_id: Nat) : Result<[StatusInfo], ReopenQuestionError> {
+      Result.mapOk<StatusHistory, [StatusInfo], ReopenQuestionError>(
+        _controller.getStatusHistory(question_id), func(history: StableBuffer<StatusInfo>) : [StatusInfo] {
+          StableBuffer.toArray<StatusInfo>(history);
+        });
     };
 
     public func revealInterestVote(vote_id: VoteId) : Result<InterestVote, RevealVoteError> {
@@ -236,7 +234,11 @@ module {
       _controller.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)]))] {
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+      _controller.queryFreshVotes(principal, vote_kind, direction, limit, previous_id);
+    };
+
+    public func getVoterConvictions(principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)], Bool))] {
       Utils.mapToArray(_controller.getVoterConvictions(principal));
     };
 
@@ -266,14 +268,6 @@ module {
       ballots = Buffer.toArray(ballots);
       aggregate = Utils.trieToArray(vote.aggregate);
     };
-  };
-
-  func toShareableIterationHistory(history: IterationHistory) : ShareableIterationHistory {
-    let iterations = StableBuffer.init<ShareableStatusHistory>();
-    for (iteration in StableBuffer.vals(history)){
-      StableBuffer.add(iterations, StableBuffer.toArray(iteration));
-    };
-    StableBuffer.toArray(iterations);
   };
 
 };

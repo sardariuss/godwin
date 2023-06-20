@@ -48,14 +48,15 @@ module {
       if (Random.random(fuzzer) < 0.3) {
         let principal = Random.randomUser(fuzzer, principals);
         switch(await* facade.openQuestion(principal, Random.randomQuestion(fuzzer), time)){
-          case(#ok(question)){ Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question.id));};
+          case(#ok(question_id)){ Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question_id));};
           case(#err(err)) { Debug.print("Fail to open question: " # openQuestionErrorToString(err)); };
         };
       };
 
       for (question_id in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
-        let iteration_history = Utils.unwrapOk(facade.getIterationHistory(question_id));
-        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration_history.size() - 1));
+        let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
+        let iteration = status_history[status_history.size() - 1].iteration;
+        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, interest_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(interest_vote_id));
@@ -68,9 +69,10 @@ module {
       };
 
       for (question_id in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
-        let iteration_history = Utils.unwrapOk(facade.getIterationHistory(question_id));
-        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration_history.size() - 1));
-        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration_history.size() - 1));
+        let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
+        let iteration = status_history[status_history.size() - 1].iteration;
+        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration));
+        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, opinion_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(opinion_vote_id));
@@ -118,26 +120,18 @@ module {
 
   func openQuestionErrorToString(openQuestionError: Types.OpenQuestionError) : Text {
     switch(openQuestionError){
-      case(#TextTooLong)                    { "TextTooLong";            };
-      case(#PrincipalIsAnonymous)           { "PrincipalIsAnonymous";   };
-      case(#OpenInterestVoteFailed(openVoteError)){
-        switch(openVoteError){
-          case(#PayinError(transferFromMasterError)){
-            switch(transferFromMasterError){
-              case(#CanisterCallError(_))   { "CanisterCallError";      };
-              case(#TooOld)                 { "TooOld";                 };
-              case(#CreatedInFuture(_))     { "CreatedInFuture";        };
-              case(#BadFee(_))              { "BadFee";                 };
-              case(#BadBurn(_))             { "BadBurn";                };
-              case(#InsufficientFunds(_))   { "InsufficientFunds";      };
-              case(#Duplicate(_))           { "Duplicate";              };
-              case(#TemporarilyUnavailable) { "TemporarilyUnavailable"; };
-              case(#GenericError(_))        { "GenericError";           };
-              case(#NotAllowed)             { "NotAllowed";             };
-            };
-          };
-        };
-      };
+      case(#TextTooLong)            { "TextTooLong";            };
+      case(#PrincipalIsAnonymous)   { "PrincipalIsAnonymous";   };
+      case(#CanisterCallError(_))   { "CanisterCallError";      };
+      case(#TooOld)                 { "TooOld";                 };
+      case(#CreatedInFuture(_))     { "CreatedInFuture";        };
+      case(#BadFee(_))              { "BadFee";                 };
+      case(#BadBurn(_))             { "BadBurn";                };
+      case(#InsufficientFunds(_))   { "InsufficientFunds";      };
+      case(#Duplicate(_))           { "Duplicate";              };
+      case(#TemporarilyUnavailable) { "TemporarilyUnavailable"; };
+      case(#GenericError(_))        { "GenericError";           };
+      case(#NotAllowed)             { "NotAllowed";             };
     };
   };
 

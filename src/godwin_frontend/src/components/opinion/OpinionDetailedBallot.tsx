@@ -31,9 +31,9 @@ const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
   }, [ballot]);
 
   return (
-    <div className="flex flex-col items-center w-full grow justify-items-center border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850">
-      <div className="grid grid-cols-10 text-black dark:text-white w-full px-2 items-center">
-        <div className="col-span-9 flex flex-col py-1 justify-between w-full space-y-2">
+    <div className="flex flex-col items-center w-full grow justify-items-center border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-5 pr-12">
+      <div className="grid grid-cols-10 text-black dark:text-white w-full space-x-10 items-center">
+        <div className="col-span-9 flex flex-col py-1 justify-between w-full space-y-2 justify-start text-sm font-normal break-words">
         {
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -51,7 +51,8 @@ const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
         	</div>
 				}
         </div>
-        <div className="w-full col-span-1 justify-self-center">
+        {/* Cursor ballots require some x padding because of the range input*/}
+        <div className="col-span-1 w-full justify-self-center">
           <CursorBallot 
             cursorInfo={fromNullable(ballot.answer) !== undefined ? toCursorInfo(fromNullable(ballot.answer), CONSTANTS.OPINION_INFO) : null}
             dateNs={ballot.date}/>

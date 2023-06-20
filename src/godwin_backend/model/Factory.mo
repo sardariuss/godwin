@@ -41,8 +41,6 @@ module {
     
     let questions = Questions.Questions(state.questions);
 
-    let status_manager = StatusManager.build(state.status.register);
-
     let queries = QuestionQueriesFactory.build(state.queries.register);
 
     let pay_rules = PayRules.build(state.price_parameters);
@@ -82,6 +80,13 @@ module {
       token_interface,
       categories,
       pay_rules
+    );
+
+    let status_manager = StatusManager.build(
+      state.status.register,
+      interest_join,
+      opinion_join,
+      categorization_join
     );
 
     let model = Model.Model(

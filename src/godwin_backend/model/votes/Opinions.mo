@@ -31,7 +31,8 @@ module {
         removeOpinionBallot,
         Polarization.nil()
       ),
-      null
+      null,
+      #REVEAL_BALLOT_ALWAYS
     );
   };
 

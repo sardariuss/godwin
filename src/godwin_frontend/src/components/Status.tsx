@@ -1,33 +1,32 @@
-import AppealDigest                                                                                from "./interest/AppealDigest";
-import OpinionAggregate                                                                            from "./opinion/OpinionAggregate";
-import AppealBar                                                                                   from "./interest/AppealBar";
-import CategorizationAggregateDigest                                                               from "./categorization/CategorizationAggregateDigest";
-import SinglePolarizationBar                                                                       from "./base/SinglePolarizationBar";
-import CategorizationPolarizationBars                                                              from "./categorization/CategorizationPolarizationBars";
-import { statusToString, toMap, VoteKind }                                                         from "../utils";
-import { nsToStrDate }                                                                             from "../utils/DateUtils";
-import CONSTANTS                                                                                   from "../Constants";
-import { _SERVICE, Status, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "../../declarations/godwin_backend/godwin_backend.did";
+import AppealDigest                                                                                    from "./interest/AppealDigest";
+import OpinionAggregate                                                                                from "./opinion/OpinionAggregate";
+import AppealBar                                                                                       from "./interest/AppealBar";
+import CategorizationAggregateDigest                                                                   from "./categorization/CategorizationAggregateDigest";
+import SinglePolarizationBar                                                                           from "./base/SinglePolarizationBar";
+import CategorizationPolarizationBars                                                                  from "./categorization/CategorizationPolarizationBars";
+import { statusToString, toMap, VoteKind }                                                             from "../utils";
+import { nsToStrDate }                                                                                 from "../utils/DateUtils";
+import CONSTANTS                                                                                       from "../Constants";
+import { _SERVICE, StatusInfo, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "../../declarations/godwin_backend/godwin_backend.did";
 
-import { ActorSubclass }                                                                           from "@dfinity/agent";
-import { useEffect, useState }                                                                     from "react";
+import { ActorSubclass }                                                                               from "@dfinity/agent";
+import { useEffect, useState }                                                                         from "react";
 
-import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon }                         from "./icons/StatusIcons";
+import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon }                             from "./icons/StatusIcons";
 
 type Props = {
   actor: ActorSubclass<_SERVICE>,
   questionId: bigint;
-  status: Status;
+  statusInfo: StatusInfo;
+  previousStatusInfo: StatusInfo | undefined;
   onStatusClicked: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  date: bigint;
-  iteration: bigint;
   isHistory: boolean;
   categories: Map<Category, CategoryInfo>
   showBorder: boolean;
   borderDashed: boolean;
 };
 
-const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iteration, isHistory, categories, showBorder, borderDashed}: Props) => {
+const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onStatusClicked, isHistory, categories, showBorder, borderDashed}: Props) => {
 
   const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
   const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
@@ -40,17 +39,18 @@ const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iter
     setOpinionVote(undefined);
     setCategorizationVote(undefined);
 
-    if (status['OPEN'] !== undefined || status['REJECTED'] !== undefined) {
-      let interest_vote_id = (await actor.findInterestVoteId(questionId, iteration))['ok'];
+    // Reveal the results of the vote(s) associated with the previous state
+    if (previousStatusInfo !== undefined && previousStatusInfo.status['CANDIDATE'] !== undefined) {
+      let interest_vote_id = (await actor.findInterestVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (interest_vote_id !== undefined) {
         setInterestVote((await actor.revealInterestVote(interest_vote_id))['ok']);
       }
-    } else if (status['CLOSED'] !== undefined) {
-      let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
+    } else if (previousStatusInfo !== undefined && previousStatusInfo.status['OPEN'] !== undefined) {
+      let opinion_vote_id = (await actor.findOpinionVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (opinion_vote_id !== undefined) {
         setOpinionVote((await actor.revealOpinionVote(opinion_vote_id))['ok']);
       }
-      let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, iteration))['ok'];
+      let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (categorization_vote_id !== undefined) {
         setCategorizationVote((await actor.revealCategorizationVote(categorization_vote_id))['ok']);
       }
@@ -59,7 +59,7 @@ const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iter
 
   useEffect(() => {
     fetchRevealedVotes();
-  }, [status, date, iteration, isHistory]);
+  }, [statusInfo, previousStatusInfo, isHistory]);
 
 	return (
     <div>
@@ -76,15 +76,15 @@ const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iter
             group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" 
             : "")}>
               {
-                status['CANDIDATE'] !== undefined ?
+                statusInfo.status['CANDIDATE'] !== undefined ?
                   <CandidateIcon/> :
-                status['OPEN'] !== undefined ?
+                statusInfo.status['OPEN'] !== undefined ?
                   <OpenIcon/> :
-                status['CLOSED'] !== undefined ?
+                statusInfo.status['CLOSED'] !== undefined ?
                   <ClosedIcon/> :
-                status['REJECTED'] !== undefined && status['REJECTED']['TIMED_OUT'] !== undefined ?
+                statusInfo.status['REJECTED'] !== undefined && statusInfo.status['REJECTED']['TIMED_OUT'] !== undefined ?
                   <TimedOutIcon/> :
-                status['REJECTED'] !== undefined && status['REJECTED']['CENSORED'] !== undefined ?
+                statusInfo.status['REJECTED'] !== undefined && statusInfo.status['REJECTED']['CENSORED'] !== undefined ?
                   <CensoredIcon/> : <></>
               }
             </span>
@@ -100,17 +100,17 @@ const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iter
           <div className="flex flex-col grow">
             <div className="flex flex-row items-center gap-x-1">
               <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-                { statusToString(status) } 
+                { statusToString(statusInfo.status) } 
               </div>
               <div className={`flex flex-row items-center gap-x-3`}>
               {
-                status['OPEN'] !== undefined || status['REJECTED'] !== undefined ?
+                statusInfo.status['OPEN'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
                   <AppealDigest 
                     aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
                     setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
                     selected={ selectedVote === VoteKind.INTEREST}
                   />
-                : status['CLOSED'] !== undefined ?
+                : statusInfo.status['CLOSED'] !== undefined ?
                 <div className="flex flex-row items-center gap-x-1">
                   <OpinionAggregate
                     aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
@@ -129,7 +129,7 @@ const StatusComponent = ({actor, questionId, status, onStatusClicked, date, iter
               }
               </div>
             </div>
-            <div className={`text-xs font-extralight ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>{ nsToStrDate(date) }</div>
+            <div className={`text-xs font-extralight ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>{ nsToStrDate(statusInfo.date) }</div>
             <div className={ selectedVote !== undefined ? "mt-5" : "" }>
               <div>
               {

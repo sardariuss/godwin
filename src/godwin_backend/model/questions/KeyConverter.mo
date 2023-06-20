@@ -50,6 +50,10 @@ module {
     });
   };
 
+  public func toOpinionVoteKey(question_id: Nat, date: Time, is_early: Bool) : Key {
+    #OPINION_VOTE({question_id; date; is_early;})
+  };
+
   public func getQuestionId(key: Key) : QuestionId {
     switch(key){
       case(#AUTHOR        ({question_id})) { question_id; };
@@ -58,6 +62,7 @@ module {
       case(#STATUS        ({question_id})) { question_id; };
       case(#INTEREST_SCORE({question_id})) { question_id; };
       case(#ARCHIVE       ({question_id})) { question_id; };
+      case(#OPINION_VOTE  ({question_id})) { question_id; };
     };
   };
 

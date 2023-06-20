@@ -103,11 +103,6 @@ module {
 
     public func createQuestion(author: Principal, date: Int, text: Text) : Question {
 
-      // Verify the question can be created
-      if (canCreateQuestion(author, date, text) != null){
-        Debug.trap("The question cannot be created.");
-      };
-
       // Create the question and add it to the register
       let question = {
         id = _register.question_index;

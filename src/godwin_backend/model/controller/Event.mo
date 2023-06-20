@@ -6,7 +6,7 @@ module {
   
   public type Event = {
     #TIME_UPDATE:      { #id; #data: { time: Time; }; };
-    #REOPEN_QUESTION : { #id; #data: { caller: Principal; } };
+    #REOPEN_QUESTION : { #id; #data: { date: Time; caller: Principal; } };
   };
 
   func toKey(event: Event) : Text {

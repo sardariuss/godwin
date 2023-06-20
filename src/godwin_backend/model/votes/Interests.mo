@@ -42,6 +42,7 @@ module {
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
+  type QuestionId             = QuestionTypes.QuestionId;
   type QuestionQueries        = QuestionTypes.QuestionQueries;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayForNew              = PayForNew.PayForNew;
@@ -89,7 +90,8 @@ module {
           ),
           pay_rules.getInterestVotePrice(),
           pay_rules.computeInterestVotePayout
-        )
+        ),
+        #REVEAL_BALLOT_VOTE_CLOSED
       ),
       pay_for_new,
       joins,
@@ -106,17 +108,15 @@ module {
     _pay_rules: PayRules
   ) {
     
-    public func openVote(principal: Principal, on_success: () -> (Question, Nat)) : async* Result<Question, OpenVoteError> {
-      let vote_id = switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), _votes.newVote)){
-        case (#err(err)) { return #err(#PayinError(err)); };
-        case (#ok(id)) { id; };
+    public func openVote(principal: Principal, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
+      switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), _votes.newVote)){
+        case(#err(err)) { #err(err); };
+        case(#ok(vote_id)) {
+          let question_id = on_success(vote_id);
+          _queries.add(KeyConverter.toInterestScoreKey(question_id, 0.0));
+          #ok((question_id, vote_id));
+        };
       };
-      let (question, iteration) = on_success();
-      // Add a join between the question and the vote
-      _joins.addJoin(question.id, iteration, vote_id);
-      // Update the associated key for the #INTEREST_SCORE order_by
-      _queries.add(KeyConverter.toInterestScoreKey(question.id, _votes.getVote(vote_id).aggregate.score));
-      #ok(question);
     };
 
     public func closeVote(vote_id: Nat) : async* () {
@@ -163,6 +163,10 @@ module {
 
     public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot> {
       _votes.revealBallots(caller, voter, direction, limit, previous_id);
+    };
+
+    public func getVoterBallots(principal: Principal) : Map<VoteId, Ballot> {
+      _votes.getVoterBallots(principal);
     };
 
   };

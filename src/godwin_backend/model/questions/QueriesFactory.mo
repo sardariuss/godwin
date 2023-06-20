@@ -12,6 +12,7 @@ import Debug        "mo:base/Debug";
 import Text         "mo:base/Text";
 import Principal    "mo:base/Principal";
 import Float        "mo:base/Float";
+import Bool         "mo:base/Bool";
 
 module {
 
@@ -29,6 +30,7 @@ module {
   type StatusEntry           = Types.StatusEntry;
   type InterestScore         = Types.InterestScore;
   type QuestionQueries       = Types.QuestionQueries;
+  type OpinionVoteEntry      = Types.OpinionVoteEntry;
 
   public type Register = Queries.Register<OrderBy, Key>;
 
@@ -49,6 +51,7 @@ module {
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #ARCHIVE);
+    addOrderBy(register, #OPINION_VOTE);
 
     let queries = Queries.build<OrderBy, Key>(
       register,
@@ -72,6 +75,7 @@ module {
       case(#STATUS(#REJECTED))            { "STATUS(REJECTED)";    };
       case(#INTEREST_SCORE)               { "INTEREST_SCORE";      };
       case(#ARCHIVE)                      { "ARCHIVE";             };
+      case(#OPINION_VOTE)                 { "OPINION_VOTE";        };
     };
   };
 
@@ -94,17 +98,19 @@ module {
       };
       case(#INTEREST_SCORE(_)) { #INTEREST_SCORE;     };
       case(#ARCHIVE(_))        { #ARCHIVE;            };
+      case(#OPINION_VOTE(_))   { #OPINION_VOTE;       };
     };
   };
 
   func compareKeys(a: Key, b: Key) : Order {
     switch(toOrderBy(a)){
-      case(#AUTHOR)         { compareAuthorEntries (unwrapAuthor(a),        unwrapAuthor(b)       ); };
-      case(#TEXT)           { compareTextEntries   (unwrapText(a),          unwrapText(b)         ); };
-      case(#DATE)           { compareDateEntries   (unwrapDateEntry(a),     unwrapDateEntry(b)    ); };
-      case(#STATUS(_))      { compareDateEntries   (unwrapStatusEntry(a),   unwrapStatusEntry(b)  ); };
-      case(#INTEREST_SCORE) { compareInterestScores(unwrapInterestScore(a), unwrapInterestScore(b)); };
-      case(#ARCHIVE)        { compareDateEntries   (unwrapDateEntry(a),     unwrapDateEntry(b)    ); };
+      case(#AUTHOR)         { compareAuthorEntries     (unwrapAuthor(a),           unwrapAuthor(b)           ); };
+      case(#TEXT)           { compareTextEntries       (unwrapText(a),             unwrapText(b)             ); };
+      case(#DATE)           { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
+      case(#STATUS(_))      { compareDateEntries       (unwrapStatusEntry(a),      unwrapStatusEntry(b)      ); };
+      case(#INTEREST_SCORE) { compareInterestScores    (unwrapInterestScore(a),    unwrapInterestScore(b)    ); };
+      case(#ARCHIVE)        { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
+      case(#OPINION_VOTE)   { compareOpinionVoteEntries(unwrapOpinionVoteEntry(a), unwrapOpinionVoteEntry(b) ); };
     };
   };
 
@@ -116,6 +122,7 @@ module {
       case(#STATUS(entry))         { entry.question_id; };
       case(#INTEREST_SCORE(entry)) { entry.question_id; };
       case(#ARCHIVE(entry))        { entry.question_id; };
+      case(#OPINION_VOTE(entry))   { entry.question_id; };
     };
   };
 
@@ -133,8 +140,8 @@ module {
   };
   func unwrapDateEntry(key: Key) : DateEntry {
     switch(key){
-      case(#DATE(entry)) { entry; };
-      case(#ARCHIVE(entry)) { entry; };
+      case(#DATE(entry))         { entry; };
+      case(#ARCHIVE(entry))      { entry; };
       case(_) { Debug.trap("Failed to unwrap date entry"); };
     };
   };
@@ -148,6 +155,12 @@ module {
     switch(key){
       case(#INTEREST_SCORE(interest_score)) { interest_score; };
       case(_) { Debug.trap("Failed to unwrap appeal score"); };
+    };
+  };
+  func unwrapOpinionVoteEntry(key: Key) : OpinionVoteEntry {
+    switch(key){
+      case(#OPINION_VOTE(entry)) { entry; };
+      case(_) { Debug.trap("Failed to unwrap opinion vote entry"); };
     };
   };
 
@@ -168,6 +181,12 @@ module {
   func compareInterestScores(a: InterestScore, b: InterestScore) : Order {
     strictCompare<Float>(a.score, b.score, Float.compare, 
       Nat.compare(a.question_id, b.question_id));
+  };
+  func compareOpinionVoteEntries(a: OpinionVoteEntry, b: OpinionVoteEntry) : Order {
+    // Reverse the compare on is_early to put the early votes at the end
+    strictCompare<Bool>(b.is_early, a.is_early, Bool.compare, 
+      strictCompare<Int>(a.date, b.date, Int.compare, 
+        Nat.compare(a.question_id, b.question_id)));
   };
 
   func strictCompare<T>(a: T, b: T, compare: (T, T) -> Order, on_equality: Order) : Order {

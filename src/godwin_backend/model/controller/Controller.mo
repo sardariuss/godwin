@@ -53,6 +53,7 @@ module {
   type Duration                    = Types.Duration;
   type VoteKind                    = Types.VoteKind;
   type SchedulerParameters         = Types.SchedulerParameters;
+  type StatusInput                 = Types.StatusInput;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -60,7 +61,6 @@ module {
   type StatusInfo                  = QuestionTypes.StatusInfo;
   type Key                         = QuestionTypes.Key;
   type OrderBy                     = QuestionTypes.OrderBy;
-  type IterationHistory            = QuestionTypes.IterationHistory;
   type Category                    = VoteTypes.Category;
   type VoterHistory                = VoteTypes.VoterHistory;
   type Ballot<T>                   = VoteTypes.Ballot<T>;
@@ -91,7 +91,6 @@ module {
   type GetVoteError                = Types.GetVoteError;
   type OpenVoteError               = Types.OpenVoteError;
   type RevealVoteError             = Types.RevealVoteError;
-  type TransitionError             = Types.TransitionError;
   type OpenQuestionError           = Types.OpenQuestionError; // @todo
 
   public func build(model: Model) : Controller {
@@ -146,30 +145,33 @@ module {
       Result.fromOption(_model.getQuestions().findQuestion(question_id), #QuestionNotFound);
     };
 
-    public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<Question, OpenQuestionError> {
+    public func openQuestion(caller: Principal, text: Text, date: Time) : async* Result<QuestionId, OpenQuestionError> {
       // Verify if the arguments are valid
       switch(_model.getQuestions().canCreateQuestion(caller, date, text)){
         case(?err) { return #err(err); };
         case(null) {};
       };
-      // Callback on create question if opening the interest vote succeeds
-      let open_question = func() : (Question, Nat) {
+      // Callback called if opening the vote succeeds
+      let create_question = func(vote_id: VoteId) : QuestionId {
+        // Create the question
         let question = _model.getQuestions().createQuestion(caller, date, text);
+        // Set the status
+        ignore _model.getStatusManager().setStatus(question.id, #CANDIDATE, date, ?#INTEREST_VOTE(vote_id));
+        // Add to the status queries
         _model.getQueries().add(KeyConverter.toStatusKey(question.id, #CANDIDATE, date));
-        let iteration = _model.getStatusManager().newIteration(question.id);
-        _model.getStatusManager().setCurrentStatus(question.id, #CANDIDATE, date);
-        (question, iteration);
+        // Return the question
+        question.id;
       };
-      // Open the interest vote
-      Result.mapErr<Question, OpenVoteError, OpenQuestionError>(
-        await* _model.getInterestVotes().openVote(caller, open_question),
-        func(err: OpenVoteError) : OpenQuestionError { #OpenInterestVoteFailed(err); }
-      );
+      // Open up the vote
+      switch(await* _model.getInterestVotes().openVote(caller, create_question)){
+        case(#err(err)) { return #err(err); };
+        case(#ok((question_id, _))) { return #ok(question_id); };
+      };
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, TransitionError)]> {
-      let result = StateMachine.initEventResult<Status, TransitionError>();
-      await* submitEvent(question_id, #REOPEN_QUESTION(#data({caller})), date, result);
+    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, Text)]> {
+      let result = StateMachine.initEventResult<Status, StatusInput>();
+      await* submitEvent(question_id, #REOPEN_QUESTION(#data({date; caller;})), date, result);
       switch(result.get()){
         case(#err(err)) { return #err(err); };
         case(#ok(_)) { return #ok; };
@@ -200,10 +202,10 @@ module {
       await* _model.getCategorizationVotes().putBallot(principal, vote_id, { answer = cursors; date; });
     };
 
-    public func getIterationHistory(question_id: Nat) : Result<IterationHistory, ReopenQuestionError> {
+    public func getStatusHistory(question_id: Nat) : Result<StatusHistory, ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
         case(null) { #err(#PrincipalIsAnonymous); };
-        case(?question) { #ok(_model.getStatusManager().getIterationHistory(question_id)); };
+        case(?question) { #ok(_model.getStatusManager().getStatusHistory(question_id)); };
       };
     };
 
@@ -262,6 +264,33 @@ module {
       });
     };
 
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+      
+      let (order_by, has_vote, joins) = switch(vote_kind){
+        case(#INTEREST)       {
+          (#INTEREST_SCORE, func(vote_id: VoteId) : Bool { Map.has(_model.getInterestVotes().getVoterBallots(principal), Map.nhash, vote_id); },       _model.getInterestJoins())
+        };
+        case(#OPINION)        { 
+          (#OPINION_VOTE,   func(vote_id: VoteId) : Bool { Map.has(_model.getOpinionVotes().getVoterBallots(principal), Map.nhash, vote_id); },        _model.getOpinionJoins())
+        };
+        case(#CATEGORIZATION) { 
+          (#STATUS(#OPEN),  func(vote_id: VoteId) : Bool { Map.has(_model.getCategorizationVotes().getVoterBallots(principal), Map.nhash, vote_id); }, _model.getCategorizationJoins())
+        };
+      };
+
+      let filter = func(key: Key) : Bool {
+        let question_id = KeyConverter.getQuestionId(key);
+        for (vote_id in Map.vals(joins.getQuestionVotes(question_id))){
+          if (has_vote(vote_id)){
+            return false;
+          };
+        };
+        return true;
+      };
+
+      _model.getQueries().select(order_by, direction, limit, previous_id, ?filter);
+    };
+
     public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
     ) : ScanLimitResult<RevealedBallot<Interest>> {
       _model.getInterestVotes().revealBallots(caller, voter, direction, limit, previous_id);
@@ -277,21 +306,28 @@ module {
       _model.getCategorizationVotes().revealBallots(caller, voter, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)])> {
-      // Get voter opinions
-      // @toto: Watchout, asssumes same vote id for opinion and categorization!
-      // One should retrieve the question vote id from the status manager
-      // then get the last OPEN iteration from the history
-      // and finally get the vote id from the join
+    public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)], Bool)> {
+      // Get the voter opinion ballots
       Map.mapFilter(
         _model.getOpinionVotes().getVoterBallots(principal),
         Map.nhash,
-        func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)]) {
-          let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
-          switch(opinion_vote.status){
-            case(#OPEN){ null; };
-            case(#CLOSED) {
-              ?(ballot, Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(vote_id).aggregate)));
+        func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)], Bool) {
+          let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
+          // Get the last closed categorization vote for this question
+          let join = Map.findDesc(
+            _model.getCategorizationJoins().getQuestionVotes(question_id),
+            func(iteration: Nat, cat_vote_id: VoteId) : Bool {
+              _model.getCategorizationVotes().getVote(cat_vote_id).status == #CLOSED;
+            });
+          // Return the vote ID, the user opinion ballot and the up-to-date categorization
+          switch(join){
+            case(null) { null; };
+            case(?(cat_iteration, cat_vote_id)){
+              ?(
+                ballot, 
+                Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(cat_vote_id).aggregate)),
+                cat_iteration >= opinion_iteration // If the categorization is newer or as old as the opinion, we consider the opinion genuine
+              );
             };
           };
         }
@@ -300,7 +336,7 @@ module {
 
     public func run(time: Time) : async* () {
       for (question in _model.getQuestions().iter()){
-        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, TransitionError>());
+        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, StatusInput>());
       };
     };
 
@@ -310,59 +346,52 @@ module {
 
     func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
 
-      let (iteration, current) = _model.getStatusManager().getCurrentStatus(question_id);
+      let current = _model.getStatusManager().getCurrentStatus(question_id);
 
       // Submit the event
       await* StateMachine.submitEvent(_schema, current.status, question_id, event, result);
 
       switch(result.get()){
         case(#err(_)) {}; // No transition
-        case(#ok(new)) {
+        case(#ok({state; info;})) {
           // When the question status changes, update the associated key for the #STATUS order_by
           _model.getQueries().replace(
             ?KeyConverter.toStatusKey(question_id, current.status, current.date),
-            Option.map(new, func(status: Status) : Key { KeyConverter.toStatusKey(question_id, status, date); })
+            Option.map(state, func(status: Status) : Key { KeyConverter.toStatusKey(question_id, status, date); })
           );
           // Close vote(s) if any
           switch(current.status){
             case(#CANDIDATE) { 
-              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, iteration));
+              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current.iteration));
             };
             case(#OPEN)      { 
-              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration));
-              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, iteration)); 
+              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, current.iteration));
+              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, current.iteration)); 
             };
             case(_) {};
           };
-          switch(new){
+          switch(state){
             case(null) {
-              // Remove status and question
-              _model.getStatusManager().removeIterationHistory(question_id);
+              // Remove status history and question
+              _model.getStatusManager().removeStatusHistory(question_id);
               _model.getQuestions().removeQuestion(question_id);
             };
             case(?status){
+              // Set the new status
+              let iteration = _model.getStatusManager().setStatus(question_id, status, date, info);
               switch(status){
-                case(#CANDIDATE) { 
-                  // Interest vote has already been opened by the state machine
-                };
-                case(#OPEN) { 
-                  _model.getOpinionJoins().addJoin(question_id, iteration, _model.getOpinionVotes().newVote());
-                  _model.getCategorizationJoins().addJoin(question_id, iteration, _model.getCategorizationVotes().newVote());
-                };
                 case(#CLOSED) {
                   // Add the question to the archive queries
                   let previous_key = if (iteration == 0) { null; } else {
-                    switch(StatusManager.findStatusInfo(_model.getStatusManager().getIterationHistory(question_id), #CLOSED, iteration - 1)){
+                    switch(_model.getStatusManager().findStatusInfo(question_id, #CLOSED, iteration - 1)){
                       case(null) { null; };
-                      case(?status_info) { ?KeyConverter.toStatusKey(question_id, #CLOSED, status_info.date); };
+                      case(?status_info) { ?KeyConverter.toArchiveKey(question_id, status_info.date); };
                     };
                   };
-                  _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, current.date));
+                  _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, date));
                 };
-                case(#REJECTED(_)) {};
+                case(_) {};
               };
-              // Finally set the status as current
-              _model.getStatusManager().setCurrentStatus(question_id, status, date);
             };
           };
         };

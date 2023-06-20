@@ -1,6 +1,6 @@
 import Convictions                         from "./Convictions";
-import {VoterHistory}                      from "./VoterHistory";
-import {VoterQuestions}                    from "./VoterQuestions";
+import { VoterHistory }                    from "./VoterHistory";
+import { VoterQuestions }                  from "./VoterQuestions";
 import CopyIcon                            from "../icons/CopyIcon";
 import SvgButton                           from "../base/SvgButton"
 import EditIcon                            from "../icons/EditIcon";
@@ -10,6 +10,7 @@ import { MainTabButton }                   from "../MainTabButton";
 import SubNameBanner                       from "../SubNameBanner";
 import CONSTANTS                           from "../../Constants";
 import { getEncodedAccount }               from "../../utils/LedgerUtils";
+import { VoteKind }                        from "../../utils";
 import { ActorContext }                    from "../../ActorContext"
 import { Account }                         from "../../../declarations/godwin_master/godwin_master.did";
 
@@ -21,20 +22,23 @@ import { fromNullable }                    from "@dfinity/utils";
 
 export enum UserFilter {
   CONVICTIONS,
-  VOTES,
+  INTERESTS,
+  CATEGORIZATIONS,
   QUESTIONS
 };
 
-const filters = [UserFilter.CONVICTIONS, UserFilter.VOTES, UserFilter.QUESTIONS];
+const filters = [UserFilter.CONVICTIONS, UserFilter.INTERESTS, UserFilter.CATEGORIZATIONS, UserFilter.QUESTIONS];
 
 const filterToText = (filter: UserFilter) => {
   switch (filter) {
     case UserFilter.CONVICTIONS:
       return "Convictions";
+    case UserFilter.INTERESTS:
+      return "Interests";
+    case UserFilter.CATEGORIZATIONS:
+      return "Categorizations";
     case UserFilter.QUESTIONS:
       return "Questions";
-    case UserFilter.VOTES:
-      return "Votes";
   }
 }
 
@@ -144,7 +148,7 @@ const UserComponent = () => {
                       onKeyDown={(e) => {if (e.key === 'Enter') saveUserName(); } }
                     />
                     <div className="w-7 h-7">
-                      <SvgButton onClick={(e) => {saveUserName()}}>
+                      <SvgButton onClick={(e) => {saveUserName()}} disabled={ editState === EditingState.SAVING }>
                         <SaveIcon/>
                       </SvgButton>
                     </div>
@@ -154,7 +158,7 @@ const UserComponent = () => {
                       { userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT }
                     </div>
                     <div className="w-5 h-5">
-                      <SvgButton onClick={(e) => {setEditState(EditingState.EDITING)}} disabled={ !isLoggedUser }>
+                      <SvgButton onClick={(e) => {setEditState(EditingState.EDITING)}} disabled={ !isLoggedUser}>
                         <EditIcon/>
                       </SvgButton>
                     </div>
@@ -207,7 +211,7 @@ const UserComponent = () => {
                     <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                     {
                       filters.map((filter, index) => (
-                        <li key={index} className="w-1/3">
+                        <li key={index} className="w-1/4">
                           <MainTabButton label={filterToText(filter)} isCurrent={filter == currentUserFilter} setIsCurrent={() => setCurrentUserFilter(filter)}/>
                         </li>
                       ))
@@ -217,9 +221,11 @@ const UserComponent = () => {
                   {
                     currentUserFilter === UserFilter.CONVICTIONS ?
                       <Convictions sub={sub} principal={principal}/> :
-                    currentUserFilter === UserFilter.VOTES ?
-                      <VoterHistory sub={sub} principal={principal}/> :
-                    currentUserFilter === UserFilter.QUESTIONS ?
+                    currentUserFilter === UserFilter.INTERESTS ?
+                      <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.INTEREST}/> :
+                    currentUserFilter === UserFilter.CATEGORIZATIONS ?
+                      <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.CATEGORIZATION}/> :
+                    currentUserFilter === UserFilter.QUESTIONS ? 
                       <VoterQuestions sub={sub} principal={principal}/> :
                     <></>
                   }

@@ -1,5 +1,7 @@
 import Types  "Types";
 
+import Joins  "../votes/QuestionVoteJoins";
+
 import WMap   "../../utils/wrappers/WMap";
 
 import Buffer "mo:stablebuffer/StableBuffer";
@@ -24,74 +26,145 @@ module {
   type Question         = Types.Question;
   type Status           = Types.Status;
   type QuestionId       = Types.QuestionId;
+  type StatusInput      = Types.StatusInput;
   type StatusInfo       = Types.StatusInfo;
   type StatusHistory    = Types.StatusHistory;
-  type IterationHistory = Types.IterationHistory;
+  type CursorVotes      = Types.CursorVotes;
+  type Joins            = Joins.QuestionVoteJoins;
 
-  public type Register = Map<QuestionId, IterationHistory>;
+  public type Register = Map<QuestionId, StatusHistory>;
 
-  public func build(register: Register) : StatusManager {
-    StatusManager(WMap.WMap(register, Map.nhash));
+  public func build(
+    register: Register,
+    interest_joins: Joins,
+    opinion_joins: Joins,
+    categorization_joins: Joins
+  ) : StatusManager {
+    StatusManager(WMap.WMap(register, Map.nhash), interest_joins, opinion_joins, categorization_joins);
   };
   
-  public class StatusManager(_register: WMap.WMap<QuestionId, IterationHistory>) {
+  public class StatusManager(
+    _register: WMap.WMap<QuestionId, StatusHistory>,
+    _interest_joins: Joins,
+    _opinion_joins: Joins,
+    _categorization_joins: Joins
+  ) {
 
-    public func newIteration(question_id: QuestionId) : Nat {
-      let iteration_history = Option.get(_register.getOpt(question_id), Buffer.init<StatusHistory>());
-      let status_history = Buffer.init<StatusInfo>();
-      Buffer.add(iteration_history, status_history);
-      _register.set(question_id, iteration_history);
-      Int.abs(Buffer.size(iteration_history) - 1);
+    public func setStatus(question_id: QuestionId, status: Status, date: Time, opt_input: ?StatusInput) : Nat {
+      // Get or create a status history for the question
+      let status_history = switch(_register.getOpt(question_id)){
+        case(null) { Buffer.init<StatusInfo>(); };
+        case(?history) { history; };
+      };
+      // Deduce the iteration from the last status info
+      let iteration = switch(findLastStatusInfo(status_history, status)){
+        case(null) { 0 };
+        case(?info) { info.iteration + 1; };
+      };
+      // Join the vote to the question
+      switch(status){
+        case(#CANDIDATE){
+          switch(getInterestVoteId(opt_input)){
+            case(null) { Debug.trap("The interest vote id is missing"); };
+            case(?vote_id) { _interest_joins.addJoin(question_id, iteration, vote_id); };
+          };
+        };
+        case(#OPEN){
+          switch(getCursorVoteIds(opt_input)){
+            case(null) {
+              if (iteration == 0) { Debug.trap("The cursor vote ids for the first iteration are missing"); };
+            };
+            case(?cursor_votes) {
+              if (iteration > 0) { Debug.trap("The cursor vote ids shall have already been added as early votes");};
+              _opinion_joins.addJoin       (question_id, iteration, cursor_votes.opinion_vote_id       );
+              _categorization_joins.addJoin(question_id, iteration, cursor_votes.categorization_vote_id);
+            };
+          };
+        };
+        case(#CLOSED){
+          switch(getCursorVoteIds(opt_input)){
+            case(null) { Debug.trap("The cursor votes for the next iteration are missing"); };
+            case(?cursor_votes) {
+              _opinion_joins.addJoin       (question_id, iteration + 1, cursor_votes.opinion_vote_id       );
+              _categorization_joins.addJoin(question_id, iteration + 1, cursor_votes.categorization_vote_id);
+            };
+          };
+        };
+        case(_){};
+      };
+      // Add the new status info to the history
+      Buffer.add(status_history, {status; date; iteration;});
+      _register.set(question_id, status_history);
+      // Return the iteration
+      iteration;
     };
 
-    public func setCurrentStatus(question_id: QuestionId, status: Status, date: Time) {
-      let (iteration, status_history) = getCurrentStatusHistory(question_id);
-      Buffer.add(status_history, {status; date;});
-    };
-
-    public func getCurrentStatus(question_id: QuestionId) : (Nat, StatusInfo) {
-      let (iteration, status_history) = getCurrentStatusHistory(question_id);
+    public func getCurrentStatus(question_id: QuestionId) : StatusInfo {
+      let status_history = getStatusHistory(question_id);
       let num_statuses : Int = Buffer.size(status_history);
       if (num_statuses == 0) {
-        Debug.trap("Current iteration has an empty status history");
+        Debug.trap("The status history us empty");
       };
-      (iteration, Buffer.get(status_history, Int.abs(num_statuses - 1)));
+      Buffer.get(status_history, Int.abs(num_statuses - 1));
     };
 
-    public func getIterationHistory(question_id: QuestionId): IterationHistory {
+    public func getStatusHistory(question_id: QuestionId) : StatusHistory {
       switch(_register.getOpt(question_id)){
-        case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no iterations history"); };
-        case(?it_history){ it_history; };
+        case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no status history"); };
+        case(?history){ history; };
       };
     };
 
-    public func removeIterationHistory(question_id: QuestionId) {
+    public func findStatusInfo(question_id: QuestionId, status: Status, iteration: Nat) : ?StatusInfo {
+      let status_history = switch(_register.getOpt(question_id)){
+        case(null) { return null; };
+        case(?history){ history; };
+      };
+      for (status_info in Buffer.vals(status_history)){
+        if (status_info.status == status and status_info.iteration == iteration){
+          return ?status_info;
+        };
+      };
+      return null;
+    };
+
+    public func removeStatusHistory(question_id: QuestionId) {
       _register.delete(question_id);
     };
 
-    func getCurrentStatusHistory(question_id: QuestionId) : (Nat, StatusHistory) {
-      let iteration_history = switch(_register.getOpt(question_id)){
-        case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no iterations history"); };
-        case(?it_history){ it_history; };
-      };
-      let num_iterations : Int = Buffer.size(iteration_history);
-      if (num_iterations == 0) {
-        Debug.trap("The question '" # Nat.toText(question_id) # "' has an empty iterations history");
-      };
-      let last_iteration = Int.abs(num_iterations - 1);
-      (last_iteration, Buffer.get(iteration_history, last_iteration));
-    };
-
   };
 
-  public func findStatusInfo(iteration_history: IterationHistory, status: Status, iteration: Nat) : ?StatusInfo {
-    if (iteration >= Buffer.size(iteration_history)){
-      return null;
-    };
-    let status_history = Buffer.get(iteration_history, iteration);
+  public func findLastStatusInfo(status_history: StatusHistory, status: Status) : ?StatusInfo {
+    var match : ?StatusInfo = null;
     for (status_info in Buffer.vals(status_history)){
       if (status_info.status == status){
-        return ?status_info;
+        match := ?status_info;
+      };
+    };
+    match;
+  };
+
+  func getInterestVoteId(opt_input: ?StatusInput) : ?Nat {
+    switch(opt_input){
+      case(null) {};
+      case(?input) {
+        switch(input){
+          case(#INTEREST_VOTE(vote_id)) { return ?vote_id; };
+          case(_){};
+        };
+      };
+    };
+    null;
+  };
+
+  func getCursorVoteIds(opt_input: ?StatusInput) : ?CursorVotes {
+    switch(opt_input){
+      case(null) {};
+      case(?input) {
+        switch(input){
+          case(#CURSOR_VOTES(cursor_votes)) { return ?cursor_votes; };
+          case(_){};
+        };
       };
     };
     null;

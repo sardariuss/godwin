@@ -59,7 +59,8 @@ module {
         ),
         pay_rules.getCategorizationVotePrice(),
         pay_rules.computeCategorizationPayout
-      )
+      ),
+      #REVEAL_BALLOT_VOTE_CLOSED
     );
   };
 

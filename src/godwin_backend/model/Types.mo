@@ -26,9 +26,8 @@ module {
   public type Question                   = QuestionTypes.Question;
   public type Status                     = QuestionTypes.Status;
   public type StatusInfo                 = QuestionTypes.StatusInfo;
-  public type StatusHistory              = [StatusInfo];
-  public type IterationHistory           = [StatusHistory];
-  public type OpenQuestionError          = QuestionTypes.OpenQuestionError or { #OpenInterestVoteFailed: OpenVoteError; };
+  public type StatusInput                = QuestionTypes.StatusInput;
+  public type OpenQuestionError          = QuestionTypes.OpenQuestionError or PayTypes.TransferFromMasterError;
   public type QuestionOrderBy            = QuestionTypes.OrderBy;
 
   public type TransactionsRecord         = PayTypes.TransactionsRecord;
@@ -156,16 +155,5 @@ module {
   public type GetUserConvictionsError = PrincipalError;
 
   public type GetUserVotesError = PrincipalError;
-
-  public type TransitionError = OpenVoteError or {
-    #WrongStatusIteration;
-    #EmptyQueryInterestScore;
-    #NotMostInteresting;
-    #TooSoon;
-    #PrincipalIsAnonymous;
-    #QuestionNotFound;
-    #PositiveAppeal;
-    #NegativeAppeal;
-  };
 
 };

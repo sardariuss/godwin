@@ -38,8 +38,8 @@ module {
   type CursorMap           = VoteTypes.CursorMap;
   type PolarizationMap     = VoteTypes.PolarizationMap;
   type Polarization        = VoteTypes.Polarization;
+  type StatusHistory       = QuestionTypes.StatusHistory;
   type TransactionsRecord  = PayTypes.TransactionsRecord;
-  type IterationHistory    = QuestionTypes.IterationHistory;
 
   public type State = {
     name              : Ref<Text>; // @todo: this shouldn't be a ref
@@ -51,7 +51,7 @@ module {
     price_parameters  : Ref<PriceParameters>;
     scheduler_params  : Ref<SchedulerParameters>;
     status            : {
-      register           : Map<Nat, IterationHistory>;
+      register           : Map<Nat, StatusHistory>;
     };
     queries           : {
       register           : QuestionQueriesFactory.Register;
@@ -91,7 +91,7 @@ module {
       scheduler_params  = Ref.init<SchedulerParameters>(parameters.scheduler);
       price_parameters  = Ref.init<PriceParameters>(parameters.prices);
       status            = {
-        register            = Map.new<Nat, IterationHistory>(Map.nhash);
+        register            = Map.new<Nat, StatusHistory>(Map.nhash);
       };
       questions             = Questions.initRegister(parameters.questions.character_limit);
       queries           = {
