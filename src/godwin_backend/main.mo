@@ -21,7 +21,6 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
   // For convenience: from types module
   type Question                     = Types.Question;
   type Category                     = Types.Category;
-  type Decay                        = Types.Decay;
   type Duration                     = Types.Duration;
   type Status                       = Types.Status;
   type TransactionsRecord           = Types.TransactionsRecord;
@@ -82,10 +81,9 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.getName();
   };
 
-  // @todo: revive decay
-//  public query func getDecay() : async ?Decay {
-//    _facade.getDecay();
-//  };
+  public query func getHalfLife() : async Duration {
+    _facade.getHalfLife();
+  };
 
   public query func getCategories() : async CategoryArray {
     _facade.getCategories();

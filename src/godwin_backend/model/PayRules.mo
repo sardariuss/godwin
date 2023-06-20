@@ -34,28 +34,28 @@ module {
   let SIGMOID_INTERSECTION = 0.333333333333333333333333333;
   let CONFIDENCE_COEF      = 0.666666666666666666666666666;
 
-  public func build(price_parameters: Ref<PriceParameters>) : PayRules {
-    PayRules(WRef.WRef(price_parameters));
+  public func build(price_params: Ref<PriceParameters>) : PayRules {
+    PayRules(WRef.WRef(price_params));
   };
 
-  public class PayRules(_price_parameters: WRef<PriceParameters>) {
+  public class PayRules(_price_params: WRef<PriceParameters>) {
 
     public func getOpenVotePrice(): Balance {
-      _price_parameters.get().open_vote_price_e8s;
+      _price_params.get().open_vote_price_e8s;
     };
 
     public func getInterestVotePrice(): Balance {
-      _price_parameters.get().interest_vote_price_e8s;
+      _price_params.get().interest_vote_price_e8s;
     };
 
     public func getCategorizationVotePrice(): Balance {
-      _price_parameters.get().categorization_vote_price_e8s;
+      _price_params.get().categorization_vote_price_e8s;
     };
 
     public func computeOpenVotePayout(result: Appeal, num_voters: Nat) : (Nat, Nat) {
       var payout_args = {
         refund_share = if (result.score >= 0) { 1.0; } else { 0.0; };
-        reward_tokens = 0; // @todo: _price_parameters.open_vote_price if question is selected!
+        reward_tokens = 0; // @todo: _price_params.open_vote_price if question is selected!
       };
       // If there is no voter, we payout the full amount, otherwise we attenuate the payout
       if (num_voters > 0){

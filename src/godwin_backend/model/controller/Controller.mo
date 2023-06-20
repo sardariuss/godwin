@@ -44,7 +44,6 @@ module {
 
   // For convenience: from types module
   type TransactionsRecord          = Types.TransactionsRecord;
-  type Decay                       = Types.Decay; // @todo
   type PolarizationArray           = Types.PolarizationArray;
   type CategoryInfo                = Types.CategoryInfo;
   type CursorArray                 = Types.CursorArray;
@@ -103,9 +102,9 @@ module {
       _model.getName();
     };
 
-//    public func getDecay() : ?Decay {
-//      _model.getUsers().getDecay();
-//    };
+    public func getHalfLife() : Duration {
+      _model.getDecayParameters().half_life;
+    };
 
     public func getCategories() : Categories.Categories {
       _model.getCategories();

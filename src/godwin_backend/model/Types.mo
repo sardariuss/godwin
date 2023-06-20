@@ -95,9 +95,11 @@ module {
     scheduler: SchedulerParameters;
     questions: QuestionsParameters;
     prices: PriceParameters;
+    decay_half_life: Duration;
   };
 
-  public type Decay = {
+  public type DecayParameters = {
+    half_life: Duration;
     lambda: Float;
     shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };

@@ -31,7 +31,6 @@ module {
   // For convenience: from types module
   type QuestionId                   = Types.QuestionId;
   type QuestionOrderBy              = Types.QuestionOrderBy;
-  type Decay                        = Types.Decay; // @todo
   type Interest                     = Types.Interest;
   type Appeal                       = Types.Appeal;
   type CursorArray                  = Types.CursorArray;
@@ -54,6 +53,7 @@ module {
   type VoteKind                     = Types.VoteKind;
   type TransactionsRecord           = Types.TransactionsRecord;
   type SchedulerParameters          = Types.SchedulerParameters;
+  type Duration                     = Types.Duration;
   type Question                     = QuestionTypes.Question;
   type Status                       = QuestionTypes.Status;
   type StatusHistoryMap             = QuestionTypes.StatusHistory;
@@ -91,10 +91,9 @@ module {
       _controller.getName();
     };
 
-  // @todo: revive decay
-//    public func getDecay() : ?Decay {
-//      _controller.getDecay();
-//    };
+    public func getHalfLife() : Duration {
+      _controller.getHalfLife();
+    };
 
     public func getCategories() : CategoryArray {
       Iter.toArray(_controller.getCategories().entries());

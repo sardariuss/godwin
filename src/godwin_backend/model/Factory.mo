@@ -43,7 +43,7 @@ module {
 
     let queries = QuestionQueriesFactory.build(state.queries.register);
 
-    let pay_rules = PayRules.build(state.price_parameters);
+    let pay_rules = PayRules.build(state.price_params);
 
     let token_interface = TokenInterface.build(state.master.v);
     let pay_to_open_question = PayForNew.build(
@@ -94,6 +94,7 @@ module {
       WRef.WRef(state.master),
       WRef.WRef(state.last_pick_date),
       WRef.WRef(state.scheduler_params),
+      WRef.WRef(state.decay_params),
       categories,
       questions,
       status_manager,

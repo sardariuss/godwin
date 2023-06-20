@@ -29,12 +29,14 @@ module {
   type OpinionVotes        = Opinions.Opinions;
   type CategorizationVotes = Categorizations.Categorizations;
   type Joins               = Joins.QuestionVoteJoins;
+  type DecayParameters     = Types.DecayParameters;
 
   public class Model(
     _name: WRef<Text>,
     _master: WRef<Principal>,
     _last_pick_date: WRef<Time>,
-    _params: WRef<SchedulerParameters>,
+    _scheduler_params: WRef<SchedulerParameters>,
+    _decay_params: WRef<DecayParameters>,
     _categories: Categories,
     _questions: Questions,
     _status_manager: StatusManager,
@@ -44,7 +46,7 @@ module {
     _categorization_votes: CategorizationVotes,
     _interest_joins: Joins,
     _opinion_joins: Joins,
-    _categorization_joins: Joins,
+    _categorization_joins: Joins
   ) = {
 
     public func getName() : Text {
@@ -72,11 +74,15 @@ module {
     };
 
     public func getSchedulerParameters() : SchedulerParameters {
-      _params.get();
+      _scheduler_params.get();
     };
 
     public func setSchedulerParameters(params: SchedulerParameters) {
-      _params.set(params);
+      _scheduler_params.set(params);
+    };
+
+    public func getDecayParameters(): DecayParameters {
+      _decay_params.get();
     };
 
     public func getCategories(): Categories {

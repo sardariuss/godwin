@@ -1,9 +1,10 @@
 import Types                  "Types";
+import Categories             "Categories";
+import Decay                  "Decay";
 import VoteTypes              "votes/Types";
 import QuestionTypes          "questions/Types";
 import Questions              "questions/Questions";	
 import QuestionQueriesFactory "questions/QueriesFactory";
-import Categories             "Categories";
 import Interests              "votes/Interests";
 import Categorizations        "votes/Categorizations";
 import Opinions               "votes/Opinions";
@@ -32,6 +33,7 @@ module {
   type Parameters          = Types.Parameters;
   type SchedulerParameters = Types.SchedulerParameters;
   type PriceParameters     = Types.PriceParameters;
+  type DecayParameters     = Types.DecayParameters;
   type VoteId              = VoteTypes.VoteId;
   type Cursor              = VoteTypes.Cursor;
   type Category            = VoteTypes.Category;
@@ -48,8 +50,9 @@ module {
     categories        : Categories.Register;
     questions         : Questions.Register;
     last_pick_date    : Ref<Time>;
-    price_parameters  : Ref<PriceParameters>;
+    price_params      : Ref<PriceParameters>;
     scheduler_params  : Ref<SchedulerParameters>;
+    decay_params      : Ref<DecayParameters>;
     status            : {
       register           : Map<Nat, StatusHistory>;
     };
@@ -89,7 +92,8 @@ module {
       categories        = Categories.initRegister(parameters.categories);
       last_pick_date    = Ref.init<Time>(creation_date);
       scheduler_params  = Ref.init<SchedulerParameters>(parameters.scheduler);
-      price_parameters  = Ref.init<PriceParameters>(parameters.prices);
+      price_params      = Ref.init<PriceParameters>(parameters.prices);
+      decay_params      = Ref.init<DecayParameters>(Decay.initParameters(parameters.decay_half_life, creation_date));
       status            = {
         register            = Map.new<Nat, StatusHistory>(Map.nhash);
       };
