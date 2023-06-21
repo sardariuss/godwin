@@ -29,6 +29,8 @@ function App() {
     userAccount,
     balance,
     refreshBalance,
+    loggedUserName,
+    refreshLoggedUserName,
     getPrincipal
   } = useAuthClient();
 
@@ -52,6 +54,8 @@ function App() {
           userAccount,
           balance,
           refreshBalance,
+          loggedUserName,
+          refreshLoggedUserName,
           getPrincipal
         }}>
           <div className="flex flex-col">

@@ -51,17 +51,17 @@ enum EditingState {
 const UserComponent = () => {
 
   const {user} = useParams<string>();
-  const {subs, isAuthenticated, authClient, master, logout, balance, refreshBalance} = useContext(ActorContext);
+  const {subs, isAuthenticated, authClient, master, logout, loggedUserName, refreshLoggedUserName, refreshBalance} = useContext(ActorContext);
 
-  const [principal, setPrincipal] = useState<Principal | undefined>(undefined);
-  const [isLoggedUser, setIsLoggedUser] = useState<boolean>(false);
-  const [userName, setUserName] = useState<string | undefined>(undefined);
-  const [account, setAccount] = useState<Account | undefined>(undefined);
+  const [principal,         setPrincipal        ] = useState<Principal | undefined>(undefined             );
+  const [isLoggedUser,      setIsLoggedUser     ] = useState<boolean>              (false                 );
+  const [userName,          setUserName         ] = useState<string | undefined>   (undefined             );
+  const [account,           setAccount          ] = useState<Account | undefined>  (undefined             );
 
-  const [editingName, setEditingName] = useState<string>("");
-  const [editState, setEditState] = useState<EditingState>(EditingState.SAVED);
+  const [editingName,       setEditingName      ] = useState<string>               (""                    );
+  const [editState,         setEditState        ] = useState<EditingState>         (EditingState.SAVED    );
 
-  const [currentUserFilter, setCurrentUserFilter] = useState<UserFilter>(UserFilter.CONVICTIONS);
+  const [currentUserFilter, setCurrentUserFilter] = useState<UserFilter>           (UserFilter.CONVICTIONS);
 
 	const refreshUser = async () => {
     if (user === undefined) {
@@ -77,6 +77,8 @@ const UserComponent = () => {
   const refreshUserName = async () => {
     if (principal === undefined) {
       setUserName(undefined);
+    } else if (isLoggedUser) {
+      setUserName(loggedUserName);
     } else {
       setUserName(fromNullable(await master.getUserName(principal)));
     }
@@ -91,18 +93,18 @@ const UserComponent = () => {
     }
   }
 
-  // @todo: use a timer to not update the name at each character change
   const saveUserName = () => {
     setEditState(EditingState.SAVING);
     master.setUserName(editingName).then((result) => {
       setEditState(EditingState.SAVED);
       setUserName(editingName); // @todo: take name from the result
+      refreshLoggedUserName();
     });
   }
 
   const airdrop = () => {
     // @todo: temporary airdrop
-    master.airdrop().then((result) => {;
+    master.airdrop().then(() => {;
       refreshBalance();
     });
   }
@@ -112,15 +114,12 @@ const UserComponent = () => {
   }, [subs, isAuthenticated, user]);
 
   useEffect(() => {
-    refreshAccount();
     refreshUserName();
   }, [principal, isLoggedUser]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      refreshBalance();
-    }
-  }, [isAuthenticated]);
+    refreshAccount();
+  }, [principal]);
 
 	return (
     <div className="flex flex-col items-center">
@@ -134,7 +133,6 @@ const UserComponent = () => {
               <div className="flex flex-col justify-evenly">
                 {
                   editState === EditingState.EDITING || editState === EditingState.SAVING ?
-                  // @todo: should have a minimum length, and a visual indicator if min/max is reached
                   <div className="flex flex-row gap-x-1 items-center">
                     <input type="text" 
                       className={`appearance-none bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full p-1 -ml-1 
@@ -145,7 +143,7 @@ const UserComponent = () => {
                       disabled={ editState === EditingState.SAVING }
                       defaultValue={ userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT } 
                       onChange={(e) => setEditingName(e.target.value)} maxLength={CONSTANTS.USER_NAME.MAX_LENGTH}
-                      onKeyDown={(e) => {if (e.key === 'Enter') saveUserName(); } }
+                      onKeyDown={(e) => {if (e.key === 'Enter') saveUserName() }  }
                     />
                     <div className="w-7 h-7">
                       <SvgButton onClick={(e) => {saveUserName()}} disabled={ editState === EditingState.SAVING }>
@@ -183,7 +181,7 @@ const UserComponent = () => {
                   <button 
                     type="button" 
                     onClick={(e) => airdrop()} 
-                    className="w-1/2 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm py-2.5 text-center">
+                    className="w-20 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm py-2.5 text-center">
                       Airdrop
                   </button> : <></>
                 }

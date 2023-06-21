@@ -95,6 +95,10 @@ module {
       _controller.getHalfLife();
     };
 
+    public func getSelectionScore(now: Time) : Float {
+      _controller.getSelectionScore(now);
+    };
+
     public func getCategories() : CategoryArray {
       Iter.toArray(_controller.getCategories().entries());
     };

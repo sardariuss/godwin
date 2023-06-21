@@ -49,6 +49,7 @@ dfx canister call godwin_master createSubGodwin '("classic6", record {
     categorization_vote_price_e8s =  350_000_000;
   };
   decay_half_life = variant { DAYS = 365 };
+  minimum_interest_score = 1.0;
 })'
 # Run the scenario @todo for some reason this does not work, one shall use ic-repl instead
 #export SUB_6_VALUES_PRINCIPAL=${SUB_6_VALUES_ID:1:29}
@@ -80,6 +81,7 @@ dfx canister call godwin_master createSubGodwin '("uspolitics", record {
     categorization_vote_price_e8s =  350_000_000;
   };
   decay_half_life = variant { DAYS = 365 };
+  minimum_interest_score = 1.0;
 })'
 
 # Deploy the internet identity

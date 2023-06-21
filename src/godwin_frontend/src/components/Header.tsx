@@ -3,6 +3,7 @@ import { ActorContext }          from "../ActorContext"
 
 import { Link }                  from "react-router-dom";
 import { useContext, useEffect } from "react";
+import CONSTANTS                 from "../Constants";
 
 type Props = {
   login: () => (void),
@@ -11,7 +12,7 @@ type Props = {
 
 function Header({login, setShowAskQuestion}: Props) {
 
-  const {isAuthenticated, authClient, balance} = useContext(ActorContext);
+  const {isAuthenticated, authClient, balance, loggedUserName} = useContext(ActorContext);
 
   useEffect(() => {
 
@@ -63,7 +64,7 @@ function Header({login, setShowAskQuestion}: Props) {
 
   return (
 		<>
-      <header className="bg-slate-100 sticky top-0 z-20 w-full px-2 sm:px-4 py-2.5 dark:bg-gray-800">
+      <header className="bg-slate-100 dark:bg-gray-800 sticky top-0 z-20 w-full px-2 sm:px-4 py-2.5">
         <div className="container flex flex-row justify-between items-center mx-auto">
           <Link to="/">
             <div className="flex flex-row items-center">
@@ -90,7 +91,7 @@ function Header({login, setShowAskQuestion}: Props) {
               <li>
                 { isAuthenticated && authClient !== undefined ? 
                   <Link to={"/profile/" + authClient.getIdentity().getPrincipal().toString()} className="block text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                    My profile
+                    { loggedUserName !== undefined ? loggedUserName : CONSTANTS.USER_NAME.DEFAULT }
                   </Link> :
                   <button type="button" onClick={login} className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
                     Log in

@@ -11,6 +11,7 @@ import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
 import Decay               "../votes/Decay";
+import Interests           "../votes/Interests";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PolarizationMap     "../votes/representation/PolarizationMap";
 
@@ -105,6 +106,10 @@ module {
 
     public func getHalfLife() : Duration {
       _model.getDecayParameters().half_life;
+    };
+
+    public func getSelectionScore(now: Time) : Float {
+      Interests.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_rate), now);
     };
 
     public func getCategories() : Categories.Categories {

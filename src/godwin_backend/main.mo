@@ -85,6 +85,10 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.getHalfLife();
   };
 
+  public query func getSelectionScore() : async Float {
+    _facade.getSelectionScore(Time.now());
+  };
+
   public query func getCategories() : async CategoryArray {
     _facade.getCategories();
   };

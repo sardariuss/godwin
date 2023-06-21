@@ -20,72 +20,79 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
-	const [currentStatus, setCurrentStatus] = useState<StatusInfo | undefined>(undefined);
 	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
 
-	const fetchQuestion = async () => {
+	const refreshQuestion = async () => {
 		const question = await actor.getQuestion(questionId);
 		setQuestion(question['ok']);
 	}
 
-	const fetchStatusHistory = async () => {
+	const refreshStatusHistory = async () => {
 		var statuses : StatusInfo[] = [];
-		var current : StatusInfo | undefined = undefined;
-
 		const history = await actor.getStatusHistory(questionId);
-		
 		if (history['ok'] !== undefined){
 			statuses = history['ok'];	
-			if (statuses.length !== 0) {
-				current = statuses[statuses.length - 1];
-			}
 		}
-	
 		setStatusHistory(statuses);
-		setCurrentStatus(current);
 	}
 
-	const fetchQuestionVoteJoins = async (status_info: StatusInfo) => {
+	const refreshQuestionVoteJoins = async () => {
 
-		var joins = new Map<VoteKind, bigint>();
-				
-		if (vote_kind === VoteKind.INTEREST) {
-			if (status_info.status['CANDIDATE'] !== undefined) {
-				let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(status_info.iteration)))['ok'];
-				if (interest_vote_id !== undefined) {
-					joins.set(VoteKind.INTEREST, interest_vote_id);
+		if (statusHistory.length === 0) {
+			setQuestionVoteJoins(new Map<VoteKind, bigint>());
+		} else {
+			let currentStatus = statusHistory[statusHistory.length - 1];
+			let previousClosedStatus = findLastVote(statusHistory, 'CLOSED');
+			
+			var joins = new Map<VoteKind, bigint>();
+					
+			if (vote_kind === VoteKind.INTEREST) {
+				if (currentStatus.status['CANDIDATE'] !== undefined) {
+					let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+					if (interest_vote_id !== undefined) {
+						joins.set(VoteKind.INTEREST, interest_vote_id);
+					}
+				}
+			} else if (vote_kind === VoteKind.OPINION) {
+				// Include early votes
+				let iteration = currentStatus.status['OPEN'] !== undefined ? currentStatus.iteration : previousClosedStatus !== undefined ?
+				previousClosedStatus.iteration + BigInt(1) : undefined;
+				if (iteration !== undefined) {
+					let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
+					if (opinion_vote_id !== undefined) {
+						joins.set(VoteKind.OPINION, opinion_vote_id);
+					}
+				}
+			} else if (vote_kind === VoteKind.CATEGORIZATION) {
+				if (currentStatus.status['OPEN'] !== undefined) {
+					let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+					if (categorization_vote_id !== undefined) {
+						joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
+					}
 				}
 			}
-		} else if (vote_kind === VoteKind.OPINION) {
-			let iteration = status_info.status['OPEN'] !== undefined ? status_info.iteration : status_info.iteration + BigInt(1);
-			let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
-			if (opinion_vote_id !== undefined) {
-				joins.set(VoteKind.OPINION, opinion_vote_id);
-			}
-		} else if (vote_kind === VoteKind.CATEGORIZATION) {
-			if (status_info.status['OPEN'] !== undefined) {
-				let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(status_info.iteration)))['ok'];
-				if (categorization_vote_id !== undefined) {
-					joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
-				}
+
+			setQuestionVoteJoins(joins);
+		}
+	};
+
+	const findLastVote = (history: StatusInfo[], status_name: string) : StatusInfo | undefined => {
+		for (let i = history.length - 1; i >= 0; i--) {
+			if (history[i].status[status_name] !== undefined) {
+				return history[i];
 			}
 		}
-
-		setQuestionVoteJoins(joins);
+		return undefined;
 	};
 
 	useEffect(() => {
-		fetchQuestion();
-		fetchStatusHistory();
-  }, []);
+		refreshQuestion();
+		refreshStatusHistory();
+  }, [questionId]);
 
 	useEffect(() => {
-		if (currentStatus !== undefined) {
-			fetchQuestionVoteJoins(currentStatus);
-		} else {
-			setQuestionVoteJoins(new Map<VoteKind, bigint>());
-		}
-	}, [currentStatus, vote_kind]);
+		refreshQuestionVoteJoins();
+	}, [questionId, statusHistory, vote_kind]);
 
 	return (
 		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10

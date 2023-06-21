@@ -92,6 +92,7 @@ module {
     questions: QuestionsParameters;
     prices: PriceParameters;
     decay_half_life: Duration;
+    minimum_interest_score: Float;
   };
 
   public type Category = Text;

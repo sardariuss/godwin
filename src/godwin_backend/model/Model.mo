@@ -4,6 +4,7 @@ import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
 import Votes               "votes/Votes";
 import Joins               "votes/QuestionVoteJoins";
+import VoteTypes           "votes/Types";
 import Categories          "Categories";
 import SubaccountGenerator "token/SubaccountGenerator";
 import QuestionTypes       "questions/Types";
@@ -17,24 +18,25 @@ import Principal           "mo:base/Principal";
 
 module {
 
-  type Time                = Int;
-  type Status              = Types.Status;
-  type WRef<T>             = WRef.WRef<T>;
-  type SchedulerParameters = Types.SchedulerParameters;
-  type Categories          = Categories.Categories;
-  type Questions           = Questions.Questions;
-  type QuestionQueries     = QuestionTypes.QuestionQueries;
-  type StatusManager       = StatusManager.StatusManager;
-  type InterestVotes       = Interests.Interests;
-  type OpinionVotes        = Opinions.Opinions;
-  type CategorizationVotes = Categorizations.Categorizations;
-  type Joins               = Joins.QuestionVoteJoins;
-  type DecayParameters     = Types.DecayParameters;
+  type WRef<T>              = WRef.WRef<T>;
+
+  type Status               = Types.Status;
+  type SchedulerParameters  = Types.SchedulerParameters;
+  type DecayParameters      = Types.DecayParameters;
+  type InterestMomentumArgs = VoteTypes.InterestMomentumArgs;
+  type Categories           = Categories.Categories;
+  type Questions            = Questions.Questions;
+  type QuestionQueries      = QuestionTypes.QuestionQueries;
+  type StatusManager        = StatusManager.StatusManager;
+  type InterestVotes        = Interests.Interests;
+  type OpinionVotes         = Opinions.Opinions;
+  type CategorizationVotes  = Categorizations.Categorizations;
+  type Joins                = Joins.QuestionVoteJoins;
 
   public class Model(
     _name: WRef<Text>,
     _master: WRef<Principal>,
-    _last_pick_date: WRef<Time>,
+    _momentum_args: WRef<InterestMomentumArgs>,
     _scheduler_params: WRef<SchedulerParameters>,
     _decay_params: WRef<DecayParameters>,
     _categories: Categories,
@@ -65,12 +67,12 @@ module {
       _master.set(master);
     };
 
-    public func getLastPickDate() : Time {
-      _last_pick_date.get();
+    public func getMomentumArgs() : InterestMomentumArgs {
+      _momentum_args.get();
     };
 
-    public func setLastPickDate(last_pick_date: Time) {
-      _last_pick_date.set(last_pick_date);
+    public func setMomentumArgs(momentum_args: InterestMomentumArgs) {
+      _momentum_args.set(momentum_args);
     };
 
     public func getSchedulerParameters() : SchedulerParameters {

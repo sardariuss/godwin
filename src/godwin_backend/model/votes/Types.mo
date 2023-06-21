@@ -33,6 +33,13 @@ module {
     #DOWN;
   };
 
+  public type InterestMomentumArgs = {
+    last_pick_date : Time;
+    last_pick_score: Float;
+    num_votes_opened: Nat;
+    minimum_score: Float;
+  };
+
   public type DecayParameters = {
     half_life: Duration;
     lambda: Float;

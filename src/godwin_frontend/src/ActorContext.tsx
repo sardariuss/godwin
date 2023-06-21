@@ -1,17 +1,17 @@
-import { AuthClient } from "@dfinity/auth-client";
-
-import { _SERVICE as MasterService, Account } from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, CategoryArray__1 } from "../declarations/godwin_backend/godwin_backend.did";
-import { _SERVICE as TokenService } from "../declarations/godwin_token/godwin_token.did";
+import { _SERVICE as MasterService, Account }                     from "../declarations/godwin_master/godwin_master.did";
+import { _SERVICE as SubService, CategoryArray__1 }               from "../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE as TokenService }                               from "../declarations/godwin_token/godwin_token.did";
 import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
-import { godwin_token } from "../declarations/godwin_token";
-import { createActor as createSub } from "../declarations/godwin_backend";
-import { ActorSubclass } from "@dfinity/agent";
-import { Principal } from "@dfinity/principal";
+import { godwin_token }                                           from "../declarations/godwin_token";
+import { createActor as createSub }                               from "../declarations/godwin_backend";
 
-import { useState, useEffect } from "react";
+import { AuthClient }                                             from "@dfinity/auth-client";
+import { ActorSubclass }                                          from "@dfinity/agent";
+import { Principal }                                              from "@dfinity/principal";
+import { fromNullable }                                           from "@dfinity/utils";
 
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect }                                    from "react";
+import { useNavigate }                                            from "react-router-dom";
 
 import React from 'react'
 
@@ -36,6 +36,8 @@ export const ActorContext = React.createContext<{
   userAccount?: Account | null;
   balance: bigint | null;
   refreshBalance: () => void;
+  loggedUserName?: string | undefined;
+  refreshLoggedUserName: () => void;
   getPrincipal: () => Principal;
 }>({
   login: () => {},
@@ -45,20 +47,23 @@ export const ActorContext = React.createContext<{
   subs: new Map(),
   balance: null,
   refreshBalance: () => {},
+  loggedUserName: undefined,
+  refreshLoggedUserName: () => {},
   getPrincipal: () => Principal.anonymous()
 });
 
 export function useAuthClient() {
   const navigate = useNavigate();
 
-  const [authClient, setAuthClient] = useState<AuthClient>();
-  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
-  const [token] = useState<ActorSubclass<TokenService>>(godwin_token);
-  const [master, setMaster] = useState<ActorSubclass<MasterService>>(godwin_master);
-  const [subs, setSubs] = useState<Map<string, Sub>>(new Map());
-  const [subsFetched, setSubsFetched] = useState<boolean | null>(true);
-  const [userAccount, setUserAccount] = useState<Account | null>(null);
-  const [balance, setBalance] = useState<bigint | null>(null);
+  const [authClient,      setAuthClient     ] = useState<AuthClient>                  (             );
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null         );
+  const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token );
+  const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master);
+  const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()    );
+  const [subsFetched,     setSubsFetched    ] = useState<boolean | null>              (true         );
+  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null         );
+  const [loggedUserName,        setUserName       ] = useState<string | undefined>          (undefined    );
+  const [balance,         setBalance        ] = useState<bigint | null>               (null         );
 
   const login = () => {
     authClient?.login({
@@ -109,6 +114,19 @@ export function useAuthClient() {
     setSubsFetched(true);
   }
 
+  const refreshUserAccount = () => {
+    if (isAuthenticated) {
+      let principal = authClient?.getIdentity().getPrincipal();
+      if (principal !== undefined && !principal.isAnonymous()){
+        master.getUserAccount(principal).then((account) => {
+          setUserAccount(account);
+        });
+        return;
+      }
+    }
+    setUserAccount(null);
+  }
+
   const refreshBalance = () => {
     if (userAccount !== null) {
       token.icrc1_balance_of(userAccount).then((balance) => {;
@@ -116,6 +134,17 @@ export function useAuthClient() {
       });
     } else {
       setBalance(null);
+    }
+  }
+
+  const refreshLoggedUserName = () => {
+    let principal = authClient?.getIdentity().getPrincipal();
+    if (principal !== undefined){
+      master.getUserName(principal).then((name) => {
+        setUserName(fromNullable(name));
+      }
+    )} else {
+      setUserName(undefined);
     }
   }
 
@@ -152,21 +181,16 @@ export function useAuthClient() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      let principal = authClient?.getIdentity().getPrincipal();
-      if (principal !== undefined && !principal.isAnonymous()){
-        master.getUserAccount(principal).then((account) => {
-          setUserAccount(account);
-        });
-        return;
-      }
-    }
-    setUserAccount(null);
+    refreshUserAccount();
   }, [master, isAuthenticated]);
 
   useEffect(() => {
     refreshBalance();
-  }, [userAccount]);
+  }, [token, userAccount]);
+
+  useEffect(() => {
+    refreshLoggedUserName();
+  }, [master, authClient]);
 
   return {
     authClient,
@@ -183,6 +207,8 @@ export function useAuthClient() {
     userAccount,
     balance,
     refreshBalance,
+    loggedUserName,
+    refreshLoggedUserName,
     getPrincipal
   };
 }

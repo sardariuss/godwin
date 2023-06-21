@@ -106,7 +106,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
           </div>
           <div className="grid grid-cols-3 w-full items-center mt-2 text-xs font-light text-gray-400">
             <div className=" place-self-center">
-              { voteNumber.toString() + " votes" }
+              { voteNumber.toString() + " votes categorized" }
             </div>
             <ChartTypeToggle 
               chartType={chartType}

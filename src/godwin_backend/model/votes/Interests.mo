@@ -38,6 +38,7 @@ module {
   type InterestBallot         = Types.InterestBallot;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
   type DecayParameters        = Types.DecayParameters;
+  type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -56,6 +57,9 @@ module {
   type PayRules               = PayRules.PayRules;
   
   public type Register        = Votes.Register<Interest, Appeal>;
+
+  let DECAY_WEIGHT      = 0.5; // Arbitrarily set
+  let DECAY_RESISTANCE  = 1.0; // Arbitrarily set
 
   let PRICE_OPENING_VOTE = 1_000_000_000; // @todo: make this a parameter
   let PRICE_PUT_BALLOT   = 100_000_000; // @todo: make this a parameter
@@ -216,6 +220,17 @@ module {
     // but that may be OK depending on your context since the exact result is nearly zero in that case.
     let sigmoid = (2.0 / (1.0 + Float.exp(-1.0 * growth_rate * (x - mid_point)))) - 1.0;
     total * sigmoid;
+  };
+
+  // https://www.desmos.com/calculator/jcddnwyqbk
+  public func computeSelectionScore(args: InterestMomentumArgs, pickRate: Time, now: Time): Float {
+    let { last_pick_date; last_pick_score; num_votes_opened; minimum_score; } = args;
+    let time_passed = Float.fromInt(now - last_pick_date) / Float.fromInt(pickRate);
+    let momentum = ( 
+        (1 - DECAY_WEIGHT) * (1.0 / time_passed)
+      +      DECAY_WEIGHT  * Float.exp((-time_passed + 1) / (DECAY_RESISTANCE * (Float.fromInt(num_votes_opened) + 1)))
+    ) * last_pick_score;
+    momentum;
   };
   
 };

@@ -84,6 +84,13 @@ module {
       };
     };
 
+    public func getLastVote(question_id: QuestionId) : ?VoteId {
+      switch(Map.peek(getQuestionVotes(question_id))){
+        case(null) { null; };
+        case(?(_, vote_id)) { ?vote_id; };
+      };
+    };
+
     public func getVoteId(question_id: QuestionId, iteration: Nat) : VoteId {
       switch(findVoteId(question_id, iteration)){
         case(#ok(vote_id))                { vote_id                                };

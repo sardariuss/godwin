@@ -95,7 +95,7 @@ module {
     let model = Model.Model(
       WRef.WRef(state.name),
       WRef.WRef(state.master),
-      WRef.WRef(state.last_pick_date),
+      WRef.WRef(state.momentum_args),
       WRef.WRef(state.scheduler_params),
       WRef.WRef(state.decay_params),
       categories,

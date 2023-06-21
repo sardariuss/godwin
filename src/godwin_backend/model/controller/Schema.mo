@@ -4,6 +4,7 @@ import Model         "../Model";
 import Status        "../questions/Status";
 import StatusManager "../questions/StatusManager";
 import KeyConverter  "../questions/KeyConverter";
+import Interests     "../votes/Interests";
 
 import Duration      "../../utils/Duration";
 import StateMachine  "../../utils/StateMachine";
@@ -11,6 +12,7 @@ import StateMachine  "../../utils/StateMachine";
 import Option        "mo:base/Option";
 import Debug         "mo:base/Debug";
 import Principal     "mo:base/Principal";
+import Float         "mo:base/Float";
 
 module {
 
@@ -123,28 +125,33 @@ module {
 
     func selected(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
-      // Get the most interesting question
-      let most_interesting = switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
-        case (null) { result.set(#err("Not listed in interest queries")); return; };
-        case(?question_id) { question_id; };
+      
+      // Verify it is the most interesting question
+      switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
+        case (null) { result.set(#err("The question is not listed in the #INTEREST_SCORE order by queries")); return; };
+        case(?most_interesting) {
+          if (question_id != most_interesting) {
+            result.set(#err("The question is currently not the most interesting question")); return;
+          };
+        };
       };
-      // Verify it is the current question
-      if (most_interesting != question_id) {
-        result.set(#err("Not the most interesting question")); return;
-      };
-      // Verify the time is greater than the last pick date
-      if (date < _model.getLastPickDate() + Duration.toTime(_model.getSchedulerParameters().question_pick_rate)){
-        result.set(#err("Too soon to get selected")); return;
-      };
-      // Verify the appeal is positive
+
       let status_info = _model.getStatusManager().getCurrentStatus(question_id);
       let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
-      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
-      if (appeal.score < 0.0) {
-        result.set(#err("Cannot select a question with negative appeal")); return;
+      let question_score = _model.getInterestVotes().getVote(vote_id).aggregate.score;
+
+      // Verify the score is positive
+      if (question_score < 0.0) {
+        result.set(#err("The question's score is negative")); return;
       };
-      // Update the last pick date
-      _model.setLastPickDate(date);
+
+      let momentum_args = _model.getMomentumArgs();
+
+      // Verify the score is greater or equal to the required score
+      if (question_score < Interests.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_rate), date)){
+        result.set(#err("The question's score is too low")); return;
+      };
+
       // If it is the first iteration, open up the cursor votes, 
       // otherwise they already have been opened early
       let cursor_votes = if (status_info.iteration == 0){
@@ -158,6 +165,15 @@ module {
       } else {
         null;
       };
+
+      // Update the momentum args
+      _model.setMomentumArgs({
+        last_pick_date = date;
+        last_pick_score = question_score;
+        num_votes_opened = momentum_args.num_votes_opened + 1;
+        minimum_score = momentum_args.minimum_score;
+      });
+
       // Perform the transition
       result.set(#ok(cursor_votes));
     };
