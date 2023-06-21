@@ -1,14 +1,14 @@
-import PolarizationBar                                             from "../base/PolarizationBar";
-import ChartTypeToggle                                             from "../base/ChartTypeToggle";
-import { ChartTypeEnum, toPolarizationInfo }                       from "../../utils";
-import CONSTANTS                                                   from "../../Constants";
-import { PublicVote_1, Category, CategoryInfo, Principal, Ballot } from "../../../declarations/godwin_backend/godwin_backend.did";
+import PolarizationBar, { BallotPoint }               from "../base/PolarizationBar";
+import ChartTypeToggle                                from "../base/ChartTypeToggle";
+import { ChartTypeEnum, toPolarizationInfo }          from "../../utils";
+import CONSTANTS                                      from "../../Constants";
+import { CategorizationVote, Category, CategoryInfo } from "../../../declarations/godwin_backend/godwin_backend.did";
 
-import { useState }                                                from "react";
+import { useState }                                   from "react";
 
 type CategorizationPolarizationBarsProps = {
   showName: boolean;
-  categorizationVote: PublicVote_1;
+  categorizationVote: CategorizationVote;
   categories: Map<Category, CategoryInfo>
 }
 
@@ -17,11 +17,16 @@ const CategorizationPolarizationBars = ({showName, categorizationVote, categorie
   const [chartType, setChartType] = useState<ChartTypeEnum>(ChartTypeEnum.Bar);
 
   // @todo: do not use the index
-  const getBallotsFromCategory = (categorizationVote: PublicVote_1, cat_index: number) : [Principal, Ballot][] => {
-    let ballots : [Principal, Ballot][] = [];
+  const getBallotsFromCategory = (categorizationVote: CategorizationVote, cat_index: number) : BallotPoint[] => {
+    let ballots : BallotPoint[] = [];
     for (let [principal, ballot] of categorizationVote.ballots){
       if (ballot.answer[cat_index] !== undefined){
-        ballots.push([principal, {date : ballot.date, answer: ballot.answer[cat_index][1]}]);
+        ballots.push({
+          label: principal.toString(),
+          cursor: ballot.answer[cat_index][1],
+          date: ballot.date,
+          coef: 1.0
+        });
       }
     }
     return ballots;
@@ -37,7 +42,7 @@ const CategorizationPolarizationBars = ({showName, categorizationVote, categorie
               showName={showName}
               polarizationInfo={toPolarizationInfo(categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
               polarizationValue={aggregate}
-              ballots={getBallotsFromCategory(categorizationVote, index).map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}
+              ballots={getBallotsFromCategory(categorizationVote, index)}
               chartType={chartType}>
             </PolarizationBar>
           </li>

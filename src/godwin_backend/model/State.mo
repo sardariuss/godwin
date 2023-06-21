@@ -1,7 +1,7 @@
 import Types                  "Types";
 import Categories             "Categories";
-import Decay                  "Decay";
 import VoteTypes              "votes/Types";
+import Decay                  "votes/Decay";
 import QuestionTypes          "questions/Types";
 import Questions              "questions/Questions";	
 import QuestionQueriesFactory "questions/QueriesFactory";

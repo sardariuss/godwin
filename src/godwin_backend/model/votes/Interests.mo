@@ -37,6 +37,7 @@ module {
   type Appeal                 = Types.Appeal;
   type InterestBallot         = Types.InterestBallot;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
+  type DecayParameters        = Types.DecayParameters;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -70,7 +71,8 @@ module {
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries,
-    pay_rules: PayRules
+    pay_rules: PayRules,
+    decay_params: DecayParameters
   ) : Interests {
     Interests(
       Votes.Votes(
@@ -91,6 +93,7 @@ module {
           pay_rules.getInterestVotePrice(),
           pay_rules.computeInterestVotePayout
         ),
+        decay_params,
         #REVEAL_BALLOT_VOTE_CLOSED
       ),
       pay_for_new,
@@ -108,8 +111,8 @@ module {
     _pay_rules: PayRules
   ) {
     
-    public func openVote(principal: Principal, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
-      switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), _votes.newVote)){
+    public func openVote(principal: Principal, date: Time, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
+      switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), func() : VoteId { _votes.newVote(date); })){
         case(#err(err)) { #err(err); };
         case(#ok(vote_id)) {
           let question_id = on_success(vote_id);
@@ -119,9 +122,9 @@ module {
       };
     };
 
-    public func closeVote(vote_id: Nat) : async* () {
+    public func closeVote(vote_id: Nat, date: Time) : async* () {
       // Close the vote
-      await* _votes.closeVote(vote_id);
+      await* _votes.closeVote(vote_id, date);
       let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
       _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.score));

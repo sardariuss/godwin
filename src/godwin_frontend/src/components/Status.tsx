@@ -1,8 +1,8 @@
 import AppealDigest                                                                                    from "./interest/AppealDigest";
 import OpinionAggregate                                                                                from "./opinion/OpinionAggregate";
+import OpinionPolarizationBar                                                                          from "./opinion/OpinionPolarizationBar";
 import AppealBar                                                                                       from "./interest/AppealBar";
 import CategorizationAggregateDigest                                                                   from "./categorization/CategorizationAggregateDigest";
-import SinglePolarizationBar                                                                           from "./base/SinglePolarizationBar";
 import CategorizationPolarizationBars                                                                  from "./categorization/CategorizationPolarizationBars";
 import { statusToString, toMap, VoteKind }                                                             from "../utils";
 import { nsToStrDate }                                                                                 from "../utils/DateUtils";
@@ -138,9 +138,9 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onS
               }
               </div>
               <div>
-              {
+              {     
                 selectedVote === VoteKind.OPINION && opinionVote !== undefined ?
-                  <SinglePolarizationBar
+                  <OpinionPolarizationBar
                     name={"OPINION"}
                     showName={false}
                     polarizationInfo={CONSTANTS.OPINION_INFO}

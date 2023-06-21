@@ -1,18 +1,18 @@
-import PolarizationBar                     from "./PolarizationBar";
-import ChartTypeToggle                     from "./ChartTypeToggle";
+import PolarizationBar                     from "../base/PolarizationBar";
+import ChartTypeToggle                     from "../base/ChartTypeToggle";
 import { OpinionVote }                     from "../../../declarations/godwin_backend/godwin_backend.did";
 import { ChartTypeEnum, PolarizationInfo } from "../../utils";
 
 import { useState }                        from "react";
 
-type SinglePolarizationBarProps = {
+type OpinionPolarizationBarProps = {
   name: string;
   showName: boolean;
   polarizationInfo: PolarizationInfo;
   vote: OpinionVote;
 }
 
-const SinglePolarizationBar = ({name, showName, polarizationInfo, vote}: SinglePolarizationBarProps) => {
+const OpinionPolarizationBar = ({name, showName, polarizationInfo, vote}: OpinionPolarizationBarProps) => {
 
   const [chartType, setChartType] = useState<ChartTypeEnum>(ChartTypeEnum.Bar);
 
@@ -24,7 +24,12 @@ const SinglePolarizationBar = ({name, showName, polarizationInfo, vote}: SingleP
           showName={showName}
           polarizationInfo={polarizationInfo}
           polarizationValue={vote.aggregate}
-          ballots={vote.ballots.map(([principal, ballot]) => { return [principal.toText(), ballot, 1.0] })}
+          ballots={vote.ballots.map(([principal, ballot]) => { return {
+            label: principal.toString(),
+            cursor: ballot.answer,
+            date: ballot.date,
+            coef: 1.0
+          }})}
           chartType={chartType}>
         </PolarizationBar>
       </div>
@@ -44,4 +49,4 @@ const SinglePolarizationBar = ({name, showName, polarizationInfo, vote}: SingleP
   );
 }
 
-export default SinglePolarizationBar;
+export default OpinionPolarizationBar;

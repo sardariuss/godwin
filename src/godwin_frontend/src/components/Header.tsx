@@ -63,7 +63,7 @@ function Header({login, setShowAskQuestion}: Props) {
 
   return (
 		<>
-      <header className="bg-slate-100 sticky top-0 z-10 w-full px-2 sm:px-4 py-2.5 dark:bg-gray-800">
+      <header className="bg-slate-100 sticky top-0 z-20 w-full px-2 sm:px-4 py-2.5 dark:bg-gray-800">
         <div className="container flex flex-row justify-between items-center mx-auto">
           <Link to="/">
             <div className="flex flex-row items-center">

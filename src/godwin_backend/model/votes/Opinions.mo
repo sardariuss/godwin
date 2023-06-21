@@ -10,6 +10,7 @@ module {
   type Cursor              = Types.Cursor;
   type Polarization        = Types.Polarization;
   type OpinionBallot       = Types.OpinionBallot;
+  type DecayParameters        = Types.DecayParameters;
 
   public type Register     = Votes.Register<Cursor, Polarization>;
 
@@ -20,7 +21,8 @@ module {
   public type Opinions = Votes.Votes<Cursor, Polarization>;
 
   public func build(
-    vote_register: Votes.Register<Cursor, Polarization>
+    vote_register: Votes.Register<Cursor, Polarization>,
+    decay_params: DecayParameters
   ) : Opinions {
     Votes.Votes<Cursor, Polarization>(
       vote_register,
@@ -32,6 +34,7 @@ module {
         Polarization.nil()
       ),
       null,
+      decay_params,
       #REVEAL_BALLOT_ALWAYS
     );
   };

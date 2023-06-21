@@ -1,5 +1,6 @@
 import RepresentationTypes "representation/Types";
 import PayTypes            "../token/Types";
+import UtilsTypes          "../../utils/Types";
 
 import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
@@ -19,6 +20,8 @@ module {
   type Set<K> = Set.Set<K>;
   type Time = Int;
 
+  type Duration               = UtilsTypes.Duration;
+
   public type Category        = RepresentationTypes.Category;
   public type Cursor          = RepresentationTypes.Cursor;
   public type Polarization    = RepresentationTypes.Polarization;
@@ -28,6 +31,12 @@ module {
   public type Interest = {
     #UP;
     #DOWN;
+  };
+
+  public type DecayParameters = {
+    half_life: Duration;
+    lambda: Float;
+    shift: Float; // Used to shift X so that the exponential does not underflow/overflow
   };
 
   public type Appeal = {
@@ -44,8 +53,8 @@ module {
   public type VoterHistory = Set<VoteId>;
 
   public type Status = {
-    #OPEN;
-    #CLOSED;
+    #OPEN: Time;
+    #CLOSED: Time;
   };
 
   public type Vote<T, A> = {
@@ -53,6 +62,7 @@ module {
     var status: Status;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
+    var decay: Float;
   };
 
   public type Ballot<T> = {

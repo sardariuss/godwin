@@ -44,24 +44,26 @@ module {
     };
 
     // @todo: dangereous, the result can still be altered after the function returns
-    func passedDuration(duration: Duration, question_id: Nat, event: Event, result: TransitionResult, on_passed: (TransitionResult) -> ()) {
+    func passedDuration(duration: Duration, question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> ()) {
       // Get the date of the current status
       let status_info = _model.getStatusManager().getCurrentStatus(question_id);
       // If enough time has passed (candidate_status_duration), perform the transition
-      if (unwrapTime(event) < status_info.date + Duration.toTime(duration)){
+      if (date < status_info.date + Duration.toTime(duration)){
         result.set(#err("Too soon to go to next status")); return;
       };
       on_passed(result);
     };
 
     func candidateStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, event, result, func(result: TransitionResult) {
+      let date = unwrapTime(event);
+      passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) {
         result.set(#ok(null));
       });
     };
   
     func openStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, event, result, func(result: TransitionResult) {
+      let date = unwrapTime(event);
+      passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, date, result, func(result: TransitionResult) {
         // Open up early votes for the next iteration
         // Find the old key
         let current = _model.getStatusManager().getCurrentStatus(question_id);
@@ -77,8 +79,8 @@ module {
           ?previous_key,
           ?KeyConverter.toOpinionVoteKey(question_id, unwrapTime(event), true));
         result.set(#ok(?#CURSOR_VOTES({ 
-          opinion_vote_id        = _model.getOpinionVotes().newVote();
-          categorization_vote_id = _model.getCategorizationVotes().newVote();
+          opinion_vote_id        = _model.getOpinionVotes().newVote(date);
+          categorization_vote_id = _model.getCategorizationVotes().newVote(date);
         })));
       });
     };
@@ -90,7 +92,8 @@ module {
         result.set(#err("Question had been opened at least once"));
         return;
       };
-      passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, event, result, func(result: TransitionResult) {
+      let date = unwrapTime(event);
+      passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, date, result, func(result: TransitionResult) {
         result.set(#ok(null));
       });
     };
@@ -119,7 +122,7 @@ module {
     };
 
     func selected(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let time = unwrapTime(event);
+      let date = unwrapTime(event);
       // Get the most interesting question
       let most_interesting = switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
         case (null) { result.set(#err("Not listed in interest queries")); return; };
@@ -130,7 +133,7 @@ module {
         result.set(#err("Not the most interesting question")); return;
       };
       // Verify the time is greater than the last pick date
-      if (time < _model.getLastPickDate() + Duration.toTime(_model.getSchedulerParameters().question_pick_rate)){
+      if (date < _model.getLastPickDate() + Duration.toTime(_model.getSchedulerParameters().question_pick_rate)){
         result.set(#err("Too soon to get selected")); return;
       };
       // Verify the appeal is positive
@@ -141,16 +144,16 @@ module {
         result.set(#err("Cannot select a question with negative appeal")); return;
       };
       // Update the last pick date
-      _model.setLastPickDate(time);
+      _model.setLastPickDate(date);
       // If it is the first iteration, open up the cursor votes, 
       // otherwise they already have been opened early
       let cursor_votes = if (status_info.iteration == 0){
         // Add to opinion vote queries
-        _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, time, false));
+        _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
         // Open up the votes
         ?#CURSOR_VOTES({ 
-          opinion_vote_id        = _model.getOpinionVotes().newVote();
-          categorization_vote_id = _model.getCategorizationVotes().newVote();
+          opinion_vote_id        = _model.getOpinionVotes().newVote(date);
+          categorization_vote_id = _model.getCategorizationVotes().newVote(date);
         });
       } else {
         null;
@@ -174,7 +177,7 @@ module {
         case(?question) { question; };
       };
       // @todo: risk of reentry, user will loose tokens if the question has already been reopened
-      switch(await* _model.getInterestVotes().openVote(caller, func(VoteId) : QuestionId { question.id; })){
+      switch(await* _model.getInterestVotes().openVote(caller, date, func(VoteId) : QuestionId { question.id; })){
         case(#err(err)) { result.set(#err("Fail to open interest vote")); };
         case(#ok((_, vote_id))) {
           result.set(#ok(?#INTEREST_VOTE(vote_id))); 

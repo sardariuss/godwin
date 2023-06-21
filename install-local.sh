@@ -33,9 +33,6 @@ dfx canister call godwin_master createSubGodwin '("classic6", record {
                right = record { name = "CONSERVATISM";   symbol = "🧊"; color = "#5f00cc"; }; }
     };
   };
-  history = record {
-    convictions_half_life = null;
-  };
   scheduler = record {
     question_pick_rate        = variant { HOURS = 2    };
     censor_timeout            = variant { MINUTES = 30 };
@@ -51,7 +48,7 @@ dfx canister call godwin_master createSubGodwin '("classic6", record {
     interest_vote_price_e8s = 100_000_000;
     categorization_vote_price_e8s =  350_000_000;
   };
-  decay_half_life = variant { DAYS = 365; };
+  decay_half_life = variant { DAYS = 365 };
 })'
 # Run the scenario @todo for some reason this does not work, one shall use ic-repl instead
 #export SUB_6_VALUES_PRINCIPAL=${SUB_6_VALUES_ID:1:29}
@@ -66,9 +63,6 @@ dfx canister call godwin_master createSubGodwin '("uspolitics", record {
       record { left  = record { name = "DEMOCRAT";   symbol = "🦓"; color = "#1404BD"; }; 
                right = record { name = "REPUBLICAN"; symbol = "🐘"; color = "#DE0100"; }; }
     };
-  };
-  history = record {
-    convictions_half_life = null;
   };
   scheduler = record {
     question_pick_rate        = variant { HOURS = 1    };
@@ -85,7 +79,7 @@ dfx canister call godwin_master createSubGodwin '("uspolitics", record {
     interest_vote_price_e8s = 100_000_000;
     categorization_vote_price_e8s =  350_000_000;
   };
-  decay_half_life = variant { DAYS = 365; };
+  decay_half_life = variant { DAYS = 365 };
 })'
 
 # Deploy the internet identity

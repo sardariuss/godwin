@@ -8,18 +8,22 @@ import { Polarization, Ballot }                                                 
 
 import { useState, useEffect }                                                       from "react";
 
+export type BallotPoint = {
+  label: string;
+  cursor: number;
+  coef: number;
+  date: bigint;
+};
 
-const getScatterChartData = (input_ballots: [string, Ballot, number][], polarizationInfo: PolarizationInfo) => {
+const getScatterChartData = (input_ballots: BallotPoint[], polarizationInfo: PolarizationInfo) => {
   let labels : string[] = [];
   let points : { x : number, y: number }[]= [];
   let colors : string[] = [];
   for (let i = 0; i < input_ballots.length; i++){
-    let coef = input_ballots[i][2];
-    let cursor = input_ballots[i][1].answer * coef;
-    let date = input_ballots[i][1].date;
-    points.push({ x: cursor, y: Number(date) });
-    colors.push(cursorToColor(cursor, polarizationInfo, Math.abs(coef)));
-    labels.push("Vote Id: " + input_ballots[i][0] + "\nCursor: " + input_ballots[i][1].answer.toPrecision(2) + "\nCoef:" + input_ballots[i][2].toPrecision(2) );
+    let final_cursor = input_ballots[i].cursor * input_ballots[i].coef;
+    points.push({ x: final_cursor, y: Number(input_ballots[i].date) });
+    colors.push(cursorToColor(final_cursor, polarizationInfo, Math.abs(input_ballots[i].coef)));
+    labels.push(input_ballots[i].label);
   }
   return {
     datasets: [{
@@ -75,7 +79,7 @@ type Props = {
   showName: boolean;
   polarizationInfo: PolarizationInfo;
   polarizationValue: Polarization;
-  ballots: [string, Ballot, number][];
+  ballots: BallotPoint[];
   chartType: ChartTypeEnum;
 };
 

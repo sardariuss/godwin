@@ -35,8 +35,9 @@ module {
         case(?v) { v };
       };
       // Check it is not closed
-      if (vote.status == #CLOSED){
-        return #err(#VoteClosed);
+      switch(vote.status){
+        case(#CLOSED(_)) { return #err(#VoteClosed); };
+        case(_) {};
       };
       // Verify the principal is not anonymous
       if (Principal.isAnonymous(principal)){

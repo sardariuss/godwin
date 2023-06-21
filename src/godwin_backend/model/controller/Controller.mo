@@ -10,6 +10,7 @@ import StatusManager       "../questions/StatusManager";
 import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
+import Decay               "../votes/Decay";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PolarizationMap     "../votes/representation/PolarizationMap";
 
@@ -162,7 +163,7 @@ module {
         question.id;
       };
       // Open up the vote
-      switch(await* _model.getInterestVotes().openVote(caller, create_question)){
+      switch(await* _model.getInterestVotes().openVote(caller, date, create_question)){
         case(#err(err)) { return #err(err); };
         case(#ok((question_id, _))) { return #ok(question_id); };
       };
@@ -305,26 +306,30 @@ module {
       _model.getCategorizationVotes().revealBallots(caller, voter, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)], Bool)> {
+    public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)], Float, Bool)> {
+      let current_decay = Decay.computeDecay(_model.getDecayParameters(), now);
       // Get the voter opinion ballots
       Map.mapFilter(
         _model.getOpinionVotes().getVoterBallots(principal),
         Map.nhash,
-        func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)], Bool) {
+        func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)], Float, Bool) {
           let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
           // Get the last closed categorization vote for this question
-          let join = Map.findDesc(
+          let cat_join = Map.findDesc(
             _model.getCategorizationJoins().getQuestionVotes(question_id),
             func(iteration: Nat, cat_vote_id: VoteId) : Bool {
-              _model.getCategorizationVotes().getVote(cat_vote_id).status == #CLOSED;
+              switch(_model.getCategorizationVotes().getVote(cat_vote_id).status) { 
+                case(#CLOSED(_)) { true; }; case (#OPEN(_)) { false; };
+              };
             });
           // Return the vote ID, the user opinion ballot and the up-to-date categorization
-          switch(join){
+          switch(cat_join){
             case(null) { null; };
             case(?(cat_iteration, cat_vote_id)){
               ?(
                 ballot, 
                 Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(cat_vote_id).aggregate)),
+                _model.getOpinionVotes().getVote(vote_id).decay / current_decay,
                 cat_iteration >= opinion_iteration // If the categorization is newer or as old as the opinion, we consider the opinion genuine
               );
             };
@@ -361,11 +366,11 @@ module {
           // Close vote(s) if any
           switch(current.status){
             case(#CANDIDATE) { 
-              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current.iteration));
+              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current.iteration), date);
             };
             case(#OPEN)      { 
-              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, current.iteration));
-              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, current.iteration)); 
+              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, current.iteration), date);
+              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, current.iteration), date);
             };
             case(_) {};
           };

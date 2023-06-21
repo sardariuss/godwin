@@ -237,8 +237,8 @@ module {
       _controller.queryFreshVotes(principal, vote_kind, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)], Bool))] {
-      Utils.mapToArray(_controller.getVoterConvictions(principal));
+    public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)], Float, Bool))] {
+      Utils.mapToArray(_controller.getVoterConvictions(now, principal));
     };
 
     public func run(time: Time) : async* () {

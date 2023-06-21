@@ -1,10 +1,10 @@
 import { VoterHistory }                                                                             from "./VoterHistory";
 import ChartTypeToggle                                                                              from "../base/ChartTypeToggle";
-import PolarizationBar                                                                              from "../base/PolarizationBar";
+import PolarizationBar, { BallotPoint }                                                             from "../base/PolarizationBar";
 import { Sub }                                                                                      from "../../ActorContext";
 import CONSTANTS                                                                                    from "../../Constants";
 import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap, VoteKind } from "../../utils";
-import { Category, Polarization, Ballot }                                                           from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, Polarization }                                                                   from "../../../declarations/godwin_backend/godwin_backend.did";
 
 import { Principal }                                                                                from "@dfinity/principal";
 import { useEffect, useState }                                                                      from "react";
@@ -16,20 +16,20 @@ type ConvictionsProps = {
 
 const Convictions = ({principal, sub} : ConvictionsProps) => {
 
-  const [chartType, setChartType] = useState<ChartTypeEnum>(ChartTypeEnum.Bar);
-  const [polarizationMap, setPolarizationMap] = useState<Map<Category, Polarization>>(new Map<Category, Polarization>());
-  const [ballotsMap, setBallotsMap] = useState<Map<Category, [string, Ballot, number][]>>(new Map<Category, [string, Ballot, number][]>());
-  const [voteNumber, setVoteNumber] = useState<number>(0);
-  const [genuineNumber, setGenuineNumber] = useState<number>(0);
+  const [chartType,       setChartType      ] = useState<ChartTypeEnum>               (ChartTypeEnum.Bar                 );
+  const [polarizationMap, setPolarizationMap] = useState<Map<Category, Polarization>> (new Map<Category, Polarization> ());
+  const [ballotsMap,      setBallotsMap     ] = useState<Map<Category, BallotPoint[]>>(new Map<Category, BallotPoint[]>());
+  const [voteNumber,      setVoteNumber     ] = useState<number>                      (0                                 );
+  const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (0                                 );
 
   const refreshConvictions = async () => {
     console.log("Refreshing convictions");
 
     if (principal === undefined) {
       setPolarizationMap(new Map<Category, Polarization>());
-      setBallotsMap(new Map<Category, [string, Ballot, number][]>());
+      setBallotsMap(new Map<Category, BallotPoint[]>());
       setVoteNumber(0);
-      setGenuineNumber(0);
+      setGenuineRatio(0);
       return;
     }
 
@@ -39,22 +39,29 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
       return;
     };
 
-    let weighted_ballots = new Map<Category, [string, Ballot, number][]>();
+    let weighted_ballots = new Map<Category, BallotPoint[]>();
     let map_polarizations = new Map<Category, Polarization>();
 
-    var genuine_number = 0;
+    var total_genuine = 0;
+    var total_decay = 0;
 
     for (let i = 0; i < queryConvictions.length; i++){
       // Get the opinion and category weight from the query
-      let [vote_id, [opinion, categorization, is_genuine]] = queryConvictions[i];
+      let [vote_id, [opinion, categorization, decay, is_genuine]] = queryConvictions[i];
 
-      genuine_number += is_genuine ? 1 : 0;
+      total_genuine += is_genuine ? decay : 0;
+      total_decay += decay;
 
       sub.categories.forEach(([category, info]) => {
         let weight = toMap(categorization).get(category) ?? 0;
         // Add the weighted ballot to the ballots array
-        let array : [string, Ballot, number][] = weighted_ballots.get(category) ?? [];
-        array.push([vote_id.toString(), opinion, weight]);
+        let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
+        array.push({
+          label: "Vote " + vote_id.toString() + ", cursor " + opinion.answer.toString() + ", decay " + decay.toString(),
+          cursor: opinion.answer,
+          coef: weight * decay,
+          date: opinion.date
+        });
         weighted_ballots.set(category, array);
         // Compute the polarization
         let old_polarization = map_polarizations.get(category) ?? {left: 0, center: 0, right: 0};
@@ -66,7 +73,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
     setPolarizationMap(map_polarizations);
     setBallotsMap(weighted_ballots);
     setVoteNumber(queryConvictions.length);
-    setGenuineNumber(genuine_number);
+    setGenuineRatio(total_genuine / total_decay);
   }
 
   useEffect(() => {
@@ -106,7 +113,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
               setChartType={setChartType}
             />
             <div className=" place-self-center">
-            { voteNumber > 0 ? (genuineNumber / voteNumber * 100).toFixed(0) + "% genuine" : ""}
+            { voteNumber > 0 ? (genuineRatio / voteNumber * 100).toFixed(0) + "% genuine" : ""}
             </div>
           </div>
         </div>

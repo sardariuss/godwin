@@ -1,6 +1,7 @@
 import Types      "Types";
 import VotePolicy "VotePolicy";
 import PayToVote  "PayToVote";
+import Decay      "Decay";
 import PayTypes   "../token/Types";
 
 import Utils      "../../utils/Utils";
@@ -23,6 +24,7 @@ import Prim       "mo:prim";
 module {
 
   // For convenience: from base module
+  type Time                      = Int;
   type Principal                 = Principal.Principal;
   type Result <Ok, Err>          = Result.Result<Ok, Err>;
     
@@ -33,6 +35,7 @@ module {
   type Ballot<T>                 = Types.Ballot<T>;
   type RevealedBallot<T>         = Types.RevealedBallot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
+  type DecayParameters           = Types.DecayParameters;
   type GetVoteError              = Types.GetVoteError;
   type FindBallotError           = Types.FindBallotError;
   type RevealVoteError           = Types.RevealVoteError;
@@ -76,12 +79,13 @@ module {
     func() = (Principal.fromText("2vxsx-fae"), 0)
   );
 
-  public func initVote<T, A>(vote_id: VoteId, empty_aggregate: A) : Vote<T, A> {
+  public func initVote<T, A>(vote_id: VoteId, date: Time, decay: Float, empty_aggregate: A) : Vote<T, A> {
     {
       id = vote_id;
-      var status = #OPEN;
+      var status = #OPEN(date);
       ballots = Map.new<Principal, Ballot<T>>(Map.phash);
-      var aggregate = empty_aggregate; 
+      var aggregate = empty_aggregate;
+      var decay = decay;
     };
   };
 
@@ -89,29 +93,32 @@ module {
     _register: Register<T, A>,
     _policy: VotePolicy<T, A>,
     _pay_to_vote: ?PayToVote<T, A>,
+    _decay_params: DecayParameters,
     _reveal_ballot_authorization: RevealBallotAuthorization
   ) {
 
     let _ballot_locks = Set.new<(Principal, VoteId)>(pnhash);
 
-    public func newVote() : VoteId {
+    public func newVote(date: Time) : VoteId {
       let index = _register.index;
-      let vote : Vote<T, A> = initVote(index, _policy.emptyAggregate());
+      let vote : Vote<T, A> = initVote(index, date, Decay.computeDecay(_decay_params, date), _policy.emptyAggregate());
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;
     };
 
-    public func closeVote(id: VoteId) : async*() {
+    public func closeVote(id: VoteId, date: Time) : async*() {
       switch(Map.get(_register.votes, Map.nhash, id)){
         case(null) { Debug.trap("Could not find a vote with ID '" # Nat.toText(id) # "'"); };
         case(?vote) {
-          // Check if the vote in not already closed
-          if (vote.status == #CLOSED) {
-            Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed");
-          };
           // Close the vote
-          vote.status := #CLOSED;
+          switch(vote.status){
+            case(#CLOSED(_)) { Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed"); };
+            case(#OPEN(_)) { 
+              vote.status := #CLOSED(date); 
+              vote.decay := Decay.computeDecay(_decay_params, date);
+            };
+          };
           Map.set(_register.votes, Map.nhash, id, vote); // @todo: not required ?
           // Payout if any
           switch(_pay_to_vote){
@@ -204,8 +211,8 @@ module {
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
       Result.chain<Vote<T, A>, Vote<T, A>, RevealVoteError>(findVote(id), func(vote) {
         switch(vote.status){
-          case(#OPEN) { #err(#VoteOpen); }; //@todo
-          case(#CLOSED) { #ok(vote); };
+          case(#OPEN(_)) { #err(#VoteOpen); }; //@todo
+          case(#CLOSED(_)) { #ok(vote); };
         };
       });
     };
@@ -219,10 +226,15 @@ module {
         case(null) { return #err(#BallotNotFound); };
         case(?b) { b; };
       };
-      let answer = if (Principal.equal(caller, voter) or _reveal_ballot_authorization == #REVEAL_BALLOT_ALWAYS or vote.status == #CLOSED){
-        ?ballot.answer; 
-      } else {
-        null; 
+      let answer = switch(vote.status){
+        case(#OPEN(_)) { 
+          if (Principal.equal(caller, voter) or _reveal_ballot_authorization == #REVEAL_BALLOT_ALWAYS) {
+            ?ballot.answer;
+          } else {
+            null;
+          }; 
+        };
+        case(#CLOSED(_)) { ?ballot.answer; };
       };
       #ok({
         vote_id;

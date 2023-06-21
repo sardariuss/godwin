@@ -193,8 +193,8 @@ shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
     _facade.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
-  public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)], Bool))] {
-    _facade.getVoterConvictions(principal);
+  public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)], Float, Bool))] {
+    _facade.getVoterConvictions(Time.now(), principal);
   };
 
   public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {

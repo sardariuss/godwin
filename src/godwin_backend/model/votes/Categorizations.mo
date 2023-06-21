@@ -2,12 +2,11 @@ import Types               "Types";
 import Votes               "Votes";
 import VotePolicy          "VotePolicy";
 import PayToVote           "PayToVote";
-
-import PayRules            "../PayRules";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
 import PayForElement       "../token/PayForElement";
 import PayTypes            "../token/Types";
+import PayRules            "../PayRules";
 import Categories          "../Categories";
 
 import Map                 "mo:map/Map";
@@ -17,11 +16,11 @@ module {
   type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
-  
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
   type CategorizationBallot   = Types.CategorizationBallot;
+  type DecayParameters        = Types.DecayParameters;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
@@ -40,7 +39,8 @@ module {
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
-    pay_rules: PayRules
+    pay_rules: PayRules,
+    decay_params: DecayParameters
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
@@ -60,6 +60,7 @@ module {
         pay_rules.getCategorizationVotePrice(),
         pay_rules.computeCategorizationPayout
       ),
+      decay_params,
       #REVEAL_BALLOT_VOTE_CLOSED
     );
   };
