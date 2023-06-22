@@ -4,7 +4,7 @@ import CONSTANTS                                                                
 import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
 import { toPercentage }                                                              from "../charts/ChartUtils";
 
-import { Polarization, Ballot }                                                      from "./../../../declarations/godwin_sub/godwin_sub.did";
+import { Polarization }                                                              from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }                                                       from "react";
 
@@ -15,10 +15,15 @@ export type BallotPoint = {
   date: bigint;
 };
 
+const getBorderColor = () : string => {
+  return document.documentElement.classList.contains('dark') ? CONSTANTS.CHART.BORDER_COLOR_DARK : CONSTANTS.CHART.BORDER_COLOR_LIGHT;
+}
+
 const getScatterChartData = (input_ballots: BallotPoint[], polarizationInfo: PolarizationInfo) => {
   let labels : string[] = [];
   let points : { x : number, y: number }[]= [];
   let colors : string[] = [];
+
   for (let i = 0; i < input_ballots.length; i++){
     let final_cursor = input_ballots[i].cursor * input_ballots[i].coef;
     points.push({ x: final_cursor, y: Number(input_ballots[i].date) });
@@ -27,6 +32,7 @@ const getScatterChartData = (input_ballots: BallotPoint[], polarizationInfo: Pol
   }
   return {
     datasets: [{
+      borderColor: getBorderColor(),
       labels,
       data: points,
       backgroundColor: colors,
@@ -38,16 +44,16 @@ const getScatterChartData = (input_ballots: BallotPoint[], polarizationInfo: Pol
 
 const getBarChartData = (name: string, polarizationValue: Polarization, polarizationInfo: PolarizationInfo) => {
   const labels = [name];
-
-  const border_color =  document.documentElement.classList.contains('dark') ? CONSTANTS.BAR_CHART_BORDER_COLOR_DARK : CONSTANTS.BAR_CHART_BORDER_COLOR_LIGHT;
-
+  const borderColor = getBorderColor();
   const normedPolarization = getNormalizedPolarization(polarizationValue);
+
+  console.log("Sum = " + (normedPolarization.left + normedPolarization.center + normedPolarization.right).toExponential(10));
 
   return {
     labels,
     datasets: [
       {
-        borderColor: border_color,
+        borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.left.symbol],
@@ -55,7 +61,7 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
         backgroundColor: polarizationInfo.left.color,
       },
       {
-        borderColor: border_color,
+        borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.center.symbol],
@@ -63,7 +69,7 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
         backgroundColor: polarizationInfo.center.color,
       },
       {
-        borderColor: border_color,
+        borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
         labels: [polarizationInfo.right.symbol],

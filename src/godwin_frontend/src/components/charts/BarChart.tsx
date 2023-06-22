@@ -48,6 +48,8 @@ const getOptions = (generate_label: (ctx: any) => string) => {
       x: {
         stacked: true,
         display: false,
+        min: 0.0,
+        max: 1.0
       },
       y: {
         stacked: true,
