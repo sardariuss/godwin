@@ -1,10 +1,10 @@
-import Types     "../../src/godwin_backend/model/Types";
-import Facade    "../../src/godwin_backend/model/Facade";
-import Factory   "../../src/godwin_backend/model/Factory";
-import State     "../../src/godwin_backend/model/State";
-import Duration  "../../src/godwin_backend/utils/Duration";
+import Types     "../../src/godwin_sub/model/Types";
+import Facade    "../../src/godwin_sub/model/Facade";
+import Factory   "../../src/godwin_sub/model/Factory";
+import State     "../../src/godwin_sub/model/State";
+import Duration  "../../src/godwin_sub/utils/Duration";
 
-import Utils     "../../src/godwin_backend/utils/Utils";
+import Utils     "../../src/godwin_sub/utils/Utils";
 
 import Random    "Random";
 

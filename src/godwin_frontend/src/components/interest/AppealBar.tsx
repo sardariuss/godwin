@@ -1,6 +1,6 @@
 import { BarChart }            from "../charts/BarChart";
 import { passthroughLabel }    from "../charts/ChartUtils";
-import { InterestVote }        from "../../../declarations/godwin_backend/godwin_backend.did";
+import { InterestVote }        from "../../../declarations/godwin_sub/godwin_sub.did";
 import { PolarizationInfo }    from "../../utils";
 
 import { useState, useEffect } from "react";

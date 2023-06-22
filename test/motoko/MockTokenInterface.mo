@@ -1,4 +1,4 @@
-import Types  "../../src/godwin_backend/model/token/Types";
+import Types  "../../src/godwin_sub/model/token/Types";
 
 import Result    "mo:base/Result";
 import Principal "mo:base/Principal";

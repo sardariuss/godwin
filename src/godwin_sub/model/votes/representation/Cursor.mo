@@ -8,6 +8,8 @@ module {
   type Cursor = Types.Cursor;
   type Polarization = Types.Polarization;
 
+  let FLOAT_EPSILON = 1e-6;
+
   public func identity() : Cursor {
     0.0;
   };
@@ -28,7 +30,7 @@ module {
   };
 
   public func equal(cursor_1: Cursor, cursor_2: Cursor) : Bool {
-    Float.equal(cursor_1, cursor_2);
+    Float.equalWithin(cursor_1, cursor_2, FLOAT_EPSILON);
   };
 
   // A cursor can be transformed into a polarization by assuming

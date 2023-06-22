@@ -9,9 +9,11 @@ dfx deploy godwin_token
 dfx deploy godwin_master
 dfx canister call godwin_master runScenario
 
+dfx deploy godwin_clock
+
 # The backend needs to be created and built to be able to generate the types later
-dfx canister create godwin_backend
-dfx build godwin_backend
+dfx canister create godwin_sub
+dfx build godwin_sub
 
 # Create first sub godwin
 dfx canister call godwin_master createSubGodwin '("classic6", record {

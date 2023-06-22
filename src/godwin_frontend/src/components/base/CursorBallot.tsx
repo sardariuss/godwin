@@ -1,7 +1,7 @@
 import { CursorInfo, }             from "../../utils";
 import { timeAgo }                 from "../../utils/DateUtils";
 import HiddenIcon                  from "../icons/HiddenIcon";
-import { TransactionsRecord }      from "../../../declarations/godwin_backend/godwin_backend.did";
+import { TransactionsRecord }      from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import TransactionsRecordComponent from "../token/TransactionsRecord";
 

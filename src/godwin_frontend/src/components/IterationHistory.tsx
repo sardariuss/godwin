@@ -1,5 +1,5 @@
 import StatusHistoryComponent                                  from "./StatusHistory";
-import { StatusInfo, Category, CategoryInfo, _SERVICE }        from "./../../declarations/godwin_backend/godwin_backend.did";
+import { StatusInfo, Category, CategoryInfo, _SERVICE }        from "./../../declarations/godwin_sub/godwin_sub.did";
 import SvgButton                                               from "./base/SvgButton";
 import { StatusEnum, statusToEnum }                            from "../utils";
 

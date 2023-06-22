@@ -1,6 +1,6 @@
 import CONSTANTS        from "../../Constants";
 import { toCursorInfo } from "../../utils";
-import { Interest }     from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Interest }     from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 export enum InterestEnum {
   Up,

@@ -1,7 +1,7 @@
-import Types          "../../../src/godwin_backend/model/votes/Types";
-import Opinions       "../../../src/godwin_backend/model/votes/Opinions";
-import Votes          "../../../src/godwin_backend/model/votes/Votes";
-import Polarization   "../../../src/godwin_backend/model/votes/representation/Polarization";
+import Types          "../../../src/godwin_sub/model/votes/Types";
+import Opinions       "../../../src/godwin_sub/model/votes/Opinions";
+import Votes          "../../../src/godwin_sub/model/votes/Votes";
+import Polarization   "../../../src/godwin_sub/model/votes/representation/Polarization";
 
 import TestifyTypes   "../testifyTypes";
 import Principals     "../Principals";

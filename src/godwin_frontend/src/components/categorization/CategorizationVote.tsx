@@ -7,7 +7,7 @@ import UpdateProgress                                                    from ".
 import { ActorContext }                                                  from "../../ActorContext"
 import { putBallotErrorToString, toMap, getStrongestCategoryCursorInfo } from "../../utils";
 import CONSTANTS                                                         from "../../Constants";
-import { CursorArray, Category, CategoryInfo, PutBallotError, _SERVICE } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { CursorArray, Category, CategoryInfo, PutBallotError, _SERVICE } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { ActorSubclass }                                                 from "@dfinity/agent";
 import { useContext, useState, useEffect }                               from "react";

@@ -7,7 +7,7 @@ import ArrowDownIcon                                    from "../icons/ArrowDown
 import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
 import { ActorContext }                                 from "../../ActorContext"
 import { putBallotErrorToString }                       from "../../utils";
-import { PutBallotError, _SERVICE }                     from "../../../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, _SERVICE }                     from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { ActorSubclass }                                from "@dfinity/agent";
 import { useState, useEffect, useContext }              from "react";

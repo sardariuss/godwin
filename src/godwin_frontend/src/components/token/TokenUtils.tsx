@@ -1,6 +1,6 @@
 import { Transaction, TransactionKind } from "./TokenTypes";
 import { Transaction as IdlTransaction } from "../../../declarations/godwin_token/godwin_token.did";
-import { ReapAccountError, MintError, TransferError } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { ReapAccountError, MintError, TransferError } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { fromNullable } from "@dfinity/utils";
 import { Mint } from "../../../declarations/godwin_master/godwin_master.did";

@@ -1,9 +1,9 @@
 import { _SERVICE as MasterService, Account }                     from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, CategoryArray__1 }               from "../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE as SubService, CategoryArray__1 }               from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                               from "../declarations/godwin_token/godwin_token.did";
 import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
 import { godwin_token }                                           from "../declarations/godwin_token";
-import { createActor as createSub }                               from "../declarations/godwin_backend";
+import { createActor as createSub }                               from "../declarations/godwin_sub";
 
 import { AuthClient }                                             from "@dfinity/auth-client";
 import { ActorSubclass }                                          from "@dfinity/agent";

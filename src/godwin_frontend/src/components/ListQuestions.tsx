@@ -3,7 +3,7 @@ import QuestionComponent, { QuestionInput } from "./Question";
 import ListComponents                       from "./base/ListComponents";
 import { ScanResults, toMap, VoteKind }     from "../utils";
 import { Sub }                              from "../ActorContext";
-import { Direction }                        from "../../declarations/godwin_backend/godwin_backend.did";
+import { Direction }                        from "../../declarations/godwin_sub/godwin_sub.did";
 
 import React                                from "react";
 

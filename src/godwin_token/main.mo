@@ -1,17 +1,17 @@
-import Types "Types";
+import Types              "Types";
 
-import Principal "mo:base/Principal";
-import Buffer "mo:base/Buffer";
-import Int "mo:base/Int";
-import Array "mo:base/Array";
-import Float "mo:base/Float";
-import Nat8 "mo:base/Nat8";
+import Principal          "mo:base/Principal";
+import Buffer             "mo:base/Buffer";
+import Int                "mo:base/Int";
+import Array              "mo:base/Array";
+import Float              "mo:base/Float";
+import Nat8               "mo:base/Nat8";
 
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
-import ICRC1 "mo:icrc1/ICRC1";
+import ICRC1              "mo:icrc1/ICRC1";
 
-actor Token {
+actor GodwinToken {
 
   type Account                 = Types.Account;
   type Subaccount              = Types.Subaccount;

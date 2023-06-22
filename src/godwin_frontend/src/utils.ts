@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 

@@ -1,7 +1,7 @@
 import AggregateDigest                                                        from "../base/AggregateDigest";
 import CONSTANTS                                                              from "../../Constants";
 import { polarizationToCursor, CursorInfo, toCursorInfo, toPolarizationInfo } from "../../utils";
-import { Category, CategoryInfo, Polarization }                               from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, CategoryInfo, Polarization }                               from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }                                                from "react";
 

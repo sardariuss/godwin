@@ -1,4 +1,4 @@
-import { Polarization }                                   from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Polarization }                                   from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 import AggregateDigest                                    from "../base/AggregateDigest";
 import CONSTANTS                                          from "../../Constants";

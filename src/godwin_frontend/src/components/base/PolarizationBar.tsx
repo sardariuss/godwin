@@ -4,7 +4,7 @@ import CONSTANTS                                                                
 import { ChartTypeEnum, PolarizationInfo, cursorToColor, getNormalizedPolarization } from "../../utils";
 import { toPercentage }                                                              from "../charts/ChartUtils";
 
-import { Polarization, Ballot }                                                      from "./../../../declarations/godwin_backend/godwin_backend.did";
+import { Polarization, Ballot }                                                      from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }                                                       from "react";
 

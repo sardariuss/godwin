@@ -5,7 +5,7 @@ import TransactionsRecordComponent                from "../token/TransactionsRec
 import { toMap, getStrongestCategoryCursorInfo }  from "../../utils";
 import { Sub }                                    from "../../ActorContext";
 import CONSTANTS                                  from "../../Constants";
-import { Question, RevealedCategorizationBallot } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Question, RevealedCategorizationBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }                    from "react";
 import { fromNullable }                           from "@dfinity/utils";

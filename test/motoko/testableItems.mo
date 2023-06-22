@@ -1,11 +1,11 @@
-import Votes "../../src/godwin_backend/model/votes/Votes";
-import Cursor "../../src/godwin_backend/model/votes/representation/Cursor";
-import Polarization "../../src/godwin_backend/model/votes/representation/Polarization";
-import CursorMap "../../src/godwin_backend/model/votes/representation/CursorMap";
-import PolarizationMap "../../src/godwin_backend/model/votes/representation/PolarizationMap";
-import Queries "../../src/godwin_backend/model/questions/QuestionQueries";
-import Questions "../../src/godwin_backend/model/questions/Questions";
-import Types "../../src/godwin_backend/model/Types";
+import Votes "../../src/godwin_sub/model/votes/Votes";
+import Cursor "../../src/godwin_sub/model/votes/representation/Cursor";
+import Polarization "../../src/godwin_sub/model/votes/representation/Polarization";
+import CursorMap "../../src/godwin_sub/model/votes/representation/CursorMap";
+import PolarizationMap "../../src/godwin_sub/model/votes/representation/PolarizationMap";
+import Queries "../../src/godwin_sub/model/questions/QuestionQueries";
+import Questions "../../src/godwin_sub/model/questions/Questions";
+import Types "../../src/godwin_sub/model/Types";
 
 import Testable "mo:matchers/Testable";
 

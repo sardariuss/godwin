@@ -1,6 +1,6 @@
 import StatusComponent                                  from "./Status";
 
-import { StatusInfo, _SERVICE, Category, CategoryInfo } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { StatusInfo, _SERVICE, Category, CategoryInfo } from "./../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState }                                     from "react";
 import { ActorSubclass }                                from "@dfinity/agent";

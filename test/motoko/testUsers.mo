@@ -1,9 +1,9 @@
-import Types "../../src/godwin_backend/model/Types";
-import Users "../../src/godwin_backend/model/Users";
-import Polarization "../../src/godwin_backend/representation/Polarization";
-import Questions "../../src/godwin_backend/questions/Questions";
-import Question "../../src/godwin_backend/questions/question";
-import Utils "../../src/godwin_backend/utils/Utils";
+import Types "../../src/godwin_sub/model/Types";
+import Users "../../src/godwin_sub/model/Users";
+import Polarization "../../src/godwin_sub/representation/Polarization";
+import Questions "../../src/godwin_sub/questions/Questions";
+import Question "../../src/godwin_sub/questions/question";
+import Utils "../../src/godwin_sub/utils/Utils";
 import TestableItems "testableItems";
 
 import Map "mo:map/Map";

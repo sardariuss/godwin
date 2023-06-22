@@ -1,11 +1,11 @@
-import VoteTypes              "../../../src/godwin_backend/model/votes/Types";
-import Interests              "../../../src/godwin_backend/model/votes/Interests";
-import PayTypes               "../../../src/godwin_backend/model/token/Types";
-import PayForNew              "../../../src/godwin_backend/model/token/PayForNew";
-import QuestionVoteJoins      "../../../src/godwin_backend/model/votes/QuestionVoteJoins";
-import QuestionQueriesFactory "../../../src/godwin_backend/model/questions/QueriesFactory";
+import VoteTypes              "../../../src/godwin_sub/model/votes/Types";
+import Interests              "../../../src/godwin_sub/model/votes/Interests";
+import PayTypes               "../../../src/godwin_sub/model/token/Types";
+import PayForNew              "../../../src/godwin_sub/model/token/PayForNew";
+import QuestionVoteJoins      "../../../src/godwin_sub/model/votes/QuestionVoteJoins";
+import QuestionQueriesFactory "../../../src/godwin_sub/model/questions/QueriesFactory";
 
-import Ref                "../../../src/godwin_backend/utils/Ref";
+import Ref                "../../../src/godwin_sub/utils/Ref";
 
 import MockTokenInterface "../MockTokenInterface";
 import TestifyTypes       "../testifyTypes";

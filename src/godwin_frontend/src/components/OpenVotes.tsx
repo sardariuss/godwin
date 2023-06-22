@@ -1,4 +1,4 @@
-import { Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_sub/godwin_sub.did";
 import SvgButton                            from "./base/SvgButton";
 import ArrowLeftIcon                        from "./icons/ArrowLeftIcon";
 import ArrowRightIcon                       from "./icons/ArrowRightIcon";

@@ -1,6 +1,6 @@
-import Types          "../../../src/godwin_backend/model/questions/Types";
-import QueriesFactory "../../../src/godwin_backend/model/questions/QueriesFactory";
-import KeyConverter   "../../../src/godwin_backend/model/questions/KeyConverter";
+import Types          "../../../src/godwin_sub/model/questions/Types";
+import QueriesFactory "../../../src/godwin_sub/model/questions/QueriesFactory";
+import KeyConverter   "../../../src/godwin_sub/model/questions/KeyConverter";
 
 import TestifyTypes   "../testifyTypes";
 import Principals     "../Principals";

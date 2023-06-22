@@ -1,7 +1,7 @@
-import Types "../../../src/godwin_backend/model/Types";
-import Categories "../../../src/godwin_backend/model/Categories";
-import Categorizations "../../../src/godwin_backend/model/votes/Categorizations";
-import Utils "../../../src/godwin_backend/utils/Utils";
+import Types "../../../src/godwin_sub/model/Types";
+import Categories "../../../src/godwin_sub/model/Categories";
+import Categorizations "../../../src/godwin_sub/model/votes/Categorizations";
+import Utils "../../../src/godwin_sub/utils/Utils";
 
 //import TestableItems "../testableItems";
 import Principals "../Principals";

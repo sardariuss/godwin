@@ -2,7 +2,7 @@ import ListComponents                                           from "../base/Li
 import TransactionsRecordComponent, { TransactionsRecordInput } from "../token/TransactionsRecord";
 import { Sub }                                                  from "../../ActorContext";
 import { ScanResults, fromScanLimitResult }                     from "../../utils";
-import { Question, TransactionsRecord, Direction }              from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Question, TransactionsRecord, Direction }              from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { Principal }                                            from "@dfinity/principal";
 import { fromNullable }                                         from "@dfinity/utils";

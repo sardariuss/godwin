@@ -1,6 +1,6 @@
 import PolarizationBar                     from "../base/PolarizationBar";
 import ChartTypeToggle                     from "../base/ChartTypeToggle";
-import { OpinionVote }                     from "../../../declarations/godwin_backend/godwin_backend.did";
+import { OpinionVote }                     from "../../../declarations/godwin_sub/godwin_sub.did";
 import { ChartTypeEnum, PolarizationInfo } from "../../utils";
 
 import { useState }                        from "react";

@@ -1,8 +1,8 @@
 [dependencies]
-base = "0.7.3"
-matchers = "https://github.com/kritzcreek/motoko-matchers"
+base = "0.8.8"
 stableRBT = "https://github.com/sardariuss/StableRBTree#main"
 stablebuffer = "https://github.com/canscale/StableBuffer#v1.2.0"
 map = "8.1.0"
 fuzz = "0.1.0"
-icrc1 = "https://github.com/NatLabs/icrc1/"
+icrc1 = "https://github.com/NatLabs/icrc1#main"
+testing = "https://github.com/sardariuss/testing.mo#main"

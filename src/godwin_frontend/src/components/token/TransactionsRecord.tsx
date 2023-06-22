@@ -1,7 +1,7 @@
 import { TransactionComponent }                        from "./Transaction";
 import { reapAccountErrorToString, mintErrorToString } from "./TokenUtils";
 import Balance                                         from "../base/Balance";
-import { TransactionsRecord }                          from "../../../declarations/godwin_backend/godwin_backend.did";
+import { TransactionsRecord }                          from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { Tooltip }                                     from "@mui/material";
 import ErrorOutlineIcon                                from '@mui/icons-material/ErrorOutline';

@@ -4,7 +4,7 @@ import StatusHistoryComponent                                     from "./Status
 import InterestVote                                               from "./interest/InterestVote";
 import { VoteKind }                                               from "../utils";
 import CONSTANTS                                                  from "../Constants";
-import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_backend/godwin_backend.did";
+import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_sub/godwin_sub.did";
 
 import { useEffect, useState }                                    from "react";
 import { ActorSubclass }                                          from "@dfinity/agent";

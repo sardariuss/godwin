@@ -4,7 +4,7 @@ import PolarizationBar, { BallotPoint }                                         
 import { Sub }                                                                                      from "../../ActorContext";
 import CONSTANTS                                                                                    from "../../Constants";
 import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap, VoteKind } from "../../utils";
-import { Category, Polarization }                                                                   from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Category, Polarization }                                                                   from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { Principal }                                                                                from "@dfinity/principal";
 import { useEffect, useState }                                                                      from "react";

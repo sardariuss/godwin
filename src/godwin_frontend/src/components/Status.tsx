@@ -7,7 +7,7 @@ import CategorizationPolarizationBars                                           
 import { statusToString, toMap, VoteKind }                                                             from "../utils";
 import { nsToStrDate }                                                                                 from "../utils/DateUtils";
 import CONSTANTS                                                                                       from "../Constants";
-import { _SERVICE, StatusInfo, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "../../declarations/godwin_backend/godwin_backend.did";
+import { _SERVICE, StatusInfo, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "../../declarations/godwin_sub/godwin_sub.did";
 
 import { ActorSubclass }                                                                               from "@dfinity/agent";
 import { useEffect, useState }                                                                         from "react";

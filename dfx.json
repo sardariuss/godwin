@@ -1,14 +1,11 @@
 {
   "canisters": {
-    "godwin_backend": {
-      "main": "src/godwin_backend/main.mo",
+    "godwin_token":{
+      "main": "src/godwin_token/main.mo",
       "type": "motoko",
       "declarations": {
-        "output": "src/godwin_frontend/declarations/godwin_backend"
-      },
-      "dependencies": [
-        "godwin_token"
-      ]
+        "output": "src/godwin_frontend/declarations/godwin_token"
+      }
     },
     "godwin_master":{
       "main": "src/godwin_master/main.mo",
@@ -20,11 +17,24 @@
         "output": "src/godwin_frontend/declarations/godwin_master"
       }
     },
-    "godwin_token":{
-      "main": "src/godwin_token/main.mo",
+    "godwin_sub": {
+      "main": "src/godwin_sub/main.mo",
       "type": "motoko",
       "declarations": {
-        "output": "src/godwin_frontend/declarations/godwin_token"
+        "output": "src/godwin_frontend/declarations/godwin_sub"
+      },
+      "dependencies": [
+        "godwin_token"
+      ]
+    },
+    "godwin_clock":{
+      "main": "src/godwin_clock/main.mo",
+      "type": "motoko",
+      "dependencies": [
+        "godwin_master"
+      ],
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_clock"
       }
     },
     "godwin_frontend": {
@@ -42,8 +52,8 @@
     },
     "internet_identity": {
       "type": "custom",
-      "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2023-04-28/internet_identity.did",
-      "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2023-04-28/internet_identity_dev.wasm.gz",
+      "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2023-06-16/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2023-06-16/internet_identity_dev.wasm.gz",
       "shrink": false,
       "remote": {
         "candid": "internet_identity.did",

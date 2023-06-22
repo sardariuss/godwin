@@ -2,7 +2,7 @@ import CursorBallot                         from "../base/CursorBallot";
 import { toCursorInfo }                     from "../../utils";
 import CONSTANTS                            from "../../Constants";
 import { Sub }                              from "../../ActorContext";
-import { Question, RevealedOpinionBallot }  from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Question, RevealedOpinionBallot }  from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }              from "react";
 import { fromNullable }                     from "@dfinity/utils";

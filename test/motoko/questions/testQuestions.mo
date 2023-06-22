@@ -1,5 +1,5 @@
-import Types            "../../../src/godwin_backend/model/questions/Types";
-import Questions        "../../../src/godwin_backend/model/questions/Questions";
+import Types            "../../../src/godwin_sub/model/questions/Types";
+import Questions        "../../../src/godwin_sub/model/questions/Questions";
 
 import TestifyTypes     "../testifyTypes";
 import Principals       "../Principals";

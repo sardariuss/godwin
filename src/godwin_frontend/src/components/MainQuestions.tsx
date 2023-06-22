@@ -1,4 +1,4 @@
-import { QuestionOrderBy, Direction } from "../../declarations/godwin_backend/godwin_backend.did";
+import { QuestionOrderBy, Direction } from "../../declarations/godwin_sub/godwin_sub.did";
 import { ActorContext, Sub } from "../ActorContext";
 import { TabButton } from "./TabButton";
 import { MainTabButton } from "./MainTabButton";

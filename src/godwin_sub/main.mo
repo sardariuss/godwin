@@ -11,7 +11,7 @@ import Result          "mo:base/Result";
 import Principal       "mo:base/Principal";
 import Time            "mo:base/Time";
 
-shared({ caller }) actor class Godwin(parameters: Types.Parameters) = {
+shared({ caller }) actor class GodwinSub(parameters: Types.Parameters) = {
 
   // For convenience: from base module
   type Result<Ok, Err>              = Result.Result<Ok, Err>;

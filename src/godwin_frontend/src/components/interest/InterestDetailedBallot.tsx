@@ -5,7 +5,7 @@ import TransactionIcon                      from "../icons/TransactionIcon";
 import TransactionsRecordComponent          from "../token/TransactionsRecord";
 import { Sub }                              from "../../ActorContext";
 import CONSTANTS                            from "../../Constants";
-import { Question, RevealedInterestBallot } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Question, RevealedInterestBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }              from "react";
 import { fromNullable }                     from "@dfinity/utils";

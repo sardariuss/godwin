@@ -1,17 +1,17 @@
-import Types     "Types";
+import Types       "Types";
 
-import Token     "canister:godwin_token";
+import GodwinToken "canister:godwin_token";
 
-import Map       "mo:map/Map";
+import Map         "mo:map/Map";
 
-import Result    "mo:base/Result";
-import Principal "mo:base/Principal";
-import Option    "mo:base/Option";
-import Buffer    "mo:base/Buffer";
-import Error     "mo:base/Error";
-import Array     "mo:base/Array";
-import Debug     "mo:base/Debug";
-import Trie      "mo:base/Trie";
+import Result      "mo:base/Result";
+import Principal   "mo:base/Principal";
+import Option      "mo:base/Option";
+import Buffer      "mo:base/Buffer";
+import Error       "mo:base/Error";
+import Array       "mo:base/Array";
+import Debug       "mo:base/Debug";
+import Trie        "mo:base/Trie";
 
 module {
 
@@ -63,7 +63,7 @@ module {
       };
       try {
         // Call the token reap_account method
-        ?toBaseResult(await Token.icrc1_transfer({
+        ?toBaseResult(await GodwinToken.icrc1_transfer({
           from_subaccount = ?from_subaccount;
           to = getMasterAccount(?to);
           amount;
@@ -82,7 +82,7 @@ module {
       var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<Token.ReapAccountRecipient>(recipients.size());
+      let to_accounts = Buffer.Buffer<GodwinToken.ReapAccountRecipient>(recipients.size());
 
       for ({ to; share; }  in recipients.vals()){
         if (share > 0.0) {
@@ -99,7 +99,7 @@ module {
 
       let reap_result = try {
         // Call the token reap_account method
-        await Token.reap_account({
+        await GodwinToken.reap_account({
           subaccount = ?subaccount;
           to = Buffer.toArray(to_accounts);
           memo = null; // @todo: memo
@@ -132,7 +132,7 @@ module {
       var results : Trie<Principal, ?MintResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<Token.MintRecipient>(recipients.size());
+      let to_accounts = Buffer.Buffer<GodwinToken.MintRecipient>(recipients.size());
 
       for ({ to; amount; } in recipients.vals()){
         if (amount > 0) {

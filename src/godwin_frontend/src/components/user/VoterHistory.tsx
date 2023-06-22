@@ -4,7 +4,7 @@ import OpinionDetailedBallot, { OpinionDetailedBallotInput }                    
 import CategorizationDetailedBallot, { CategorizationDetailedBallotInput }                        from "../categorization/CategorizationDetailedBallot";
 import { fromScanLimitResult, ScanResults, VoteKind, voteKindToString }                           from "../../utils";
 import { Sub }                                                                                    from "./../../ActorContext";
-import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { Principal }                                                                              from "@dfinity/principal";
 import { useState } from "react";

@@ -2,7 +2,7 @@ import PolarizationBar, { BallotPoint }               from "../base/Polarization
 import ChartTypeToggle                                from "../base/ChartTypeToggle";
 import { ChartTypeEnum, toPolarizationInfo }          from "../../utils";
 import CONSTANTS                                      from "../../Constants";
-import { CategorizationVote, Category, CategoryInfo } from "../../../declarations/godwin_backend/godwin_backend.did";
+import { CategorizationVote, Category, CategoryInfo } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState }                                   from "react";
 

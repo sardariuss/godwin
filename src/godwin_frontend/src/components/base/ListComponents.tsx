@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ScanResults }         from "../../utils";
-import { Direction, }          from "../../../declarations/godwin_backend/godwin_backend.did";
+import { Direction, }          from "../../../declarations/godwin_sub/godwin_sub.did";
 import React                   from "react";
 
 export type ListComponentsInput<T, Input> = {

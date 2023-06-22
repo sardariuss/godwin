@@ -5,7 +5,7 @@ import SvgButton                                                              fr
 import ReturnIcon                                                             from "../icons/ReturnIcon";
 import PutBallotIcon                                                          from "../icons/PutBallotIcon";
 import { putBallotErrorToString, PolarizationInfo, CursorInfo, toCursorInfo } from "../../utils";
-import { PutBallotError, _SERVICE }                                           from "../../../declarations/godwin_backend/godwin_backend.did";
+import { PutBallotError, _SERVICE }                                           from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { useState, useEffect }                                                from "react";
 
