@@ -26,6 +26,13 @@ module {
     #NotAllowed;
   };
 
+  public type SetUserNameError = {
+    #AnonymousNotAllowed;
+    #NameTooShort: { min_length: Nat; };
+    #NameTooLong: { max_length: Nat; };
+    #NameAlreadyTaken;
+  };
+
   public type MintBatchArgs = TokenTypes.MintBatchArgs;
 
   public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError>;

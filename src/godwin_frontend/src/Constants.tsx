@@ -49,8 +49,7 @@ const CONSTANTS = {
     }
   },
   USER_NAME: {
-    DEFAULT: 'New user',
-    MAX_LENGTH: 32,
+    DEFAULT: 'New user'
   },
   TOKEN_DECIMALS: 2,
   CHART: {

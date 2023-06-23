@@ -36,6 +36,11 @@ actor GodwinMaster {
   type TransferResult                 = Types.TransferResult;
   type AirdropResult                  = Types.AirdropResult;
   type MintBatchResult                = Types.MintBatchResult;
+  type SetUserNameError               = Types.SetUserNameError;
+
+  let MIN_USERNAME_LENGTH = 3;
+  let MAX_USERNAME_LENGTH = 32;
+
   let { toSubaccount; toBaseResult; } = Types;
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
@@ -198,8 +203,35 @@ actor GodwinMaster {
     Map.get(_user_names, Map.phash, user);
   };
 
-  public shared({caller}) func setUserName(name: Text) : async () {
+  // @todo: have a user name regexp (that e.g. does not allow only whitespaces, etc.)
+  public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
+    // Check if the principal is anonymous
+    if (Principal.isAnonymous(caller)){
+      return #err(#AnonymousNotAllowed);
+    };
+    // Check if not too short
+    if (name.size() < MIN_USERNAME_LENGTH){
+      return #err(#NameTooShort({ min_length = MIN_USERNAME_LENGTH; }));
+    };
+    // Check if not too long
+    if (name.size() > MAX_USERNAME_LENGTH){
+      return #err(#NameTooLong({ max_length = MAX_USERNAME_LENGTH; }));
+    };
+    // Check it this is the same name as before
+    switch(Map.get(_user_names, Map.phash, caller)){
+      case(?old_name) {
+        if (old_name == name){
+          return #ok;
+        };
+      };
+      case(null){};
+    };
+    // Check if the name is already taken
+    if (Map.some(_user_names, func(key: Principal, value: Text) : Bool { value == name; })){
+      return #err(#NameAlreadyTaken);
+    };
     Map.set(_user_names, Map.phash, caller, name);
+    #ok;
   };
 
 };

@@ -1,14 +1,12 @@
 import Convictions                         from "./Convictions";
 import { VoterHistory }                    from "./VoterHistory";
-import { VoterQuestions }                  from "./VoterQuestions";
+import { AuthorQuestions }                 from "./AuthorQuestions";
+import UserName                            from "./UserName";
 import CopyIcon                            from "../icons/CopyIcon";
 import SvgButton                           from "../base/SvgButton"
-import EditIcon                            from "../icons/EditIcon";
 import LogoutIcon                          from "../icons/LogoutIcon";
-import SaveIcon                            from "../icons/SaveIcon";
 import { MainTabButton }                   from "../MainTabButton";
 import SubNameBanner                       from "../SubNameBanner";
-import CONSTANTS                           from "../../Constants";
 import { getEncodedAccount }               from "../../utils/LedgerUtils";
 import { VoteKind }                        from "../../utils";
 import { ActorContext }                    from "../../ActorContext"
@@ -18,7 +16,6 @@ import { useEffect, useState, useContext } from "react";
 import { useParams }                       from "react-router-dom";
 
 import { Principal }                       from "@dfinity/principal";
-import { fromNullable }                    from "@dfinity/utils";
 
 export enum UserFilter {
   CONVICTIONS,
@@ -42,24 +39,14 @@ const filterToText = (filter: UserFilter) => {
   }
 }
 
-enum EditingState {
-  EDITING,
-  SAVING,
-  SAVED
-};
-
 const UserComponent = () => {
 
   const {user} = useParams<string>();
-  const {subs, isAuthenticated, authClient, master, logout, loggedUserName, refreshLoggedUserName, refreshBalance} = useContext(ActorContext);
+  const {subs, isAuthenticated, authClient, master, logout, refreshBalance} = useContext(ActorContext);
 
   const [principal,         setPrincipal        ] = useState<Principal | undefined>(undefined             );
   const [isLoggedUser,      setIsLoggedUser     ] = useState<boolean>              (false                 );
-  const [userName,          setUserName         ] = useState<string | undefined>   (undefined             );
   const [account,           setAccount          ] = useState<Account | undefined>  (undefined             );
-
-  const [editingName,       setEditingName      ] = useState<string>               (""                    );
-  const [editState,         setEditState        ] = useState<EditingState>         (EditingState.SAVED    );
 
   const [currentUserFilter, setCurrentUserFilter] = useState<UserFilter>           (UserFilter.CONVICTIONS);
 
@@ -74,16 +61,6 @@ const UserComponent = () => {
     }
   }
 
-  const refreshUserName = async () => {
-    if (principal === undefined) {
-      setUserName(undefined);
-    } else if (isLoggedUser) {
-      setUserName(loggedUserName);
-    } else {
-      setUserName(fromNullable(await master.getUserName(principal)));
-    }
-  }
-
   const refreshAccount = async () => {
     if (principal === undefined) {
       setAccount(undefined);
@@ -91,15 +68,6 @@ const UserComponent = () => {
       let account = await master.getUserAccount(principal);
       setAccount(account);
     }
-  }
-
-  const saveUserName = () => {
-    setEditState(EditingState.SAVING);
-    master.setUserName(editingName).then((result) => {
-      setEditState(EditingState.SAVED);
-      setUserName(editingName); // @todo: take name from the result
-      refreshLoggedUserName();
-    });
   }
 
   const airdrop = () => {
@@ -114,10 +82,6 @@ const UserComponent = () => {
   }, [subs, isAuthenticated, user]);
 
   useEffect(() => {
-    refreshUserName();
-  }, [principal, isLoggedUser]);
-
-  useEffect(() => {
     refreshAccount();
   }, [principal]);
 
@@ -129,39 +93,11 @@ const UserComponent = () => {
         <div className="flex flex-col border dark:border-gray-700 my-5 w-1/3 text-gray-900 dark:text-white">
           <div className="grid grid-cols-5">
             <div className="col-start-2 col-span-3 flex flex-row justify-center dark:fill-white">
-              <svg className="w-32" xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M232.001 802.923q59.923-38.461 118.922-58.961 59-20.5 129.077-20.5t129.384 20.5q59.308 20.5 119.231 58.961 43.615-50.538 64.807-106.692Q814.615 640.077 814.615 576q0-141.538-96.538-238.077Q621.538 241.385 480 241.385t-238.077 96.538Q145.385 434.462 145.385 576q0 64.077 21.5 120.231 21.5 56.154 65.116 106.692Zm247.813-204.231q-53.968 0-90.775-36.994-36.808-36.993-36.808-90.961 0-53.967 36.994-90.775 36.993-36.807 90.961-36.807 53.968 0 90.775 36.993 36.808 36.994 36.808 90.961 0 53.968-36.994 90.775-36.993 36.808-90.961 36.808Zm-.219 357.307q-78.915 0-148.39-29.77-69.475-29.769-120.878-81.576-51.403-51.808-80.864-120.802-29.462-68.994-29.462-148.351 0-78.972 29.77-148.159 29.769-69.186 81.576-120.494 51.808-51.307 120.802-81.076 68.994-29.77 148.351-29.77 78.972 0 148.159 29.77 69.186 29.769 120.494 81.076 51.307 51.308 81.076 120.654 29.77 69.345 29.77 148.233 0 79.272-29.77 148.192-29.769 68.919-81.076 120.727-51.308 51.807-120.783 81.576-69.474 29.77-148.775 29.77Z"/></svg>
-              <div className="flex flex-col justify-evenly">
-                {
-                  editState === EditingState.EDITING || editState === EditingState.SAVING ?
-                  <div className="flex flex-row gap-x-1 items-center">
-                    <input type="text" 
-                      className={`appearance-none bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full p-1 -ml-1 
-                        dark:bg-slate-900 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
-                        ${editState === EditingState.SAVING ? "animate-pulse" : ""}
-                        ${editingName.length === CONSTANTS.USER_NAME.MAX_LENGTH ? "focus:border-red-500 dark:focus:border-red-500 " : "focus:border-blue-500 dark:focus:border-blue-500"}
-                        `}
-                      disabled={ editState === EditingState.SAVING }
-                      defaultValue={ userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT } 
-                      onChange={(e) => setEditingName(e.target.value)} maxLength={CONSTANTS.USER_NAME.MAX_LENGTH}
-                      onKeyDown={(e) => {if (e.key === 'Enter') saveUserName() }  }
-                    />
-                    <div className="w-7 h-7">
-                      <SvgButton onClick={(e) => {saveUserName()}} disabled={ editState === EditingState.SAVING }>
-                        <SaveIcon/>
-                      </SvgButton>
-                    </div>
-                  </div> :
-                  <div className="flex flex-row gap-x-1 items-center">
-                    <div>
-                      { userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT }
-                    </div>
-                    <div className="w-5 h-5">
-                      <SvgButton onClick={(e) => {setEditState(EditingState.EDITING)}} disabled={ !isLoggedUser}>
-                        <EditIcon/>
-                      </SvgButton>
-                    </div>
-                  </div>
-                }
+              <div className="flex w-32 h-32">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960"><path d="M232.001 802.923q59.923-38.461 118.922-58.961 59-20.5 129.077-20.5t129.384 20.5q59.308 20.5 119.231 58.961 43.615-50.538 64.807-106.692Q814.615 640.077 814.615 576q0-141.538-96.538-238.077Q621.538 241.385 480 241.385t-238.077 96.538Q145.385 434.462 145.385 576q0 64.077 21.5 120.231 21.5 56.154 65.116 106.692Zm247.813-204.231q-53.968 0-90.775-36.994-36.808-36.993-36.808-90.961 0-53.967 36.994-90.775 36.993-36.807 90.961-36.807 53.968 0 90.775 36.993 36.808 36.994 36.808 90.961 0 53.968-36.994 90.775-36.993 36.808-90.961 36.808Zm-.219 357.307q-78.915 0-148.39-29.77-69.475-29.769-120.878-81.576-51.403-51.808-80.864-120.802-29.462-68.994-29.462-148.351 0-78.972 29.77-148.159 29.769-69.186 81.576-120.494 51.808-51.307 120.802-81.076 68.994-29.77 148.351-29.77 78.972 0 148.159 29.77 69.186 29.769 120.494 81.076 51.307 51.308 81.076 120.654 29.77 69.345 29.77 148.233 0 79.272-29.77 148.192-29.769 68.919-81.076 120.727-51.308 51.807-120.783 81.576-69.474 29.77-148.775 29.77Z"/></svg>
+              </div>
+              <div className="flex flex-col mt-1 justify-evenly">
+                <UserName principal={principal} isLoggedUser={isLoggedUser}/>
                 {
                   account !== undefined ? 
                   <div className="flex flex-row gap-x-1 items-center">
@@ -224,7 +160,7 @@ const UserComponent = () => {
                     currentUserFilter === UserFilter.CATEGORIZATIONS ?
                       <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.CATEGORIZATION}/> :
                     currentUserFilter === UserFilter.QUESTIONS ? 
-                      <VoterQuestions sub={sub} principal={principal}/> :
+                      <AuthorQuestions sub={sub} principal={principal}/> :
                     <></>
                   }
                 </div>

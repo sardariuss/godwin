@@ -62,7 +62,7 @@ export function useAuthClient() {
   const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()    );
   const [subsFetched,     setSubsFetched    ] = useState<boolean | null>              (true         );
   const [userAccount,     setUserAccount    ] = useState<Account | null>              (null         );
-  const [loggedUserName,        setUserName       ] = useState<string | undefined>          (undefined    );
+  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined    );
   const [balance,         setBalance        ] = useState<bigint | null>               (null         );
 
   const login = () => {
@@ -141,10 +141,10 @@ export function useAuthClient() {
     let principal = authClient?.getIdentity().getPrincipal();
     if (principal !== undefined){
       master.getUserName(principal).then((name) => {
-        setUserName(fromNullable(name));
+        setLoggedUserName(fromNullable(name));
       }
     )} else {
-      setUserName(undefined);
+      setLoggedUserName(undefined);
     }
   }
 
