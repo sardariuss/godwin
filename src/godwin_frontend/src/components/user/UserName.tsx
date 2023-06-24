@@ -95,7 +95,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
               else { setEditState(EditingState.EDITING); } } }
             autoFocus={true}
           /> :
-          <div className="break-all">
+          <div className="break-words">
             { userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT }
           </div>
       }
@@ -115,11 +115,11 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
             </SvgButton>
           </div> :
         editState === EditingState.ERROR ?
-        <div className="pl-1">
-          <Tooltip title={errorMessage} arrow>
-            <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
-          </Tooltip>
-        </div>  :
+          <div className="pl-1">
+            <Tooltip title={errorMessage} arrow>
+              <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+            </Tooltip>
+          </div>  :
           <></>
       }
     </div>

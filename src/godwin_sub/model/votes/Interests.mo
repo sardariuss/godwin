@@ -222,15 +222,20 @@ module {
     total * sigmoid;
   };
 
-  // https://www.desmos.com/calculator/jcddnwyqbk
-  public func computeSelectionScore(args: InterestMomentumArgs, pickRate: Time, now: Time): Float {
+  
+  public func computeSelectionScore(args: InterestMomentumArgs, pick_rate: Time, now: Time): Float {
     let { last_pick_date; last_pick_score; num_votes_opened; minimum_score; } = args;
-    let time_passed = Float.fromInt(now - last_pick_date) / Float.fromInt(pickRate);
-    let momentum = ( 
+    let score = computeMomentumCoef(last_pick_date, pick_rate, num_votes_opened, now) * last_pick_score;
+    if (score > minimum_score) { score; } else { minimum_score; };
+  };
+
+  // https://www.desmos.com/calculator/jcddnwyqbk
+  public func computeMomentumCoef(last_pick_date: Time, pick_rate: Time, num_votes_opened: Nat, now: Time): Float {
+    let time_passed = Float.fromInt(now - last_pick_date) / Float.fromInt(pick_rate);
+    ( 
         (1 - DECAY_WEIGHT) * (1.0 / time_passed)
       +      DECAY_WEIGHT  * Float.exp((-time_passed + 1) / (DECAY_RESISTANCE * (Float.fromInt(num_votes_opened) + 1)))
-    ) * last_pick_score;
-    momentum;
+    );
   };
   
 };

@@ -156,7 +156,7 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 			</div>
 			{
 				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
-				<div className="w-1/5 flex flex-col col-span-2 items-center justify-self-center">
+				<div className="w-1/5 col-span-2 mr-5">
 					<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
 				</div> : <></>
 			}

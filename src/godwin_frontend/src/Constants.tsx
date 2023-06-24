@@ -60,6 +60,10 @@ const CONSTANTS = {
   HELP_MESSAGE: {
     CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...',
     DELETED_QUESTION: 'This question has been deleted.',
+  },
+  OPEN_QUESTION: {
+    PLACEHOLDER: "What's interesting to vote on?",
+    PICK_SUB: "Choose a sub-godwin",
   }
 };
 

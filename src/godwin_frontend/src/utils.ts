@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -91,6 +91,23 @@ export const statusToEnum = (status: Status) => {
   if (status['REJECTED']['TIMED_OUT'] !== undefined) return StatusEnum.TIMED_OUT;
   if (status['REJECTED']['CENSORED'] !== undefined ) return StatusEnum.CENSORED;
   throw new Error('Invalid status');
+};
+
+// @todo: have a payin error instead of all at the root
+export const openQuestionErrorToString = (error: OpenQuestionError) => {
+  if (error['TextTooLong']          !== undefined) return 'TextTooLong';
+  if (error['PrincipalIsAnonymous'] !== undefined) return 'PrincipalIsAnonymous';
+  if (error['GenericError']           !== undefined) return 'GenericError: (message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString() + ")";
+  if (error['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
+  if (error['NotAllowed']             !== undefined) return 'NotAllowed';
+  if (error['BadBurn']                !== undefined) return 'BadBurn: (min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString() + ")";
+  if (error['Duplicate']              !== undefined) return 'Duplicate: (duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString() + ")";
+  if (error['BadFee']                 !== undefined) return 'BadFee: (expected_fee=' + Number(error['BadFee']['expected_fee']).toString() + ")";
+  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: (ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString() + ")";
+  if (error['TooOld']                 !== undefined) return 'TooOld';
+  if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
+  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
+  throw new Error('Invalid PutBallotError');
 };
 
 export const putBallotErrorToString = (error: PutBallotError) => {

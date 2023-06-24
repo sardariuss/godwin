@@ -1,58 +1,76 @@
-import { ActorContext } from "../ActorContext"
+import { ActorContext }              from "../ActorContext"
+import Balance                       from "./base/Balance";
+import Spinner                       from "./Spinner";
+import { openQuestionErrorToString } from "../utils";
+import CONSTANTS                     from "../Constants";
 
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
+
+import { Tooltip }                   from "@mui/material";
+import ErrorOutlineIcon              from '@mui/icons-material/ErrorOutline';
 
 type Props = {
   canSelectSub: boolean,
   subId: string | null,
-  onSubmitQuestion: () => (void)
+  onSubmitQuestion: (question_id: bigint) => (void)
 };
 
 const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
   const {subs} = useContext(ActorContext);
-  const [showSubsList, setShowSubsList] = useState<boolean>(false);
+  
+  const [showSubsList,  setShowSubsList ] = useState<boolean>      (false                                             );
   const [selectedSubId, setSelectedSubId] = useState<string | null>((subId !== null && subs.has(subId)) ? subId : null);
-
-  const placeholder = "What's interesting to vote on?";
-  const noSubSelected = "Choose a sub-godwin";
-
-  const [text, setText] = useState("");
-
-  const updateText = (input) => {
-    if (input === placeholder) {
-      setText("");
-    } else {
-      setText(input);
-    }
-  }
+  const [text,          setText         ] = useState<string>       (""                                                );
+  const [submitting,    setSubmitting   ] = useState<boolean>      (false                                             );
+  const [error,         setError        ] = useState<string | null>(null                                              );
 
   const submitQuestion = async () => {
+    setError(null);
+    setSubmitting(true);
     if (selectedSubId !== null){
       subs.get(selectedSubId)?.actor.openQuestion(text).then((res) => {
-        console.log(res);
-        setText("");
-        onSubmitQuestion();
+        setSubmitting(false);
+        if (res['ok'] !== undefined){
+          setText("");
+          onSubmitQuestion(res['ok']);
+        } else if (res['err'] !== undefined){
+          setError(openQuestionErrorToString(res['err']));
+        } else {
+          throw new Error("Invalid open question result");
+        }
       });
     }
   }
 
+  useEffect(() => {
+    setError(null);
+  }, []);
+
 	return (
     <form>
-      <div className="w-full dark:border-gray-700">
-        <div className="px-4 py-2">
-          <textarea rows={4} onChange={(e) => updateText(e.target.value)} className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400" placeholder={placeholder} required></textarea>
+      <div className="flex flex-col w-full dark:border-gray-700">
+        <div className="px-4 py-2 border-b dark:border-gray-700">
+          <textarea 
+            className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400"
+            rows={4}
+            onChange={(e) => { setError(null); setText(e.target.value)} }
+            placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} 
+            disabled={submitting}
+            required
+          />
         </div>
-        <div className="flex flex-row-reverse gap-x-3 px-3 py-2 border-t dark:border-gray-700">
-          <button type="submit" className={`py-2.5 px-4 text-xs font-medium text-center text-white bg-blue-700 rounded-lg inline-flex focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 hover:enabled:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-700`} disabled={selectedSubId===null || text.length <= 0} onClick={(e) => submitQuestion()}>
-            Suggest question
-          </button>
+        <div className="flex flex-row px-2 py-2 space-x-2 items-center place-self-end">
           {
-          canSelectSub ? 
+            canSelectSub ? 
             <div>
-              <button onClick={(e)=>{setShowSubsList(!showSubsList)}} className="text-white bg-blue-700 hover:enabled:bg-blue-800 font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex focus:ring-2 focus:ring-blue-200 items-center dark:focus:ring-blue-800 disabled:bg-gray-700" type="button">
+              <button 
+                onClick={(e)=>{setShowSubsList(!showSubsList)}} 
+                className="whitespace-nowrap h-9 text-white bg-blue-700 hover:enabled:bg-blue-800 font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex focus:ring-2 focus:ring-blue-200 items-center dark:focus:ring-blue-800 disabled:bg-gray-700" 
+                type="button"
+              >
                 {
-                  selectedSubId !== null ? subs.get(selectedSubId)?.name : noSubSelected
+                  selectedSubId !== null ? subs.get(selectedSubId)?.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
                 } 
                 <svg className="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -71,6 +89,29 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
               </div>
             </div> : <></>
           }
+          <button 
+            className={`w-32 min-w-36 flex flex-col px-3 h-9 justify-center items-center whitespace-nowrap text-xs font-medium text-center text-white bg-blue-700 rounded-lg inline-flex focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 hover:enabled:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-700`}
+            type="submit"
+            disabled={selectedSubId===null || text.length <= 0 || submitting}
+            onClick={(e) => submitQuestion()}
+          >
+            {
+              submitting ?
+              <Spinner/> :
+              <div>
+                { "Suggest question" }
+              </div>
+            }
+          </button>
+          <div className="flex flex-col w-14 min-w-14 items-center text-sm">
+          {
+            error !== null ?
+            <Tooltip title={error} arrow>
+              <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+            </Tooltip> : 
+            <Balance amount={BigInt(1_000_000_000)}/>
+          }
+          </div>
         </div>
       </div>
     </form>

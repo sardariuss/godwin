@@ -73,7 +73,7 @@ const InterestVote = ({actor, voteId}: Props) => {
     <div>
     {
       interest === null ? <></> :
-      <div className="grid grid-cols-3 w-full py-2 content-center items-center">
+      <div className="grid grid-cols-3 w-full content-center items-center">
         <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
           <div className={`w-10 flex -m-2 justify-center ${voteDate !== null ? "hidden" : ""}`}>
             <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
@@ -102,15 +102,15 @@ const InterestVote = ({actor, voteId}: Props) => {
                 set_trigger_update={setTriggerVote}
                 cost={BigInt(100_000_000)}
               >
-                <div className={`flex flex-col items-center justify-center w-full`}>
-                  <SvgButton 
-                    onClick={() => setTriggerVote(true)}
-                    disabled={false}
-                    hidden={false}
-                  >
+                <SvgButton 
+                  onClick={() => setTriggerVote(true)}
+                  disabled={false}
+                  hidden={false}
+                >
+                  <div className="w-6 h-6">
                     <PutBallotIcon/>
-                  </SvgButton>
-                </div>
+                  </div>
+                </SvgButton>
               </UpdateProgress>
           }
         </div>

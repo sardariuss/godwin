@@ -99,7 +99,7 @@ function Header({login, setShowAskQuestion}: Props) {
                 }
               </li>
               { isAuthenticated ? 
-                <li className="text-black dark:text-white">
+                <li>
                   <Balance amount={ balance !== null ? balance : undefined } />
                 </li> : <></>
               }
