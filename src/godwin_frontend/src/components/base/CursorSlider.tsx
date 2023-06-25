@@ -53,7 +53,7 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
           "--margin-left": `${(marginRatio * 100).toString() + "%"}`,
           "--margin-right": `${((1 - marginRatio) * 100).toString() + "%"}`,
           "--slider-width": `${sliderWidth + "px"}`,
-          "--slider-image": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>` + `${cursorInfo.symbol}` + `</text></svg>")`,
+          "--slider-image": `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='128px' width='128px' style='fill:black;font-size:64px;'><text x='50%' y='50%' opacity='1' dominant-baseline='middle' text-anchor='middle'>` + `${cursorInfo.symbol}` + `</text></svg>")`,
           "--thumb-size": `${thumbSize + "px"}`,
           "--cursor-type": `${disabled ? "auto" : "grab"}`
         } as React.CSSProperties }

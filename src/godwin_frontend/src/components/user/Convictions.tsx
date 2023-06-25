@@ -23,7 +23,6 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
   const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (0                                 );
 
   const refreshConvictions = async () => {
-    console.log("Refreshing convictions");
 
     if (principal === undefined) {
       setPolarizationMap(new Map<Category, Polarization>());

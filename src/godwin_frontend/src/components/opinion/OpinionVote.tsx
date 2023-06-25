@@ -52,11 +52,8 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
     <div>
     {
       cursorInfo === null ? <></> :
-      <div className={`grid grid-cols-4 items-center w-full justify-items-center grow transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-        <div className="col-span-1">
-          {/* spacer */}
-        </div>
-        <div className={`col-span-2 justify-center`}>
+      <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+        <div className={`pl-6`}>
         {
           voteDate !== null ?
           <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/> :
@@ -70,10 +67,10 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
           />
         }
         </div>
-        <div className="col-span-1 justify-center">
+        <div>
           {
             voteDate !== null ?
-            <div className="w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
+            <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
               <SvgButton onClick={() => setVoteDate(null)} disabled={false} hidden={false}>
                 <ReturnIcon/>
               </SvgButton>

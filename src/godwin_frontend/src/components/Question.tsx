@@ -2,6 +2,7 @@ import Balance                                                    from "./base/B
 import OpinionVote                                                from "./opinion/OpinionVote";
 import CategorizationVote                                         from "./categorization/CategorizationVote";
 import StatusHistoryComponent                                     from "./StatusHistory";
+import ReopenButton                                               from "./ReopenButton";
 import InterestVote                                               from "./interest/InterestVote";
 import { StatusEnum, VoteKind, statusToEnum }                     from "../utils";
 import CONSTANTS                                                  from "../Constants";
@@ -107,7 +108,8 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 	return (
 		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10
 			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined || canReopen ? "" : "pr-10"}`}>
-			<div className={`flex flex-col py-1 px-1 justify-between w-full space-y-1`}>
+			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
+				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : canReopen ? "grow" : "w-full"}`}>
 				{
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -171,13 +173,8 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 			}
 			{
 				canReopen ?
-				<div className="flex flex-row w-1/4 mr-5 mt-2 self-start items-center gap-x-1">
-					<button className="button-simple py-1 px-2 text-xs" type="button">
-						<div className="flex flex-col items-center gap-y-1">
-							Propose again
-							<Balance amount={BigInt(1_000_000_000)}/>
-						</div>
-					</button>
+				<div className="flex flex-row grow self-start justify-end mt-2 mr-5">
+					<ReopenButton actor={actor} questionId={questionId} onReopened={()=>{}}/>
 				</div> : <></>
 			}
 		</div>

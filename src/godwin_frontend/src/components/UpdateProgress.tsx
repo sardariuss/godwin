@@ -138,7 +138,7 @@ const UpdateProgress = <Error,>({
 
 	return (
     <div className="relative flex flex-col items-center w-full">
-      <div className="flex flex-col w-full items-center" style={{visibility: updateProgress === false && countdownProgress === null ? "hidden" : "visible"}}>
+      <div className="flex flex-col w-full items-center pt-1" style={{visibility: updateProgress === false && countdownProgress === null ? "hidden" : "visible"}}>
         <CssVarsProvider theme={theme}>
         <CircularProgress
           color="primary"
@@ -153,12 +153,12 @@ const UpdateProgress = <Error,>({
         </CircularProgress>
         </CssVarsProvider>
       </div>
-      <div className="absolute flex flex-col w-full z-10 items-center gap-y-1">
+      <div className="absolute flex flex-col w-full z-10 items-center">
         {
           updateProgress ? 
             <></> :
           countdownProgress?
-            <div className="w-full text-center text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white hover:cursor-pointer" 
+            <div className="w-full text-center h-8 pt-1 text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white hover:cursor-pointer" 
               onClick={(e) => stopCountdown()}> ◼ </div> :
           error === null ?
             children : error.length !== 0 ?
@@ -169,7 +169,7 @@ const UpdateProgress = <Error,>({
           }
           {
             cost !== undefined && error === null && !updateProgress ?
-            <div className="text-xs">
+            <div className="text-xs pt-1">
               <Balance amount={cost}/>
             </div> : <></>
           }

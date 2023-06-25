@@ -76,13 +76,13 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
       <div className="mb-3">
         <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), categories)} dateNs={voteDate}/>
       </div> :
-      <div className={`grid grid-cols-8 items-center w-full justify-items-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-        <div className={`col-start-2 col-span-1 justify-center w-2/5`}>
+      <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+        <div className={`justify-center w-6 h-6`}>
           <SvgButton onClick={ () => { resetCategorization(); setCountdownVote(false);}} disabled={ triggerVote } hidden={false}>
             <ResetIcon/>
           </SvgButton>
         </div>
-        <ol className="col-span-4 list-none">
+        <ol className="w-50 list-none">
         {
           categorization.map(([category, cursor], index) => (
             <li key={category} className="flex flex-col items-center">
@@ -107,7 +107,7 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
           ))
         }
         </ol>
-        <div className="col-span-1 justify-center mb-2">
+        <div className="mb-2">
           <UpdateProgress<PutBallotError> 
               delay_duration_ms={countdownDurationMs}
               update_function={putBallot}
@@ -118,7 +118,7 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
               trigger_update={triggerVote}
               set_trigger_update={setTriggerVote}
               cost={BigInt(350_000_000)}>
-            <div className="flex flex-col items-center justify-center w-full">
+            <div className="w-8 h-8">
               <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote } hidden={false}>
                 <PutBallotIcon/>
               </SvgButton>
