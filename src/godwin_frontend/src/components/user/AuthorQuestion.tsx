@@ -32,9 +32,7 @@ const AuthorQuestion = ({question, tx_record} : AuthorQuestionInput) => {
         </div>
         <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">
           <SvgButton disabled={false} onClick={(e) => {setShowTransactions(old => { return !old; })}} hidden={false}>
-            <div className="flex flex-col items-center">
-              <TransactionIcon/>
-            </div>
+            <TransactionIcon/>
           </SvgButton>
         </div>
       </div>

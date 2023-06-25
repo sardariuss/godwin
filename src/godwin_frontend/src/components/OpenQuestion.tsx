@@ -66,7 +66,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
             <div>
               <button 
                 onClick={(e)=>{setShowSubsList(!showSubsList)}} 
-                className="whitespace-nowrap h-9 text-white bg-blue-700 hover:enabled:bg-blue-800 font-medium rounded-lg text-xs px-4 py-2.5 text-center inline-flex focus:ring-2 focus:ring-blue-200 items-center dark:focus:ring-blue-800 disabled:bg-gray-700" 
+                className="button-simple h-9"
                 type="button"
               >
                 {
@@ -90,26 +90,31 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
             </div> : <></>
           }
           <button 
-            className={`w-32 min-w-36 flex flex-col px-3 h-9 justify-center items-center whitespace-nowrap text-xs font-medium text-center text-white bg-blue-700 rounded-lg inline-flex focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 hover:enabled:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-700`}
+            className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center"
             type="submit"
             disabled={selectedSubId===null || text.length <= 0 || submitting}
             onClick={(e) => submitQuestion()}
           >
             {
               submitting ?
-              <Spinner/> :
-              <div>
-                { "Suggest question" }
+              <div className="w-5 h-5">
+                <Spinner/>
+              </div> :
+              <div className="flex flex-row items-center gap-x-1 text-white">
+                Propose
+                <Balance amount={BigInt(1_000_000_000)}/>
               </div>
             }
           </button>
-          <div className="flex flex-col w-14 min-w-14 items-center text-sm">
+          <div className="flex flex-col w-6 min-w-6 items-center text-sm">
           {
             error !== null ?
-            <Tooltip title={error} arrow>
-              <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
-            </Tooltip> : 
-            <Balance amount={BigInt(1_000_000_000)}/>
+            <div className="w-full">
+              <Tooltip title={error} arrow>
+                <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+              </Tooltip>
+            </div> : 
+            <></>
           }
           </div>
         </div>

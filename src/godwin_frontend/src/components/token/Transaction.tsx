@@ -33,7 +33,9 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
     <div>
     {
       tx === null ? 
-      <Spinner/> :
+      <div className="w-4 h-4">
+        <Spinner/>
+      </div> :
       <div className="flex flex-col text-sm">
         <div className="self-center">
           <Balance amount={tx.amount}/>

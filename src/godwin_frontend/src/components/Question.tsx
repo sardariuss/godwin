@@ -1,8 +1,9 @@
+import Balance                                                    from "./base/Balance";
 import OpinionVote                                                from "./opinion/OpinionVote";
 import CategorizationVote                                         from "./categorization/CategorizationVote";
 import StatusHistoryComponent                                     from "./StatusHistory";
 import InterestVote                                               from "./interest/InterestVote";
-import { VoteKind }                                               from "../utils";
+import { StatusEnum, VoteKind, statusToEnum }                     from "../utils";
 import CONSTANTS                                                  from "../Constants";
 import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_sub/godwin_sub.did";
 
@@ -21,6 +22,7 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
 	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
+	const [canReopen, setCanReopen] = useState<boolean>(false);
 
 	const refreshQuestion = async () => {
 		const question = await actor.getQuestion(questionId);
@@ -76,6 +78,13 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 		}
 	};
 
+	const refreshCanReopen = async () => {
+		setCanReopen(
+			vote_kind === undefined && statusHistory.length > 0 && (
+			(statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.CLOSED
+	 || (statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.TIMED_OUT));
+	}
+
 	const findLastVote = (history: StatusInfo[], status_name: string) : StatusInfo | undefined => {
 		for (let i = history.length - 1; i >= 0; i--) {
 			if (history[i].status[status_name] !== undefined) {
@@ -92,13 +101,13 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 
 	useEffect(() => {
 		refreshQuestionVoteJoins();
-	}, [questionId, statusHistory, vote_kind]);
+		refreshCanReopen();
+	}, [statusHistory, vote_kind]);
 
 	return (
 		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10
-			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "" : "pr-10"}`}>
-			<div className={`flex flex-col py-1 px-1 justify-between w-full space-y-1
-				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : "w-1/5"}`}>
+			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined || canReopen ? "" : "pr-10"}`}>
+			<div className={`flex flex-col py-1 px-1 justify-between w-full space-y-1`}>
 				{
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -156,8 +165,19 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 			</div>
 			{
 				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
-				<div className="w-1/5 col-span-2 mr-5">
+				<div className="w-1/5 mr-5">
 					<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
+				</div> : <></>
+			}
+			{
+				canReopen ?
+				<div className="flex flex-row w-1/4 mr-5 mt-2 self-start items-center gap-x-1">
+					<button className="button-simple py-1 px-2 text-xs" type="button">
+						<div className="flex flex-col items-center gap-y-1">
+							Propose again
+							<Balance amount={BigInt(1_000_000_000)}/>
+						</div>
+					</button>
 				</div> : <></>
 			}
 		</div>

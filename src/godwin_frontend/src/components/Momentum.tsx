@@ -28,7 +28,9 @@ const Momentum = ({sub} : MomentumProps) => {
       <div className="font-normal text-gray-700 dark:text-gray-400">
         { "selection score: " + selectionScore.toFixed(1) }
       </div> : 
-      <Spinner/>
+      <div className="w-5 h-5">
+        <Spinner/>
+      </div>
     }
     </div>
   )

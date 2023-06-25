@@ -51,7 +51,7 @@ const CONSTANTS = {
   USER_NAME: {
     DEFAULT: 'New user'
   },
-  TOKEN_DECIMALS: 2,
+  TOKEN_DECIMALS: 1,
   CHART: {
     BORDER_COLOR_LIGHT: '#bbbbbb',
     BORDER_COLOR_DARK: '#333333',
