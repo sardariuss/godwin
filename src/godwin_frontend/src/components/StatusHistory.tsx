@@ -16,6 +16,10 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusHistory}: 
 
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
+  const toggleHistory = (toggle: boolean) => {
+    if (statusHistory.length > 1) { setHistoryVisible(toggle); };
+  };
+
 	return (
     <div className="text-gray-500 dark:border-gray-700 dark:text-gray-400">
       <ol>
@@ -31,7 +35,8 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusHistory}: 
                   categories={categories}
                   statusInfo={statusInfo}
                   previousStatusInfo={statusHistory.length - index - 2 >= 0 ? statusHistory[statusHistory.length - index - 2] : undefined}
-                  onStatusClicked={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => { if (index === 0 && statusHistory.length > 1) setHistoryVisible(!historyVisible) }}
+                  isToggledHistory={historyVisible}
+                  toggleHistory={(toggle: boolean) => {toggleHistory(toggle)}}
                   isHistory={index !== 0}
                   showBorder={index !== 0 ? (index < statusHistory.length - 1) : (statusHistory.length > 1) }
                   borderDashed={index !== 0 ? false : !historyVisible}>

@@ -47,8 +47,6 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
   const borderColor = getBorderColor();
   const normedPolarization = getNormalizedPolarization(polarizationValue);
 
-  console.log("Sum = " + (normedPolarization.left + normedPolarization.center + normedPolarization.right).toExponential(10));
-
   return {
     labels,
     datasets: [
@@ -118,7 +116,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
               <ScatterChart chart_data={scatterData}/>
             </div> :
           chartType === ChartTypeEnum.Bar ?
-            <BarChart chart_data={barData} generate_label={toPercentage} /> :
+            <BarChart chart_data={barData} generate_label={toPercentage} bar_size={1}/> :
             <></>
         }
         </div>

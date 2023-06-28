@@ -17,7 +17,7 @@ type Props = {
 
 const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
-  const {subs} = useContext(ActorContext);
+  const {subs, refreshBalance} = useContext(ActorContext);
   
   const [showSubsList,  setShowSubsList ] = useState<boolean>      (false                                             );
   const [selectedSubId, setSelectedSubId] = useState<string | null>((subId !== null && subs.has(subId)) ? subId : null);
@@ -33,6 +33,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
         setSubmitting(false);
         if (res['ok'] !== undefined){
           setText("");
+          refreshBalance();
           onSubmitQuestion(res['ok']);
         } else if (res['err'] !== undefined){
           setError(openQuestionErrorToString(res['err']));

@@ -61,7 +61,7 @@ const AppealBar = ({vote}: AppealBarProps) => {
           <div className="text-xs font-extralight">{ CONSTANTS.INTEREST_INFO.down.name }</div>
         </div>
         <div className={"col-span-3 z-0 grow max-h-16 w-full"}>
-          <BarChart chart_data={barData} generate_label={passthroughLabel} />
+          <BarChart chart_data={barData} generate_label={passthroughLabel} bar_size={vote.ballots.length}/>
         </div>
         <div className="flex flex-col items-center z-10 grow place-self-center">
           <div className="text-3xl">{ CONSTANTS.INTEREST_INFO.up.symbol }</div>

@@ -52,10 +52,11 @@ export const ActorContext = React.createContext<{
   getPrincipal: () => Principal.anonymous()
 });
 
+// @todo: remove the console.logs
 export function useAuthClient() {
   const navigate = useNavigate();
 
-  const [authClient,      setAuthClient     ] = useState<AuthClient>                  (             );
+  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined    );
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null         );
   const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token );
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master);
@@ -74,33 +75,41 @@ export function useAuthClient() {
       // 7 days in nanoseconds
       maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
       onSuccess: () => {
-        initActor();
+        //console.log("Loggin successful");
         setIsAuthenticated(true);
       },
     });
   };
 
-  const initActor = () => {
-    const actor = createMaster(canisterId as string, {
-      agentOptions: {
-        identity: authClient?.getIdentity(),
-      },
-    });
-    setMaster(actor);
+  const initMaster = () => {
+    //console.log("Initializing master actor")
+    if (isAuthenticated) {
+      const actor = createMaster(canisterId as string, {
+        agentOptions: {
+          identity: authClient?.getIdentity(),
+        },
+      });
+      setMaster(actor);
+    } else {
+      setMaster(godwin_master);
+    }
+    //console.log("Master actor initialized")
   }
 
   const logout = () => {
+    //console.log("Logging out")
     authClient?.logout().then(() => {
       navigate("/");
       setIsAuthenticated(false);
-      setMaster(godwin_master);
     });
   }
 
   const fetchSubs = async() => {
+    //console.log("Fetching subs")
     let newSubs = new Map<string, Sub>();
     let listSubs = await master.listSubGodwins();
-    for (let [principal, id] of listSubs) {
+
+    await Promise.all(listSubs.map(async ([principal, id]) => {
       let actor = createSub(principal, {
         agentOptions: {
           identity: authClient?.getIdentity(),
@@ -109,9 +118,11 @@ export function useAuthClient() {
       let name = await actor.getName();
       let categories = await actor.getCategories();
       newSubs.set(id, {actor, name, categories});
-    }
+    }));
+
     setSubs(newSubs);
     setSubsFetched(true);
+    //console.log("Subs fetched")
   }
 
   const refreshUserAccount = () => {
@@ -153,19 +164,28 @@ export function useAuthClient() {
   };
 
   useEffect(() => {
+    //console.log("Use effect []");
     AuthClient.create({
       idleOptions: {
         disableDefaultIdleCallback: true,
         disableIdle: true
       }
     }).then(async (client) => {
-      const isAuthenticated = await client.isAuthenticated();
+      //console.log("Before isAuthenticated")
+      const is_authenticated = await client.isAuthenticated();
       setAuthClient(client);
-      setIsAuthenticated(isAuthenticated);
+      setIsAuthenticated(is_authenticated);
+      //console.log("After isAuthenticated: " + is_authenticated);
+    })
+    .catch((error) => {
+      console.error(error);
+      setAuthClient(undefined);
+      setIsAuthenticated(false);
     });
   }, []);
 
   useEffect(() => {
+    //console.log("Use effect [subsFetched]");
     if (!subsFetched) {
       fetchSubs();
     }
@@ -173,22 +193,27 @@ export function useAuthClient() {
 
   // Need to fetch subs when master changes, so the subs are logged in/out too
   useEffect(() => {
+    //console.log("Use effect [master]");
     fetchSubs();
   }, [master]);
 
   useEffect(() => {
-    if (isAuthenticated) { initActor() };
+    //console.log("Use effect [isAuthenticated]");
+    initMaster();
   }, [isAuthenticated]);
 
   useEffect(() => {
+    //console.log("Use effect [master, isAuthenticated]");
     refreshUserAccount();
   }, [master, isAuthenticated]);
 
   useEffect(() => {
+    //console.log("Use effect [token, userAccount]");
     refreshBalance();
   }, [token, userAccount]);
 
   useEffect(() => {
+    //console.log("Use effect [master, authClient]");
     refreshLoggedUserName();
   }, [master, authClient]);
 

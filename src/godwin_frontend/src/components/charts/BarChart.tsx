@@ -19,7 +19,7 @@ ChartJS.register(
   Legend
 );
 
-const getOptions = (generate_label: (ctx: any) => string) => {
+const getOptions = (generate_label: (ctx: any) => string, bar_size: number) => {
   
   return {
     indexAxis: 'y' as const,
@@ -49,7 +49,7 @@ const getOptions = (generate_label: (ctx: any) => string) => {
         stacked: true,
         display: false,
         min: 0.0,
-        max: 1.0
+        max: bar_size
       },
       y: {
         stacked: true,
@@ -62,10 +62,11 @@ const getOptions = (generate_label: (ctx: any) => string) => {
 type BarChartInput = {
   chart_data: any;
   generate_label: (ctx: any) => string;
+  bar_size: number;
 };
 
-export const BarChart = ({ chart_data, generate_label }: BarChartInput) => {
+export const BarChart = ({ chart_data, generate_label, bar_size }: BarChartInput) => {
   return (
-    <Bar data={chart_data} options={getOptions(generate_label)}/>
+    <Bar data={chart_data} options={getOptions(generate_label, bar_size)}/>
   );
 };

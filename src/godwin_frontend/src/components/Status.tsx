@@ -19,14 +19,15 @@ type Props = {
   questionId: bigint;
   statusInfo: StatusInfo;
   previousStatusInfo: StatusInfo | undefined;
-  onStatusClicked: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  isToggledHistory: boolean;
+  toggleHistory: (toggle: boolean) => void;
   isHistory: boolean;
   categories: Map<Category, CategoryInfo>
   showBorder: boolean;
   borderDashed: boolean;
 };
 
-const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onStatusClicked, isHistory, categories, showBorder, borderDashed}: Props) => {
+const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isToggledHistory, toggleHistory, isHistory, categories, showBorder, borderDashed}: Props) => {
 
   const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
   const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
@@ -57,6 +58,15 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onS
     }
   }
 
+  const toggleVote = (vote_kind: VoteKind, toggled: boolean) => {
+    setSelectedVote(toggled ? vote_kind : undefined); 
+    
+    // Show the history if a vote is selected and the history is not already shown
+    if (toggled && !isToggledHistory) { 
+      toggleHistory(true); 
+    } 
+  }
+
   useEffect(() => {
     fetchRevealedVotes();
   }, [statusInfo, previousStatusInfo, isHistory]);
@@ -66,7 +76,15 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onS
       <div className={`text-gray-700 dark:text-gray-300`}>
         <div className="flex flex-row">
           <div className={`flex flex-row justify-center px-1 group/status ${!isHistory && showBorder ? "hover:cursor-pointer" : ""}`}
-          onClick={(e) => { (!isHistory && showBorder) ? onStatusClicked(e) : {} }}>
+            onClick={(e) => { 
+              if (!isHistory && showBorder) { 
+                toggleHistory(!isToggledHistory); 
+                // Hide the selected vote if the history is hidden
+                if (isToggledHistory) {
+                  setSelectedVote(undefined); 
+                }
+              }
+            }}>
             <span className={"flex items-center justify-center w-8 h-8 rounded-full ring-2 z-10 " 
             + ( isHistory ? "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400" :
             "                       bg-blue-200                         fill-blue-500                         ring-blue-500 \
@@ -107,21 +125,21 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onS
                 statusInfo.status['OPEN'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
                   <AppealDigest 
                     aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
-                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.INTEREST : undefined) }}
+                    setSelected={(selected: boolean) => { toggleVote(VoteKind.INTEREST, selected); }}
                     selected={ selectedVote === VoteKind.INTEREST}
                   />
                 : statusInfo.status['CLOSED'] !== undefined ?
                 <div className="flex flex-row items-center gap-x-1">
                   <OpinionAggregate
                     aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
-                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.OPINION : undefined) }}
+                    setSelected={(selected: boolean) => { toggleVote(VoteKind.OPINION, selected); }}
                     selected={ selectedVote === VoteKind.OPINION}
                   />
                   {" · "}
                   <CategorizationAggregateDigest 
                     aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
                     categories={categories}
-                    setSelected={(selected: boolean) => { setSelectedVote(selected ? VoteKind.CATEGORIZATION : undefined) }}
+                    setSelected={(selected: boolean) => { toggleVote(VoteKind.CATEGORIZATION, selected); }}
                     selected={ selectedVote === VoteKind.CATEGORIZATION}
                   />
                 </div>
@@ -129,7 +147,10 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, onS
               }
               </div>
             </div>
-            <div className={`text-xs font-extralight ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>{ nsToStrDate(statusInfo.date) }</div>
+            <div className={`text-xs font-extralight 
+              ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
+              { nsToStrDate(statusInfo.date) }
+            </div>
             <div className={ selectedVote !== undefined ? "mt-5" : "" }>
               <div>
               {

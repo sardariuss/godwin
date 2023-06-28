@@ -109,7 +109,8 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10
 			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined || canReopen ? "" : "pr-10"}`}>
 			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
-				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : canReopen ? "grow" : "w-full"}`}>
+				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : "w-full"}`}>
+				<div className="flex flex-row justify-between grow">
 				{
 					question === undefined ? 
 					<div role="status" className="w-full animate-pulse">
@@ -122,6 +123,13 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
           	{question.text}
         	</div>
 				}
+				{
+				canReopen ?
+					<div className="flex flex-row grow self-start justify-end mr-5">
+						<ReopenButton actor={actor} questionId={questionId} onReopened={()=>{}}/>
+					</div> : <></>
+				}
+				</div>
 				{
 						questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
 							<OpinionVote
@@ -138,12 +146,12 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 				}
 				{
 					statusHistory.length === 0 ? <></> :
-					<StatusHistoryComponent 
-						actor={actor}
-						categories={categories}
-						questionId={questionId}
-						statusHistory={statusHistory}
-					/>
+						<StatusHistoryComponent 
+							actor={actor}
+							categories={categories}
+							questionId={questionId}
+							statusHistory={statusHistory}
+						/>
 				}
 				{/*
 					<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
@@ -169,12 +177,6 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
 				<div className="w-1/5 mr-5">
 					<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
-				</div> : <></>
-			}
-			{
-				canReopen ?
-				<div className="flex flex-row grow self-start justify-end mt-2 mr-5">
-					<ReopenButton actor={actor} questionId={questionId} onReopened={()=>{}}/>
 				</div> : <></>
 			}
 		</div>
