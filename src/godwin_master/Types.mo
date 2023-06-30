@@ -17,11 +17,6 @@ module {
     #IdentifierAlreadyTaken;
   };
 
-  public type AirdropError = TokenTypes.TransferError or {
-    #AlreadySupplied;
-    #AirdropOver;
-  };
-
   public type TransferError = TokenTypes.TransferError or {
     #NotAllowed;
   };
@@ -39,15 +34,12 @@ module {
 
   public type TransferResult = Result<TokenTypes.TxIndex, TransferError>;
 
-  public type AirdropResult = Result<TokenTypes.TxIndex, AirdropError>;
-
   public type MintBatchResult = Result<[(TokenTypes.Mint, TokenTypes.TransferResult)], TransferError>;
 
   public type Balance = TokenTypes.Balance;
 
   public type MasterInterface = actor {
     pullTokens: shared(Principal, TokenTypes.Balance, ?Blob) -> async TransferResult;
-    airdrop: shared() -> async AirdropResult;
     mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
   };
 

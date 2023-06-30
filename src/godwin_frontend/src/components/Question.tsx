@@ -106,7 +106,7 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 	}, [statusHistory, vote_kind]);
 
 	return (
-		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10
+		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center
 			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined || canReopen ? "" : "pr-10"}`}>
 			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
 				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : "w-full"}`}>

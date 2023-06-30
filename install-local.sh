@@ -1,96 +1,73 @@
 dfx stop
 dfx start --background --clean
 
-# It is required to create the master first to be able to set it as the token owner
-dfx canister create godwin_master
+dfx canister create --all
 
-dfx deploy godwin_token
+dfx build --all
 
-dfx deploy godwin_master
-dfx canister call godwin_master runScenario
+# Token settings
+export NAME="Godwin"
+export SYMBOL="GDW"
+export DEMICALS="8"
+export FEE="10_000" # 0.0001
+export MAX_SUPPLY="100_000_000_000_000_000" # 1 billion
+export MIN_BURN_AMOUNT="10_000" # Same as fee
 
-# The backend needs to be created and built to be able to generate the types later
-dfx canister create godwin_sub
-dfx build godwin_sub
+# Deployer
+export DEPLOYER_PRINCIPAL=$(dfx identity get-principal)
+export DEPLOYER_AMOUNT="30_000_000_000_000_000" # 300 million
 
-# Create first sub godwin
-dfx canister call godwin_master createSubGodwin '("classic6", record {
-  name = "Classic 6 values ⚖️";
-  categories = vec {
-    record {
-      "IDENTITY"; 
-      record { left  = record { name = "CONSTRUCTIVISM"; symbol = "🧩"; color = "#f26c0d"; }; 
-               right = record { name = "ESSENTIALISM";   symbol = "💎"; color = "#f2a60d"; }; }
-    };
-    record {
-      "ECONOMY";  
-      record { left  = record { name = "SOCIALISM";      symbol = "🌹"; color = "#0fca02"; }; 
-               right = record { name = "CAPITALISM";     symbol = "🎩"; color = "#02ca27"; }; }
-    };
-    record {
-      "CULTURE";  
-      record { left  = record { name = "PROGRESSIVISM";  symbol = "🌊"; color = "#2c00cc"; }; 
-               right = record { name = "CONSERVATISM";   symbol = "🧊"; color = "#5f00cc"; }; }
-    };
-  };
-  scheduler = record {
-    question_pick_rate        = variant { HOURS = 2    };
-    censor_timeout            = variant { MINUTES = 30 };
-    candidate_status_duration = variant { HOURS = 8    };
-    open_status_duration      = variant { HOURS = 4    };
-    rejected_status_duration  = variant { HOURS = 8    };
-  };
-  questions = record {
-    character_limit = 240;
-  };
-  prices = record {
-    open_vote_price_e8s = 1_000_000_000;
-    interest_vote_price_e8s = 100_000_000;
-    categorization_vote_price_e8s =  350_000_000;
-  };
-  decay_half_life = variant { DAYS = 365 };
-  minimum_interest_score = 1.0;
-})'
-# Run the scenario @todo for some reason this does not work, one shall use ic-repl instead
-#export SUB_6_VALUES_PRINCIPAL=${SUB_6_VALUES_ID:1:29}
-#dfx canister call ${SUB_6_VALUES_PRINCIPAL} runScenario
+# Airdrop
+export AIRDROP_CANISTER=$(dfx canister id godwin_airdrop)
+export AIRDROP_AMOUNT="1_000_000_000_000_000" # 10 million
+export AIRDROP_PER_USER="100_000_000_000" # 1 thousand per user, 10 thousands users
+export AIRDROP_ALLOW_SELF="true"
 
-# Create second sub godwin
-dfx canister call godwin_master createSubGodwin '("uspolitics", record {
-  name = "US politics 🇺🇸";
-  categories = vec {
-    record {
-      "PARTISANSHIP"; 
-      record { left  = record { name = "DEMOCRAT";   symbol = "🦓"; color = "#1404BD"; }; 
-               right = record { name = "REPUBLICAN"; symbol = "🐘"; color = "#DE0100"; }; }
-    };
-  };
-  scheduler = record {
-    question_pick_rate        = variant { HOURS = 1    };
-    censor_timeout            = variant { MINUTES = 20 };
-    candidate_status_duration = variant { HOURS = 4    };
-    open_status_duration      = variant { HOURS = 1    };
-    rejected_status_duration  = variant { HOURS = 6    };
-  };
-  questions = record {
-    character_limit = 240;
-  };
-  prices = record {
-    open_vote_price_e8s = 1_000_000_000;
-    interest_vote_price_e8s = 100_000_000;
-    categorization_vote_price_e8s =  350_000_000;
-  };
-  decay_half_life = variant { DAYS = 365 };
-  minimum_interest_score = 1.0;
-})'
+# Master
+export MASTER_CANISTER=$(dfx canister id godwin_master)
 
-# Deploy the internet identity
-dfx deploy internet_identity
+dfx canister install godwin_token
+
+#dfx canister install godwin_token --argument '( record {
+#  name              = "'${NAME}'";
+#  symbol            = "'${SYMBOL}'";
+#  decimals          = '${DEMICALS}';
+#  fee               = '${FEE}';
+#  max_supply        = '${MAX_SUPPLY}';
+#  min_burn_amount   = '${MIN_BURN_AMOUNT}';
+#  initial_balances  = vec {
+#    record {
+#      record {
+#        owner = principal "'${DEPLOYER_PRINCIPAL}'";
+#        subaccount = null
+#      };
+#      '${DEPLOYER_AMOUNT}'
+#    };
+#    record {
+#      record {
+#        owner = principal "'${AIRDROP_CANISTER}'";
+#        subaccount = null
+#      };
+#      '${AIRDROP_AMOUNT}'
+#    }
+#  };
+#  minting_account   = opt record { 
+#    owner = principal "'${MASTER_CANISTER}'";
+#    subaccount = null; 
+#  };
+#  advanced_settings = null;
+#})'
+
+dfx canister install godwin_airdrop --argument '('${AIRDROP_PER_USER}', '${AIRDROP_ALLOW_SELF}')'
+
+dfx canister install godwin_master
+
+dfx canister install internet_identity
+
+dfx canister install godwin_clock
 
 # @todo: Deploy the frontend
 dfx canister create godwin_frontend
 
 # Generate the candid files
 dfx generate
-
-# @todo: need to deploy the clock, but run the scenario first

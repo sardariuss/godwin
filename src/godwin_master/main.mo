@@ -2,30 +2,23 @@ import Types              "Types";
 
 import GodwinSub          "../godwin_sub/main";
 import SubTypes           "../godwin_sub/model/Types";
-import TextUtils          "../godwin_sub/utils/Text"; // @todo
+import TextUtils          "../godwin_sub/utils/Text";
 
 import Map                "mo:map/Map";
-import Set                "mo:map/Set";
-
-import Scenario           "../../test/motoko/Scenario"; // @todo
 
 import Result             "mo:base/Result";
 import Principal          "mo:base/Principal";
 import Time               "mo:base/Time";
 import Nat64              "mo:base/Nat64";
 import Int                "mo:base/Int";
-import Nat                "mo:base/Nat";
 import Iter               "mo:base/Iter";
-import Array              "mo:base/Array";
-import Debug              "mo:base/Debug";
 import Prim               "mo:prim";
-import Nat32              "mo:base/Nat32";
 import Option             "mo:base/Option";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
 import GodwinToken        "canister:godwin_token";
 
-actor GodwinMaster {
+shared({caller = _controller}) actor class GodwinMaster() = this {
 
   type Parameters                     = SubTypes.Parameters;
   type Result<Ok, Err>                = Result.Result<Ok, Err>;
@@ -34,7 +27,6 @@ actor GodwinMaster {
   type Balance                        = Types.Balance;
   type CreateSubGodwinResult          = Types.CreateSubGodwinResult;
   type TransferResult                 = Types.TransferResult;
-  type AirdropResult                  = Types.AirdropResult;
   type MintBatchResult                = Types.MintBatchResult;
   type SetUserNameError               = Types.SetUserNameError;
 
@@ -52,15 +44,7 @@ actor GodwinMaster {
 
   stable let _sub_godwins = Map.new<(Principal, Text), GodwinSub>(pthash);
 
-  stable let _airdropped_users = Set.new<Principal>(Map.phash);
-
   stable let _user_names = Map.new<Principal, Text>(Map.phash);
-
-  // 0.1% of the total supply
-  stable var _airdrop_supply = 1_000_000 * 100_000_000;
-
-  // 1000 tokens to 1000 users
-  stable let _airdrop_amount_per_user = 1_000 * 100_000_000;
 
   public query func getCyclesBalance() : async Nat {
     ExperimentalCycles.balance();
@@ -78,10 +62,11 @@ actor GodwinMaster {
     };
 
     // Add 50B cycles; creating the canister seem to take 8B, installation 6B.
+    // @todo: probably want to be more conservative in prod
     ExperimentalCycles.add(50_000_000_000);
 
     let new_sub = await (system GodwinSub.GodwinSub)(#new {settings = ?{ 
-      controllers = ?[Principal.fromActor(GodwinMaster)];
+      controllers = ?[Principal.fromActor(this), _controller];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
@@ -94,6 +79,24 @@ actor GodwinMaster {
     #ok(principal);
   };
 
+  type AddGodwinSubError = {
+    #NotAuthorized;
+    #AlreadyAdded;
+  };
+
+  // @todo: verify the names are unique
+  public shared({caller}) func addGodwinSub(principal: Principal, identifier: Text) : async Result<(), AddGodwinSubError> {
+    if (caller != _controller){
+      return #err(#NotAuthorized);
+    };
+    if(Option.isSome(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
+      return #err(#AlreadyAdded);
+    };
+    let sub : GodwinSub = actor(Principal.toText(principal));
+    Map.set(_sub_godwins, pthash, (principal, identifier), sub);
+    #ok;
+  };
+
   // @todo: deal with the parameters
   // @todo: what happens if there is a breaking change ?
   public shared func updateSubGodwins(parameters: Parameters) : async () {
@@ -104,61 +107,6 @@ actor GodwinMaster {
 
   public query func listSubGodwins() : async [(Principal, Text)] {
     Iter.toArray(Map.keys(_sub_godwins));
-  };
-
-  // @todo: remove
-  public shared func runScenario() : async () {
-    let time_now = Nat64.fromNat(Int.abs(Time.now()));
-
-    Debug.print("Run scenario!");
-
-    for (principal in Array.vals(Scenario.getPrincipals())){
-
-      Debug.print("Loop for principal: " # Principal.toText(principal));
-       
-       let mint_result = toBaseResult(await GodwinToken.mint({
-        to = {
-          owner = Principal.fromActor(GodwinMaster);
-          subaccount = ?toSubaccount(principal);
-        };
-        amount = _airdrop_amount_per_user;
-        memo = null;
-        created_at_time = ?time_now;
-      }));
-
-      switch(mint_result){
-        case(#err(err)) { Debug.print(Types.transferErrorToText(err)); };
-        case(#ok(tx_index)) { ignore Set.put(_airdropped_users, Map.phash, principal); };
-      };
-    };
-  };
-
-  public shared({caller}) func airdrop() : async AirdropResult {
-    
-    if (_airdrop_supply == 0) {
-      return #err(#AirdropOver);
-    };
-
-    if (Set.has(_airdropped_users, Map.phash, caller)) {
-      return #err(#AlreadySupplied);
-    };
-
-    let mint_result = toBaseResult(await GodwinToken.mint({
-      to = {
-        owner = Principal.fromActor(GodwinMaster);
-        subaccount = ?toSubaccount(caller);
-      };
-      amount = _airdrop_amount_per_user;
-      memo = null;
-      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-    }));
-
-    Result.iterate(mint_result, func(tx_index: GodwinToken.TxIndex){
-      _airdrop_supply -= _airdrop_amount_per_user;
-      ignore Set.put(_airdropped_users, Map.phash, caller);
-    });
-
-    mint_result;
   };
 
   public shared({caller}) func pullTokens(user: Principal, amount: Balance, subaccount: ?Blob) : async TransferResult {
@@ -191,12 +139,8 @@ actor GodwinMaster {
     toBaseResult(await GodwinToken.mint_batch(args));
   };
 
-  public query func getAirdropSupply() : async Balance {
-    _airdrop_supply;
-  };
-
   public query func getUserAccount(user: Principal) : async GodwinToken.Account {
-    { owner = Principal.fromActor(GodwinMaster); subaccount = ?toSubaccount(user) };
+    { owner = Principal.fromActor(this); subaccount = ?toSubaccount(user) };
   };
 
   public query func getUserName(user: Principal) : async ?Text {

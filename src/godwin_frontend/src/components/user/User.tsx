@@ -42,7 +42,7 @@ const filterToText = (filter: UserFilter) => {
 const UserComponent = () => {
 
   const {user} = useParams<string>();
-  const {subs, isAuthenticated, authClient, master, logout, refreshBalance} = useContext(ActorContext);
+  const {subs, isAuthenticated, authClient, master, airdrop, logout, refreshBalance} = useContext(ActorContext);
 
   const [principal,         setPrincipal        ] = useState<Principal | undefined>(undefined             );
   const [isLoggedUser,      setIsLoggedUser     ] = useState<boolean>              (false                 );
@@ -70,9 +70,9 @@ const UserComponent = () => {
     }
   }
 
-  const airdrop = () => {
+  const claimAirdrop = () => {
     // @todo: temporary airdrop
-    master.airdrop().then(() => {;
+    airdrop.airdropSelf().then(() => {;
       refreshBalance();
     });
   }
@@ -113,7 +113,7 @@ const UserComponent = () => {
                 }
                 {
                   isLoggedUser ?
-                  <button type="button" onClick={(e) => airdrop()} className="button-blue">
+                  <button type="button" onClick={(e) => claimAirdrop()} className="button-blue">
                     Airdrop
                   </button> : <></>
                 }

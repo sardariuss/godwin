@@ -6,12 +6,15 @@ import Int                "mo:base/Int";
 import Array              "mo:base/Array";
 import Float              "mo:base/Float";
 import Nat8               "mo:base/Nat8";
+import Debug              "mo:base/Debug";
+import Option             "mo:base/Option";
 
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
 import ICRC1              "mo:icrc1/ICRC1";
 
 actor GodwinToken {
+//shared({ caller = _owner }) actor class GodwinToken(token_args : ICRC1.TokenInitArgs) {
 
   type Account                 = Types.Account;
   type Subaccount              = Types.Subaccount;
@@ -41,20 +44,27 @@ actor GodwinToken {
   let TOKEN_SUPPLY : Nat = 1_000_000_000 * TOKEN_UNIT;
   let FEE : Nat = 10_000;
 
-  // @todo: fix args
-  let token_args : InitArgs = {
+  // @todo: remove args
+  let token_args : ICRC1.TokenInitArgs = {
     name = "Godwin";
     symbol = "GDW";
     decimals = Nat8.fromNat(DECIMALS);
     fee = FEE;
     max_supply = TOKEN_SUPPLY;
-    initial_balances = [({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 500_000_000 * TOKEN_UNIT)];
+    initial_balances = [
+      ({ owner = Principal.fromText("l2dqn-dqd5a-er3f7-h472o-ainav-j3ll7-iavjt-4v6ib-c6bom-duooy-uqe"); subaccount = null;}, 500_000_000 * TOKEN_UNIT), // deployer
+      ({ owner = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"); subaccount = null;}, 10_000_000 * TOKEN_UNIT)]; // airdrop
     min_burn_amount = FEE;
-    minting_account = { owner = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"); subaccount = null; };
+    minting_account = ?{ owner = Principal.fromText("br5f7-7uaaa-aaaaa-qaaca-cai"); subaccount = null; }; // master
     advanced_settings = null;
   };
 
-  stable let token = ICRC1.init(token_args);
+  stable let token = ICRC1.init({
+    token_args with minting_account = switch(token_args.minting_account){
+      case(?account) { account; };
+      case(null) { Debug.trap("Minting account must be specified"); };
+    }
+  });
 
   /// Functions for the ICRC1 token standard
   public shared query func icrc1_name() : async Text {

@@ -1,0 +1,37 @@
+record {
+  name = "Classic 6 values ⚖️";
+  categories = vec {
+    record {
+      "IDENTITY"; 
+      record { left  = record { name = "CONSTRUCTIVISM"; symbol = "🧩"; color = "#f26c0d"; }; 
+               right = record { name = "ESSENTIALISM";   symbol = "💎"; color = "#f2a60d"; }; }
+    };
+    record {
+      "ECONOMY";  
+      record { left  = record { name = "SOCIALISM";      symbol = "🌹"; color = "#0fca02"; }; 
+               right = record { name = "CAPITALISM";     symbol = "🎩"; color = "#02ca27"; }; }
+    };
+    record {
+      "CULTURE";  
+      record { left  = record { name = "PROGRESSIVISM";  symbol = "🌊"; color = "#2c00cc"; }; 
+               right = record { name = "CONSERVATISM";   symbol = "🧊"; color = "#5f00cc"; }; }
+    };
+  };
+  scheduler = record {
+    question_pick_rate        = variant { HOURS = 2 : nat    };
+    censor_timeout            = variant { MINUTES = 30 : nat };
+    candidate_status_duration = variant { HOURS = 8 : nat    };
+    open_status_duration      = variant { HOURS = 4 : nat    };
+    rejected_status_duration  = variant { HOURS = 8 : nat    };
+  };
+  questions = record {
+    character_limit = 240 : nat;
+  };
+  prices = record {
+    open_vote_price_e8s = 1_000_000_000 : nat;
+    interest_vote_price_e8s = 100_000_000 : nat;
+    categorization_vote_price_e8s =  350_000_000 : nat;
+  };
+  decay_half_life = variant { DAYS = 365 : nat };
+  minimum_interest_score = 1.0;
+}

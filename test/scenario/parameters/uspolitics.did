@@ -1,0 +1,27 @@
+record {
+  name = "US politics 🇺🇸";
+  categories = vec {
+    record {
+      "PARTISANSHIP"; 
+      record { left  = record { name = "DEMOCRAT";   symbol = "🦓"; color = "#1404BD"; }; 
+               right = record { name = "REPUBLICAN"; symbol = "🐘"; color = "#DE0100"; }; }
+    };
+  };
+  scheduler = record {
+    question_pick_rate        = variant { HOURS = 1    };
+    censor_timeout            = variant { MINUTES = 20 };
+    candidate_status_duration = variant { HOURS = 4    };
+    open_status_duration      = variant { HOURS = 1    };
+    rejected_status_duration  = variant { HOURS = 6    };
+  };
+  questions = record {
+    character_limit = 240;
+  };
+  prices = record {
+    open_vote_price_e8s = 1_000_000_000;
+    interest_vote_price_e8s = 100_000_000;
+    categorization_vote_price_e8s =  350_000_000;
+  };
+  decay_half_life = variant { DAYS = 365 };
+  minimum_interest_score = 1.0;
+}

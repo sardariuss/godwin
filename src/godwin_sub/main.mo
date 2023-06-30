@@ -3,10 +3,6 @@ import State           "model/State";
 import Factory         "model/Factory";
 import Facade          "model/Facade";
 
-import Duration        "utils/Duration";
-
-import Scenario        "../../test/motoko/Scenario"; // @todo
-
 import Result          "mo:base/Result";
 import Principal       "mo:base/Principal";
 import Time            "mo:base/Time";
@@ -65,17 +61,9 @@ shared({ caller }) actor class GodwinSub(parameters: Types.Parameters) = {
   type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
   type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
 
-  stable var time_now : Time.Time = Time.now();
-
-  let _start_date = Time.now() - Duration.toTime(#MINUTES(830));  // @temp
-
-  stable var _state = State.initState(caller, _start_date, parameters);
+  stable var _state = State.initState(caller, Time.now(), parameters);
 
   let _facade = Factory.build(_state);
-
-  public shared func runScenario() : async () {
-    await* Scenario.run(_facade, _start_date, Time.now(), #MINUTES(10));
-  };
 
   public query func getName() : async Text {
     _facade.getName();

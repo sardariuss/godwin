@@ -1,19 +1,21 @@
-import { _SERVICE as MasterService, Account }                     from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, CategoryArray__1 }               from "../declarations/godwin_sub/godwin_sub.did";
-import { _SERVICE as TokenService }                               from "../declarations/godwin_token/godwin_token.did";
-import { canisterId, createActor as createMaster, godwin_master } from "../declarations/godwin_master";
-import { godwin_token }                                           from "../declarations/godwin_token";
-import { createActor as createSub }                               from "../declarations/godwin_sub";
+import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
+import { _SERVICE as SubService, CategoryArray__1 }                              from "../declarations/godwin_sub/godwin_sub.did";
+import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
+import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
+import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
+import { godwin_token }                                                          from "../declarations/godwin_token";
+import { canisterId as airdropId, createActor as createAirdrop, godwin_airdrop } from "../declarations/godwin_airdrop";
+import { createActor as createSub }                                              from "../declarations/godwin_sub";
 
-import { AuthClient }                                             from "@dfinity/auth-client";
-import { ActorSubclass }                                          from "@dfinity/agent";
-import { Principal }                                              from "@dfinity/principal";
-import { fromNullable }                                           from "@dfinity/utils";
+import { AuthClient }                                                            from "@dfinity/auth-client";
+import { ActorSubclass }                                                         from "@dfinity/agent";
+import { Principal }                                                             from "@dfinity/principal";
+import { fromNullable }                                                          from "@dfinity/utils";
 
-import { useState, useEffect }                                    from "react";
-import { useNavigate }                                            from "react-router-dom";
+import { useState, useEffect }                                                   from "react";
+import { useNavigate }                                                           from "react-router-dom";
 
-import React from 'react'
+import React                                                                     from 'react'
 
 export type Sub = {
   actor: ActorSubclass<SubService>;
@@ -31,6 +33,7 @@ export const ActorContext = React.createContext<{
   login: () => void;
   logout: () => void;
   token: ActorSubclass<TokenService>;
+  airdrop: ActorSubclass<AirdopService>;
   master: ActorSubclass<MasterService>;
   subs: Map<string, Sub>;
   userAccount?: Account | null;
@@ -43,6 +46,7 @@ export const ActorContext = React.createContext<{
   login: () => {},
   logout: () => {},
   token: godwin_token,
+  airdrop: godwin_airdrop,
   master: godwin_master,
   subs: new Map(),
   balance: null,
@@ -56,15 +60,16 @@ export const ActorContext = React.createContext<{
 export function useAuthClient() {
   const navigate = useNavigate();
 
-  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined    );
-  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null         );
-  const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token );
-  const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master);
-  const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()    );
-  const [subsFetched,     setSubsFetched    ] = useState<boolean | null>              (true         );
-  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null         );
-  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined    );
-  const [balance,         setBalance        ] = useState<bigint | null>               (null         );
+  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
+  const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token  );
+  const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master );
+  const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService>>(godwin_airdrop);
+  const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
+  const [subsFetched,     setSubsFetched    ] = useState<boolean | null>              (true          );
+  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
+  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
+  const [balance,         setBalance        ] = useState<bigint | null>               (null          );
 
   const login = () => {
     authClient?.login({
@@ -81,10 +86,25 @@ export function useAuthClient() {
     });
   };
 
+  const initAirdrop = () => {
+    //console.log("Initializing airdrop actor")
+    if (isAuthenticated) {
+      const actor = createAirdrop(airdropId as string, {
+        agentOptions: {
+          identity: authClient?.getIdentity(),
+        },
+      });
+      setAirdrop(actor);
+    } else {
+      setAirdrop(godwin_airdrop);
+    }
+    //console.log("Airdrop actor initialized")
+  }
+
   const initMaster = () => {
     //console.log("Initializing master actor")
     if (isAuthenticated) {
-      const actor = createMaster(canisterId as string, {
+      const actor = createMaster(masterId as string, {
         agentOptions: {
           identity: authClient?.getIdentity(),
         },
@@ -200,6 +220,7 @@ export function useAuthClient() {
   useEffect(() => {
     //console.log("Use effect [isAuthenticated]");
     initMaster();
+    initAirdrop();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -227,6 +248,7 @@ export function useAuthClient() {
     login,
     logout,
     token,
+    airdrop,
     master,
     subs,
     userAccount,

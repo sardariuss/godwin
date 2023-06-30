@@ -6,12 +6,13 @@ import Duration  "../../src/godwin_sub/utils/Duration";
 
 import Utils     "../../src/godwin_sub/utils/Utils";
 
-import Random    "Random";
+import Random    "../motoko/Random";
 
 import Principal "mo:base/Principal";
 import Debug     "mo:base/Debug";
 import Nat       "mo:base/Nat";
 import Result    "mo:base/Result";
+import Error     "mo:base/Error";
 
 import Fuzz      "mo:fuzz";
 import Array     "mo:base/Array";
@@ -80,7 +81,6 @@ module {
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
             };
-            
           };
           if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, categorization_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(categorization_vote_id));
@@ -120,18 +120,30 @@ module {
 
   func openQuestionErrorToString(openQuestionError: Types.OpenQuestionError) : Text {
     switch(openQuestionError){
-      case(#TextTooLong)            { "TextTooLong";            };
-      case(#PrincipalIsAnonymous)   { "PrincipalIsAnonymous";   };
-      case(#CanisterCallError(_))   { "CanisterCallError";      };
-      case(#TooOld)                 { "TooOld";                 };
-      case(#CreatedInFuture(_))     { "CreatedInFuture";        };
-      case(#BadFee(_))              { "BadFee";                 };
-      case(#BadBurn(_))             { "BadBurn";                };
-      case(#InsufficientFunds(_))   { "InsufficientFunds";      };
-      case(#Duplicate(_))           { "Duplicate";              };
-      case(#TemporarilyUnavailable) { "TemporarilyUnavailable"; };
-      case(#GenericError(_))        { "GenericError";           };
-      case(#NotAllowed)             { "NotAllowed";             };
+      case(#TextTooLong)              { "TextTooLong";                                   };
+      case(#PrincipalIsAnonymous)     { "PrincipalIsAnonymous";                          };
+      case(#CanisterCallError(code))  { "CanisterCallError: " # errorCodeToString(code); };
+      case(#TooOld)                   { "TooOld";                                        };
+      case(#CreatedInFuture(_))       { "CreatedInFuture";                               };
+      case(#BadFee(_))                { "BadFee";                                        };
+      case(#BadBurn(_))               { "BadBurn";                                       };
+      case(#InsufficientFunds(_))     { "InsufficientFunds";                             };
+      case(#Duplicate(_))             { "Duplicate";                                     };
+      case(#TemporarilyUnavailable)   { "TemporarilyUnavailable";                        };
+      case(#GenericError(_))          { "GenericError";                                  };
+      case(#NotAllowed)               { "NotAllowed";                                    };
+    };
+  };
+
+  func errorCodeToString(code: Error.ErrorCode) : Text {
+    switch(code){
+      case(#system_fatal){ "system_fatal" ; };
+      case(#system_transient){ "system_transient" ; };
+      case(#destination_invalid){ "destination_invalid" ; };
+      case(#canister_reject){ "canister_reject" ; };
+      case(#canister_error){ "canister_error" ; };
+      case(#future(_)){ "future" ; };
+      case(#call_error(_)){ "call_error" ; };
     };
   };
 
