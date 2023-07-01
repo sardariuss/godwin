@@ -17,6 +17,11 @@ export const nsToStrDate = (ns: bigint) => {
 
 export const timeAgo = (input) => {
   const date = (input instanceof Date) ? input : new Date(input);
+  const secondsElapsed = (date.getTime() - Date.now()) / 1000;
+  return formatTimeDiff(secondsElapsed);
+}
+
+export const formatTimeDiff = (diffInSeconds: number) : string | undefined => {
   const formatter = new Intl.RelativeTimeFormat('en', { style: 'narrow' });
   const ranges = {
     years: 3600 * 24 * 365,
@@ -27,11 +32,10 @@ export const timeAgo = (input) => {
     minutes: 60,
     seconds: 1
   };
-  const secondsElapsed = (date.getTime() - Date.now()) / 1000;
   for (let key in ranges) {
-    if (ranges[key] < Math.abs(secondsElapsed)) {
+    if (ranges[key] < Math.abs(diffInSeconds)) {
       if (key == 'seconds') return "now";
-      const delta = secondsElapsed / ranges[key];
+      const delta = diffInSeconds / ranges[key];
       return formatter.format(Math.round(delta), key as keyof typeof ranges);
     }
   }

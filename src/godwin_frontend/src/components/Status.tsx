@@ -1,33 +1,32 @@
-import AppealDigest                                                                                    from "./interest/AppealDigest";
-import OpinionAggregate                                                                                from "./opinion/OpinionAggregate";
-import OpinionPolarizationBar                                                                          from "./opinion/OpinionPolarizationBar";
-import AppealBar                                                                                       from "./interest/AppealBar";
-import CategorizationAggregateDigest                                                                   from "./categorization/CategorizationAggregateDigest";
-import CategorizationPolarizationBars                                                                  from "./categorization/CategorizationPolarizationBars";
-import { statusToString, toMap, VoteKind }                                                             from "../utils";
-import { nsToStrDate }                                                                                 from "../utils/DateUtils";
-import CONSTANTS                                                                                       from "../Constants";
-import { _SERVICE, StatusInfo, Category, CategoryInfo, InterestVote, OpinionVote, CategorizationVote } from "../../declarations/godwin_sub/godwin_sub.did";
+import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon }           from "./icons/StatusIcons";
+import AppealDigest                                                                  from "./interest/AppealDigest";
+import OpinionAggregate                                                              from "./opinion/OpinionAggregate";
+import OpinionPolarizationBar                                                        from "./opinion/OpinionPolarizationBar";
+import AppealBar                                                                     from "./interest/AppealBar";
+import CategorizationAggregateDigest                                                 from "./categorization/CategorizationAggregateDigest";
+import CategorizationPolarizationBars                                                from "./categorization/CategorizationPolarizationBars";
+import { statusToString, toMap, VoteKind, getStatusDuration, durationToNanoSeconds } from "../utils";
+import { nsToStrDate, formatTimeDiff }                                               from "../utils/DateUtils";
+import CONSTANTS                                                                     from "../Constants";
+import { Sub }                                                                       from "../ActorContext";
+import { StatusInfo, InterestVote, OpinionVote, CategorizationVote }                 from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { ActorSubclass }                                                                               from "@dfinity/agent";
-import { useEffect, useState }                                                                         from "react";
-
-import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon }                             from "./icons/StatusIcons";
+import Countdown                                                                     from "react-countdown";
+import { useEffect, useState }                                                       from "react";
 
 type Props = {
-  actor: ActorSubclass<_SERVICE>,
+  sub: Sub,
   questionId: bigint;
   statusInfo: StatusInfo;
   previousStatusInfo: StatusInfo | undefined;
   isToggledHistory: boolean;
   toggleHistory: (toggle: boolean) => void;
   isHistory: boolean;
-  categories: Map<Category, CategoryInfo>
   showBorder: boolean;
   borderDashed: boolean;
 };
 
-const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isToggledHistory, toggleHistory, isHistory, categories, showBorder, borderDashed}: Props) => {
+const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isToggledHistory, toggleHistory, isHistory, showBorder, borderDashed}: Props) => {
 
   const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
   const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
@@ -42,18 +41,18 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
 
     // Reveal the results of the vote(s) associated with the previous state
     if (previousStatusInfo !== undefined && previousStatusInfo.status['CANDIDATE'] !== undefined) {
-      let interest_vote_id = (await actor.findInterestVoteId(questionId, previousStatusInfo.iteration))['ok'];
+      let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (interest_vote_id !== undefined) {
-        setInterestVote((await actor.revealInterestVote(interest_vote_id))['ok']);
+        setInterestVote((await sub.actor.revealInterestVote(interest_vote_id))['ok']);
       }
     } else if (previousStatusInfo !== undefined && previousStatusInfo.status['OPEN'] !== undefined) {
-      let opinion_vote_id = (await actor.findOpinionVoteId(questionId, previousStatusInfo.iteration))['ok'];
+      let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (opinion_vote_id !== undefined) {
-        setOpinionVote((await actor.revealOpinionVote(opinion_vote_id))['ok']);
+        setOpinionVote((await sub.actor.revealOpinionVote(opinion_vote_id))['ok']);
       }
-      let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, previousStatusInfo.iteration))['ok'];
+      let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, previousStatusInfo.iteration))['ok'];
       if (categorization_vote_id !== undefined) {
-        setCategorizationVote((await actor.revealCategorizationVote(categorization_vote_id))['ok']);
+        setCategorizationVote((await sub.actor.revealCategorizationVote(categorization_vote_id))['ok']);
       }
     }
   }
@@ -66,6 +65,14 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
       toggleHistory(true); 
     } 
   }
+
+  const statusEndDate = () : Date | undefined => {
+    let status_duration = getStatusDuration(statusInfo.status, sub.scheduler_parameters);
+    if (status_duration === undefined) {
+      return undefined;
+    }
+    return new Date(Number((statusInfo.date + durationToNanoSeconds(status_duration)) / 1000000n));
+  };
 
   useEffect(() => {
     fetchRevealedVotes();
@@ -115,8 +122,8 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
               {"." /* Hack to be able to display the border */}
             </div>
           </div>
-          <div className="flex flex-col grow">
-            <div className="flex flex-row items-center gap-x-1">
+          <div className="flex flex-col w-full">
+            <div className="flex flex-row items-center gap-x-1 w-full">
               <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
                 { statusToString(statusInfo.status) } 
               </div>
@@ -138,7 +145,7 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
                   {" · "}
                   <CategorizationAggregateDigest 
                     aggregate={categorizationVote !== undefined ? toMap(categorizationVote.aggregate) : undefined}
-                    categories={categories}
+                    categories={toMap(sub.categories)}
                     setSelected={(selected: boolean) => { toggleVote(VoteKind.CATEGORIZATION, selected); }}
                     selected={ selectedVote === VoteKind.CATEGORIZATION}
                   />
@@ -147,9 +154,16 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
               }
               </div>
             </div>
-            <div className={`text-xs font-extralight 
-              ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-              { nsToStrDate(statusInfo.date) }
+            <div className="flex flex-row justify-between">
+              <div className={`text-xs font-extralight 
+                ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
+                  { nsToStrDate(statusInfo.date) }
+              </div>
+              { statusEndDate() !== undefined && !isHistory ?
+                <Countdown date={statusEndDate()} renderer={props => <div className="text-xs font-light">{ "ends " + formatTimeDiff(props.total / 1000) }</div>}>
+                  <div>Good to go</div>
+                </Countdown> : <></>
+              }
             </div>
             <div className={ selectedVote !== undefined ? "mt-5" : "" }>
               <div>
@@ -175,7 +189,7 @@ const StatusComponent = ({actor, questionId, statusInfo, previousStatusInfo, isT
                 <CategorizationPolarizationBars
                   showName={true}
                   categorizationVote={categorizationVote}
-                  categories={categories}
+                  categories={toMap(sub.categories)}
                 /> : <></>
               }
               </div>

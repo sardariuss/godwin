@@ -1,24 +1,22 @@
-import Balance                                                    from "./base/Balance";
-import OpinionVote                                                from "./opinion/OpinionVote";
-import CategorizationVote                                         from "./categorization/CategorizationVote";
-import StatusHistoryComponent                                     from "./StatusHistory";
-import ReopenButton                                               from "./ReopenButton";
-import InterestVote                                               from "./interest/InterestVote";
-import { StatusEnum, VoteKind, statusToEnum }                     from "../utils";
-import CONSTANTS                                                  from "../Constants";
-import { Question, StatusInfo, Category, CategoryInfo, _SERVICE } from "./../../declarations/godwin_sub/godwin_sub.did";
+import OpinionVote                                   from "./opinion/OpinionVote";
+import CategorizationVote                            from "./categorization/CategorizationVote";
+import StatusHistoryComponent                        from "./StatusHistory";
+import ReopenButton                                  from "./ReopenButton";
+import InterestVote                                  from "./interest/InterestVote";
+import { StatusEnum, VoteKind, statusToEnum, toMap } from "../utils";
+import { Sub }                                       from "../ActorContext";
+import CONSTANTS                                     from "../Constants";
+import { Question, StatusInfo }                      from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { useEffect, useState }                                    from "react";
-import { ActorSubclass }                                          from "@dfinity/agent";
+import { useEffect, useState }                       from "react";
 
 export type QuestionInput = {
-	actor: ActorSubclass<_SERVICE>,
-	categories: Map<Category, CategoryInfo>,
+	sub: Sub,
   questionId: bigint,
 	vote_kind: VoteKind | undefined
 };
 
-const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionInput) => {
+const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
@@ -26,13 +24,13 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 	const [canReopen, setCanReopen] = useState<boolean>(false);
 
 	const refreshQuestion = async () => {
-		const question = await actor.getQuestion(questionId);
+		const question = await sub.actor.getQuestion(questionId);
 		setQuestion(question['ok']);
 	}
 
 	const refreshStatusHistory = async () => {
 		var statuses : StatusInfo[] = [];
-		const history = await actor.getStatusHistory(questionId);
+		const history = await sub.actor.getStatusHistory(questionId);
 		if (history['ok'] !== undefined){
 			statuses = history['ok'];	
 		}
@@ -51,7 +49,7 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 					
 			if (vote_kind === VoteKind.INTEREST) {
 				if (currentStatus.status['CANDIDATE'] !== undefined) {
-					let interest_vote_id = (await actor.findInterestVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+					let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
 					if (interest_vote_id !== undefined) {
 						joins.set(VoteKind.INTEREST, interest_vote_id);
 					}
@@ -61,14 +59,14 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 				let iteration = currentStatus.status['OPEN'] !== undefined ? currentStatus.iteration : previousClosedStatus !== undefined ?
 				previousClosedStatus.iteration + BigInt(1) : undefined;
 				if (iteration !== undefined) {
-					let opinion_vote_id = (await actor.findOpinionVoteId(questionId, iteration))['ok'];
+					let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, iteration))['ok'];
 					if (opinion_vote_id !== undefined) {
 						joins.set(VoteKind.OPINION, opinion_vote_id);
 					}
 				}
 			} else if (vote_kind === VoteKind.CATEGORIZATION) {
 				if (currentStatus.status['OPEN'] !== undefined) {
-					let categorization_vote_id = (await actor.findCategorizationVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+					let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
 					if (categorization_vote_id !== undefined) {
 						joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
 					}
@@ -126,29 +124,28 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 				{
 				canReopen ?
 					<div className="flex flex-row grow self-start justify-end mr-5">
-						<ReopenButton actor={actor} questionId={questionId} onReopened={()=>{}}/>
+						<ReopenButton actor={sub.actor} questionId={questionId} onReopened={()=>{}}/>
 					</div> : <></>
 				}
 				</div>
 				{
 						questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
 							<OpinionVote
-								actor={actor} 
+								actor={sub.actor} 
                 polarizationInfo={CONSTANTS.OPINION_INFO} 
                 voteId={questionVoteJoins.get(VoteKind.OPINION)} 
               /> :
 						questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
 							<CategorizationVote 
-								actor={actor}
-								categories={categories}
+								actor={sub.actor}
+								categories={toMap(sub.categories)}
 								voteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
 							/> : <></>
 				}
 				{
 					statusHistory.length === 0 ? <></> :
 						<StatusHistoryComponent 
-							actor={actor}
-							categories={categories}
+							sub={sub}
 							questionId={questionId}
 							statusHistory={statusHistory}
 						/>
@@ -176,7 +173,7 @@ const QuestionComponent = ({actor, categories, questionId, vote_kind}: QuestionI
 			{
 				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
 				<div className="w-1/5 mr-5">
-					<InterestVote actor={actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
+					<InterestVote actor={sub.actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
 				</div> : <></>
 			}
 		</div>

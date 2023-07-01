@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction } from "./../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -308,3 +308,19 @@ export const getStrongestCategoryCursorInfo = (ballot: Map<Category, number>, ca
   return toCursorInfo(greatest_cursor, toPolarizationInfo(categories.get(winning_category), CONSTANTS.CATEGORIZATION_INFO.center));
 };
 
+export const getStatusDuration = (status: Status, parameters: SchedulerParameters__1) : Duration | undefined =>  {
+  if (status['CANDIDATE'] !== undefined) return parameters.candidate_status_duration;
+  if (status['OPEN'] !== undefined     ) return parameters.open_status_duration;
+  if (status['CLOSED'] !== undefined   ) return undefined;
+  if (status['REJECTED'] !== undefined ) return parameters.rejected_status_duration;
+  throw new Error('Invalid status');
+}
+
+export const durationToNanoSeconds = (duration: Duration) : bigint => {
+  if (duration['DAYS'] !== undefined)   { return BigInt(duration['DAYS']) * 24n * 60n * 60n * 1_000_000_000n; };
+  if (duration['HOURS'] !== undefined)  { return BigInt(duration['HOURS'])      * 60n * 60n * 1_000_000_000n; };
+  if (duration['MINUTES'] !== undefined){ return BigInt(duration['MINUTES'])          * 60n * 1_000_000_000n; };
+  if (duration['SECONDS'] !== undefined){ return BigInt(duration['SECONDS'])                * 1_000_000_000n; };
+  if (duration['NS'] !== undefined)     { return BigInt(duration['NS'])                                     ; };
+  throw new Error('Invalid duration');
+}

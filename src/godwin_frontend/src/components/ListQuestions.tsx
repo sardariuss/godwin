@@ -20,7 +20,7 @@ const ListQuestions = ({sub, query_questions, vote_kind}: ListQuestionsInput) =>
     {
       React.createElement(ListComponents<bigint, QuestionInput>, {
         query_components: query_questions,
-        generate_input: (id: bigint) => { return { actor: sub.actor, categories: toMap(sub.categories), questionId: id, vote_kind } },
+        generate_input: (id: bigint) => { return { sub: sub, questionId: id, vote_kind } },
         build_component: QuestionComponent,
         generate_key: (id: bigint) => { return id.toString() }
       })

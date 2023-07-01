@@ -1,18 +1,16 @@
-import StatusComponent                                  from "./Status";
+import StatusComponent from "./Status";
+import { Sub }         from "../ActorContext";
+import { StatusInfo }  from "./../../declarations/godwin_sub/godwin_sub.did";
 
-import { StatusInfo, _SERVICE, Category, CategoryInfo } from "./../../declarations/godwin_sub/godwin_sub.did";
-
-import { useState }                                     from "react";
-import { ActorSubclass }                                from "@dfinity/agent";
+import { useState }    from "react";
 
 type Props = {
-  actor: ActorSubclass<_SERVICE>,
+  sub: Sub
   questionId: bigint;
-  categories: Map<Category, CategoryInfo>
   statusHistory: StatusInfo[]
 };
 
-const StatusHistoryComponent = ({actor, questionId, categories, statusHistory}: Props) => {
+const StatusHistoryComponent = ({sub, questionId, statusHistory}: Props) => {
 
   const [historyVisible, setHistoryVisible] = useState<boolean>(false);
 
@@ -30,9 +28,8 @@ const StatusHistoryComponent = ({actor, questionId, categories, statusHistory}: 
               {
                 index === 0 || historyVisible ?
                 <StatusComponent 
-                  actor={actor}
+                  sub={sub}
                   questionId={questionId}
-                  categories={categories}
                   statusInfo={statusInfo}
                   previousStatusInfo={statusHistory.length - index - 2 >= 0 ? statusHistory[statusHistory.length - index - 2] : undefined}
                   isToggledHistory={historyVisible}
