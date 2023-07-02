@@ -20,15 +20,15 @@ import GodwinToken        "canister:godwin_token";
 
 shared({caller = _controller}) actor class GodwinMaster() = this {
 
-  type Parameters                     = SubTypes.Parameters;
-  type Result<Ok, Err>                = Result.Result<Ok, Err>;
-  type Map<K, V>                      = Map.Map<K, V>;
-  type GodwinSub                      = GodwinSub.GodwinSub;
-  type Balance                        = Types.Balance;
-  type CreateSubGodwinResult          = Types.CreateSubGodwinResult;
-  type TransferResult                 = Types.TransferResult;
-  type MintBatchResult                = Types.MintBatchResult;
-  type SetUserNameError               = Types.SetUserNameError;
+  type Parameters            = SubTypes.Parameters;
+  type Result<Ok, Err>       = Result.Result<Ok, Err>;
+  type Map<K, V>             = Map.Map<K, V>;
+  type GodwinSub             = GodwinSub.GodwinSub;
+  type Balance               = Types.Balance;
+  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
+  type TransferResult        = Types.TransferResult;
+  type MintBatchResult       = Types.MintBatchResult;
+  type SetUserNameError      = Types.SetUserNameError;
 
   let MIN_USERNAME_LENGTH = 3;
   let MAX_USERNAME_LENGTH = 32;
@@ -42,6 +42,7 @@ shared({caller = _controller}) actor class GodwinMaster() = this {
     func() = (Principal.fromText("2vxsx-fae"), "")
   );
 
+  // @todo: keeping the actor as value seems useless
   stable let _sub_godwins = Map.new<(Principal, Text), GodwinSub>(pthash);
 
   stable let _user_names = Map.new<Principal, Text>(Map.phash);
@@ -70,7 +71,7 @@ shared({caller = _controller}) actor class GodwinMaster() = this {
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
-    }})(parameters);
+    }})(#init({ master = Principal.fromActor(this); parameters; }));
 
     let principal = Principal.fromActor(new_sub);
 
@@ -97,11 +98,17 @@ shared({caller = _controller}) actor class GodwinMaster() = this {
     #ok;
   };
 
-  // @todo: deal with the parameters
-  // @todo: what happens if there is a breaking change ?
-  public shared func updateSubGodwins(parameters: Parameters) : async () {
+  // In anticipation of next versions
+  public shared func upgradeSubGodwins() : async () {
     for (sub in Map.vals(_sub_godwins)){
-      let updated_sub = await (system GodwinSub.GodwinSub)(#upgrade(sub))(parameters);
+      let updated_sub = await (system GodwinSub.GodwinSub)(#upgrade(sub))(#upgrade({}));
+    };
+  };
+
+  // In anticipation of next versions
+  public shared func downgradeSubGodwins() : async () {
+    for (sub in Map.vals(_sub_godwins)){
+      let updated_sub = await (system GodwinSub.GodwinSub)(#upgrade(sub))(#downgrade({}));
     };
   };
 

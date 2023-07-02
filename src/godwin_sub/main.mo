@@ -1,19 +1,23 @@
 import Types           "model/Types";
-import State           "model/State";
 import Factory         "model/Factory";
 import Facade          "model/Facade";
+import MigrationTypes  "stable/Types";
+import Migrations      "stable/Migrations";
 
 import Result          "mo:base/Result";
 import Principal       "mo:base/Principal";
 import Time            "mo:base/Time";
+import Debug           "mo:base/Debug";
 
-shared({ caller }) actor class GodwinSub(parameters: Types.Parameters) = {
+shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   // For convenience: from base module
   type Result<Ok, Err>              = Result.Result<Ok, Err>;
   type Principal                    = Principal.Principal;
   type Time                         = Time.Time;
 
+  // For convenience: from Facade module
+  type Facade                       = Facade.Facade;
   // For convenience: from types module
   type Question                     = Types.Question;
   type Category                     = Types.Category;
@@ -61,144 +65,156 @@ shared({ caller }) actor class GodwinSub(parameters: Types.Parameters) = {
   type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
   type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
 
-  stable var _state = State.initState(caller, Time.now(), parameters);
+  stable var _state: MigrationTypes.State = Migrations.install(Time.now(), args);
 
-  let _facade = Factory.build(_state);
+  _state := Migrations.migrate(_state, Time.now(), args);
+
+  let _facade = switch(_state){
+    case(#v0_1_0(state)) { ?Factory.build(state); };
+    case(_) { null; }; // Required in anticipation of next versions
+  };
 
   public query func getName() : async Text {
-    _facade.getName();
+    getFacade().getName();
   };
 
   public query func getHalfLife() : async Duration {
-    _facade.getHalfLife();
+    getFacade().getHalfLife();
   };
 
   public query func getSelectionScore() : async Float {
-    _facade.getSelectionScore(Time.now());
+    getFacade().getSelectionScore(Time.now());
   };
 
   public query func getCategories() : async CategoryArray {
-    _facade.getCategories();
+    getFacade().getCategories();
   };
 
   public shared({caller}) func addCategory(category: Category, info: CategoryInfo) : async Result<(), AddCategoryError> {
-    _facade.addCategory(caller, category, info);
+    getFacade().addCategory(caller, category, info);
   };
 
   public shared({caller}) func removeCategory(category: Category) : async Result<(), RemoveCategoryError> {
-    _facade.removeCategory(caller, category);
+    getFacade().removeCategory(caller, category);
   };
 
   public query func getSchedulerParameters() : async SchedulerParameters {
-    _facade.getSchedulerParameters();
+    getFacade().getSchedulerParameters();
   };
 
   public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
-    _facade.setSchedulerParameters(caller, params);
+    getFacade().setSchedulerParameters(caller, params);
   };
 
   public query func searchQuestions(text: Text, limit: Nat) : async [QuestionId] {
-    _facade.searchQuestions(text, limit);
+    getFacade().searchQuestions(text, limit);
   };
 
   public query func getQuestion(question_id: QuestionId) : async Result<Question, GetQuestionError> {
-    _facade.getQuestion(question_id);
+    getFacade().getQuestion(question_id);
   };
 
   public shared({caller}) func openQuestion(text: Text) : async Result<QuestionId, OpenQuestionError> {
-    await* _facade.openQuestion(caller, text, Time.now());
+    await* getFacade().openQuestion(caller, text, Time.now());
   };
 
   public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, Text)]> {
-    await* _facade.reopenQuestion(caller, question_id, Time.now());
+    await* getFacade().reopenQuestion(caller, question_id, Time.now());
   };
 
   public query({caller}) func getInterestBallot(vote_id: VoteId) : async Result<RevealedInterestBallot, FindBallotError> {
-    _facade.getInterestBallot(caller, vote_id);
+    getFacade().getInterestBallot(caller, vote_id);
   };
 
   public shared({caller}) func putInterestBallot(vote_id: VoteId, interest: Interest) : async Result<(), PutBallotError> {
-    await* _facade.putInterestBallot(caller, vote_id, Time.now(), interest);
+    await* getFacade().putInterestBallot(caller, vote_id, Time.now(), interest);
   };
 
   public query({caller}) func getOpinionBallot(vote_id: VoteId) : async Result<RevealedOpinionBallot, FindBallotError> {
-    _facade.getOpinionBallot(caller, vote_id);
+    getFacade().getOpinionBallot(caller, vote_id);
   };
 
   public shared({caller}) func putOpinionBallot(vote_id: VoteId, cursor: Cursor) : async Result<(), PutBallotError> {
-    await* _facade.putOpinionBallot(caller, vote_id, Time.now(), cursor);
+    await* getFacade().putOpinionBallot(caller, vote_id, Time.now(), cursor);
   };
 
   public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<RevealedCategorizationBallot, FindBallotError> {
-    _facade.getCategorizationBallot(caller, vote_id);
+    getFacade().getCategorizationBallot(caller, vote_id);
   };
 
   public shared({caller}) func putCategorizationBallot(vote_id: VoteId, answer: CursorArray) : async Result<(), PutBallotError> {
-    await* _facade.putCategorizationBallot(caller, vote_id, Time.now(), answer);
+    await* getFacade().putCategorizationBallot(caller, vote_id, Time.now(), answer);
   };
 
   public query func getStatusHistory(question_id: QuestionId) : async Result<[StatusInfo], ReopenQuestionError> {
-    _facade.getStatusHistory(question_id);
+    getFacade().getStatusHistory(question_id);
   };
 
   public query func revealInterestVote(vote_id: VoteId) : async Result<InterestVote, RevealVoteError>{
-    _facade.revealInterestVote(vote_id);
+    getFacade().revealInterestVote(vote_id);
   };
 
   public query func revealOpinionVote(vote_id: VoteId) : async Result<OpinionVote, RevealVoteError>{
-    _facade.revealOpinionVote(vote_id);
+    getFacade().revealOpinionVote(vote_id);
   };
 
   public query func revealCategorizationVote(vote_id: VoteId) : async Result<CategorizationVote, RevealVoteError>{
-    _facade.revealCategorizationVote(vote_id);
+    getFacade().revealCategorizationVote(vote_id);
   };
 
   public query func findInterestVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    _facade.findInterestVoteId(question_id, iteration);
+    getFacade().findInterestVoteId(question_id, iteration);
   };
 
   public query func findOpinionVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    _facade.findOpinionVoteId(question_id, iteration);
+    getFacade().findOpinionVoteId(question_id, iteration);
   };
 
   public query func findCategorizationVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    _facade.findCategorizationVoteId(question_id, iteration);
+    getFacade().findCategorizationVoteId(question_id, iteration);
   };
 
   public query({caller}) func queryInterestBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedInterestBallot> {
-    _facade.queryInterestBallots(caller, voter, direction, limit, previous_id);
+    getFacade().queryInterestBallots(caller, voter, direction, limit, previous_id);
   };
 
   public query({caller}) func queryOpinionBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedOpinionBallot> {
-    _facade.queryOpinionBallots(caller, voter, direction, limit, previous_id);
+    getFacade().queryOpinionBallots(caller, voter, direction, limit, previous_id);
   };
 
   public query({caller}) func queryCategorizationBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedCategorizationBallot> {
-    _facade.queryCategorizationBallots(caller, voter, direction, limit, previous_id);
+    getFacade().queryCategorizationBallots(caller, voter, direction, limit, previous_id);
   };
 
   public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
-    _facade.getQuestionIteration(vote_kind, vote_id);
+    getFacade().getQuestionIteration(vote_kind, vote_id);
   };
 
   public query func queryQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
-    _facade.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
+    getFacade().queryQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)], Float, Bool))] {
-    _facade.getVoterConvictions(Time.now(), principal);
+    getFacade().getVoterConvictions(Time.now(), principal);
   };
 
   public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
-    _facade.queryQuestions(order_by, direction, limit, previous_id);
+    getFacade().queryQuestions(order_by, direction, limit, previous_id);
   };
 
   public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
-    _facade.queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
+    getFacade().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
   };
 
   public shared func run() : async() {
-    await* _facade.run(Time.now());
+    await* getFacade().run(Time.now());
+  };
+
+  func getFacade() : Facade {
+    switch(_facade){
+      case (?f) { f; };
+      case (null) { Debug.trap("Facade is null"); };
+    };
   };
 
 };

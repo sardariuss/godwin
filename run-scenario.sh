@@ -20,7 +20,7 @@ export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canister
 eval "$SUB_UPGRADE_1"
 export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { MINUTES = 830 : nat } , variant { MINUTES = 10 : nat } )'"
 eval "$RUN_SUB_SCENARIO"
-export SUB_UPGRADE_2="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/godwin_sub/godwin_sub.wasm\" --mode=upgrade --yes --argument='("${SUB_PARAMETERS}")'"
+export SUB_UPGRADE_2="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/godwin_sub/godwin_sub.wasm\" --mode=upgrade --yes --argument='(variant {none})'"
 eval "$SUB_UPGRADE_2"
 
 # Create second sub godwin

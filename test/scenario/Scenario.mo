@@ -1,7 +1,6 @@
 import Types     "../../src/godwin_sub/model/Types";
 import Facade    "../../src/godwin_sub/model/Facade";
 import Factory   "../../src/godwin_sub/model/Factory";
-import State     "../../src/godwin_sub/model/State";
 import Duration  "../../src/godwin_sub/utils/Duration";
 
 import Utils     "../../src/godwin_sub/utils/Utils";
