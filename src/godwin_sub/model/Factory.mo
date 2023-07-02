@@ -1,7 +1,6 @@
 import VoteTypes              "votes/Types";
 import QuestionTypes          "questions/Types";
 import PayRules               "PayRules";
-import State                  "State";
 import Model                  "Model";
 import Categories             "Categories";
 import Facade                 "Facade";
@@ -19,6 +18,7 @@ import PolarizationMap        "votes/representation/PolarizationMap";
 import SubaccountGenerator    "token/SubaccountGenerator";
 import TokenInterface         "token/TokenInterface";
 import PayForNew              "token/PayForNew";
+import StableTypes            "../stable/Types";
 
 import WRef                   "../utils/wrappers/WRef";
 
@@ -31,7 +31,7 @@ module {
   type CursorMap       = VoteTypes.CursorMap;
   type PolarizationMap = VoteTypes.PolarizationMap;
   type Facade          = Facade.Facade;
-  type State           = State.State;
+  type State           = StableTypes.Current.State;
 
   public func build(state: State) : Facade {
 
