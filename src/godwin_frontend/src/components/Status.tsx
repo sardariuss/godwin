@@ -71,7 +71,7 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
     if (status_duration === undefined) {
       return undefined;
     }
-    return new Date(Number((statusInfo.date + durationToNanoSeconds(status_duration)) / 1000000n));
+    return new Date(Number((statusInfo.date + durationToNanoSeconds(status_duration)) / BigInt(1000000)));
   };
 
   useEffect(() => {

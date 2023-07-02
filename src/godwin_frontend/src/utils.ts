@@ -317,10 +317,10 @@ export const getStatusDuration = (status: Status, parameters: SchedulerParameter
 }
 
 export const durationToNanoSeconds = (duration: Duration) : bigint => {
-  if (duration['DAYS'] !== undefined)   { return BigInt(duration['DAYS']) * 24n * 60n * 60n * 1_000_000_000n; };
-  if (duration['HOURS'] !== undefined)  { return BigInt(duration['HOURS'])      * 60n * 60n * 1_000_000_000n; };
-  if (duration['MINUTES'] !== undefined){ return BigInt(duration['MINUTES'])          * 60n * 1_000_000_000n; };
-  if (duration['SECONDS'] !== undefined){ return BigInt(duration['SECONDS'])                * 1_000_000_000n; };
-  if (duration['NS'] !== undefined)     { return BigInt(duration['NS'])                                     ; };
+  if (duration['DAYS'] !== undefined)   { return BigInt(duration['DAYS'])    * BigInt(24 * 60 * 60 * 1_000_000_000); };
+  if (duration['HOURS'] !== undefined)  { return BigInt(duration['HOURS'])   * BigInt(     60 * 60 * 1_000_000_000); };
+  if (duration['MINUTES'] !== undefined){ return BigInt(duration['MINUTES']) * BigInt(          60 * 1_000_000_000); };
+  if (duration['SECONDS'] !== undefined){ return BigInt(duration['SECONDS']) * BigInt(               1_000_000_000); };
+  if (duration['NS'] !== undefined)     { return BigInt(duration['NS']);                                             };
   throw new Error('Invalid duration');
 }
