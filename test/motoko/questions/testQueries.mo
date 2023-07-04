@@ -48,11 +48,11 @@ module {
     ];
 
     let updated_status : [StatusInfo] = [
-      { status = #CANDIDATE; iteration = 0; date = 27;  },
-      { status = #CLOSED;    iteration = 0; date = 454; },
-      { status = #OPEN;      iteration = 0; date = 968; },
-      { status = #REJECTED;  iteration = 0; date = 516; },
-      { status = #CLOSED;    iteration = 0; date = 959; },
+      { status = #CANDIDATE;             iteration = 0; date = 27;  },
+      { status = #CLOSED;                iteration = 0; date = 454; },
+      { status = #OPEN;                  iteration = 0; date = 968; },
+      { status = #REJECTED(#TIMED_OUT);  iteration = 0; date = 516; },
+      { status = #CLOSED;                iteration = 0; date = 959; },
     ];
 
     let updated_scores : [Float] = [165, 137, 232, 118, 183];

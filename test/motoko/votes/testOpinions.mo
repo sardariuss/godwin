@@ -1,6 +1,7 @@
 import Types          "../../../src/godwin_sub/model/votes/Types";
 import Opinions       "../../../src/godwin_sub/model/votes/Opinions";
 import Votes          "../../../src/godwin_sub/model/votes/Votes";
+import Decay          "../../../src/godwin_sub/model/votes/Decay";
 import Polarization   "../../../src/godwin_sub/model/votes/representation/Polarization";
 
 import TestifyTypes   "../testifyTypes";
@@ -17,6 +18,7 @@ import Array          "mo:base/Array";
 import Nat            "mo:base/Nat";
 import Text           "mo:base/Text";
 import Result         "mo:base/Result";
+import Time           "mo:base/Time";
 
 module {
 
@@ -62,24 +64,26 @@ module {
 
   public func run(test_status: TestStatus) : async* () {
 
+    let now = Time.now();
     let principals = Principals.init();
-    let opinions = Opinions.build(Opinions.initRegister());
+    let decay_parameters = Decay.initParameters(#DAYS(365), now);
+    let opinions = Opinions.build(Opinions.initRegister(), decay_parameters);
 
     let s = SuiteState.Suite<Opinions>(opinions);
 
     await* s.run([
       describe("New votes", [
         itp("New vote 0", equal(
-          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(0, Polarization.nil())),
-          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote())); }
+          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(0, Decay.computeDecay(decay_parameters, now), Polarization.nil())),
+          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote(now))); }
         )),
         itp("New vote 1", equal(
-          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(1, Polarization.nil())),
-          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote())); }
+          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(1, Decay.computeDecay(decay_parameters, now), Polarization.nil())),
+          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote(now))); }
         )),
         itp("New vote 2", equal(
-          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(2, Polarization.nil())),
-          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote())); }
+          testifyElement(optionalTestify(testify_opinion_vote), ?Votes.initVote<Cursor, Polarization>(2, Decay.computeDecay(decay_parameters, now), Polarization.nil())),
+          func (opinions: Opinions) : ?OpinionVote { Result.toOption(opinions.findVote(opinions.newVote(now))); }
         ))
       ]),
       describe("putBallot", [

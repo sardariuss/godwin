@@ -79,10 +79,10 @@ module {
     func() = (Principal.fromText("2vxsx-fae"), 0)
   );
 
-  public func initVote<T, A>(vote_id: VoteId, date: Time, decay: Float, empty_aggregate: A) : Vote<T, A> {
+  public func initVote<T, A>(vote_id: VoteId, decay: Float, empty_aggregate: A) : Vote<T, A> {
     {
       id = vote_id;
-      var status = #OPEN(date);
+      var status = #OPEN;
       ballots = Map.new<Principal, Ballot<T>>(Map.phash);
       var aggregate = empty_aggregate;
       var decay = decay;
@@ -101,7 +101,7 @@ module {
 
     public func newVote(date: Time) : VoteId {
       let index = _register.index;
-      let vote : Vote<T, A> = initVote(index, date, Decay.computeDecay(_decay_params, date), _policy.emptyAggregate());
+      let vote : Vote<T, A> = initVote(index, Decay.computeDecay(_decay_params, date), _policy.emptyAggregate());
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;
@@ -113,9 +113,9 @@ module {
         case(?vote) {
           // Close the vote
           switch(vote.status){
-            case(#CLOSED(_)) { Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed"); };
-            case(#OPEN(_)) { 
-              vote.status := #CLOSED(date); 
+            case(#CLOSED) { Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed"); };
+            case(#OPEN) { 
+              vote.status := #CLOSED; 
               vote.decay := Decay.computeDecay(_decay_params, date);
             };
           };
@@ -211,8 +211,8 @@ module {
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
       Result.chain<Vote<T, A>, Vote<T, A>, RevealVoteError>(findVote(id), func(vote) {
         switch(vote.status){
-          case(#OPEN(_)) { #err(#VoteOpen); }; //@todo
-          case(#CLOSED(_)) { #ok(vote); };
+          case(#OPEN) { #err(#VoteOpen); }; //@todo
+          case(#CLOSED) { #ok(vote); };
         };
       });
     };
@@ -227,14 +227,14 @@ module {
         case(?b) { b; };
       };
       let answer = switch(vote.status){
-        case(#OPEN(_)) { 
+        case(#OPEN) { 
           if (Principal.equal(caller, voter) or _reveal_ballot_authorization == #REVEAL_BALLOT_ALWAYS) {
             ?ballot.answer;
           } else {
             null;
           }; 
         };
-        case(#CLOSED(_)) { ?ballot.answer; };
+        case(#CLOSED) { ?ballot.answer; };
       };
       #ok({
         vote_id;

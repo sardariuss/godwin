@@ -60,8 +60,8 @@ module {
   public type VoterHistory = Set<VoteId>;
 
   public type Status = {
-    #OPEN: Time;
-    #CLOSED: Time;
+    #OPEN;
+    #CLOSED;
   };
 
   public type Vote<T, A> = {

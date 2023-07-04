@@ -324,7 +324,7 @@ module {
             _model.getCategorizationJoins().getQuestionVotes(question_id),
             func(iteration: Nat, cat_vote_id: VoteId) : Bool {
               switch(_model.getCategorizationVotes().getVote(cat_vote_id).status) { 
-                case(#CLOSED(_)) { true; }; case (#OPEN(_)) { false; };
+                case(#CLOSED) { true; }; case (#OPEN) { false; };
               };
             });
           // Return the vote ID, the user opinion ballot and the up-to-date categorization
