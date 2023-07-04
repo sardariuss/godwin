@@ -58,6 +58,7 @@ export const orderByToString = (orderBy: QuestionOrderBy) => {
   if (orderBy['TEXT'] !== undefined) return 'Text';
   if (orderBy['INTEREST_SCORE'] !== undefined) return 'Interest score';
   if (orderBy['STATUS'] !== undefined) return 'Status: ' + statusToString(orderBy['STATUS']);
+  if (orderBy['OPINION_VOTE'] !== undefined) return 'Opinion vote';
   throw new Error('Invalid orderBy');
 };
 
