@@ -20,7 +20,6 @@ jobs:
     - name: "install mops"
       run: |
        npm i -g ic-mops
-       mops init
     - name: "install mops test"
       run: |
        mops add test
