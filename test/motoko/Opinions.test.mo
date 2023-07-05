@@ -1,12 +1,11 @@
-import Types            "../../../src/godwin_sub/model/votes/Types";
-import Opinions         "../../../src/godwin_sub/model/votes/Opinions";
-import Votes            "../../../src/godwin_sub/model/votes/Votes";
-import Decay            "../../../src/godwin_sub/model/votes/Decay";
-import Polarization     "../../../src/godwin_sub/model/votes/representation/Polarization";
+import Types            "../../src/godwin_sub/model/votes/Types";
+import Opinions         "../../src/godwin_sub/model/votes/Opinions";
+import Votes            "../../src/godwin_sub/model/votes/Votes";
+import Decay            "../../src/godwin_sub/model/votes/Decay";
+import Polarization     "../../src/godwin_sub/model/votes/representation/Polarization";
 
-import Principals       "../Principals";
-
-import { compare; optionalTestify; Testify; } = "../Testify";
+import Principals                               "common/Principals";
+import { compare; optionalTestify; Testify; } = "common/Testify";
 
 import Map              "mo:map/Map";
 
@@ -21,7 +20,7 @@ import Debug            "mo:base/Debug";
 import { test; suite; } "mo:test/async";
 
 
-await suite("my async test suite", func(): async () {
+await suite("Opinions module test suite", func(): async () {
   
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   

@@ -1,4 +1,4 @@
-import Types     "../../src/godwin_sub/model/Types";
+import Types     "../../../src/godwin_sub/model/Types";
 
 import Principal "mo:base/Principal";
 import Buffer    "mo:base/Buffer";

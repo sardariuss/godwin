@@ -5,7 +5,7 @@ import Duration  "../../src/godwin_sub/utils/Duration";
 
 import Utils     "../../src/godwin_sub/utils/Utils";
 
-import Random    "../motoko/Random";
+import Random    "../motoko/common/Random";
 
 import Principal "mo:base/Principal";
 import Debug     "mo:base/Debug";

@@ -22,7 +22,7 @@ check-strict:
 		--actor-idl ".dfx/local/canisters/idl/" 
 
 test:
-	$(shell dfx cache show)/moc $(shell mops sources) -r test/motoko/suite.mo
+	mops test
 
 docs:
 	$(shell dfx cache show)/mo-doc

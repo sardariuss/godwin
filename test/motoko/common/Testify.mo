@@ -1,11 +1,11 @@
-import QuestionTypes "../../src/godwin_sub/model/questions/Types";
-import Questions     "../../src/godwin_sub/model/questions/Questions";
-import VoteTypes     "../../src/godwin_sub/model/votes/Types";
-import Votes         "../../src/godwin_sub/model/votes/Votes";
-import Cursor        "../../src/godwin_sub/model/votes/representation/Cursor";
-import Polarization  "../../src/godwin_sub/model/votes/representation/Polarization";
+import QuestionTypes "../../../src/godwin_sub/model/questions/Types";
+import Questions     "../../../src/godwin_sub/model/questions/Questions";
+import VoteTypes     "../../../src/godwin_sub/model/votes/Types";
+import Votes         "../../../src/godwin_sub/model/votes/Votes";
+import Cursor        "../../../src/godwin_sub/model/votes/representation/Cursor";
+import Polarization  "../../../src/godwin_sub/model/votes/representation/Polarization";
 
-import Utils         "../../src/godwin_sub/utils/Utils";
+import Utils         "../../../src/godwin_sub/utils/Utils";
 
 import Map           "mo:map/Map";
 
