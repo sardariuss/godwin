@@ -49,6 +49,14 @@ module {
     ballots: [(Principal, VoteTypes.Ballot<T>)];
     aggregate: A;
   };
+  public type UserQuestionBallots<T>       = {
+    question_id: QuestionId;
+    question: ?Question;
+    ballots: [(Nat, Bool, VoteTypes.RevealedBallot<T>)];
+  };
+  public type UserQuestionInterestBallots  = UserQuestionBallots<Interest>;
+  public type UserQuestionOpinionBallots   = UserQuestionBallots<Cursor>;
+  public type UserQuestionCategorizationBallots = UserQuestionBallots<CursorArray>;
   public type InterestVote                 = Vote<Interest, Appeal>;
   public type OpinionVote                  = Vote<Cursor, Polarization>;
   public type CategorizationVote           = Vote<CursorArray, PolarizationArray>;

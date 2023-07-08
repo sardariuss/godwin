@@ -12,6 +12,7 @@ import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
 import Decay               "../votes/Decay";
 import Interests           "../votes/Interests";
+import VotersHistory       "../votes/VotersHistory";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PolarizationMap     "../votes/representation/PolarizationMap";
 
@@ -20,6 +21,7 @@ import Utils               "../../utils/Utils";
 import StateMachine        "../../utils/StateMachine";
 
 import Map                 "mo:map/Map";
+import Set                 "mo:map/Set";
 
 import Result              "mo:base/Result";
 import Principal           "mo:base/Principal";
@@ -31,6 +33,7 @@ import Array               "mo:base/Array";
 module {
 
   type Map<K, V>                   = Map.Map<K, V>;
+  type Set<K>                      = Set.Set<K>;
   type Buffer<T>                   = Buffer.Buffer<T>;
 
   // For convenience: from other modules
@@ -38,6 +41,7 @@ module {
   type Model                       = Model.Model;
   type Event                       = Event.Event;
   type Schema                      = Schema.Schema;
+  type VotersHistory               = VotersHistory.VotersHistory;
 
   // For convenience: from base module
   type Result<Ok, Err>             = Result.Result<Ok, Err>;
@@ -55,6 +59,7 @@ module {
   type VoteKind                    = Types.VoteKind;
   type SchedulerParameters         = Types.SchedulerParameters;
   type StatusInput                 = Types.StatusInput;
+  type UserQuestionBallots<T>      = Types.UserQuestionBallots<T>;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -269,6 +274,7 @@ module {
       });
     };
 
+    // @todo: use votersHistory instead, no need for the joins anymore
     public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
       
       let (order_by, has_vote, joins) = switch(vote_kind){
@@ -296,19 +302,23 @@ module {
       _model.getQueries().select(order_by, direction, limit, previous_id, ?filter);
     };
 
-    public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
-    ) : ScanLimitResult<RevealedBallot<Interest>> {
-      _model.getInterestVotes().revealBallots(caller, voter, direction, limit, previous_id);
+    public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<Interest>> {
+      queryBallots<Interest>(_model.getInterestVotersHistory(), _model.getInterestVotes().revealBallot, caller, voter, direction, limit, previous_id);
     };
 
-    public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
-    ) : ScanLimitResult<RevealedBallot<Cursor>> {
-      _model.getOpinionVotes().revealBallots(caller, voter, direction, limit, previous_id);
+    public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<Cursor>> {
+      queryBallots<Cursor>(_model.getOpinionVotersHistory(), _model.getOpinionVotes().revealBallot, caller, voter, direction, limit, previous_id);
     };
 
-    public func queryCategorizationBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
-    ) : ScanLimitResult<RevealedBallot<CursorMap>> {
-      _model.getCategorizationVotes().revealBallots(caller, voter, direction, limit, previous_id);
+    public func queryCategorizationBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<CursorMap>> {
+      queryBallots<CursorMap>(_model.getCategorizationVotersHistory(), _model.getCategorizationVotes().revealBallot, caller, voter, direction, limit, previous_id);
+    };
+
+    public func getNumberOpinionVotes(principal: Principal) : Nat {
+      Map.size(_model.getOpinionVotes().getVoterBallots(principal));
     };
 
     public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)], Float, Bool)> {
@@ -405,6 +415,33 @@ module {
           };
         };
       };
+    };
+
+    // @todo: this shall not be part of the controller but in a separate module
+    func queryBallots<T>(
+      voters_history: VotersHistory,
+      reveal_ballots: (Principal, Principal, VoteId) -> Result<RevealedBallot<T>, FindBallotError>,
+      caller: Principal,
+      voter: Principal,
+      direction: Direction,
+      limit: Nat,
+      previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<T>> {
+      let scan_answered_questions = voters_history.scanVoterHistory(voter, direction, limit, previous_id);
+      Utils.mapScanLimitResult(scan_answered_questions, func((question_id, vote_map): (QuestionId, Map<Nat, VoteId>)) : UserQuestionBallots<T> {
+        let ballots = Buffer.Buffer<(Nat, Bool, RevealedBallot<T>)>(0);
+        let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+        for ((iteration, vote_id) in Map.entries(vote_map)){
+          switch(reveal_ballots(caller, voter, vote_id)){
+            case(#err(err)) {};
+            case(#ok(ballot)) { 
+              let can_edit = (iteration == status_info.iteration);
+              ballots.add((iteration, can_edit, ballot)); 
+            };
+          };
+        };
+        { question_id; question = _model.getQuestions().findQuestion(question_id); ballots = Buffer.toArray(ballots); };
+      });
     };
 
   };

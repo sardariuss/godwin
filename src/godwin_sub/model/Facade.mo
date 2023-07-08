@@ -15,6 +15,7 @@ import Principal           "mo:base/Principal";
 import Option              "mo:base/Option";
 import Iter                "mo:base/Iter";
 import Buffer              "mo:base/Buffer";
+import Array               "mo:base/Array";
 
 module {
 
@@ -54,6 +55,7 @@ module {
   type TransactionsRecord           = Types.TransactionsRecord;
   type SchedulerParameters          = Types.SchedulerParameters;
   type Duration                     = Types.Duration;
+  type UserQuestionBallots<T>       = Types.UserQuestionBallots<T>;
   type Question                     = QuestionTypes.Question;
   type Status                       = QuestionTypes.Status;
   type StatusHistoryMap             = QuestionTypes.StatusHistory;
@@ -156,13 +158,8 @@ module {
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealedCategorizationBallot, FindBallotError> {
-      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func({vote_id; date; answer; transactions_record}: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
-        { 
-          vote_id;
-          date ;
-          answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
-          transactions_record; 
-        };
+      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func(revealed_ballot: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
+        { revealed_ballot with answer = Option.map(revealed_ballot.answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); }); };
       });
     };
       
@@ -207,26 +204,38 @@ module {
       _controller.findCategorizationVoteId(question_id, iteration);
     };
 
-    public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedInterestBallot> {
+    public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<Interest>> {
       _controller.queryInterestBallots(caller, voter, direction, limit, previous_id);
     };
 
-    public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedOpinionBallot> {
+    public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<Cursor>> {
       _controller.queryOpinionBallots(caller, voter, direction, limit, previous_id);
     };
 
-    public func queryCategorizationBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedCategorizationBallot> {
-      Utils.mapScanLimitResult<RevealedBallot<CursorMap>, RevealedCategorizationBallot>(
+    public func queryCategorizationBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId
+    ) : ScanLimitResult<UserQuestionBallots<CursorArray>> {
+      Utils.mapScanLimitResult<UserQuestionBallots<CursorMap>, UserQuestionBallots<CursorArray>>(
         _controller.queryCategorizationBallots(caller, voter, direction, limit, previous_id),
-        func({vote_id; date; answer; transactions_record;}: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
-          { 
-            vote_id;
-            date ;
-            answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
-            transactions_record; 
-          };
+        func(question_ballots : UserQuestionBallots<CursorMap>) : UserQuestionBallots<CursorArray> {
+          let ballots = Array.mapEntries<(Nat, Bool, RevealedBallot<CursorMap>), (Nat, Bool, RevealedBallot<CursorArray>)>(
+            question_ballots.ballots,
+            func((iteration, is_early, ballot): (Nat, Bool, RevealedBallot<CursorMap>), index: Nat) : (Nat, Bool, RevealedBallot<CursorArray>) {
+              (
+                iteration,
+                is_early,
+                { ballot with answer = Option.map(ballot.answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); }); }
+              );
+            }
+          );
+          { question_ballots with ballots = ballots; };
         }
       );
+    };
+
+    public func getNumberOpinionVotes(principal: Principal) : Nat {
+      _controller.getNumberOpinionVotes(principal);
     };
 
     public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {

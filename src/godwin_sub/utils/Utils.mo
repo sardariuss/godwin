@@ -117,6 +117,26 @@ module {
     { keys = Buffer.toArray(keys); next; };
   };
 
+  public func mapScanLimit<K, V>(map: Map<K, V>, hash: HashUtils<K>, dir: Direction, limit: Nat, previous: ?K) : ScanLimitResult<(K, V)> {
+    let entries = Buffer.Buffer<(K, V)>(limit);
+    var next : ?(K, V) = null;
+    let iter = switch(dir){
+      case(#FWD) { Map.entriesFrom<K, V>    (map, hash, previous); };
+      case(#BWD) { Map.entriesFromDesc<K, V>(map, hash, previous); };
+    };
+    label entries_loop loop {
+      switch(iter.next()){
+        case(?kv) {
+          if (entries.size() < limit)   { entries.add(kv);    }
+          else if (Option.isNull(next)) { next := ?kv;        }
+          else                          { break entries_loop; };
+        };
+        case(null)                      { break entries_loop; };
+      };
+    };
+    { keys = Buffer.toArray(entries); next; };
+  };
+
   public func mapScanLimitResult<K1, K2>(scan: ScanLimitResult<K1>, f: (K1) -> K2) : ScanLimitResult<K2> {
     let keys = Array.map(scan.keys, f);
     let next = Option.map(scan.next, f);

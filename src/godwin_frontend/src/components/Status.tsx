@@ -161,7 +161,7 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
               </div>
               { statusEndDate() !== undefined && !isHistory ?
                 <Countdown date={statusEndDate()} renderer={props => <div className="text-xs font-light">{ "ends " + formatTimeDiff(props.total / 1000) }</div>}>
-                  <div>Good to go</div>
+                  <div></div>
                 </Countdown> : <></>
               }
             </div>

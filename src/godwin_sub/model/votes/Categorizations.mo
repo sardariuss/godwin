@@ -4,6 +4,7 @@ import VotePolicy          "VotePolicy";
 import PayToVote           "PayToVote";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
+import VotersHistory       "VotersHistory";
 import PayForElement       "../token/PayForElement";
 import PayTypes            "../token/Types";
 import PayRules            "../PayRules";
@@ -16,6 +17,7 @@ module {
   type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
+  type VotersHistory          = VotersHistory.VotersHistory;
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
@@ -36,6 +38,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<CursorMap, PolarizationMap>,
+    voters_history: VotersHistory,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
@@ -44,6 +47,7 @@ module {
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
+      voters_history,
       VotePolicy.VotePolicy<CursorMap, PolarizationMap>(
         #BALLOT_CHANGE_FORBIDDEN,
         func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },

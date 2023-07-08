@@ -1,14 +1,14 @@
-import { QuestionOrderBy, Direction } from "../../declarations/godwin_sub/godwin_sub.did";
-import { ActorContext, Sub } from "../ActorContext";
-import { TabButton } from "./TabButton";
-import { MainTabButton } from "./MainTabButton";
-import ListQuestions from "./ListQuestions";
-import { ScanResults, StatusEnum, fromScanLimitResult, VoteKind, voteKindToCandidVariant } from "../utils";
-import OpenQuestion from "./OpenQuestion";
-import SubBanner from "./SubBanner";
+import { QuestionOrderBy, Direction }                                          from "../../declarations/godwin_sub/godwin_sub.did";
+import { ActorContext, Sub }                                                   from "../ActorContext";
+import { TabButton }                                                           from "./TabButton";
+import { MainTabButton }                                                       from "./MainTabButton";
+import ListQuestions                                                           from "./ListQuestions";
+import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant } from "../utils";
+import OpenQuestion                                                            from "./OpenQuestion";
+import SubBanner                                                               from "./SubBanner";
 
-import { useParams } from "react-router-dom";
-import { useState, useContext, useEffect } from "react";
+import { useParams }                                                           from "react-router-dom";
+import { useState, useContext, useEffect }                                     from "react";
 
 export enum MainTab {
   HOME,

@@ -3,6 +3,7 @@ import Votes               "Votes";
 import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
+import VotersHistory       "VotersHistory";
 import PayRules            "../PayRules";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
@@ -41,6 +42,7 @@ module {
   type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
+  type VotersHistory          = VotersHistory.VotersHistory;
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
   type Question               = QuestionTypes.Question;
   type Key                    = QuestionTypes.Key;
@@ -70,6 +72,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<Interest, Appeal>,
+    voters_history: VotersHistory,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     pay_for_new: PayForNew,
@@ -81,6 +84,7 @@ module {
     Interests(
       Votes.Votes(
         vote_register,
+        voters_history,
         VotePolicy.VotePolicy<Interest, Appeal>(
           #BALLOT_CHANGE_FORBIDDEN,
           func (interest: Interest) : Bool { true; }, // A variant is always valid.
@@ -166,10 +170,6 @@ module {
 
     public func findOpenVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
       _pay_for_new.findTransactionsRecord(principal, id);
-    };
-
-    public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot> {
-      _votes.revealBallots(caller, voter, direction, limit, previous_id);
     };
 
     public func getVoterBallots(principal: Principal) : Map<VoteId, Ballot> {

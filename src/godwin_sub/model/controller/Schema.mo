@@ -158,6 +158,7 @@ module {
         // Add to opinion vote queries
         _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
         // Open up the votes
+        // @todo: there is a risk that people start categorizing questions sooner than expected
         ?#CURSOR_VOTES({ 
           opinion_vote_id        = _model.getOpinionVotes().newVote(date);
           categorization_vote_id = _model.getCategorizationVotes().newVote(date);

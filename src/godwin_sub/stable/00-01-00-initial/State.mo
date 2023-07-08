@@ -22,11 +22,12 @@ module {
 
   type State                      = MigrationTypes.State;
 
+  type QuestionId                 = Types.QuestionId;
+  type VoteId                     = Types.VoteId;
   type Parameters                 = Types.Parameters;
   type SchedulerParameters        = Types.SchedulerParameters;
   type PriceParameters            = Types.PriceParameters;
   type DecayParameters            = Types.DecayParameters;
-  type VoteId                     = Types.VoteId;
   type InterestMomentumArgs       = Types.InterestMomentumArgs;
   type StatusHistory              = Types.StatusHistory;
   type TransactionsRecord         = Types.TransactionsRecord;
@@ -67,20 +68,21 @@ module {
       votes                       = {
         interest                     = {
           register                      = Interests.initRegister();
+          voters_history                = Map.new<Principal, Map<QuestionId, Map<Nat, VoteId>>>(Map.phash);
+          joins                         = Joins.initRegister();
           transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
         };
         opinion                      = {
           register                      = Opinions.initRegister();
+          voters_history                = Map.new<Principal, Map<QuestionId, Map<Nat, VoteId>>>(Map.phash);
+          joins                         = Joins.initRegister();
         };
         categorization               = {
           register                      = Categorizations.initRegister();
+          voters_history                = Map.new<Principal, Map<QuestionId, Map<Nat, VoteId>>>(Map.phash);
+          joins                         = Joins.initRegister();
           transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
         };
-      };
-      joins                       = {
-        interests                    = Joins.initRegister();
-        opinions                     = Joins.initRegister();
-        categorizations              = Joins.initRegister();
       };
     });
   };

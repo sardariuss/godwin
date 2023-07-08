@@ -8,7 +8,6 @@ import Error  "mo:base/Error";
 import Map    "mo:map/Map";
 import Set    "mo:map/Set";
 
-
 // please do not import any types from your project outside migrations folder here
 // it can lead to bugs when you change those types later, because migration types should not be changed
 // you should also avoid importing these types anywhere in your project directly from here
@@ -49,20 +48,21 @@ module {
     votes                       : {
       interest                     : {
         register                      : InterestVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
         transactions                  : Map<Principal, Map<VoteId, TransactionsRecord>>;
        };
       opinion                      : {
         register                      : OpinionVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
       };
       categorization               : {
         register                      : CategorizationVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
         transactions                  : Map<Principal, Map<VoteId, TransactionsRecord>>;
       };
-    };
-    joins                       : {
-      interests                    : JoinsRegister;
-      opinions                     : JoinsRegister;
-      categorizations              : JoinsRegister;
     };
   };
 
@@ -138,7 +138,6 @@ module {
 
   public type VoteRegister<T, A> = {
     votes: Map<VoteId, Vote<T, A>>;
-    voters_history: Map<Principal, Set<VoteId>>;
     var index: VoteId;
   };
 
