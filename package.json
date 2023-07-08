@@ -2,5 +2,8 @@
   "scripts": {
     "build": "cd src/godwin_frontend && npm run build",
     "dev": "cd src/godwin_frontend && npm run dev"
+  },
+  "dependencies": {
+    "godwin_frontend": "file:src/godwin_frontend"
   }
 }

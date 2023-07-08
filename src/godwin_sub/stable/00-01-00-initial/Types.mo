@@ -143,8 +143,8 @@ module {
   };
 
   public type VoteStatus = {
-    #OPEN: Time;
-    #CLOSED: Time;
+    #OPEN;
+    #CLOSED;
   };
 
   public type Vote<T, A> = {
