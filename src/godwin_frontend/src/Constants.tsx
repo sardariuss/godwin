@@ -1,7 +1,5 @@
 
 const CONSTANTS = {
-  CURSOR_DECIMALS: 2,
-  CURSOR_SIDE_THRESHOLD: 0.1,
   INTEREST_INFO: {
     down: {
       symbol: '🤡',
@@ -52,6 +50,9 @@ const CONSTANTS = {
     DEFAULT: 'New user'
   },
   TOKEN_DECIMALS: 1,
+  CURSOR_DECIMALS: 2,
+  CURSOR_SIDE_THRESHOLD: 0.1,
+  DECAY_DECIMALS: 2,
   CHART: {
     BORDER_COLOR_LIGHT: '#bbbbbb',
     BORDER_COLOR_DARK: '#333333',
@@ -64,6 +65,10 @@ const CONSTANTS = {
   OPEN_QUESTION: {
     PLACEHOLDER: "What's interesting to vote on?",
     PICK_SUB: "Choose a sub-godwin",
+  },
+  SICK_FILTER: {
+    SEPIA_PERCENT: 40,
+    HUE_ROTATE_DEG: 39,
   }
 };
 

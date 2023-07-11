@@ -8,6 +8,7 @@ import { Category, Polarization }                                               
 
 import { Principal }                                                                                from "@dfinity/principal";
 import { useEffect, useState }                                                                      from "react";
+import { fromNullable } from "@dfinity/utils";
 
 type ConvictionsProps = {
   principal: Principal;
@@ -20,7 +21,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
   const [polarizationMap, setPolarizationMap] = useState<Map<Category, Polarization>> (new Map<Category, Polarization> ());
   const [ballotsMap,      setBallotsMap     ] = useState<Map<Category, BallotPoint[]>>(new Map<Category, BallotPoint[]>());
   const [voteNumber,      setVoteNumber     ] = useState<number>                      (0                                 );
-  const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (0                                 );
+  const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (1                                 );
 
   const refreshConvictions = async () => {
 
@@ -41,30 +42,32 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
     let weighted_ballots = new Map<Category, BallotPoint[]>();
     let map_polarizations = new Map<Category, Polarization>();
 
-    var total_genuine = 0;
-    var total_decay = 0;
+    var total_late = 0;
 
     for (let i = 0; i < queryConvictions.length; i++){
-      // Get the opinion and category weight from the query
-      let [vote_id, [opinion, categorization, decay, is_genuine]] = queryConvictions[i];
+      // Get the BallotConvictionInput for each vote
+      let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
 
-      total_genuine += is_genuine ? decay : 0;
-      total_decay += decay;
+      // Use the question decay for the late votes indicator, not the individual vote decay!
+      // This way even if the late votes will disappear from the profile, the profile will be stained for longer
+      total_late += (fromNullable(late_ballot_decay) ?? 0);
 
       sub.categories.forEach(([category, info]) => {
         let weight = toMap(categorization).get(category) ?? 0;
         // Add the weighted ballot to the ballots array
         let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
+        // Compute the decay
+        let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
         array.push({
-          label: "Vote " + vote_id.toString() + ", cursor " + opinion.answer.toString() + ", decay " + decay.toString(),
-          cursor: opinion.answer,
+          label: "Vote " + vote_id.toString() + ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
+          cursor,
           coef: weight * decay,
-          date: opinion.date
+          date
         });
         weighted_ballots.set(category, array);
         // Compute the polarization
         let old_polarization = map_polarizations.get(category) ?? {left: 0, center: 0, right: 0};
-        let new_polarization = addPolarization(old_polarization, mul(toPolarization(opinion.answer), weight));
+        let new_polarization = addPolarization(old_polarization, mul(toPolarization(cursor), weight));
         map_polarizations.set(category, new_polarization);
       });
     }
@@ -72,7 +75,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
     setPolarizationMap(map_polarizations);
     setBallotsMap(weighted_ballots);
     setVoteNumber(queryConvictions.length);
-    setGenuineRatio(total_genuine / total_decay);
+    setGenuineRatio((queryConvictions.length - total_late) / queryConvictions.length);
   }
 
   useEffect(() => {
@@ -88,7 +91,10 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
             {
               [...Array.from(polarizationMap.entries())].map((elem, index) => (
                 (
-                  <li key={elem[0]}>
+                  <li key={elem[0]} style={{
+                      filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * genuineRatio + `%) 
+                               hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * genuineRatio + `deg)`
+                      }}>
                     <PolarizationBar 
                       name={elem[0]}
                       showName={true}
@@ -112,7 +118,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
               setChartType={setChartType}
             />
             <div className=" place-self-center">
-            { voteNumber > 0 ? (genuineRatio / voteNumber * 100).toFixed(0) + "% genuine" : ""}
+            { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
             </div>
           </div>
         </div>

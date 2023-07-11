@@ -14,10 +14,11 @@ import { ActorSubclass }                                                      fr
 type Props = {
   polarizationInfo: PolarizationInfo;
   voteId: bigint;
-  actor: ActorSubclass<_SERVICE>,
+  isLocked: boolean;
+  actor: ActorSubclass<_SERVICE>;
 };
 
-const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
+const OpinionVote = ({polarizationInfo, voteId, isLocked, actor}: Props) => {
 
   const COUNTDOWN_DURATION_MS = 0;
 
@@ -28,7 +29,7 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
 
   const refreshBallot = () : Promise<void> => {
     return actor.getOpinionBallot(voteId).then((result) => {
-      setCursorInfo(toCursorInfo((result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? result['ok'].answer[0] : 0.0), polarizationInfo));
+      setCursorInfo(toCursorInfo((result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? result['ok'].answer[0].cursor : 0.0), polarizationInfo));
       setVoteDate(result['ok'] !== undefined ? result['ok'].date : null);
     });
   }
@@ -56,7 +57,7 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
         <div className={`pl-6`}>
         {
           voteDate !== null ?
-          <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate}/> :
+          <CursorBallot cursorInfo={cursorInfo} dateNs={voteDate} isLate={isLocked}/> :
           <CursorSlider
             cursor = { cursorInfo.value }
             polarizationInfo={ polarizationInfo }
@@ -64,6 +65,7 @@ const OpinionVote = ({polarizationInfo, voteId, actor}: Props) => {
             setCursor={ refreshCursorInfo }
             onMouseUp={ () => { setCountdownVote(true)} }
             onMouseDown={ () => { setCountdownVote(false)} }
+            isLate={isLocked}
           />
         }
         </div>

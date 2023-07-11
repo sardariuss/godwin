@@ -10,9 +10,10 @@ type Props = {
   setCursor: (cursor: number) => (void);
   onMouseUp: () => (void);
   onMouseDown: () => (void);
+  isLate: boolean;
 };
 
-export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown}: Props) => {
+export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown, isLate}: Props) => {
 
   const sliderWidth = 200;
   const thumbSize = 50;
@@ -45,7 +46,7 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
         onChange={(e) => refreshValue(Number(e.target.value))}
         onMouseUp={(e) => onMouseUp()}
         onMouseDown={(e) => onMouseDown()}
-        className={"input appearance-none"} 
+        className={`input appearance-none ${isLate ? "late-vote" : ""}`} 
         style={{
           "--progress-percent": `${ ((marginRatio + ((cursorInfo.value + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
           "--slider-left-color": `${cursorInfo.colors.left}`,
@@ -59,7 +60,7 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
         } as React.CSSProperties }
         disabled={disabled}
       />
-      <div className="text-xs font-extralight mt-1">
+      <div className="text-xs font-extralight mt-1">  
         { cursorInfo.value.toFixed(2) }
       </div>
     </div>

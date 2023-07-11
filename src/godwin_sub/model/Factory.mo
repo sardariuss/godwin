@@ -63,16 +63,13 @@ module {
       pay_to_open_question,
       interest_join,
       queries,
-      pay_rules,
-      state.decay_params.v
-    );
+      pay_rules);
     
     let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
     
     let opinions = Opinions.build(
       state.votes.opinion.register,
-      state.decay_params.v
-    );
+      state.decay_params.v);
     
     let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     
@@ -81,8 +78,7 @@ module {
       state.votes.categorization.transactions,
       token_interface,
       categories,
-      pay_rules,
-      state.decay_params.v
+      pay_rules
     );
 
     let status_manager = StatusManager.build(

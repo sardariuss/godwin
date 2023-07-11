@@ -19,8 +19,8 @@ export DEPLOYER_AMOUNT="30_000_000_000_000_000" # 300 million
 
 # Airdrop
 export AIRDROP_CANISTER=$(dfx canister id godwin_airdrop)
-export AIRDROP_AMOUNT="1_000_000_000_000_000" # 10 million
-export AIRDROP_PER_USER="100_000_000_000" # 1 thousand per user, 10 thousands users
+export AIRDROP_AMOUNT="100_000_000_000_000" # 1 million
+export AIRDROP_PER_USER="8_000_000_000" # 80 per user, 12.5k users
 export AIRDROP_ALLOW_SELF="true"
 
 # Master

@@ -27,6 +27,7 @@ import Option              "mo:base/Option";
 import Iter                "mo:base/Iter";
 import Buffer              "mo:base/Buffer";
 import Array               "mo:base/Array";
+import Debug               "mo:base/Debug";
 
 module {
 
@@ -55,6 +56,7 @@ module {
   type VoteKind                    = Types.VoteKind;
   type SchedulerParameters         = Types.SchedulerParameters;
   type StatusInput                 = Types.StatusInput;
+  type BallotConvictionInput       = Types.BallotConvictionInput;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -72,6 +74,7 @@ module {
   type Appeal                      = VoteTypes.Appeal;
   type Polarization                = VoteTypes.Polarization;
   type CursorMap                   = VoteTypes.CursorMap;
+  type OpinionAnswer               = VoteTypes.OpinionAnswer;
   type PolarizationMap             = VoteTypes.PolarizationMap;
   type InterestBallot              = VoteTypes.InterestBallot;
   type OpinionBallot               = VoteTypes.OpinionBallot;
@@ -79,6 +82,7 @@ module {
   type VoteId                      = VoteTypes.VoteId;
   type FindVoteError               = VoteTypes.FindVoteError;
   type FindQuestionIterationError  = VoteTypes.FindQuestionIterationError;
+  type OpinionAggregate            = VoteTypes.OpinionAggregate;
   // Errors
   type AddCategoryError            = Types.AddCategoryError;
   type RemoveCategoryError         = Types.RemoveCategoryError;
@@ -191,12 +195,12 @@ module {
       await* _model.getInterestVotes().putBallot(principal, vote_id, date, interest);
     };
 
-    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<Cursor>, FindBallotError> {
+    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<OpinionAnswer>, FindBallotError> {
       _model.getOpinionVotes().revealBallot(caller, caller, vote_id);
     };
 
     public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
-      await* _model.getOpinionVotes().putBallot(principal, vote_id, { answer = cursor; date; });
+      await* _model.getOpinionVotes().putBallot(principal, vote_id, cursor, date);
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealedBallot<CursorMap>, FindBallotError> {
@@ -209,7 +213,7 @@ module {
 
     public func getStatusHistory(question_id: Nat) : Result<StatusHistory, ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
-        case(null) { #err(#PrincipalIsAnonymous); };
+        case(null) { #err(#PrincipalIsAnonymous); }; // @todo
         case(?question) { #ok(_model.getStatusManager().getStatusHistory(question_id)); };
       };
     };
@@ -218,7 +222,7 @@ module {
       _model.getInterestVotes().revealVote(vote_id);
     };
 
-    public func revealOpinionVote(vote_id: VoteId) : Result<Vote<Cursor, Polarization>, RevealVoteError> {
+    public func revealOpinionVote(vote_id: VoteId) : Result<Vote<OpinionAnswer, OpinionAggregate>, RevealVoteError> {
       _model.getOpinionVotes().revealVote(vote_id);
     };
 
@@ -302,7 +306,7 @@ module {
     };
 
     public func queryOpinionBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
-    ) : ScanLimitResult<RevealedBallot<Cursor>> {
+    ) : ScanLimitResult<RevealedBallot<OpinionAnswer>> {
       _model.getOpinionVotes().revealBallots(caller, voter, direction, limit, previous_id);
     };
 
@@ -311,33 +315,39 @@ module {
       _model.getCategorizationVotes().revealBallots(caller, voter, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, (OpinionBallot, [(Category, Float)], Float, Bool)> {
+    public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, BallotConvictionInput> {
       let current_decay = Decay.computeDecay(_model.getDecayParameters(), now);
       // Get the voter opinion ballots
       Map.mapFilter(
         _model.getOpinionVotes().getVoterBallots(principal),
         Map.nhash,
-        func(vote_id: VoteId, ballot: OpinionBallot) : ?(OpinionBallot, [(Category, Float)], Float, Bool) {
+        func(vote_id: VoteId, ballot: OpinionBallot) : ?BallotConvictionInput {
+          // Get the opinion decay
+          let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
+          let vote_decay = switch(opinion_vote.aggregate.is_locked){
+            case(null) { return null; }; // Do not consider the vote if it is not locked or closed
+            case(?opt_decay) { opt_decay / current_decay; };
+          };
+          // Get the most up-to-date categorization vote for this question
           let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
-          // Get the last closed categorization vote for this question
-          let cat_join = Map.findDesc(
+          let join = Map.findDesc(
             _model.getCategorizationJoins().getQuestionVotes(question_id),
-            func(iteration: Nat, cat_vote_id: VoteId) : Bool {
-              switch(_model.getCategorizationVotes().getVote(cat_vote_id).status) { 
-                case(#CLOSED) { true; }; case (#OPEN) { false; };
-              };
+            func(iteration: Nat, id: VoteId) : Bool {
+              _model.getCategorizationVotes().getVote(id).status == #CLOSED;
             });
-          // Return the vote ID, the user opinion ballot and the up-to-date categorization
-          switch(cat_join){
-            case(null) { null; };
-            case(?(cat_iteration, cat_vote_id)){
-              ?(
-                ballot, 
-                Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(cat_vote_id).aggregate)),
-                _model.getOpinionVotes().getVote(vote_id).decay / current_decay,
-                cat_iteration >= opinion_iteration // If the categorization is newer or as old as the opinion, we consider the opinion genuine
-              );
+          let categorization = switch(join){
+            case(null) { Debug.trap("Categorization missing"); };
+            case(?(_, id)){
+              _model.getCategorizationVotes().getVote(id);
             };
+          };
+          // Return the cursor, the up-to-date categorization, the vote decay and the late ballot decay if any
+          ?{
+            cursor = ballot.answer.cursor;
+            date = ballot.date;
+            categorization = Utils.trieToArray(PolarizationMap.toCursorMap(categorization.aggregate));
+            vote_decay;
+            late_ballot_decay = Option.map(ballot.answer.is_late, func(late_decay: Float) : Float { (late_decay / current_decay); });
           };
         }
       );
@@ -368,17 +378,6 @@ module {
             ?KeyConverter.toStatusKey(question_id, current.status, current.date),
             Option.map(state, func(status: Status) : Key { KeyConverter.toStatusKey(question_id, status, date); })
           );
-          // Close vote(s) if any
-          switch(current.status){
-            case(#CANDIDATE) { 
-              await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current.iteration), date);
-            };
-            case(#OPEN)      { 
-              await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, current.iteration), date);
-              await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, current.iteration), date);
-            };
-            case(_) {};
-          };
           switch(state){
             case(null) {
               // Remove status history and question

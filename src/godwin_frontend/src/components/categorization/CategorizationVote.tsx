@@ -98,6 +98,7 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
                 }}
                 onMouseUp={ () => { setCountdownVote(true)} }
                 onMouseDown={ () => { setCountdownVote(false)} }
+                isLate={false}
               />
               {
                 index !== categorization.length - 1 ?

@@ -183,8 +183,8 @@ module {
       Nat.compare(a.question_id, b.question_id));
   };
   func compareOpinionVoteEntries(a: OpinionVoteEntry, b: OpinionVoteEntry) : Order {
-    // Reverse the compare on is_early to put the early votes at the end
-    strictCompare<Bool>(b.is_early, a.is_early, Bool.compare, 
+    // Reverse the compare on is_late to put the early votes at the end
+    strictCompare<Bool>(b.is_late, a.is_late, Bool.compare, 
       strictCompare<Int>(a.date, b.date, Int.compare, 
         Nat.compare(a.question_id, b.question_id)));
   };

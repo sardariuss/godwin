@@ -46,7 +46,7 @@ const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
           <div className="italic">
             { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
           </div> :
-					<div className={`w-full justify-start text-sm font-normal`}>
+					<div className={`w-full justify-start text-sm font-normal ${(fromNullable(fromNullable(ballot.answer).is_late) !== undefined) ? "text-green-200" : ""}`}>
           	{question.text}
         	</div>
 				}
@@ -54,8 +54,10 @@ const OpinionDetailedBallot = ({sub, ballot} : OpinionDetailedBallotInput) => {
         {/* Cursor ballots require some x padding because of the range input*/}
         <div className="col-span-1 w-full justify-self-center">
           <CursorBallot 
-            cursorInfo={fromNullable(ballot.answer) !== undefined ? toCursorInfo(fromNullable(ballot.answer), CONSTANTS.OPINION_INFO) : null}
-            dateNs={ballot.date}/>
+            cursorInfo={fromNullable(ballot.answer) !== undefined ? toCursorInfo(fromNullable(ballot.answer).cursor, CONSTANTS.OPINION_INFO) : null}
+            dateNs={ballot.date}
+            isLate={fromNullable(ballot.answer) !== undefined ? (fromNullable(fromNullable(ballot.answer).is_late) !== undefined) : false}
+            />
         </div>
       </div>
     </div>

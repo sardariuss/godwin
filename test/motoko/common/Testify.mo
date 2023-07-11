@@ -16,6 +16,7 @@ import Buffer        "mo:base/Buffer";
 import Principal     "mo:base/Principal";
 import Float         "mo:base/Float";
 import Int           "mo:base/Int";
+import Option        "mo:base/Option";
 import Debug         "mo:base/Debug";
 import Prim          "mo:⛔";
 
@@ -26,6 +27,9 @@ module {
   type OpenQuestionError = QuestionTypes.OpenQuestionError;
   type OpinionBallot     = VoteTypes.OpinionBallot;
   type Polarization      = VoteTypes.Polarization;
+  type OpinionAnswer     = VoteTypes.OpinionAnswer;
+
+  let FLOAT_EPSILON : Float = 1e-9;
 
   public type Testify<T> = {
     toText : (t : T) -> Text;
@@ -62,6 +66,38 @@ module {
       Debug.print("Expected: " # testify.toText(expected));
       assert(false);
     };
+  };
+
+  func equalFloat(f1: Float, f2: Float) : Bool {
+    Float.equalWithin(f1, f2, FLOAT_EPSILON);
+  };
+
+  func optToText<T>(item: ?T, to_text: (T) -> Text) : Text {
+    switch(item){
+      case(null) { "(null)"; };
+      case(?item) { to_text(item); };
+    };
+  };
+
+  func optEqual<T>(item1: ?T, item2: ?T, equal: (T, T) -> Bool) : Bool {
+    switch((item1, item2)){
+      case(?i1, ?i2) { equal(i1, i2); };
+      case(null, null) { true; };
+      case(_) { false; };
+    };
+  };
+
+  func opinionBallotToText(b : OpinionBallot) : Text { 
+    Votes.ballotToText(b, func(answer: OpinionAnswer): Text {
+      "{ cursor = " # Cursor.toText(answer.cursor) #
+      ", is_late = " # optToText(answer.is_late, Float.toText) # " }";
+    });
+  };
+
+  func opinionBallotsEqual(b1 : OpinionBallot, b2 : OpinionBallot) : Bool { 
+    Votes.ballotsEqual(b1, b2, func(answer1: OpinionAnswer, answer2: OpinionAnswer) : Bool {
+      answer1.cursor == answer2.cursor and optEqual(answer1.is_late, answer2.is_late, equalFloat);
+    });
   };
 
   /// Submodule of primitive testify functions (excl. 'Any', 'None' and 'Null').
@@ -205,29 +241,28 @@ module {
     };
 
     public let opinionBallot : Testify<OpinionBallot> = {
-      toText = func (b : OpinionBallot) : Text { Votes.ballotToText(b, Cursor.toText); };
-      equal  = func (b1 : OpinionBallot, b2 : OpinionBallot) : Bool { Votes.ballotsEqual(b1, b2, Cursor.equal); };
+      toText = opinionBallotToText;
+      equal  = opinionBallotsEqual;
     };
 
     public let opinionVote : Testify<VoteTypes.OpinionVote> = {
       toText = func (v : VoteTypes.OpinionVote) : Text { 
         let status = switch(v.status) { case(#OPEN) { "OPEN"; }; case(#CLOSED) { "CLOSED"; }; };
         let ballots = Buffer.Buffer<Text>(Map.size(v.ballots));
-        for ((key, value) in Map.entries(v.ballots)) {
-          ballots.add("[" # Principal.toText(key) # " ,  (answer=" # Float.toText(value.answer) # ", date=" # Int.toText(value.date) # ")] ");
+        for ((principal, ballot) in Map.entries(v.ballots)) {
+          ballots.add("[" # Principal.toText(principal) # ", " # opinionBallotToText(ballot) # "] ");
         };
         "id: " # Nat.toText(v.id) #
-        " aggregate: " # Polarization.toText(v.aggregate) #
+        " aggregate: { polarization: " # Polarization.toText(v.aggregate.polarization) # ", is_locked: " # optToText(v.aggregate.is_locked, Float.toText) # " }" #
         " status: " # status #
         " ballots: " # Text.join("", ballots.vals());
       };
       equal  = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
         v1.id == v2.id and
-        v1.aggregate == v2.aggregate and
+        v1.aggregate.polarization == v2.aggregate.polarization and
+        optEqual(v1.aggregate.is_locked, v2.aggregate.is_locked, equalFloat) and
         v1.status == v2.status and
-        Utils.mapEqual<Principal, OpinionBallot>(v1.ballots, v2.ballots, Map.phash, func(v1, v2): Bool{
-          Votes.ballotsEqual(v1, v2, Cursor.equal);
-        }); 
+        Utils.mapEqual<Principal, OpinionBallot>(v1.ballots, v2.ballots, Map.phash, opinionBallotsEqual)
       };
     };
 
@@ -285,4 +320,5 @@ module {
       t;
     };
   };
+
 };

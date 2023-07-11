@@ -21,6 +21,7 @@ const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 	const [question, setQuestion] = useState<Question | undefined>(undefined);
 	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
 	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
+	const [isLocked, setIsLocked] = useState<boolean>(false); // @todo: one should not use a specific state for the opinion vote
 	const [canReopen, setCanReopen] = useState<boolean>(false);
 
 	const refreshQuestion = async () => {
@@ -43,7 +44,7 @@ const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 			setQuestionVoteJoins(new Map<VoteKind, bigint>());
 		} else {
 			let currentStatus = statusHistory[statusHistory.length - 1];
-			let previousClosedStatus = findLastVote(statusHistory, 'CLOSED');
+			let previousOpenStatus = findLastVote(statusHistory, 'OPEN');
 			
 			var joins = new Map<VoteKind, bigint>();
 					
@@ -55,9 +56,15 @@ const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 					}
 				}
 			} else if (vote_kind === VoteKind.OPINION) {
-				// Include early votes
-				let iteration = currentStatus.status['OPEN'] !== undefined ? currentStatus.iteration : previousClosedStatus !== undefined ?
-				previousClosedStatus.iteration + BigInt(1) : undefined;
+				// Include late votes
+				var iteration : bigint | undefined = undefined;
+				if (currentStatus.status['OPEN'] !== undefined){
+					iteration = currentStatus.iteration;
+					setIsLocked(false);
+				} else if (previousOpenStatus !== undefined){
+					iteration = previousOpenStatus.iteration;
+					setIsLocked(true);
+				}
 				if (iteration !== undefined) {
 					let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, iteration))['ok'];
 					if (opinion_vote_id !== undefined) {
@@ -129,18 +136,19 @@ const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 				}
 				</div>
 				{
-						questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
-							<OpinionVote
-								actor={sub.actor} 
-                polarizationInfo={CONSTANTS.OPINION_INFO} 
-                voteId={questionVoteJoins.get(VoteKind.OPINION)} 
-              /> :
-						questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
-							<CategorizationVote 
-								actor={sub.actor}
-								categories={toMap(sub.categories)}
-								voteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
-							/> : <></>
+					questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
+						<OpinionVote
+							actor={sub.actor}
+							polarizationInfo={CONSTANTS.OPINION_INFO}
+							isLocked={isLocked}
+							voteId={questionVoteJoins.get(VoteKind.OPINION)}
+						/> :
+					questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
+						<CategorizationVote 
+							actor={sub.actor}
+							categories={toMap(sub.categories)}
+							voteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
+						/> : <></>
 				}
 				{
 					statusHistory.length === 0 ? <></> :

@@ -47,6 +47,10 @@ textarea {
   outline: none;
 }
 
+.late-vote {
+  filter: sepia(40%) hue-rotate(39deg);
+}
+
 .bar-result {
   background: linear-gradient(
     to right,

@@ -64,6 +64,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type RevealedInterestBallot       = Types.RevealedInterestBallot;
   type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
   type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
+  type BallotConvictionInput        = Types.BallotConvictionInput;
 
   stable var _state: MigrationTypes.State = Migrations.install(Time.now(), args);
 
@@ -194,7 +195,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().queryQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
-  public query func getVoterConvictions(principal: Principal) : async [(VoteId, (OpinionBallot, [(Category, Float)], Float, Bool))] {
+  public query func getVoterConvictions(principal: Principal) : async [(VoteId, BallotConvictionInput)] {
     getFacade().getVoterConvictions(Time.now(), principal);
   };
 

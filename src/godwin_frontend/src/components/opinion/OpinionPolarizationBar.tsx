@@ -23,10 +23,10 @@ const OpinionPolarizationBar = ({name, showName, polarizationInfo, vote}: Opinio
           name={name}
           showName={showName}
           polarizationInfo={polarizationInfo}
-          polarizationValue={vote.aggregate}
+          polarizationValue={vote.aggregate.polarization}
           ballots={vote.ballots.map(([principal, ballot]) => { return {
             label: principal.toString(),
-            cursor: ballot.answer,
+            cursor: ballot.answer.cursor,
             date: ballot.date,
             coef: 1.0
           }})}
@@ -35,7 +35,7 @@ const OpinionPolarizationBar = ({name, showName, polarizationInfo, vote}: Opinio
       </div>
       <div className="grid grid-cols-3 w-full items-center">
         <div className="text-xs font-light text-gray-600 dark:text-gray-400 place-self-center">
-          { (vote.aggregate.left + vote.aggregate.center + vote.aggregate.right).toString() + " voters" }
+          { (vote.aggregate.polarization.left + vote.aggregate.polarization.center + vote.aggregate.polarization.right).toString() + " voters" }
         </div>
         <ChartTypeToggle 
           chartType={chartType}

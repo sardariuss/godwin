@@ -1,6 +1,5 @@
 import Types               "Types";
 import Votes               "Votes";
-import VotePolicy          "VotePolicy";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
 import PayRules            "../PayRules";
@@ -18,6 +17,7 @@ import Map                 "mo:map/Map";
 import Result              "mo:base/Result";
 import Float               "mo:base/Float";
 import Nat                 "mo:base/Nat";
+import Option              "mo:base/Option";
 
 module {
 
@@ -35,10 +35,9 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
-  type InterestBallot         = Types.InterestBallot;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
-  type DecayParameters        = Types.DecayParameters;
   type InterestMomentumArgs   = Types.InterestMomentumArgs;
+  type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -75,19 +74,12 @@ module {
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries,
-    pay_rules: PayRules,
-    decay_params: DecayParameters
+    pay_rules: PayRules
   ) : Interests {
     Interests(
       Votes.Votes(
         vote_register,
-        VotePolicy.VotePolicy<Interest, Appeal>(
-          #BALLOT_CHANGE_FORBIDDEN,
-          func (interest: Interest) : Bool { true; }, // A variant is always valid.
-          addInterest,
-          subInterest,
-          initInterest()
-        ),
+        VotePolicy(),
         ?PayToVote.PayToVote<Interest, Appeal>(
           PayForElement.build(
             transactions_register,
@@ -96,9 +88,7 @@ module {
           ),
           pay_rules.getInterestVotePrice(),
           pay_rules.computeInterestVotePayout
-        ),
-        decay_params,
-        #REVEAL_BALLOT_VOTE_CLOSED
+        )
       ),
       pay_for_new,
       joins,
@@ -178,11 +168,46 @@ module {
 
   };
 
+  class VotePolicy() : IVotePolicy {
+
+    public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
+      // The interest variant is always valid.
+      #ok;
+    };
+
+    public func emptyAggregate() : Appeal {
+      { ups = 0; downs = 0; score = 0.0; last_score_switch = null; };
+    };
+
+    public func onPutBallot(aggregate: Appeal, new_ballot: Ballot, old_ballot: ?Ballot) : Appeal {
+      var appeal = aggregate;
+      // Add the new ballot to the appeal
+      appeal := addInterest(appeal, new_ballot);
+      // If there was an old ballot, remove it from the appeal
+      Option.iterate(old_ballot, func(ballot: Ballot) {
+        appeal := subInterest(appeal, ballot);
+      });
+      appeal;
+    };
+
+    public func onVoteClosed(aggregate: Appeal, date: Time) : Appeal {
+      aggregate;
+    };
+
+    public func canRevealVote(vote: Vote) : Bool {
+      vote.status == #CLOSED;
+    };
+
+    public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {
+      vote.status == #CLOSED or caller == voter;
+    };
+  };
+
   func initInterest() : Appeal {
     { ups = 0; downs = 0; score = 0.0; last_score_switch = null; };
   };
 
-  func addInterest(appeal: Appeal, ballot: InterestBallot) : Appeal {
+  func addInterest(appeal: Appeal, ballot: Ballot) : Appeal {
     let ups   = if (ballot.answer == #UP)   { Nat.add(appeal.ups, 1);   } else { appeal.ups;   };
     let downs = if (ballot.answer == #DOWN) { Nat.add(appeal.downs, 1); } else { appeal.downs; };
     let score = computeScore(ups, downs);
@@ -196,18 +221,12 @@ module {
     { ups; downs; score; last_score_switch; };
   };
 
-  func subInterest(appeal: Appeal, ballot: InterestBallot) : Appeal {
+  func subInterest(appeal: Appeal, ballot: Ballot) : Appeal {
     let ups   = if (ballot.answer == #UP)   { Nat.sub(appeal.ups, 1);   } else { appeal.ups;   };
     let downs = if (ballot.answer == #DOWN) { Nat.sub(appeal.downs, 1); } else { appeal.downs; };
     let score = computeScore(ups, downs);
 
-    let last_score_switch = if (appeal.last_score_switch == null or ups == downs){
-      ?ballot.date;
-      } else {
-      appeal.last_score_switch;
-    };
-
-    { ups; downs; score; last_score_switch; };
+    { appeal with ups; downs; score; };
   };
 
   func computeScore(ups: Nat, downs: Nat) : Float {

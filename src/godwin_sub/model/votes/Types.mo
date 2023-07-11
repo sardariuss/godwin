@@ -69,7 +69,6 @@ module {
     var status: Status;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
-    var decay: Float;
   };
 
   public type Ballot<T> = {
@@ -77,12 +76,29 @@ module {
     answer: T;
   };
 
+  public type IVotePolicy<T, A> = {
+    canPutBallot: (Vote<T, A>, Principal, Ballot<T>) -> Result<(), PutBallotError>;
+    emptyAggregate: () -> A;
+    onPutBallot: (A, Ballot<T>,  ?Ballot<T>) -> A;
+    onVoteClosed: (A, Time) -> A;
+    canRevealVote: (Vote<T, A>) -> Bool;
+    canRevealBallot: (Vote<T, A>, Principal, Principal) -> Bool;
+  };
+
   public type InterestBallot = Ballot<Interest>;
-  public type OpinionBallot = Ballot<Cursor>;
+  public type OpinionAnswer = {
+    cursor: Cursor;
+    is_late: ?Float;
+  };
+  public type OpinionBallot = Ballot<OpinionAnswer>;
+  public type OpinionAggregate = {
+    polarization: Polarization;
+    is_locked: ?Float;
+  };
   public type CategorizationBallot = Ballot<CursorMap>;
 
   public type InterestVote = Vote<Interest, Appeal>;
-  public type OpinionVote = Vote<Cursor, Polarization>;
+  public type OpinionVote = Vote<OpinionAnswer, OpinionAggregate>;
   public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
 
   public type Voter = {
@@ -102,12 +118,7 @@ module {
     #BALLOT_CHANGE_AUTHORIZED;
     #BALLOT_CHANGE_FORBIDDEN;
   };
-
-  public type RevealBallotAuthorization = {
-    #REVEAL_BALLOT_ALWAYS;
-    #REVEAL_BALLOT_VOTE_CLOSED;
-  };
-
+  
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };

@@ -1,7 +1,5 @@
 import Types      "Types";
-import VotePolicy "VotePolicy";
 import PayToVote  "PayToVote";
-import Decay      "Decay";
 import PayTypes   "../token/Types";
 
 import Utils      "../../utils/Utils";
@@ -35,19 +33,17 @@ module {
   type Ballot<T>                 = Types.Ballot<T>;
   type RevealedBallot<T>         = Types.RevealedBallot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
-  type DecayParameters           = Types.DecayParameters;
   type GetVoteError              = Types.GetVoteError;
   type FindBallotError           = Types.FindBallotError;
   type RevealVoteError           = Types.RevealVoteError;
   type PutBallotError            = Types.PutBallotError;
-  type RevealBallotAuthorization = Types.RevealBallotAuthorization;
+  type IVotePolicy<T, A> = Types.IVotePolicy<T, A>;
 
   type ScanLimitResult<K>        = UtilsTypes.ScanLimitResult<K>;
   type Direction                 = UtilsTypes.Direction;
   
   type TransactionsRecord        = PayTypes.TransactionsRecord;
 
-  type VotePolicy<T, A>          = VotePolicy.VotePolicy<T, A>;
   type PayToVote<T, A>           = PayToVote.PayToVote<T, A>;
 
   public func ballotToText<T>(ballot: Ballot<T>, toText: (T) -> Text) : Text {
@@ -79,29 +75,26 @@ module {
     func() = (Principal.fromText("2vxsx-fae"), 0)
   );
 
-  public func initVote<T, A>(vote_id: VoteId, decay: Float, empty_aggregate: A) : Vote<T, A> {
+  public func initVote<T, A>(vote_id: VoteId, empty_aggregate: A) : Vote<T, A> {
     {
       id = vote_id;
       var status = #OPEN;
       ballots = Map.new<Principal, Ballot<T>>(Map.phash);
       var aggregate = empty_aggregate;
-      var decay = decay;
     };
   };
 
   public class Votes<T, A>(
     _register: Register<T, A>,
-    _policy: VotePolicy<T, A>,
-    _pay_to_vote: ?PayToVote<T, A>,
-    _decay_params: DecayParameters,
-    _reveal_ballot_authorization: RevealBallotAuthorization
+    _policy: IVotePolicy<T, A>,
+    _pay_to_vote: ?PayToVote<T, A>
   ) {
 
     let _ballot_locks = Set.new<(Principal, VoteId)>(pnhash);
 
     public func newVote(date: Time) : VoteId {
       let index = _register.index;
-      let vote : Vote<T, A> = initVote(index, Decay.computeDecay(_decay_params, date), _policy.emptyAggregate());
+      let vote : Vote<T, A> = initVote(index, _policy.emptyAggregate());
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;
@@ -115,8 +108,8 @@ module {
           switch(vote.status){
             case(#CLOSED) { Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed"); };
             case(#OPEN) { 
-              vote.status := #CLOSED; 
-              vote.decay := Decay.computeDecay(_decay_params, date);
+              vote.status := #CLOSED;
+              vote.aggregate := _policy.onVoteClosed(vote.aggregate, date);
             };
           };
           Map.set(_register.votes, Map.nhash, id, vote); // @todo: not required ?
@@ -145,9 +138,23 @@ module {
     // changed after the await, and updating the state not working in consequence.
     // Right now it is not the case, it is just a Map.put
     func _putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+
+      let vote = switch(Map.get(_register.votes, Map.nhash, id)){
+        case(null) { return #err(#VoteNotFound); };
+        case(?v) { v };
+      };
+      // Check it is not closed
+      switch(vote.status){
+        case(#CLOSED) { return #err(#VoteClosed); };
+        case(_) {};
+      };
+      // Verify the principal is not anonymous
+      if (Principal.isAnonymous(principal)){
+        return #err(#PrincipalIsAnonymous);
+      };
       
       // Check if the user can put the ballot
-      let vote = switch(_policy.canPutBallot(_register.votes, id, principal, ballot)){
+      switch(_policy.canPutBallot(vote, principal, ballot)){
         case(#err(err)) { return #err(err); };
         case(#ok(v)) { v; };
       };
@@ -164,7 +171,7 @@ module {
           // Add the ballot
           let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
           // Update the aggregate
-          vote.aggregate := _policy.updateAggregate(vote.aggregate, ?ballot, old_ballot);
+          vote.aggregate := _policy.onPutBallot(vote.aggregate, ballot, old_ballot);
           // Link the vote to the voter
           let history = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
           Set.add(history, Map.nhash, id);
@@ -210,9 +217,10 @@ module {
 
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
       Result.chain<Vote<T, A>, Vote<T, A>, RevealVoteError>(findVote(id), func(vote) {
-        switch(vote.status){
-          case(#OPEN) { #err(#VoteOpen); }; //@todo
-          case(#CLOSED) { #ok(vote); };
+        if(not _policy.canRevealVote(vote)){
+          #err(#VoteOpen); // @todo
+        } else {
+          #ok(vote);
         };
       });
     };
@@ -226,16 +234,7 @@ module {
         case(null) { return #err(#BallotNotFound); };
         case(?b) { b; };
       };
-      let answer = switch(vote.status){
-        case(#OPEN) { 
-          if (Principal.equal(caller, voter) or _reveal_ballot_authorization == #REVEAL_BALLOT_ALWAYS) {
-            ?ballot.answer;
-          } else {
-            null;
-          }; 
-        };
-        case(#CLOSED) { ?ballot.answer; };
-      };
+      let answer = if(_policy.canRevealBallot(vote, caller, voter)) { ?ballot.answer; } else { null; };
       #ok({
         vote_id;
         date = ballot.date;

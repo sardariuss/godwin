@@ -1,6 +1,5 @@
 import Types               "Types";
 import Votes               "Votes";
-import VotePolicy          "VotePolicy";
 import PayToVote           "PayToVote";
 import PolarizationMap     "representation/PolarizationMap";
 import CursorMap           "representation/CursorMap";
@@ -9,25 +8,41 @@ import PayTypes            "../token/Types";
 import PayRules            "../PayRules";
 import Categories          "../Categories";
 
+import UtilsTypes          "../../utils/Types";
+
 import Map                 "mo:map/Map";
+
+import Result              "mo:base/Result";
+import Option              "mo:base/Option";
 
 module {
 
+  type Result<Ok, Err>        = Result.Result<Ok, Err>;
+  type Time                   = Int;
   type Map<K, V>              = Map.Map<K, V>;
 
   type Categories             = Categories.Categories;
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
-  type CategorizationBallot   = Types.CategorizationBallot;
-  type DecayParameters        = Types.DecayParameters;
+  type Ballot                 = Types.CategorizationBallot;
+  type Vote                   = Types.CategorizationVote;
+  type IVotePolicy            = Types.IVotePolicy<CursorMap, PolarizationMap>;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
   type PayRules               = PayRules.PayRules;
 
-  public type Register        = Votes.Register<CursorMap, PolarizationMap>;
+  type ScanLimitResult<K>        = UtilsTypes.ScanLimitResult<K>;
+  type Direction                 = UtilsTypes.Direction;
 
+  type GetVoteError              = Types.GetVoteError;
+  type RevealVoteError           = Types.RevealVoteError;
+  type FindBallotError           = Types.FindBallotError;
+  type PutBallotError            = Types.PutBallotError;
+  type RevealedBallot<T>         = Types.RevealedBallot<T>;
+
+  public type Register        = Votes.Register<CursorMap, PolarizationMap>;
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
 
   public func initRegister() : Register {
@@ -39,18 +54,11 @@ module {
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
-    pay_rules: PayRules,
-    decay_params: DecayParameters
+    pay_rules: PayRules
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
-      VotePolicy.VotePolicy<CursorMap, PolarizationMap>(
-        #BALLOT_CHANGE_FORBIDDEN,
-        func(cursor_map: CursorMap) : Bool { CursorMap.isValid(cursor_map, categories); },
-        addCategorizationBallot,
-        removeCategorizationBallot,
-        PolarizationMap.nil(categories)
-      ),
+      VotePolicy(categories),
       ?PayToVote.PayToVote<CursorMap, PolarizationMap>(
         PayForElement.build(
           transactions_register,
@@ -59,18 +67,48 @@ module {
         ),
         pay_rules.getCategorizationVotePrice(),
         pay_rules.computeCategorizationPayout
-      ),
-      decay_params,
-      #REVEAL_BALLOT_VOTE_CLOSED
+      )
     );
   };
 
-  func addCategorizationBallot(polarization: PolarizationMap, ballot: CategorizationBallot) : PolarizationMap {
-    PolarizationMap.addCursorMap(polarization, ballot.answer);
-  };
+  class VotePolicy(
+    _categories: Categories
+  ) : IVotePolicy {
 
-  func removeCategorizationBallot(polarization: PolarizationMap, ballot: CategorizationBallot) : PolarizationMap {
-    PolarizationMap.subCursorMap(polarization, ballot.answer);
+    public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
+      // Verify the ballot is valid
+      if (not CursorMap.isValid(ballot.answer, _categories)){
+        return #err(#InvalidBallot);
+      };
+      #ok;
+    };
+
+    public func emptyAggregate() : PolarizationMap {
+      PolarizationMap.nil(_categories);
+    };
+
+    public func onPutBallot(aggregate: PolarizationMap, new_ballot: Ballot, old_ballot: ?Ballot) : PolarizationMap {
+      var polarization_map = aggregate;
+      // Add the new ballot to the polarization
+      polarization_map := PolarizationMap.addCursorMap(polarization_map, new_ballot.answer);
+      // If there was an old ballot, remove it from the polarization
+      Option.iterate(old_ballot, func(ballot: Ballot) {
+        polarization_map := PolarizationMap.subCursorMap(polarization_map, ballot.answer);
+      });
+      polarization_map;
+    };
+
+    public func onVoteClosed(aggregate: PolarizationMap, date: Time) : PolarizationMap {
+      aggregate;
+    };
+
+    public func canRevealVote(vote: Vote) : Bool {
+      vote.status == #CLOSED;
+    };
+
+    public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {
+      vote.status == #CLOSED or caller == voter;
+    };
   };
 
 };

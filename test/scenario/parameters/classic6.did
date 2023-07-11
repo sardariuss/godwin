@@ -30,7 +30,7 @@ record {
   prices = record {
     open_vote_price_e8s = 1_000_000_000 : nat;
     interest_vote_price_e8s = 100_000_000 : nat;
-    categorization_vote_price_e8s =  350_000_000 : nat;
+    categorization_vote_price_e8s =  300_000_000 : nat;
   };
   decay_half_life = variant { DAYS = 365 : nat };
   minimum_interest_score = 1.0;

@@ -50,8 +50,8 @@ module {
     });
   };
 
-  public func toOpinionVoteKey(question_id: Nat, date: Time, is_early: Bool) : Key {
-    #OPINION_VOTE({question_id; date; is_early;})
+  public func toOpinionVoteKey(question_id: Nat, date: Time, is_late: Bool) : Key {
+    #OPINION_VOTE({question_id; date; is_late;})
   };
 
   public func getQuestionId(key: Key) : QuestionId {

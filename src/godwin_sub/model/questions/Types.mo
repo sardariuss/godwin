@@ -80,7 +80,7 @@ module {
   public type AuthorEntry      = DateEntry and { author: Principal; };
   public type StatusEntry      = DateEntry and { status: Status; };
   public type InterestScore    = { question_id: Nat; score: Float; };
-  public type OpinionVoteEntry = DateEntry and { is_early: Bool; };
+  public type OpinionVoteEntry = DateEntry and { is_late: Bool; };
 
   public type OpenQuestionError = {
     #PrincipalIsAnonymous;

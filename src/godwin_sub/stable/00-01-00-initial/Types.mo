@@ -152,11 +152,10 @@ module {
     var status: VoteStatus;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
-    var decay: Float;
   };
 
   public type InterestVoteRegister = VoteRegister<Interest, Appeal>;
-  public type OpinionVoteRegister = VoteRegister<Cursor, Polarization>;
+  public type OpinionVoteRegister = VoteRegister<OpinionAnswer, OpinionAggregate>;
   public type CategorizationVoteRegister = VoteRegister<CursorMap, PolarizationMap>;
 
   public type JoinsRegister = {
@@ -186,7 +185,7 @@ module {
   public type AuthorEntry      = DateEntry and { author: Principal; };
   public type StatusEntry      = DateEntry and { status: Status; };
   public type InterestScore    = { question_id: Nat; score: Float; };
-  public type OpinionVoteEntry = DateEntry and { is_early: Bool; };
+  public type OpinionVoteEntry = DateEntry and { is_late: Bool; };
 
   public type Status = {
     #CANDIDATE;
@@ -272,6 +271,16 @@ module {
 
   public type VoteId = Nat;
   public type Cursor = Float;
+
+  public type OpinionAnswer = {
+    cursor: Cursor;
+    is_late: ?Float;
+  };
+
+  public type OpinionAggregate = { 
+    polarization: Polarization;
+    is_locked: ?Float;
+  };
 
   public type Polarization = {
     left: Float;

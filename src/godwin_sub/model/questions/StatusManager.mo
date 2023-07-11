@@ -43,6 +43,7 @@ module {
     StatusManager(WMap.WMap(register, Map.nhash), interest_joins, opinion_joins, categorization_joins);
   };
   
+  // @todo: this class needs a rework
   public class StatusManager(
     _register: WMap.WMap<QuestionId, StatusHistory>,
     _interest_joins: Joins,
@@ -71,22 +72,11 @@ module {
         };
         case(#OPEN){
           switch(getCursorVoteIds(opt_input)){
-            case(null) {
-              if (iteration == 0) { Debug.trap("The cursor vote ids for the first iteration are missing"); };
+            case(null) { Debug.trap("The cursor votes ids are missing");
             };
             case(?cursor_votes) {
-              if (iteration > 0) { Debug.trap("The cursor vote ids shall have already been added as early votes");};
               _opinion_joins.addJoin       (question_id, iteration, cursor_votes.opinion_vote_id       );
               _categorization_joins.addJoin(question_id, iteration, cursor_votes.categorization_vote_id);
-            };
-          };
-        };
-        case(#CLOSED){
-          switch(getCursorVoteIds(opt_input)){
-            case(null) { Debug.trap("The cursor votes for the next iteration are missing"); };
-            case(?cursor_votes) {
-              _opinion_joins.addJoin       (question_id, iteration + 1, cursor_votes.opinion_vote_id       );
-              _categorization_joins.addJoin(question_id, iteration + 1, cursor_votes.categorization_vote_id);
             };
           };
         };

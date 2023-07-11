@@ -41,7 +41,9 @@ module {
   type OpinionVote                  = Types.OpinionVote;
   type CategorizationVote           = Types.CategorizationVote;
   type InterestBallot               = Types.InterestBallot;
+  type OpinionAnswer                = Types.OpinionAnswer;
   type OpinionBallot                = Types.OpinionBallot;
+  type OpinionAggregate             = Types.OpinionAggregate;
   type CategorizationBallot         = Types.CategorizationBallot;
   type ShareableVote<T, A>          = Types.Vote<T, A>;
   type RevealedInterestBallot       = Types.RevealedInterestBallot;
@@ -54,6 +56,7 @@ module {
   type TransactionsRecord           = Types.TransactionsRecord;
   type SchedulerParameters          = Types.SchedulerParameters;
   type Duration                     = Types.Duration;
+  type BallotConvictionInput        = Types.BallotConvictionInput;
   type Question                     = QuestionTypes.Question;
   type Status                       = QuestionTypes.Status;
   type StatusHistoryMap             = QuestionTypes.StatusHistory;
@@ -178,19 +181,19 @@ module {
     };
 
     public func revealInterestVote(vote_id: VoteId) : Result<InterestVote, RevealVoteError> {
-      Result.mapOk<Vote<Interest, Appeal>, InterestVote, RevealVoteError>(_controller.revealInterestVote(vote_id), func(vote: Vote<Interest, Appeal>) : InterestVote {
+      Result.mapOk(_controller.revealInterestVote(vote_id), func(vote: Vote<Interest, Appeal>) : InterestVote {
         toShareableVote(vote);
       });
     };
 
     public func revealOpinionVote(vote_id: VoteId) : Result<OpinionVote, RevealVoteError> {
-      Result.mapOk<Vote<Cursor, Polarization>, OpinionVote, RevealVoteError>(_controller.revealOpinionVote(vote_id), func(vote: Vote<Cursor, Polarization>) : OpinionVote {
+      Result.mapOk(_controller.revealOpinionVote(vote_id), func(vote: Vote<OpinionAnswer, OpinionAggregate>) : OpinionVote {
         toShareableVote(vote);
       });
     };
 
     public func revealCategorizationVote(vote_id: VoteId) : Result<CategorizationVote, RevealVoteError> {
-      Result.mapOk<Vote<CursorMap, PolarizationMap>, CategorizationVote, RevealVoteError>(_controller.revealCategorizationVote(vote_id), func(vote: Vote<CursorMap, PolarizationMap>) : CategorizationVote {
+      Result.mapOk(_controller.revealCategorizationVote(vote_id), func(vote: Vote<CursorMap, PolarizationMap>) : CategorizationVote {
         toShareableCategorizationVote(vote);
       });
     };
@@ -241,7 +244,7 @@ module {
       _controller.queryFreshVotes(principal, vote_kind, direction, limit, previous_id);
     };
 
-    public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, (OpinionBallot, [(Category, Float)], Float, Bool))] {
+    public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, BallotConvictionInput)] {
       Utils.mapToArray(_controller.getVoterConvictions(now, principal));
     };
 

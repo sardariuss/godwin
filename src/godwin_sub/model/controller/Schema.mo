@@ -5,6 +5,7 @@ import Status        "../questions/Status";
 import StatusManager "../questions/StatusManager";
 import KeyConverter  "../questions/KeyConverter";
 import Interests     "../votes/Interests";
+import Opinions      "../votes/Opinions";
 
 import Duration      "../../utils/Duration";
 import StateMachine  "../../utils/StateMachine";
@@ -46,44 +47,41 @@ module {
     };
 
     // @todo: dangereous, the result can still be altered after the function returns
-    func passedDuration(duration: Duration, question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> ()) {
+    func passedDuration(duration: Duration, question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> async* ()) : async* () {
       // Get the date of the current status
       let status_info = _model.getStatusManager().getCurrentStatus(question_id);
       // If enough time has passed (candidate_status_duration), perform the transition
       if (date < status_info.date + Duration.toTime(duration)){
         result.set(#err("Too soon to go to next status")); return;
       };
-      on_passed(result);
+      await* on_passed(result);
     };
 
     func candidateStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
-      passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) {
+      await* passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
+        let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+        // Close the interest vote
+        await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date);
+        // Perform the transition
         result.set(#ok(null));
       });
     };
   
     func openStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
-      passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, date, result, func(result: TransitionResult) {
-        // Open up early votes for the next iteration
-        // Find the old key
-        let current = _model.getStatusManager().getCurrentStatus(question_id);
-        let previous_key = if (current.iteration == 0){
-          KeyConverter.toOpinionVoteKey(question_id, current.date, false);
-        } else {
-          switch(_model.getStatusManager().findStatusInfo(question_id, #CLOSED, current.iteration - 1)){
-            case(null){ Debug.trap("Could not find previous CLOSED status"); };
-            case(?status_info){ KeyConverter.toOpinionVoteKey(question_id, status_info.date, true); };
-          };
-        };
+      await* passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, date, result, func(result: TransitionResult): async* () {
+        let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+        // Lock up the opinion vote
+        _model.getOpinionVotes().lockVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
+        // Close the categorization vote
+        await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, status_info.iteration), date);
+        // Update the key for the opinion queries
+        let previous_key = KeyConverter.toOpinionVoteKey(question_id, status_info.date, false);
         _model.getQueries().replace(
           ?previous_key,
           ?KeyConverter.toOpinionVoteKey(question_id, unwrapTime(event), true));
-        result.set(#ok(?#CURSOR_VOTES({ 
-          opinion_vote_id        = _model.getOpinionVotes().newVote(date);
-          categorization_vote_id = _model.getCategorizationVotes().newVote(date);
-        })));
+        result.set(#ok(null));
       });
     };
 
@@ -95,13 +93,13 @@ module {
         return;
       };
       let date = unwrapTime(event);
-      passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, date, result, func(result: TransitionResult) {
+      await* passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
         result.set(#ok(null));
       });
     };
 
     func censored(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let time = unwrapTime(event);
+      let date = unwrapTime(event);
       let status_info = _model.getStatusManager().getCurrentStatus(question_id);
 
       let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
@@ -116,9 +114,12 @@ module {
         case(?time_switch) { time_switch; };
       };
 
-      if (time < time_score_switch + Duration.toTime(_model.getSchedulerParameters().censor_timeout)){
+      if (date < time_score_switch + Duration.toTime(_model.getSchedulerParameters().censor_timeout)){
         result.set(#err("Too soon to get censored")); return;
       };
+
+      // Close the interest vote
+      await* _model.getInterestVotes().closeVote(vote_id, date);
 
       result.set(#ok(null));
     };
@@ -152,19 +153,27 @@ module {
         result.set(#err("The question's score is too low")); return;
       };
 
-      // If it is the first iteration, open up the cursor votes, 
-      // otherwise they already have been opened early
-      let cursor_votes = if (status_info.iteration == 0){
-        // Add to opinion vote queries
-        _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
-        // Open up the votes
-        ?#CURSOR_VOTES({ 
-          opinion_vote_id        = _model.getOpinionVotes().newVote(date);
-          categorization_vote_id = _model.getCategorizationVotes().newVote(date);
-        });
-      } else {
-        null;
+      // Close the interest vote
+      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date);
+
+      // If it is not the first iteration, close the previous opinion vote
+      if (status_info.iteration > 0){
+        switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){
+          case(null) { Debug.trap("If this is not the first selection, the history shall already contain an OPEN status"); };
+          case(?status_info){
+            await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
+            // Remove the key for the opinion queries
+            _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
+          };
+        };
       };
+
+      // Open up the opinion and categorization votes
+      let opinion_vote_id        = _model.getOpinionVotes().newVote(date);
+      let categorization_vote_id = _model.getCategorizationVotes().newVote(date);
+
+      // Add the key for the opinion queries
+      _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
 
       // Update the momentum args
       _model.setMomentumArgs({
@@ -175,7 +184,7 @@ module {
       });
 
       // Perform the transition
-      result.set(#ok(cursor_votes));
+      result.set(#ok(?#CURSOR_VOTES({ opinion_vote_id; categorization_vote_id; } )));
     };
 
     func reopenQuestion(question_id: Nat, event: Event, result: TransitionResult) : async* () {

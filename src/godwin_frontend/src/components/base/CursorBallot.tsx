@@ -8,10 +8,11 @@ import TransactionsRecordComponent from "../token/TransactionsRecord";
 export type CursorBallotProps = {
   cursorInfo: CursorInfo | null;
   dateNs: bigint | null;
+  isLate: boolean;
   tx_record: TransactionsRecord | undefined;
 };
 
-const CursorBallot = ({cursorInfo, dateNs, tx_record} : CursorBallotProps) => {
+const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record} : CursorBallotProps) => {
 
   return (
     <div className="flex flex-row items-center w-full grow">
@@ -21,7 +22,7 @@ const CursorBallot = ({cursorInfo, dateNs, tx_record} : CursorBallotProps) => {
           <div className="w-6 h-6 icon-svg">
             <HiddenIcon/>
           </div> : 
-            <div className="flex flex-col items-center">
+            <div className={`flex flex-col items-center ${isLate ? "late-vote" : ""}`}>
               <div className="flex flex-row items-center">
                 <span className="text-xs font-light">
                   {}

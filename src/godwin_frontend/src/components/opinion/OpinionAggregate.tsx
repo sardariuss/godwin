@@ -1,4 +1,4 @@
-import { Polarization }                                   from "./../../../declarations/godwin_sub/godwin_sub.did";
+import { OpinionAggregate as OpinionAggregateDid }        from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 import AggregateDigest                                    from "../base/AggregateDigest";
 import CONSTANTS                                          from "../../Constants";
@@ -7,7 +7,7 @@ import { polarizationToCursor, toCursorInfo, CursorInfo } from "../../utils";
 import { useState, useEffect }                            from "react";
 
 type Props = {
-  aggregate: Polarization | undefined,
+  aggregate: OpinionAggregateDid | undefined,
   selected: boolean,
   setSelected: (selected: boolean) => void
 };
@@ -18,7 +18,7 @@ const OpinionAggregate = ({ aggregate, selected, setSelected }: Props) => {
 
   const refreshCursorInfo = async () => {
     if (aggregate !== undefined) {
-      setCursorInfo(toCursorInfo(polarizationToCursor(aggregate), CONSTANTS.OPINION_INFO));
+      setCursorInfo(toCursorInfo(polarizationToCursor(aggregate.polarization), CONSTANTS.OPINION_INFO));
     } else {
       setCursorInfo(undefined);
     }

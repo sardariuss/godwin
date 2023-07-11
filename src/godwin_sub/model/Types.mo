@@ -37,12 +37,13 @@ module {
   public type Interest                     = VoteTypes.Interest;
   public type Appeal                       = VoteTypes.Appeal;
   public type Cursor                       = VoteTypes.Cursor;
+  public type OpinionAnswer                = VoteTypes.OpinionAnswer;
   public type Polarization                 = VoteTypes.Polarization;
   public type CursorArray                  = [(VoteTypes.Category, VoteTypes.Cursor)];
   public type PolarizationArray            = [(VoteTypes.Category, VoteTypes.Polarization)];
-
   public type InterestBallot               = VoteTypes.InterestBallot;
   public type OpinionBallot                = VoteTypes.OpinionBallot;
+  public type OpinionAggregate             = VoteTypes.OpinionAggregate;
   public type CategorizationBallot         = VoteTypes.Ballot<CursorArray>;
   public type Vote<T, A> = {
     id: VoteId;
@@ -50,10 +51,10 @@ module {
     aggregate: A;
   };
   public type InterestVote                 = Vote<Interest, Appeal>;
-  public type OpinionVote                  = Vote<Cursor, Polarization>;
+  public type OpinionVote                  = Vote<OpinionAnswer, OpinionAggregate>;
   public type CategorizationVote           = Vote<CursorArray, PolarizationArray>;
   public type RevealedInterestBallot       = VoteTypes.RevealedBallot<Interest>;
-  public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<Cursor>;
+  public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<OpinionAnswer>;
   public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
   public type DecayParameters              = VoteTypes.DecayParameters;
 
@@ -83,6 +84,14 @@ module {
 
   public type QuestionsParameters = {
     character_limit: Nat;
+  };
+
+  public type BallotConvictionInput = {
+    cursor: Cursor;
+    date: Time;
+    categorization: CursorArray;
+    vote_decay: Float;
+    late_ballot_decay: ?Float;
   };
 
   public type Parameters = {
