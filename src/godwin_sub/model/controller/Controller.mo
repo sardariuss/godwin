@@ -298,7 +298,7 @@ module {
             return false;
           };
         };
-        return true;
+        true;
       };
 
       _model.getQueries().select(order_by, direction, limit, previous_id, ?filter);

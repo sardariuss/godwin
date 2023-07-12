@@ -87,9 +87,9 @@ module {
 
     func rejectedStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {  
       // Do not delete questions that had been opened at least once
-      let status_info = _model.getStatusManager().getCurrentStatus(question_id);
-      if (status_info.iteration > 1){
-        result.set(#err("Question had been opened at least once"));
+      // @todo: so this question stays rejected for ever?
+      if (Option.isSome(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN))){
+        result.set(#err("The question had been opened at least once"));
         return;
       };
       let date = unwrapTime(event);
