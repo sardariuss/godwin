@@ -22,7 +22,6 @@ module {
 
   type Status               = Types.Status;
   type SchedulerParameters  = Types.SchedulerParameters;
-  type DecayParameters      = Types.DecayParameters;
   type InterestMomentumArgs = VoteTypes.InterestMomentumArgs;
   type Categories           = Categories.Categories;
   type Questions            = Questions.Questions;
@@ -38,7 +37,6 @@ module {
     _master: WRef<Principal>,
     _momentum_args: WRef<InterestMomentumArgs>,
     _scheduler_params: WRef<SchedulerParameters>,
-    _decay_params: WRef<DecayParameters>,
     _categories: Categories,
     _questions: Questions,
     _status_manager: StatusManager,
@@ -81,10 +79,6 @@ module {
 
     public func setSchedulerParameters(params: SchedulerParameters) {
       _scheduler_params.set(params);
-    };
-
-    public func getDecayParameters(): DecayParameters {
-      _decay_params.get();
     };
 
     public func getCategories(): Categories {

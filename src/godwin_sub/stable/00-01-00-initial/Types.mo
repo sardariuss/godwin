@@ -34,7 +34,10 @@ module {
     momentum_args               : Ref<InterestMomentumArgs>;
     price_params                : Ref<PriceParameters>;
     scheduler_params            : Ref<SchedulerParameters>;
-    decay_params                : Ref<DecayParameters>;
+    decay_params                : {
+      opinion_vote                 : Ref<DecayParameters>;
+      late_opinion_ballot          : Ref<DecayParameters>;
+    };
     status                      : {
       register                     : Map<Nat, StatusHistory>;
     };
@@ -226,7 +229,10 @@ module {
     scheduler: SchedulerParameters;
     questions: QuestionsParameters;
     prices: PriceParameters;
-    decay_half_life: Duration;
+    opinion: {
+      vote_half_life: Duration;
+      late_ballot_half_life: Duration;
+    };
     minimum_interest_score: Float;
   };
 

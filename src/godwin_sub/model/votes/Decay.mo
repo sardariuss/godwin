@@ -17,6 +17,7 @@ module {
   // the initial time value is shifted closer to the lower bound.
   // Choose -200 so that if the decay is squared (decay are multiplied in convictions computation) or multiplied 
   // further, it shall stay within the range of a float64 ( 10^-200 * 10^-200 = 10^-400 >> 10^-744)
+  // @todo: not up to date, decay are devided not multiplied
   let SHIFT_EXP : Float = -200;
 
   public func computeDecay(params: DecayParameters, date: Time) : Float {
@@ -24,7 +25,6 @@ module {
   };
 
   public func initParameters(half_life: Duration, time_init: Time) : DecayParameters {
-    // time_half_life = ln(2) / lambda
     let lambda = Float.log(2.0) / Float.fromInt(Duration.toTime(half_life));
     // The bigger positive number a float 64 can hold is 1.797693134e+308, which is approx. equal to exp(709)
     // The smaller positive number a float64 can hold is 4.940656458e-324, which is approx. equal to exp(-744)

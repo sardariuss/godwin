@@ -100,7 +100,10 @@ module {
     scheduler: SchedulerParameters;
     questions: QuestionsParameters;
     prices: PriceParameters;
-    decay_half_life: Duration;
+    opinion: {
+      vote_half_life: Duration;
+      late_ballot_half_life: Duration;
+    };
     minimum_interest_score: Float;
   };
 

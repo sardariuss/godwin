@@ -69,7 +69,8 @@ module {
     
     let opinions = Opinions.build(
       state.votes.opinion.register,
-      state.decay_params.v);
+      WRef.WRef(state.decay_params.opinion_vote),
+      WRef.WRef(state.decay_params.late_opinion_ballot));
     
     let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     
@@ -93,7 +94,6 @@ module {
       WRef.WRef(state.master),
       WRef.WRef(state.momentum_args),
       WRef.WRef(state.scheduler_params),
-      WRef.WRef(state.decay_params),
       categories,
       questions,
       status_manager,

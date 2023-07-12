@@ -1,9 +1,10 @@
-import Types               "Types";
-import Votes               "Votes";
-import Decay               "Decay";
-import Polarization        "representation/Polarization";
-import Cursor              "representation/Cursor";
+import Types         "Types";
+import Votes         "Votes";
+import Decay         "Decay";
+import Polarization  "representation/Polarization";
+import Cursor        "representation/Cursor";
 
+import WRef       "../../utils/wrappers/WRef";
 import UtilsTypes "../../utils/Types";
 
 import Map        "mo:map/Map";
@@ -24,6 +25,7 @@ module {
   type Result<Ok, Err>    = Result.Result<Ok, Err>;
     
   type Map<K, V>          = Map.Map<K, V>;
+  type WRef<T>            = WRef.WRef<T>;
 
   type Answer             = Types.OpinionAnswer;
   type Ballot             = Types.OpinionBallot;
@@ -49,7 +51,8 @@ module {
 
   public func build(
     vote_register: Votes.Register<Answer, Aggregate>,
-    decay_params: DecayParameters
+    vote_decay: WRef<DecayParameters>,
+    late_ballot_decay: WRef<DecayParameters>
   ) : Opinions {
     Opinions(
       Votes.Votes<Answer, Aggregate>(
@@ -57,13 +60,23 @@ module {
         VotePolicy(),
         null
       ),
-      decay_params);
+      vote_decay,
+      late_ballot_decay);
   };
 
   public class Opinions(
     _votes: Votes.Votes<Answer, Aggregate>,
-    _decay_params: DecayParameters
+    _vote_decay: WRef<DecayParameters>,
+    _late_ballot_decay: WRef<DecayParameters>
   ){
+
+    public func getVoteDecay() : DecayParameters {
+      _vote_decay.get();
+    };
+
+    public func getLateBallotDecay() : DecayParameters {
+      _late_ballot_decay.get();
+    };
 
     public func newVote(date: Time) : VoteId {
       _votes.newVote(date);
@@ -74,7 +87,7 @@ module {
       if (Option.isSome(vote.aggregate.is_locked)){
         Debug.trap("The vote is already locked");
       };
-      vote.aggregate := { vote.aggregate with is_locked = ?Decay.computeDecay(_decay_params, date); };
+      vote.aggregate := { vote.aggregate with is_locked = ?Decay.computeDecay(getVoteDecay(), date); };
     };
 
     public func isLocked(id: VoteId) : ?Float {
@@ -87,7 +100,7 @@ module {
     };
 
     public func putBallot(principal: Principal, id: VoteId, cursor: Cursor, date: Time) : async* Result<(), PutBallotError> {
-      let is_late = if (Option.isSome(isLocked(id))) { ?Decay.computeDecay(_decay_params, date); } else { null; };
+      let is_late = if (Option.isSome(isLocked(id))) { ?Decay.computeDecay(getLateBallotDecay(), date); } else { null; };
       await* _votes.putBallot(principal, id, { answer = { cursor; is_late; }; date; });
     };
 

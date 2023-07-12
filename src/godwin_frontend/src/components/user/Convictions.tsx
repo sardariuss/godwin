@@ -21,7 +21,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
   const [polarizationMap, setPolarizationMap] = useState<Map<Category, Polarization>> (new Map<Category, Polarization> ());
   const [ballotsMap,      setBallotsMap     ] = useState<Map<Category, BallotPoint[]>>(new Map<Category, BallotPoint[]>());
   const [voteNumber,      setVoteNumber     ] = useState<number>                      (0                                 );
-  const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (1                                 );
+  const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (0                                 );
 
   const refreshConvictions = async () => {
 
@@ -48,11 +48,11 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
       // Get the BallotConvictionInput for each vote
       let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
 
-      // Use the question decay for the late votes indicator, not the individual vote decay!
-      // This way even if the late votes will disappear from the profile, the profile will be stained for longer
-      total_late += (fromNullable(late_ballot_decay) ?? 0);
+      // Use the vote decay for the late votes indicator, not the late ballot decay itself!
+      // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
+      total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
 
-      sub.categories.forEach(([category, info]) => {
+      sub.categories.forEach(([category, _]) => {
         let weight = toMap(categorization).get(category) ?? 0;
         // Add the weighted ballot to the ballots array
         let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
@@ -92,8 +92,8 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
               [...Array.from(polarizationMap.entries())].map((elem, index) => (
                 (
                   <li key={elem[0]} style={{
-                      filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * genuineRatio + `%) 
-                               hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * genuineRatio + `deg)`
+                      filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
+                               hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
                       }}>
                     <PolarizationBar 
                       name={elem[0]}

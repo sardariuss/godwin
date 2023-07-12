@@ -94,8 +94,12 @@ module {
       _controller.getName();
     };
 
-    public func getHalfLife() : Duration {
-      _controller.getHalfLife();
+    public func getOpinionVoteHalfLife() : Duration {
+      _controller.getOpinionVoteHalfLife();
+    };
+
+    public func getLateOpinionBallotHalfLife() : Duration {
+      _controller.getLateOpinionBallotHalfLife();
     };
 
     public func getSelectionScore(now: Time) : Float {

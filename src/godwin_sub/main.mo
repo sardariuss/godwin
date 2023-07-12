@@ -79,8 +79,12 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().getName();
   };
 
-  public query func getHalfLife() : async Duration {
-    getFacade().getHalfLife();
+  public query func getOpinionVoteHalfLife() : async Duration {
+    getFacade().getOpinionVoteHalfLife();
+  };
+
+  public query func getLateOpinionBallotHalfLife() : async Duration {
+    getFacade().getLateOpinionBallotHalfLife();
   };
 
   public query func getSelectionScore() : async Float {

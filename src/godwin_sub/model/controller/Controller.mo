@@ -108,8 +108,12 @@ module {
       _model.getName();
     };
 
-    public func getHalfLife() : Duration {
-      _model.getDecayParameters().half_life;
+    public func getOpinionVoteHalfLife() : Duration {
+      _model.getOpinionVotes().getVoteDecay().half_life;
+    };
+
+    public func getLateOpinionBallotHalfLife() : Duration {
+      _model.getOpinionVotes().getLateBallotDecay().half_life;
     };
 
     public func getSelectionScore(now: Time) : Float {
@@ -316,41 +320,40 @@ module {
     };
 
     public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, BallotConvictionInput> {
-      let current_decay = Decay.computeDecay(_model.getDecayParameters(), now);
-      // Get the voter opinion ballots
-      Map.mapFilter(
-        _model.getOpinionVotes().getVoterBallots(principal),
-        Map.nhash,
-        func(vote_id: VoteId, ballot: OpinionBallot) : ?BallotConvictionInput {
-          // Get the opinion decay
-          let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
-          let vote_decay = switch(opinion_vote.aggregate.is_locked){
-            case(null) { return null; }; // Do not consider the vote if it is not locked or closed
-            case(?opt_decay) { opt_decay / current_decay; };
+
+      // Get the current decays
+      let current_vote_decay = Decay.computeDecay(_model.getOpinionVotes().getVoteDecay(), now);
+      let current_late_ballot_decay = Decay.computeDecay(_model.getOpinionVotes().getLateBallotDecay(), now);
+
+      // Function to convert a ballot to a conviction input
+      let to_ballot_conviction_input = func(vote_id: VoteId, ballot: OpinionBallot) : ?BallotConvictionInput {
+        let { answer = { cursor; is_late; }; date; } = ballot;
+        // Get the opinion decay
+        let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
+        let vote_decay = switch(opinion_vote.aggregate.is_locked){
+          case(null) { return null; }; // Do not consider the vote if it is not locked or closed
+          case(?decay) { decay / current_vote_decay; };
+        };
+        // Get the most up-to-date categorization vote for this question
+        let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
+        let join = Map.findDesc(
+          _model.getCategorizationJoins().getQuestionVotes(question_id),
+          func(iteration: Nat, id: VoteId) : Bool {
+            _model.getCategorizationVotes().getVote(id).status == #CLOSED;
+          });
+        let categorization = switch(join){
+          case(null) { Debug.trap("Categorization vote is missing"); };
+          case(?(_, id)){
+            Utils.trieToArray(PolarizationMap.toCursorMap(_model.getCategorizationVotes().getVote(id).aggregate));
           };
-          // Get the most up-to-date categorization vote for this question
-          let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
-          let join = Map.findDesc(
-            _model.getCategorizationJoins().getQuestionVotes(question_id),
-            func(iteration: Nat, id: VoteId) : Bool {
-              _model.getCategorizationVotes().getVote(id).status == #CLOSED;
-            });
-          let categorization = switch(join){
-            case(null) { Debug.trap("Categorization missing"); };
-            case(?(_, id)){
-              _model.getCategorizationVotes().getVote(id);
-            };
-          };
-          // Return the cursor, the up-to-date categorization, the vote decay and the late ballot decay if any
-          ?{
-            cursor = ballot.answer.cursor;
-            date = ballot.date;
-            categorization = Utils.trieToArray(PolarizationMap.toCursorMap(categorization.aggregate));
-            vote_decay;
-            late_ballot_decay = Option.map(ballot.answer.is_late, func(late_decay: Float) : Float { (late_decay / current_decay); });
-          };
-        }
-      );
+        };
+        // Compute the ballot decay if applicable
+        let late_ballot_decay = Option.map(is_late, func(late_decay: Float) : Float { (late_decay / current_late_ballot_decay); });
+        // Return the whole input
+        ?{ cursor; date; categorization; vote_decay; late_ballot_decay; };
+      };
+
+      Map.mapFilter(_model.getOpinionVotes().getVoterBallots(principal), Map.nhash, to_ballot_conviction_input);
     };
 
     public func run(time: Time) : async* () {
