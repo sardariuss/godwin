@@ -200,10 +200,22 @@ module {
     };
   };
 
+  public type VoteKind = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
+  public type VoteLink = {
+    vote_kind: VoteKind;
+    vote_id: Nat;
+  };
+
   public type StatusInfo = {
     status: Status;
     date: Time;
     iteration: Nat;
+    votes: [VoteLink];
   };
 
   public type StatusHistory = Buffer<StatusInfo>;

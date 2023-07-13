@@ -1,4 +1,5 @@
 import Types               "Types";
+import StatusManager       "StatusManager";
 import Categorizations     "votes/Categorizations";
 import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
@@ -9,7 +10,6 @@ import Categories          "Categories";
 import SubaccountGenerator "token/SubaccountGenerator";
 import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
-import StatusManager       "questions/StatusManager";
 
 import WRef                "../utils/wrappers/WRef";
 

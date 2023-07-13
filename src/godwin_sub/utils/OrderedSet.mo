@@ -43,6 +43,17 @@ module {
     RBT.delete(set, compare, k);
   };
 
+  public func remove<K>(set: OrderedSet<K>, compare: (K, K) -> Order.Order, k : K) : (?K, OrderedSet<K>){
+    switch(RBT.get(set, compare, k)){
+      case(null) { (null, set); };
+      case(_){
+        let rbt = RBT.delete(set, compare, k);
+        assert(not has(rbt, compare, k));
+        (?k, rbt);
+      };
+    };
+  };
+
   public func keys<K>(set: OrderedSet<K>) : Iter<K> {
     Iter.map<(K, ()), K>(RBT.entries(set), func(entry: (K, ())) : K { entry.0; });
   };

@@ -48,12 +48,14 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type Cursor                       = Types.Cursor;
   type Polarization                 = Types.Polarization;
   type CursorArray                  = Types.CursorArray;
+  type QueryQuestionItem            = Types.QueryQuestionItem;
   type GetUserVotesError            = Types.GetUserVotesError;
   type CategoryInfo                 = Types.CategoryInfo;
   type CategoryArray                = Types.CategoryArray;
   type RevealVoteError              = Types.RevealVoteError;
   type FindVoteError                = Types.FindVoteError;
   type StatusInfo                   = Types.StatusInfo;
+  type StatusData                   = Types.StatusData;
   type QuestionId                   = Types.QuestionId;
   type VoteId                       = Types.VoteId;
   type QuestionOrderBy              = Types.QuestionOrderBy;
@@ -151,7 +153,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     await* getFacade().putCategorizationBallot(caller, vote_id, Time.now(), answer);
   };
 
-  public query func getStatusHistory(question_id: QuestionId) : async Result<[StatusInfo], ReopenQuestionError> {
+  public query func getStatusHistory(question_id: QuestionId) : async Result<[StatusData], ReopenQuestionError> {
     getFacade().getStatusHistory(question_id);
   };
 
@@ -203,11 +205,11 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().getVoterConvictions(Time.now(), principal);
   };
 
-  public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
+  public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryQuestionItem> {
     getFacade().queryQuestions(order_by, direction, limit, previous_id);
   };
 
-  public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QuestionId> {
+  public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryQuestionItem> {
     getFacade().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
   };
 

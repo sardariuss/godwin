@@ -42,7 +42,7 @@ export const VoterHistory = ({principal, sub, voteKind, }: VoterHistoryProps) =>
   const [queryOpinionBallotsState] = useState<QueryFunction<RevealedOpinionBallot>>(() => queryOpinionBallots);
   const [queryCategorizationBallotsState] = useState<QueryFunction<RevealedCategorizationBallot>>(() => queryCategorizationBallots);
 
-  // Workaround: put each list into a div to crash when switching voteKind
+  // Workaround: put each list into a div to avoid crash when switching voteKind
   return (
     <div className="w-full flex flex-col">
       <div>

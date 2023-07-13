@@ -1,28 +1,49 @@
 import StatusComponent from "./Status";
 import { Sub }         from "../ActorContext";
-import { StatusInfo }  from "./../../declarations/godwin_sub/godwin_sub.did";
+import { StatusInfo, StatusData }  from "./../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState }    from "react";
+import { useEffect, useState }    from "react";
+import { toNullable } from "@dfinity/utils";
 
 type Props = {
   sub: Sub
   questionId: bigint;
-  statusHistory: StatusInfo[]
+  currentStatus: StatusData;
 };
 
-const StatusHistoryComponent = ({sub, questionId, statusHistory}: Props) => {
+const StatusHistoryComponent = ({sub, questionId, currentStatus}: Props) => {
 
-  const [historyVisible, setHistoryVisible] = useState<boolean>(false);
+  const [statusHistory,  setStatusHistory]  = useState<StatusData[]>([currentStatus]);
+  const [historyVisible, setHistoryVisible] = useState<boolean     >(false          );
+
+  const queryStatusHistory = async () => {
+    if (statusHistory.length === 1) {
+      const history = await sub.actor.getStatusHistory(questionId);
+      if (history['ok'] !== undefined) {
+        setStatusHistory(history['ok']);
+      } else {
+        throw new Error("Error getting status history: " + history['err']);
+      }
+    }
+  }
 
   const toggleHistory = (toggle: boolean) => {
-    if (statusHistory.length > 1) { setHistoryVisible(toggle); };
+    if (toNullable(currentStatus.previous_status) !== undefined){
+      setHistoryVisible(toggle);
+    }
   };
+
+  useEffect(() => {
+    if (historyVisible) {
+      queryStatusHistory();
+    }
+  }, [historyVisible]);
 
 	return (
     <div className="text-gray-500 dark:border-gray-700 dark:text-gray-400">
       <ol>
       {
-        statusHistory.slice(0).reverse().map((statusInfo, index) => {
+        statusHistory.slice(0).reverse().map((statusData, index) => {
           return (
             <li key={index.toString()}>
               {
@@ -30,8 +51,7 @@ const StatusHistoryComponent = ({sub, questionId, statusHistory}: Props) => {
                 <StatusComponent 
                   sub={sub}
                   questionId={questionId}
-                  statusInfo={statusInfo}
-                  previousStatusInfo={statusHistory.length - index - 2 >= 0 ? statusHistory[statusHistory.length - index - 2] : undefined}
+                  statusData={statusData}
                   isToggledHistory={historyVisible}
                   toggleHistory={(toggle: boolean) => {toggleHistory(toggle)}}
                   isHistory={index !== 0}

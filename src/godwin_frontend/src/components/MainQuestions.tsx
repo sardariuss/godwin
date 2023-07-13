@@ -1,4 +1,4 @@
-import { QuestionOrderBy, Direction } from "../../declarations/godwin_sub/godwin_sub.did";
+import { QuestionOrderBy, Direction, QueryQuestionItem } from "../../declarations/godwin_sub/godwin_sub.did";
 import { ActorContext, Sub } from "../ActorContext";
 import { TabButton } from "./TabButton";
 import { MainTabButton } from "./MainTabButton";
@@ -26,15 +26,34 @@ const mainTabToText = (mainTab: MainTab) => {
 
 const mainTabs = [MainTab.HOME, MainTab.BROWSE];
 
+export enum UserAction {
+  SELECT,
+  VOTE,
+  CATEGORIZE,
+  REOPEN_QUESTION
+};
 
-const voteKindToTabText = (vote_kind: VoteKind) => {
+const voteKindToUserAction = (vote_kind: VoteKind) => {
   switch (vote_kind) {
     case VoteKind.INTEREST:
-      return "Select";
+      return UserAction.SELECT;
     case VoteKind.OPINION:
-      return "Vote";
+      return UserAction.VOTE;
     case VoteKind.CATEGORIZATION:
+      return UserAction.CATEGORIZE;
+  }
+}
+
+const userActionToText = (user_action: UserAction) => {
+  switch (user_action) {
+    case UserAction.SELECT:
+      return "Select";
+    case UserAction.VOTE:
+      return "Vote";
+    case UserAction.CATEGORIZE:
       return "Categorize";
+    case UserAction.REOPEN_QUESTION:
+      return "Reopen";
   }
 }
 
@@ -75,7 +94,7 @@ const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   }
 }
 
-type QueryFunction = (direction: Direction, limit: bigint, next: bigint | undefined) => Promise<ScanResults<bigint>>;
+type QueryFunction = (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => Promise<ScanResults<QueryQuestionItem>>;
 
 const MainQuestions = () => {
 
@@ -85,6 +104,7 @@ const MainQuestions = () => {
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(MainTab.HOME);
   const [currentHomeFilter, setCurrentHomeFilter] = useState<VoteKind>(VoteKind.INTEREST);
   const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter>(BrowseFilter.CANDIDATE);
+  const [currentUserAction, setCurrentUserAction] = useState<UserAction | undefined>(undefined);
   const [queryQuestions, setQueryQuestions] = useState<QueryFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 
   useEffect(() => {
@@ -97,12 +117,13 @@ const MainQuestions = () => {
     if (sub === undefined) {
       setQueryQuestions(() => () => Promise.resolve({ ids : [], next: undefined}));
     } else if (currentMainTab === MainTab.HOME) {
-      setQueryQuestions(() => (direction: Direction, limit: bigint, next: bigint | undefined) => 
-        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next] : []).then(fromScanLimitResult));
+      setQueryQuestions(() => (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => 
+        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question.id] : []).then(fromScanLimitResult));
     } else if (currentMainTab === MainTab.BROWSE) {
-      setQueryQuestions(() => (direction: Direction, limit: bigint, next: bigint | undefined) => 
-        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next] : []).then(fromScanLimitResult));
+      setQueryQuestions(() => (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => 
+        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question.id] : []).then(fromScanLimitResult));
     }
+    setCurrentUserAction(currentMainTab === MainTab.HOME ? voteKindToUserAction(currentHomeFilter) : UserAction.REOPEN_QUESTION);
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
 	return (
@@ -136,7 +157,7 @@ const MainQuestions = () => {
                   currentMainTab === MainTab.HOME ? (
                     vote_kind_filters.map((filter, index) => (
                       <li key={index} className="w-1/3">
-                        <TabButton label={voteKindToTabText(filter)} isCurrent={filter == currentHomeFilter} setIsCurrent={() => setCurrentHomeFilter(filter)}/>
+                        <TabButton label={userActionToText(voteKindToUserAction(filter))} isCurrent={filter == currentHomeFilter} setIsCurrent={() => setCurrentHomeFilter(filter)}/>
                       </li>))
                   ) : (
                     browse_filters.map((filter, index) => (
@@ -151,9 +172,15 @@ const MainQuestions = () => {
             </div>
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
-            <ListQuestions sub={sub} query_questions={queryQuestions} vote_kind={ currentMainTab === MainTab.HOME ? currentHomeFilter : undefined }/>
+          <div className="w-full flex">
+            <ListQuestions 
+              sub={sub}
+              query_questions={queryQuestions}
+              user_action={currentUserAction}
+            />
           </div>
         </div>
+      </div>
     )
 	);
 };

@@ -80,8 +80,12 @@ module {
         if (not Map.has(inner.key_map, Map.nhash, id)) {
           Debug.trap("Cannot remove element with id '" # Nat.toText(id) # "' because it does not exist for this order_by");
         };
+        let (removed, set) = OrderedSet.remove(inner.ordered_set, _compare_keys, key);
+        if(Option.isNull(removed)){
+          Debug.trap("Key not found");
+        };
         Map.delete(inner.key_map, Map.nhash, id);
-        inner.ordered_set := OrderedSet.delete(inner.ordered_set, _compare_keys, key);
+        inner.ordered_set := set;
       });
     };
 

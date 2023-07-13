@@ -3,160 +3,194 @@ import CategorizationVote                            from "./categorization/Cate
 import StatusHistoryComponent                        from "./StatusHistory";
 import ReopenButton                                  from "./ReopenButton";
 import InterestVote                                  from "./interest/InterestVote";
-import { StatusEnum, VoteKind, statusToEnum, toMap } from "../utils";
+import { StatusEnum, VoteKind, statusToEnum, toMap, voteKindFromCandidVariant } from "../utils";
 import { Sub }                                       from "../ActorContext";
 import CONSTANTS                                     from "../Constants";
-import { Question, StatusInfo }                      from "../../declarations/godwin_sub/godwin_sub.did";
+import { Question, StatusInfo, QueryQuestionItem, VoteLink, VoteKind__1, VoteData }   from "../../declarations/godwin_sub/godwin_sub.did";
+
+import { UserAction } from "./MainQuestions";
 
 import { useEffect, useState }                       from "react";
 
 export type QuestionInput = {
 	sub: Sub,
-  questionId: bigint,
-	vote_kind: VoteKind | undefined
+  queried_question: QueryQuestionItem,
+	user_action: UserAction | undefined
 };
 
-const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
+const findVoteId = (vote_links: [VoteKind__1, VoteData][], vote_kind: VoteKind) : bigint | undefined => {
+	let found_vote = vote_links.find(([kind, data]) : boolean => {
+		return voteKindFromCandidVariant(kind) === vote_kind && data.status['OPEN'] !== undefined;
+	})
+	return found_vote !== undefined ? found_vote[1].id : undefined;
+}
 
-	const [question, setQuestion] = useState<Question | undefined>(undefined);
-	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
-	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
-	const [isLocked, setIsLocked] = useState<boolean>(false); // @todo: one should not use a specific state for the opinion vote
-	const [canReopen, setCanReopen] = useState<boolean>(false);
+const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) => {
 
-	const refreshQuestion = async () => {
-		const question = await sub.actor.getQuestion(questionId);
-		setQuestion(question['ok']);
+  const [activeVote, setActiveVote] = useState<VoteKind | undefined>(undefined);
+	const [voteId, setVoteId] = useState<bigint | undefined>(undefined);
+	const [showReopenQuestion, setShowReopenQuestion] = useState<boolean>(false);
+
+	const refreshActiveVote = () => {
+		setActiveVote(
+			user_action === UserAction.SELECT ? VoteKind.INTEREST :
+			user_action === UserAction.VOTE ? VoteKind.OPINION :
+			user_action === UserAction.CATEGORIZE ? VoteKind.CATEGORIZATION : undefined);
 	}
 
-	const refreshStatusHistory = async () => {
-		var statuses : StatusInfo[] = [];
-		const history = await sub.actor.getStatusHistory(questionId);
-		if (history['ok'] !== undefined){
-			statuses = history['ok'];	
-		}
-		setStatusHistory(statuses);
+	const refreshVoteId = () => {
+		setVoteId(activeVote !== undefined ? findVoteId(queried_question.votes, activeVote) : undefined);
 	}
 
-	const refreshQuestionVoteJoins = async () => {
-
-		if (statusHistory.length === 0) {
-			setQuestionVoteJoins(new Map<VoteKind, bigint>());
-		} else {
-			let currentStatus = statusHistory[statusHistory.length - 1];
-			let previousOpenStatus = findLastVote(statusHistory, 'OPEN');
-			
-			var joins = new Map<VoteKind, bigint>();
-					
-			if (vote_kind === VoteKind.INTEREST) {
-				if (currentStatus.status['CANDIDATE'] !== undefined) {
-					let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
-					if (interest_vote_id !== undefined) {
-						joins.set(VoteKind.INTEREST, interest_vote_id);
-					}
-				}
-			} else if (vote_kind === VoteKind.OPINION) {
-				// Include late votes
-				var iteration : bigint | undefined = undefined;
-				if (currentStatus.status['OPEN'] !== undefined){
-					iteration = currentStatus.iteration;
-					setIsLocked(false);
-				} else if (previousOpenStatus !== undefined){
-					iteration = previousOpenStatus.iteration;
-					setIsLocked(true);
-				}
-				if (iteration !== undefined) {
-					let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, iteration))['ok'];
-					if (opinion_vote_id !== undefined) {
-						joins.set(VoteKind.OPINION, opinion_vote_id);
-					}
-				}
-			} else if (vote_kind === VoteKind.CATEGORIZATION) {
-				if (currentStatus.status['OPEN'] !== undefined) {
-					let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
-					if (categorization_vote_id !== undefined) {
-						joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
-					}
-				}
-			}
-
-			setQuestionVoteJoins(joins);
-		}
-	};
-
-	const refreshCanReopen = async () => {
-		setCanReopen(
-			vote_kind === undefined && statusHistory.length > 0 && (
-			(statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.CLOSED
-	 || (statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.TIMED_OUT));
+	const refreshShowReopenQuestion = () => {
+		setShowReopenQuestion(
+			user_action === UserAction.REOPEN_QUESTION && (
+				statusToEnum(queried_question.status_data.status_info.status) === StatusEnum.CLOSED ||
+				statusToEnum(queried_question.status_data.status_info.status) === StatusEnum.TIMED_OUT));
 	}
-
-	const findLastVote = (history: StatusInfo[], status_name: string) : StatusInfo | undefined => {
-		for (let i = history.length - 1; i >= 0; i--) {
-			if (history[i].status[status_name] !== undefined) {
-				return history[i];
-			}
-		}
-		return undefined;
-	};
 
 	useEffect(() => {
-		refreshQuestion();
-		refreshStatusHistory();
-  }, [questionId]);
+		refreshActiveVote();
+	}, [user_action]);
 
 	useEffect(() => {
-		refreshQuestionVoteJoins();
-		refreshCanReopen();
-	}, [statusHistory, vote_kind]);
+		refreshVoteId();
+	}, [activeVote, queried_question]);
+
+	useEffect(() => {
+		refreshShowReopenQuestion();
+	}, [user_action, queried_question]);
+
+//	const [question, setQuestion] = useState<Question | undefined>(undefined);
+//	const [statusHistory, setStatusHistory] = useState<StatusInfo[]>([]);
+//	const [questionVoteJoins, setQuestionVoteJoins] = useState<Map<VoteKind, bigint>>(new Map<VoteKind, bigint>());
+//	const [isLocked, setIsLocked] = useState<boolean>(false); // @todo: one should not use a specific state for the opinion vote
+//	const [canReopen, setCanReopen] = useState<boolean>(false);
+//
+//	const refreshQuestion = async () => {
+//		const question = await sub.actor.getQuestion(questionId);
+//		setQuestion(question['ok']);
+//	}
+//
+//	const refreshStatusHistory = async () => {
+//		var statuses : StatusInfo[] = [];
+//		const history = await sub.actor.getStatusHistory(questionId);
+//		if (history['ok'] !== undefined){
+//			statuses = history['ok'];	
+//		}
+//		setStatusHistory(statuses);
+//	}
+//
+//	const refreshQuestionVoteJoins = async () => {
+//
+//		if (statusHistory.length === 0) {
+//			setQuestionVoteJoins(new Map<VoteKind, bigint>());
+//		} else {
+//			let currentStatus = statusHistory[statusHistory.length - 1];
+//			let previousOpenStatus = findLastVote(statusHistory, 'OPEN');
+//			
+//			var joins = new Map<VoteKind, bigint>();
+//					
+//			if (user_action === VoteKind.INTEREST) {
+//				if (currentStatus.status['CANDIDATE'] !== undefined) {
+//					let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+//					if (interest_vote_id !== undefined) {
+//						joins.set(VoteKind.INTEREST, interest_vote_id);
+//					}
+//				}
+//			} else if (user_action === VoteKind.OPINION) {
+//				// Include late votes
+//				var iteration : bigint | undefined = undefined;
+//				if (currentStatus.status['OPEN'] !== undefined){
+//					iteration = currentStatus.iteration;
+//					setIsLocked(false);
+//				} else if (previousOpenStatus !== undefined){
+//					iteration = previousOpenStatus.iteration;
+//					setIsLocked(true);
+//				}
+//				if (iteration !== undefined) {
+//					let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, iteration))['ok'];
+//					if (opinion_vote_id !== undefined) {
+//						joins.set(VoteKind.OPINION, opinion_vote_id);
+//					}
+//				}
+//			} else if (user_action === VoteKind.CATEGORIZATION) {
+//				if (currentStatus.status['OPEN'] !== undefined) {
+//					let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, BigInt(currentStatus.iteration)))['ok'];
+//					if (categorization_vote_id !== undefined) {
+//						joins.set(VoteKind.CATEGORIZATION, categorization_vote_id);
+//					}
+//				}
+//			}
+//
+//			setQuestionVoteJoins(joins);
+//		}
+//	};
+//
+//	const refreshCanReopen = async () => {
+//		setCanReopen(
+//			user_action === undefined && statusHistory.length > 0 && (
+//			(statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.CLOSED
+//	 || (statusToEnum(statusHistory[statusHistory.length - 1].status)) === StatusEnum.TIMED_OUT));
+//	}
+//
+//	const findLastVote = (history: StatusInfo[], status_name: string) : StatusInfo | undefined => {
+//		for (let i = history.length - 1; i >= 0; i--) {
+//			if (history[i].status[status_name] !== undefined) {
+//				return history[i];
+//			}
+//		}
+//		return undefined;
+//	};
+//
+//	useEffect(() => {
+//		refreshQuestion();
+//		refreshStatusHistory();
+//  }, [questionId]);
+//
+//	useEffect(() => {
+//		refreshQuestionVoteJoins();
+//		refreshCanReopen();
+//	}, [statusHistory, user_action]);
 
 	return (
-		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center
-			${questionVoteJoins.get(VoteKind.INTEREST) !== undefined || canReopen ? "" : "pr-10"}`}>
+		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 
+			${activeVote === VoteKind.INTEREST || showReopenQuestion ? "" : "pr-10"}`}>
 			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
-				${questionVoteJoins.get(VoteKind.INTEREST) !== undefined ? "w-4/5" : "w-full"}`}>
+				${activeVote === VoteKind.INTEREST ? "w-4/5" : "w-full"}`}>
 				<div className="flex flex-row justify-between grow">
-				{
-					question === undefined ? 
-					<div role="status" className="w-full animate-pulse">
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 my-2"></div>
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 my-2"></div>
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
-						<span className="sr-only">Loading...</span>
-					</div> :
 					<div className={`w-full justify-start text-sm font-normal break-words`}>
-          	{question.text}
+          	{queried_question.question.text}
         	</div>
-				}
 				{
-				canReopen ?
+				showReopenQuestion ?
 					<div className="flex flex-row grow self-start justify-end mr-5">
-						<ReopenButton actor={sub.actor} questionId={questionId} onReopened={()=>{}}/>
+						<ReopenButton actor={sub.actor} questionId={queried_question.question.id} onReopened={()=>{}}/>
 					</div> : <></>
 				}
 				</div>
 				{
-					questionVoteJoins.get(VoteKind.OPINION) !== undefined ? 
+					activeVote === VoteKind.OPINION && voteId !== undefined ? 
 						<OpinionVote
 							actor={sub.actor}
 							polarizationInfo={CONSTANTS.OPINION_INFO}
-							isLocked={isLocked}
-							voteId={questionVoteJoins.get(VoteKind.OPINION)}
-						/> :
-					questionVoteJoins.get(VoteKind.CATEGORIZATION) !== undefined?
+							isLocked={false}
+							voteId={voteId} /> :
+					activeVote === VoteKind.CATEGORIZATION && voteId !== undefined ?
 						<CategorizationVote 
 							actor={sub.actor}
 							categories={toMap(sub.categories)}
-							voteId={questionVoteJoins.get(VoteKind.CATEGORIZATION)}
-						/> : <></>
+							voteId={voteId}/> : <></>
 				}
 				{
+					/*
 					statusHistory.length === 0 ? <></> :
 						<StatusHistoryComponent 
 							sub={sub}
 							questionId={questionId}
 							statusHistory={statusHistory}
 						/>
+					*/
 				}
 				{/*
 					<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
@@ -179,9 +213,9 @@ const QuestionComponent = ({sub, questionId, vote_kind}: QuestionInput) => {
 				*/}
 			</div>
 			{
-				questionVoteJoins.get(VoteKind.INTEREST) !== undefined ?
+				activeVote === VoteKind.INTEREST && voteId !== undefined ?
 				<div className="w-1/5 mr-5">
-					<InterestVote actor={sub.actor} voteId={questionVoteJoins.get(VoteKind.INTEREST)}/>
+					<InterestVote actor={sub.actor} voteId={voteId}/>
 				</div> : <></>
 			}
 		</div>

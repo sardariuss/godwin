@@ -1,14 +1,9 @@
 import UtilsTypes "../../utils/Types";
 import Queries    "../../utils/Queries";
 
-import Buffer "mo:stablebuffer/StableBuffer";
-import Map "mo:map/Map";
-
 module {
 
   type Time = Int;
-  type Map<K, V> = Map.Map<K, V>;
-  type Buffer<K> = Buffer.StableBuffer<K>;
 
   public type QuestionId = Nat;
 
@@ -28,24 +23,6 @@ module {
       #CENSORED;
     };
   };
-
-  public type CursorVotes = {
-    opinion_vote_id: Nat;
-    categorization_vote_id: Nat;
-  };
-
-  public type StatusInput = {
-    #INTEREST_VOTE: Nat;
-    #CURSOR_VOTES: CursorVotes;
-  };
-
-  public type StatusInfo = {
-    status: Status;
-    date: Time;
-    iteration: Nat;
-  };
-
-  public type StatusHistory = Buffer<StatusInfo>;
 
   public type QuestionQueries = Queries.Queries<OrderBy, Key>;
   
@@ -90,4 +67,4 @@ module {
 
   public type ScanLimitResult = UtilsTypes.ScanLimitResult<QuestionId>;
   
-}
+};

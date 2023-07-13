@@ -118,6 +118,22 @@ module {
     #BALLOT_CHANGE_AUTHORIZED;
     #BALLOT_CHANGE_FORBIDDEN;
   };
+
+  public type VoteKind = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
+  public type VoteLink = {
+    vote_kind: VoteKind;
+    vote_id: Nat;
+  };
+
+  public type VoteData = {
+    id: VoteId;
+    status: Status;
+  };
   
   public type PrincipalError = {
     #PrincipalIsAnonymous;

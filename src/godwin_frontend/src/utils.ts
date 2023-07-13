@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -37,6 +37,13 @@ export const VoteKinds = [
   VoteKind.OPINION,
   VoteKind.CATEGORIZATION,
 ];
+
+export const voteKindFromCandidVariant = (idl: VoteKindIdl) => {
+  if (idl['INTEREST'] !== undefined) return VoteKind.INTEREST;
+  if (idl['OPINION'] !== undefined) return VoteKind.OPINION;
+  if (idl['CATEGORIZATION'] !== undefined) return VoteKind.CATEGORIZATION;
+  throw new Error('Invalid voteKind');
+};
 
 export const voteKindToString = (voteKind: VoteKind) => {
   if (voteKind === VoteKind.INTEREST) return 'Interest';

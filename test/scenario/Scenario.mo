@@ -53,9 +53,10 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
+        let question_id = queried_question.question.id;
         let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
-        let iteration = status_history[status_history.size() - 1].iteration;
+        let iteration = status_history[status_history.size() - 1].status_info.iteration;
         let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration));
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, interest_vote_id))){
@@ -68,9 +69,10 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
+        let question_id = queried_question.question.id;
         let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
-        let iteration = status_history[status_history.size() - 1].iteration;
+        let iteration = status_history[status_history.size() - 1].status_info.iteration;
         let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration));
         let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration));
         for (principal in Array.vals(principals)) {
@@ -91,7 +93,8 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+        let question_id = queried_question.question.id;
         if (Random.random(fuzzer) < 0.1){
           let principal = Random.randomUser(fuzzer, principals);
           Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));

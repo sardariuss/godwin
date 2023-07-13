@@ -5,20 +5,18 @@ import OpinionPolarizationBar                                                   
 import AppealBar                                                                     from "./interest/AppealBar";
 import CategorizationAggregateDigest                                                 from "./categorization/CategorizationAggregateDigest";
 import CategorizationPolarizationBars                                                from "./categorization/CategorizationPolarizationBars";
-import { statusToString, toMap, VoteKind, getStatusDuration, durationToNanoSeconds } from "../utils";
+import { statusToString, toMap, VoteKind, getStatusDuration, durationToNanoSeconds, StatusEnum, statusToEnum } from "../utils";
 import { nsToStrDate, formatTimeDiff }                                               from "../utils/DateUtils";
 import CONSTANTS                                                                     from "../Constants";
 import { Sub }                                                                       from "../ActorContext";
-import { StatusInfo, InterestVote, OpinionVote, CategorizationVote }                 from "../../declarations/godwin_sub/godwin_sub.did";
+import { StatusInfo, InterestVote, OpinionVote, CategorizationVote, StatusData, SchedulerParameters }                 from "../../declarations/godwin_sub/godwin_sub.did";
 
 import Countdown                                                                     from "react-countdown";
 import { useEffect, useState }                                                       from "react";
 
 type Props = {
-  sub: Sub,
-  questionId: bigint;
-  statusInfo: StatusInfo;
-  previousStatusInfo: StatusInfo | undefined;
+  sub: Sub;
+  statusData: StatusData;
   isToggledHistory: boolean;
   toggleHistory: (toggle: boolean) => void;
   isHistory: boolean;
@@ -26,35 +24,52 @@ type Props = {
   borderDashed: boolean;
 };
 
-const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isToggledHistory, toggleHistory, isHistory, showBorder, borderDashed}: Props) => {
+const computeEndDate = (status_data: StatusData, scheduler_parameters: SchedulerParameters) : Date | undefined => {
+  let status_duration = getStatusDuration(status_data.status_info.status, scheduler_parameters);
+  if (status_duration === undefined) {
+    return undefined;
+  }
+  return new Date(Number((status_data.status_info.date + durationToNanoSeconds(status_duration)) / BigInt(1000000)));
+};
 
-  const [selectedVote,       setSelectedVote      ] = useState<          VoteKind | undefined>(undefined);
-  const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
-  const [opinionVote,        setOpinionVote       ] = useState<       OpinionVote | undefined>(undefined);
-  const [categorizationVote, setCategorizationVote] = useState<CategorizationVote | undefined>(undefined);
+const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHistory, showBorder, borderDashed}: Props) => {
 
-  const fetchRevealedVotes = async () => {
-  
-    setInterestVote(undefined);
-    setOpinionVote(undefined);
-    setCategorizationVote(undefined);
+  const [status] = useState<StatusEnum>(statusToEnum(statusData.status_info.status));
+  const [statusEndDate] = useState<Date | undefined>(computeEndDate(statusData, sub.scheduler_parameters));
 
-    // Reveal the results of the vote(s) associated with the previous state
-    if (previousStatusInfo !== undefined && previousStatusInfo.status['CANDIDATE'] !== undefined) {
-      let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, previousStatusInfo.iteration))['ok'];
-      if (interest_vote_id !== undefined) {
-        setInterestVote((await sub.actor.revealInterestVote(interest_vote_id))['ok']);
-      }
-    } else if (previousStatusInfo !== undefined && previousStatusInfo.status['OPEN'] !== undefined) {
-      let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, previousStatusInfo.iteration))['ok'];
-      if (opinion_vote_id !== undefined) {
-        setOpinionVote((await sub.actor.revealOpinionVote(opinion_vote_id))['ok']);
-      }
-      let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, previousStatusInfo.iteration))['ok'];
-      if (categorization_vote_id !== undefined) {
-        setCategorizationVote((await sub.actor.revealCategorizationVote(categorization_vote_id))['ok']);
-      }
-    }
+  const [{ status_info, previous_status }]          = useState<StatusData          >(statusData);
+  const [selectedVote,       setSelectedVote      ] = useState<VoteKind | undefined>(undefined );
+
+//  const [interestVote,       setInterestVote      ] = useState<      InterestVote | undefined>(undefined);
+//  const [opinionVote,        setOpinionVote       ] = useState<       OpinionVote | undefined>(undefined);
+//  const [categorizationVote, setCategorizationVote] = useState<CategorizationVote | undefined>(undefined);
+
+//  const fetchRevealedVotes = async () => {
+//  
+//    setInterestVote(undefined);
+//    setOpinionVote(undefined);
+//    setCategorizationVote(undefined);
+//
+//    // Reveal the results of the vote(s) associated with the previous state
+//    if (previousStatusInfo !== undefined && previousStatusInfo.status['CANDIDATE'] !== undefined) {
+//      let interest_vote_id = (await sub.actor.findInterestVoteId(questionId, previousStatusInfo.iteration))['ok'];
+//      if (interest_vote_id !== undefined) {
+//        setInterestVote((await sub.actor.revealInterestVote(interest_vote_id))['ok']);
+//      }
+//    } else if (previousStatusInfo !== undefined && previousStatusInfo.status['OPEN'] !== undefined) {
+//      let opinion_vote_id = (await sub.actor.findOpinionVoteId(questionId, previousStatusInfo.iteration))['ok'];
+//      if (opinion_vote_id !== undefined) {
+//        setOpinionVote((await sub.actor.revealOpinionVote(opinion_vote_id))['ok']);
+//      }
+//      let categorization_vote_id = (await sub.actor.findCategorizationVoteId(questionId, previousStatusInfo.iteration))['ok'];
+//      if (categorization_vote_id !== undefined) {
+//        setCategorizationVote((await sub.actor.revealCategorizationVote(categorization_vote_id))['ok']);
+//      }
+//    }
+//  }
+
+  const getStatus = () : StatusEnum => {
+    return statusToEnum(status_info.status);
   }
 
   const toggleVote = (vote_kind: VoteKind, toggled: boolean) => {
@@ -66,17 +81,9 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
     } 
   }
 
-  const statusEndDate = () : Date | undefined => {
-    let status_duration = getStatusDuration(statusInfo.status, sub.scheduler_parameters);
-    if (status_duration === undefined) {
-      return undefined;
-    }
-    return new Date(Number((statusInfo.date + durationToNanoSeconds(status_duration)) / BigInt(1000000)));
-  };
-
-  useEffect(() => {
-    fetchRevealedVotes();
-  }, [statusInfo, previousStatusInfo, isHistory]);
+//  useEffect(() => {
+//    fetchRevealedVotes();
+//  }, [status_info, previousStatusInfo, isHistory]);
 
 	return (
     <div>
@@ -101,16 +108,11 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
             group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" 
             : "")}>
               {
-                statusInfo.status['CANDIDATE'] !== undefined ?
-                  <CandidateIcon/> :
-                statusInfo.status['OPEN'] !== undefined ?
-                  <OpenIcon/> :
-                statusInfo.status['CLOSED'] !== undefined ?
-                  <ClosedIcon/> :
-                statusInfo.status['REJECTED'] !== undefined && statusInfo.status['REJECTED']['TIMED_OUT'] !== undefined ?
-                  <TimedOutIcon/> :
-                statusInfo.status['REJECTED'] !== undefined && statusInfo.status['REJECTED']['CENSORED'] !== undefined ?
-                  <CensoredIcon/> : <></>
+                status === StatusEnum.CANDIDATE ? <CandidateIcon/> :
+                status === StatusEnum.OPEN ? <OpenIcon/> :
+                status === StatusEnum.CLOSED ? <ClosedIcon/> :
+                status === StatusEnum.TIMED_OUT ? <TimedOutIcon/> :
+                status === StatusEnum.CENSORED ? <CensoredIcon/> : <></>
               }
             </span>
             <div className={`border-gray-500 -ml-[17px] w-5 grow
@@ -125,17 +127,17 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
           <div className="flex flex-col w-full">
             <div className="flex flex-row items-center gap-x-1 w-full">
               <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-                { statusToString(statusInfo.status) } 
+                { statusToString(status_info.status) } 
               </div>
               <div className={`flex flex-row items-center gap-x-3`}>
               {
-                statusInfo.status['OPEN'] !== undefined || statusInfo.status['REJECTED'] !== undefined ?
+                status_info.status['OPEN'] !== undefined || status_info.status['REJECTED'] !== undefined ?
                   <AppealDigest 
                     aggregate={interestVote !== undefined ? interestVote.aggregate : undefined}
                     setSelected={(selected: boolean) => { toggleVote(VoteKind.INTEREST, selected); }}
                     selected={ selectedVote === VoteKind.INTEREST}
                   />
-                : statusInfo.status['CLOSED'] !== undefined ?
+                : status_info.status['CLOSED'] !== undefined ?
                 <div className="flex flex-row items-center gap-x-1">
                   <OpinionAggregate
                     aggregate={opinionVote !== undefined ? opinionVote.aggregate : undefined}
@@ -157,10 +159,10 @@ const StatusComponent = ({sub, questionId, statusInfo, previousStatusInfo, isTog
             <div className="flex flex-row justify-between">
               <div className={`text-xs font-extralight 
                 ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-                  { nsToStrDate(statusInfo.date) }
+                  { nsToStrDate(status_info.date) }
               </div>
-              { statusEndDate() !== undefined && !isHistory ?
-                <Countdown date={statusEndDate()} renderer={props => <div className="text-xs font-light">{ "ends " + formatTimeDiff(props.total / 1000) }</div>}>
+              { statusEndDate !== undefined && !isHistory ?
+                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "ends " + formatTimeDiff(props.total / 1000) }</div>}>
                   <div>Good to go</div>
                 </Countdown> : <></>
               }

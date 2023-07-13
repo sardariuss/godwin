@@ -6,6 +6,7 @@ import UtilsTypes    "../utils/Types";
 import MasterTypes   "../../godwin_master/Types";
 
 import Set           "mo:map/Set";
+import Buffer        "mo:stablebuffer/StableBuffer";
 
 import Principal     "mo:base/Principal";
 
@@ -16,6 +17,7 @@ module {
   type Time                                = Int;
 
   type Set<K>                              = Set.Set<K>;
+  type Buffer<K>                           = Buffer.StableBuffer<K>;
   
   public type Duration                     = UtilsTypes.Duration;
   public type Direction                    = UtilsTypes.Direction;
@@ -25,12 +27,17 @@ module {
   public type QuestionId                   = QuestionTypes.QuestionId;  
   public type Question                     = QuestionTypes.Question;
   public type Status                       = QuestionTypes.Status;
-  public type StatusInfo                   = QuestionTypes.StatusInfo;
-  public type StatusInput                  = QuestionTypes.StatusInput;
   public type OpenQuestionError            = QuestionTypes.OpenQuestionError or PayTypes.TransferFromMasterError;
   public type QuestionOrderBy              = QuestionTypes.OrderBy;
 
   public type TransactionsRecord           = PayTypes.TransactionsRecord;
+
+  public type StatusInfo = {
+    status: Status;
+    date: Time;
+    iteration: Nat;
+    votes: [VoteLink];
+  };
 
   // @todo: are all these types required in the canister interface?
   public type VoteId                       = VoteTypes.VoteId;
@@ -39,17 +46,14 @@ module {
   public type Cursor                       = VoteTypes.Cursor;
   public type OpinionAnswer                = VoteTypes.OpinionAnswer;
   public type Polarization                 = VoteTypes.Polarization;
+  public type VoteKind                     = VoteTypes.VoteKind;
+  public type VoteLink                     = VoteTypes.VoteLink;
   public type CursorArray                  = [(VoteTypes.Category, VoteTypes.Cursor)];
   public type PolarizationArray            = [(VoteTypes.Category, VoteTypes.Polarization)];
   public type InterestBallot               = VoteTypes.InterestBallot;
   public type OpinionBallot                = VoteTypes.OpinionBallot;
   public type OpinionAggregate             = VoteTypes.OpinionAggregate;
   public type CategorizationBallot         = VoteTypes.Ballot<CursorArray>;
-  public type Vote<T, A> = {
-    id: VoteId;
-    ballots: [(Principal, VoteTypes.Ballot<T>)];
-    aggregate: A;
-  };
   public type InterestVote                 = Vote<Interest, Appeal>;
   public type OpinionVote                  = Vote<OpinionAnswer, OpinionAggregate>;
   public type CategorizationVote           = Vote<CursorArray, PolarizationArray>;
@@ -57,6 +61,7 @@ module {
   public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<OpinionAnswer>;
   public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
   public type DecayParameters              = VoteTypes.DecayParameters;
+  public type VoteData                     = VoteTypes.VoteData;
 
   public type FindVoteError                = VoteTypes.FindVoteError;
   public type FindQuestionIterationError   = VoteTypes.FindQuestionIterationError;
@@ -111,12 +116,6 @@ module {
   
   public type CategoryArray = [(Category, CategoryInfo)];
 
-  public type VoteKind = {
-    #INTEREST;
-    #OPINION;
-    #CATEGORIZATION;
-  };
-
   public type CategoryInfo = {
     left: CategorySide;
     right: CategorySide;
@@ -126,6 +125,39 @@ module {
     name: Text;
     symbol: Text;
     color: Text;
+  };
+
+  public type Vote<T, A> = {
+    id: VoteId;
+    ballots: [(Principal, VoteTypes.Ballot<T>)];
+    aggregate: A;
+  };
+  public type StatusHistory = Buffer<StatusInfo>;
+
+  public type VoteKindAggregate = {
+    #INTEREST: Appeal;
+    #OPINION: OpinionAggregate;
+    #CATEGORIZATION: PolarizationArray;
+  };
+
+  public type VoteAggregate = {
+    vote_id: VoteId;
+    aggregate: VoteKindAggregate;
+  };
+
+  public type StatusVoteAggregates = {
+    vote_aggregates: [VoteAggregate];
+  };
+
+  public type StatusData = {
+    status_info: StatusInfo;
+    previous_status: ?StatusVoteAggregates;
+  };
+
+  public type QueryQuestionItem = {
+    question: Question;
+    status_data: StatusData;
+    votes: [(VoteKind, VoteData)];
   };
 
   public type PrincipalError = {
