@@ -169,18 +169,6 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().revealCategorizationVote(vote_id);
   };
 
-  public query func findInterestVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    getFacade().findInterestVoteId(question_id, iteration);
-  };
-
-  public query func findOpinionVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    getFacade().findOpinionVoteId(question_id, iteration);
-  };
-
-  public query func findCategorizationVoteId(question_id: QuestionId, iteration: Nat) : async Result<VoteId, FindVoteError> {
-    getFacade().findCategorizationVoteId(question_id, iteration);
-  };
-
   public query({caller}) func queryInterestBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedInterestBallot> {
     getFacade().queryInterestBallots(caller, voter, direction, limit, previous_id);
   };

@@ -1,19 +1,19 @@
-import StatusComponent from "./Status";
-import { Sub }         from "../ActorContext";
-import { StatusInfo, StatusData }  from "./../../declarations/godwin_sub/godwin_sub.did";
+import StatusComponent         from "./Status";
+import { Sub }                 from "../ActorContext";
+import { StatusData }          from "./../../declarations/godwin_sub/godwin_sub.did";
 
-import { useEffect, useState }    from "react";
-import { toNullable } from "@dfinity/utils";
+import { useEffect, useState } from "react";
+import { fromNullable }        from "@dfinity/utils";
 
 type Props = {
   sub: Sub
   questionId: bigint;
-  currentStatus: StatusData;
+  currentStatusData: StatusData;
 };
 
-const StatusHistoryComponent = ({sub, questionId, currentStatus}: Props) => {
+const StatusHistoryComponent = ({sub, questionId, currentStatusData}: Props) => {
 
-  const [statusHistory,  setStatusHistory]  = useState<StatusData[]>([currentStatus]);
+  const [statusHistory,  setStatusHistory]  = useState<StatusData[]>([currentStatusData]);
   const [historyVisible, setHistoryVisible] = useState<boolean     >(false          );
 
   const queryStatusHistory = async () => {
@@ -28,7 +28,7 @@ const StatusHistoryComponent = ({sub, questionId, currentStatus}: Props) => {
   }
 
   const toggleHistory = (toggle: boolean) => {
-    if (toNullable(currentStatus.previous_status) !== undefined){
+    if (fromNullable(currentStatusData.previous_status) !== undefined){
       setHistoryVisible(toggle);
     }
   };
@@ -43,19 +43,19 @@ const StatusHistoryComponent = ({sub, questionId, currentStatus}: Props) => {
     <div className="text-gray-500 dark:border-gray-700 dark:text-gray-400">
       <ol>
       {
-        statusHistory.slice(0).reverse().map((statusData, index) => {
+        statusHistory.slice(0).reverse().map((status_data, index) => {
           return (
             <li key={index.toString()}>
               {
                 index === 0 || historyVisible ?
-                <StatusComponent 
+                <StatusComponent
                   sub={sub}
                   questionId={questionId}
-                  statusData={statusData}
+                  statusData={status_data}
                   isToggledHistory={historyVisible}
                   toggleHistory={(toggle: boolean) => {toggleHistory(toggle)}}
                   isHistory={index !== 0}
-                  showBorder={index !== 0 ? (index < statusHistory.length - 1) : (statusHistory.length > 1) }
+                  showBorder={index !== 0 ? (index < statusHistory.length - 1) : (fromNullable(currentStatusData.previous_status) !== undefined) }
                   borderDashed={index !== 0 ? false : !historyVisible}>
                 </StatusComponent> :
                 <></>

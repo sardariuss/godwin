@@ -199,18 +199,6 @@ module {
       });
     };
 
-    public func findInterestVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findInterestVoteId(question_id, iteration);
-    };
-
-    public func findOpinionVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findOpinionVoteId(question_id, iteration);
-    };
-
-    public func findCategorizationVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findCategorizationVoteId(question_id, iteration);
-    };
-
     public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedInterestBallot> {
       _controller.queryInterestBallots(caller, voter, direction, limit, previous_id);
     };
@@ -225,7 +213,7 @@ module {
         func({vote_id; date; answer; transactions_record;}: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
           { 
             vote_id;
-            date ;
+            date;
             answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
             transactions_record; 
           };

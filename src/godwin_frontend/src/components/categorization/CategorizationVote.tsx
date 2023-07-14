@@ -4,19 +4,12 @@ import SvgButton                                                         from ".
 import ResetIcon                                                         from "../icons/ResetIcon";
 import PutBallotIcon                                                     from "../icons/PutBallotIcon";
 import UpdateProgress                                                    from "../UpdateProgress";
-import { ActorContext }                                                  from "../../ActorContext"
-import { putBallotErrorToString, toMap, getStrongestCategoryCursorInfo } from "../../utils";
+import { putBallotErrorToString, getStrongestCategoryCursorInfo, toMap } from "../../utils";
 import CONSTANTS                                                         from "../../Constants";
-import { CursorArray, Category, CategoryInfo, PutBallotError, _SERVICE } from "../../../declarations/godwin_sub/godwin_sub.did";
+import { Sub, ActorContext }                                             from "../../ActorContext";
+import { CursorArray, Category, CategoryInfo, PutBallotError, VoteData } from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { ActorSubclass }                                                 from "@dfinity/agent";
-import { useContext, useState, useEffect }                               from "react";
-
-type Props = {
-  actor: ActorSubclass<_SERVICE>,
-  categories: Map<Category, CategoryInfo>,
-  voteId: bigint,
-};
+import { useContext, useState }                                          from "react";
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   let categorization: CursorArray = [];
@@ -26,55 +19,74 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   return categorization;
 }
 
-const CategorizationVote = ({actor, categories, voteId}: Props) => {
+const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
+  if (vote_data.user_ballot['CATEGORIZATION'] !== undefined){
+		return vote_data.user_ballot['CATEGORIZATION'].date;
+	}
+  return undefined;
+}
+
+const unwrapBallotCategorization = (vote_data: VoteData, categories: Map<Category, CategoryInfo>) : CursorArray => {
+  if (vote_data.user_ballot['CATEGORIZATION'] !== undefined){
+		return vote_data.user_ballot['CATEGORIZATION'].answer;
+	}
+  return initCategorization(categories);
+}
+
+type Props = {
+  sub: Sub,
+  voteData: VoteData,
+};
+
+const CategorizationVote = ({sub, voteData}: Props) => {
 
   const {refreshBalance}   = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote,  setCountdownVote ] = useState<boolean>           (false);
-  const [triggerVote,    setTriggerVote   ] = useState<boolean>           (false);
-  const [categorization, setCategorization] = useState<CursorArray | null>(null);
-  const [voteDate,       setVoteDate      ] = useState<bigint | null>     (null);
+  const [countdownVote,  setCountdownVote ] = useState<boolean>           (false                                               );
+  const [triggerVote,    setTriggerVote   ] = useState<boolean>           (false                                               );
+  const [voteDate,       setVoteDate      ] = useState<bigint | undefined>(unwrapBallotDate(voteData)                          );
+  const [categorization, setCategorization] = useState<CursorArray>       (unwrapBallotCategorization(voteData, sub.categories));
 
   const resetCategorization = () => {
-    setCategorization(initCategorization(categories));
+    setCategorization(initCategorization(sub.categories));
   };
 
   const setCategoryCursor = (category_index: number, cursor: number) => {
     setCategorization(old_categorization => {
-      let new_categorization = (old_categorization !== null ? [...old_categorization] : initCategorization(categories));
+      let new_categorization = [...old_categorization];
       new_categorization[category_index] = [new_categorization[category_index][0], cursor];
       return new_categorization;
     });
   };
 
   const refreshBallot = () : Promise<void> => {
-    return actor.getCategorizationBallot(voteId).then((result) => {
-      setCategorization(result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? result['ok'].answer[0] : initCategorization(categories));
-      setVoteDate(result['ok'] !== undefined ? result['ok'].date : null);
+    return sub.actor.getCategorizationBallot(voteData.id).then((result) => {
+      if (result['ok'] !== undefined){
+        if (result['ok'].answer[0] !== undefined){
+          setCategorization(result['ok'].answer[0]);
+        }
+        if (result['ok'].date !== undefined){
+          setVoteDate(result['ok'].date);
+        }
+      }
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (categorization === null) return Promise.resolve(null);
-    return actor.putCategorizationBallot(voteId, categorization).then((result) => {
+    return sub.actor.putCategorizationBallot(voteData.id, categorization).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
   }
 
-  useEffect(() => {
-    refreshBallot();
-  }, []);
-
 	return (
     <div className="w-full">
     {
-      categorization === null ? <></> :
-      voteDate !== null ?
+      voteDate !== undefined ?
       <div className="mb-3">
-        <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), categories)} dateNs={voteDate}/>
+        <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), sub.categories)} dateNs={voteDate}/>
       </div> :
       <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
         <div className={`justify-center w-6 h-6`}>
@@ -87,14 +99,14 @@ const CategorizationVote = ({actor, categories, voteId}: Props) => {
           categorization.map(([category, cursor], index) => (
             <li key={category} className="flex flex-col items-center">
               <CursorSlider
-                id={ category + voteId.toString() }
+                id={ category + voteData.id.toString() }
                 cursor={ cursor }
                 disabled={ triggerVote }
                 setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
                 polarizationInfo = {{
-                  left: categories.get(category).left,
+                  left: sub.categories.get(category).left,
                   center: {...CONSTANTS.CATEGORIZATION_INFO.center, name: category + ": " + CONSTANTS.CATEGORIZATION_INFO.center.name},
-                  right: categories.get(category).right
+                  right: sub.categories.get(category).right
                 }}
                 onMouseUp={ () => { setCountdownVote(true)} }
                 onMouseDown={ () => { setCountdownVote(false)} }

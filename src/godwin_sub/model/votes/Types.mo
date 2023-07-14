@@ -129,11 +129,6 @@ module {
     vote_kind: VoteKind;
     vote_id: Nat;
   };
-
-  public type VoteData = {
-    id: VoteId;
-    status: Status;
-  };
   
   public type PrincipalError = {
     #PrincipalIsAnonymous;

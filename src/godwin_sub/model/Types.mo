@@ -61,7 +61,6 @@ module {
   public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<OpinionAnswer>;
   public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
   public type DecayParameters              = VoteTypes.DecayParameters;
-  public type VoteData                     = VoteTypes.VoteData;
 
   public type FindVoteError                = VoteTypes.FindVoteError;
   public type FindQuestionIterationError   = VoteTypes.FindQuestionIterationError;
@@ -140,6 +139,12 @@ module {
     #CATEGORIZATION: PolarizationArray;
   };
 
+  public type VoteKindBallot = {
+    #INTEREST: InterestBallot;
+    #OPINION: OpinionBallot;
+    #CATEGORIZATION: CategorizationBallot;
+  };
+
   public type VoteAggregate = {
     vote_id: VoteId;
     aggregate: VoteKindAggregate;
@@ -152,6 +157,12 @@ module {
   public type StatusData = {
     status_info: StatusInfo;
     previous_status: ?StatusVoteAggregates;
+  };
+
+  public type VoteData = {
+    id: VoteId;
+    status: VoteTypes.Status;
+    user_ballot: ?VoteKindBallot;
   };
 
   public type QueryQuestionItem = {
