@@ -1,4 +1,5 @@
-import Types            "../../src/godwin_sub/model/questions/Types";
+import Types            "../../src/godwin_sub/model/Types";
+import QuestionTypes    "../../src/godwin_sub/model/questions/Types";
 import QueriesFactory   "../../src/godwin_sub/model/questions/QueriesFactory";
 import KeyConverter     "../../src/godwin_sub/model/questions/KeyConverter";
 
@@ -13,11 +14,11 @@ import { test; suite; } "mo:test";
 suite("Opinions module test suite", func() {
 
   // For convenience: from types module
-  type Question          = Types.Question;
-  type OpenQuestionError = Types.OpenQuestionError;
   type StatusInfo        = Types.StatusInfo;
-  type ScanLimitResult   = Types.ScanLimitResult;
-  type QuestionQueries   = Types.QuestionQueries;
+  type Question          = QuestionTypes.Question;
+  type OpenQuestionError = QuestionTypes.OpenQuestionError;
+  type ScanLimitResult   = QuestionTypes.ScanLimitResult;
+  type QuestionQueries   = QuestionTypes.QuestionQueries;
 
   let { toAuthorKey; toTextKey; toDateKey; toStatusKey; toInterestScoreKey; } = KeyConverter;
 
@@ -27,19 +28,19 @@ suite("Opinions module test suite", func() {
  let principals = Principals.init();
 
   let questions : [(Question, StatusInfo, Float)] = [
-    ({ id = 0; author = principals[0]; text = "Selfishness is the overriding drive in the human species, no matter the context."; date = 8493; }, { status = #CANDIDATE; iteration = 0; date = 6000; }, 87),
-    ({ id = 1; author = principals[1]; text = "Patents should not exist.";                                                        date = 2432; }, { status = #OPEN;      iteration = 0; date = 3000; }, 40),
-    ({ id = 2; author = principals[2]; text = "Marriage should be abolished.";                                                    date = 3132; }, { status = #OPEN;      iteration = 0; date = 2000; }, 38),
-    ({ id = 3; author = principals[3]; text = "It is necessary to massively invest in research to improve productivity.";         date = 4213; }, { status = #CANDIDATE; iteration = 0; date = 4000; }, 23),
-    ({ id = 4; author = principals[4]; text = "Insurrection is necessary to deeply change society.";                              date = 9711; }, { status = #OPEN;      iteration = 0; date = 5000; }, 77),
+    ({ id = 0; author = principals[0]; text = "Selfishness is the overriding drive in the human species, no matter the context."; date = 8493; }, { status = #CANDIDATE; iteration = 0; date = 6000; votes = [] }, 87),
+    ({ id = 1; author = principals[1]; text = "Patents should not exist.";                                                        date = 2432; }, { status = #OPEN;      iteration = 0; date = 3000; votes = [] }, 40),
+    ({ id = 2; author = principals[2]; text = "Marriage should be abolished.";                                                    date = 3132; }, { status = #OPEN;      iteration = 0; date = 2000; votes = [] }, 38),
+    ({ id = 3; author = principals[3]; text = "It is necessary to massively invest in research to improve productivity.";         date = 4213; }, { status = #CANDIDATE; iteration = 0; date = 4000; votes = [] }, 23),
+    ({ id = 4; author = principals[4]; text = "Insurrection is necessary to deeply change society.";                              date = 9711; }, { status = #OPEN;      iteration = 0; date = 5000; votes = [] }, 77),
   ];
 
   let updated_status : [StatusInfo] = [
-    { status = #CANDIDATE;             iteration = 0; date = 27;  },
-    { status = #CLOSED;                iteration = 0; date = 454; },
-    { status = #OPEN;                  iteration = 0; date = 968; },
-    { status = #REJECTED(#TIMED_OUT);  iteration = 0; date = 516; },
-    { status = #CLOSED;                iteration = 0; date = 959; },
+    { status = #CANDIDATE;             iteration = 0; date = 27;  votes=[]; },
+    { status = #CLOSED;                iteration = 0; date = 454; votes=[]; },
+    { status = #OPEN;                  iteration = 0; date = 968; votes=[]; },
+    { status = #REJECTED(#TIMED_OUT);  iteration = 0; date = 516; votes=[]; },
+    { status = #CLOSED;                iteration = 0; date = 959; votes=[]; },
   ];
 
   let updated_scores : [Float] = [165, 137, 232, 118, 183];

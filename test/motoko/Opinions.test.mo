@@ -3,6 +3,8 @@ import Opinions         "../../src/godwin_sub/model/votes/Opinions";
 import Votes            "../../src/godwin_sub/model/votes/Votes";
 import Decay            "../../src/godwin_sub/model/votes/Decay";
 import Polarization     "../../src/godwin_sub/model/votes/representation/Polarization";
+import Ref              "../../src/godwin_sub/utils/Ref";
+import Wref             "../../src/godwin_sub/utils/wrappers/WRef";
 
 import Principals                               "common/Principals";
 import { compare; optionalTestify; Testify; } = "common/Testify";
@@ -32,11 +34,13 @@ await suite("Opinions module test suite", func(): async () {
   type Cursor           = Types.Cursor;
   type OpinionAnswer    = Types.OpinionAnswer;
   type OpinionAggregate = Types.OpinionAggregate;
+  type DecayParameters  = Types.DecayParameters;
 
   let now = Time.now();
   let principals = Principals.init();
-  let decay_parameters = Decay.initParameters(#DAYS(365), now);
-  let opinions = Opinions.build(Opinions.initRegister(), decay_parameters);
+  let vote_decay        = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(365), now)));
+  let late_ballot_decay = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(7), now)  ));
+  let opinions = Opinions.build(Opinions.initRegister(), vote_decay, late_ballot_decay);
 
   await test("New vote 0", func() : async () {
     compare(
