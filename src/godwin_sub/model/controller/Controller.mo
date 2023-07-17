@@ -12,6 +12,7 @@ import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
 import Decay               "../votes/Decay";
 import Interests           "../votes/Interests";
+import InterestRules       "../votes/InterestRules";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PolarizationMap     "../votes/representation/PolarizationMap";
 
@@ -124,7 +125,7 @@ module {
     };
 
     public func getSelectionScore(now: Time) : Float {
-      Interests.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_rate), now);
+      InterestRules.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_period), now);
     };
 
     public func getCategories() : Categories.Categories {
@@ -337,7 +338,7 @@ module {
       
       let (order_by, has_vote, joins) = switch(vote_kind){
         case(#INTEREST)       {
-          (#INTEREST_SCORE, func(vote_id: VoteId) : Bool { Map.has(_model.getInterestVotes().getVoterBallots(principal), Map.nhash, vote_id); },       _model.getInterestJoins())
+          (#HOTNESS, func(vote_id: VoteId) : Bool { Map.has(_model.getInterestVotes().getVoterBallots(principal), Map.nhash, vote_id); },       _model.getInterestJoins())
         };
         case(#OPINION)        { 
           (#OPINION_VOTE,   func(vote_id: VoteId) : Bool { Map.has(_model.getOpinionVotes().getVoterBallots(principal), Map.nhash, vote_id); },        _model.getOpinionJoins())

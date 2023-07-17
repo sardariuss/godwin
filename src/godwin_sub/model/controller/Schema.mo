@@ -5,6 +5,7 @@ import Model         "../Model";
 import Status        "../questions/Status";
 import KeyConverter  "../questions/KeyConverter";
 import Interests     "../votes/Interests";
+import InterestRules "../votes/InterestRules";
 import Opinions      "../votes/Opinions";
 
 import Duration      "../../utils/Duration";
@@ -108,7 +109,7 @@ module {
         result.set(#err("Appeal score is positive")); return;
       };
 
-      let time_score_switch = switch(appeal.last_score_switch){
+      let time_score_switch = switch(appeal.negative_score_date){
         case(null){ result.set(#err("Appeal score has not switched yet")); return; };
         case(?time_switch) { time_switch; };
       };
@@ -127,8 +128,8 @@ module {
       let date = unwrapTime(event);
       
       // Verify it is the most interesting question
-      switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
-        case (null) { result.set(#err("The question is not listed in the #INTEREST_SCORE order by queries")); return; };
+      switch(_model.getQueries().iter(#HOTNESS, #BWD).next()){
+        case (null) { result.set(#err("The question is not listed in the #HOTNESS order by queries")); return; };
         case(?most_interesting) {
           if (question_id != most_interesting) {
             result.set(#err("The question is currently not the most interesting question")); return;
@@ -148,7 +149,7 @@ module {
       let momentum_args = _model.getMomentumArgs();
 
       // Verify the score is greater or equal to the required score
-      if (question_score < Interests.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_rate), date)){
+      if (question_score < InterestRules.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_period), date)){
         result.set(#err("The question's score is too low")); return;
       };
 
@@ -174,7 +175,7 @@ module {
 
       // Update the momentum args
       _model.setMomentumArgs({
-        last_pick_date = date;
+        last_pick_date_ns = date;
         last_pick_score = question_score;
         num_votes_opened = momentum_args.num_votes_opened + 1;
         minimum_score = momentum_args.minimum_score;

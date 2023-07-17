@@ -37,7 +37,7 @@ module {
       #CLOSED;
       #REJECTED;
     };
-    #INTEREST_SCORE;
+    #HOTNESS;
     #ARCHIVE;
     #OPINION_VOTE;
   };
@@ -47,7 +47,7 @@ module {
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
-    #INTEREST_SCORE: InterestScore;
+    #HOTNESS: InterestScore;
     #ARCHIVE: DateEntry;
     #OPINION_VOTE: OpinionVoteEntry;
   };

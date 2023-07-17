@@ -46,19 +46,19 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(0, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 1", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(1, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 2", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(2, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("Add ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 123456789; answer = { cursor = 0.0; is_late = null; } };
@@ -66,7 +66,7 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
-      optionalTestify(Testify.opinionBallot));
+      optionalTestify(Testify.opinionBallot.equal));
   });
   await test("Update ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 12121212; answer = { cursor = 1.0; is_late = null; } };
@@ -74,7 +74,7 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
-      optionalTestify(Testify.opinionBallot));
+      optionalTestify(Testify.opinionBallot.equal));
   });
   await test("Vote aggregate vote 1", func() : async () {
     let vote_id = 1;
@@ -91,14 +91,14 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       opinions.getVote(vote_id).aggregate.polarization,
       { left = 2.0; center = 4.5; right = 3.5; },
-      Testify.polarization);
+      Testify.polarization.equal);
   });
   await test("Reveal ballots", func() : async () {
     for (principal in Array.vals(principals)){
       compare(
         opinions.revealBallots(principal, principal, #FWD, 10, null).keys.size(),
         if (principal == principals[0]) 2 else 1,
-        Testify.nat);
+        Testify.nat.equal);
     };
   });
   await test("Get voter ballots", func() : async () {
@@ -106,7 +106,7 @@ await suite("Opinions module test suite", func(): async () {
       compare(
         Map.size(opinions.getVoterBallots(principal)),
         if (principal == principals[0]) 2 else 1,
-        Testify.nat);
+        Testify.nat.equal);
     };
   });
   

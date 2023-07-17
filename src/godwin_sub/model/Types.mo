@@ -73,7 +73,7 @@ module {
   public type PutBallotError               = VoteTypes.PutBallotError;
 
   public type SchedulerParameters = {
-    question_pick_rate        : Duration;
+    question_pick_period        : Duration;
     censor_timeout            : Duration;
     candidate_status_duration : Duration;
     open_status_duration      : Duration;

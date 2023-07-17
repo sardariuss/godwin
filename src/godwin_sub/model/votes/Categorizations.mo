@@ -83,7 +83,7 @@ module {
       #ok;
     };
 
-    public func emptyAggregate() : PolarizationMap {
+    public func emptyAggregate(date: Time) : PolarizationMap {
       PolarizationMap.nil(_categories);
     };
 

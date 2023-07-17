@@ -34,7 +34,7 @@ module {
   };
 
   public type InterestMomentumArgs = {
-    last_pick_date : Time;
+    last_pick_date_ns : Time;
     last_pick_score: Float;
     num_votes_opened: Nat;
     minimum_score: Float;
@@ -50,7 +50,14 @@ module {
     ups: Nat;
     downs: Nat;
     score: Float;
-    last_score_switch: ?Time;
+    negative_score_date: ?Time;
+    hot_timestamp: Float;
+    hotness: Float;
+  };
+
+  public type ScoreAndHotness = {
+    score: Float;
+    hotness: Float;
   };
 
   public type VoteId = Nat;
@@ -78,7 +85,7 @@ module {
 
   public type IVotePolicy<T, A> = {
     canPutBallot: (Vote<T, A>, Principal, Ballot<T>) -> Result<(), PutBallotError>;
-    emptyAggregate: () -> A;
+    emptyAggregate: (Time) -> A;
     onPutBallot: (A, Ballot<T>,  ?Ballot<T>) -> A;
     onVoteClosed: (A, Time) -> A;
     canRevealVote: (Vote<T, A>) -> Bool;

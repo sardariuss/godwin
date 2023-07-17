@@ -94,7 +94,7 @@ module {
 
     public func newVote(date: Time) : VoteId {
       let index = _register.index;
-      let vote : Vote<T, A> = initVote(index, _policy.emptyAggregate());
+      let vote : Vote<T, A> = initVote(index, _policy.emptyAggregate(date));
       Map.set(_register.votes, Map.nhash, index, vote);
       _register.index += 1;
       index;

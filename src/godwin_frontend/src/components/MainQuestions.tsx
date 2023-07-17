@@ -84,7 +84,7 @@ const browse_filters = [BrowseFilter.CANDIDATE, BrowseFilter.OPEN, BrowseFilter.
 const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   switch (filter) {
     case BrowseFilter.CANDIDATE:
-      return { 'INTEREST_SCORE' : null          };
+      return { 'HOTNESS' : null          };
     case BrowseFilter.OPEN:
       return { 'STATUS' : { 'OPEN' : null     } };
     case BrowseFilter.ARCHIVED:

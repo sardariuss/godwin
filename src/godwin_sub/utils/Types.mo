@@ -11,4 +11,9 @@ module {
     #NS: Nat;
   };
 
+  public type LogitNormalParams = {
+    sigma: Float;
+    mu: Float;
+  };
+
 };
