@@ -1,20 +1,35 @@
-import PolarizationBar, { BallotPoint }               from "../base/PolarizationBar";
-import ChartTypeToggle                                from "../base/ChartTypeToggle";
-import { ChartTypeEnum, toPolarizationInfo }          from "../../utils";
-import CONSTANTS                                      from "../../Constants";
-import { CategorizationVote, Category, CategoryInfo } from "../../../declarations/godwin_sub/godwin_sub.did";
+import PolarizationBar, { BallotPoint }      from "../base/PolarizationBar";
+import ChartTypeToggle                       from "../base/ChartTypeToggle";
+import { ChartTypeEnum, toPolarizationInfo } from "../../utils";
+import CONSTANTS                             from "../../Constants";
+import { Sub }                               from "../../ActorContext";
+import { CategorizationVote }                from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState }                                   from "react";
+import { useState, useEffect }               from "react";
 
 type CategorizationPolarizationBarsProps = {
-  showName: boolean;
-  categorizationVote: CategorizationVote;
-  categories: Map<Category, CategoryInfo>
+  sub: Sub;
+  vote_id: bigint;
 }
 
-const CategorizationPolarizationBars = ({showName, categorizationVote, categories}: CategorizationPolarizationBarsProps) => {
+const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizationBarsProps) => {
 
-  const [chartType, setChartType] = useState<ChartTypeEnum>(ChartTypeEnum.Bar);
+  const [vote,      setVote     ] = useState<CategorizationVote|undefined>(undefined            );
+  const [chartType, setChartType] = useState<ChartTypeEnum               >(ChartTypeEnum.Bar    );
+
+  const queryVote = async () => {
+    const vote = await sub.actor.revealCategorizationVote(vote_id);
+    if (vote['ok'] !== undefined) {
+      setVote(vote['ok']);
+    } else {
+      console.error("Failed to query vote: ", vote['err']);
+      setVote(undefined);
+    }
+  }
+
+  useEffect(() => {
+    queryVote();
+  }, [vote_id]);
 
   // @todo: do not use the index
   const getBallotsFromCategory = (categorizationVote: CategorizationVote, cat_index: number) : BallotPoint[] => {
@@ -33,31 +48,35 @@ const CategorizationPolarizationBars = ({showName, categorizationVote, categorie
   }
 
   return (
+    vote === undefined ? <></> :
     <div className="flex flex-col w-full">
-      <ol className="w-full">
-        {[...Array.from(categorizationVote.aggregate)].map(([category, aggregate], index) => (
-          <li key={category}>
-            <PolarizationBar 
-              name={category}
-              showName={showName}
-              polarizationInfo={toPolarizationInfo(categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
-              polarizationValue={aggregate}
-              ballots={getBallotsFromCategory(categorizationVote, index)}
-              chartType={chartType}>
-            </PolarizationBar>
-          </li>
-        ))}
-      </ol>
+      {
+        vote.ballots.length === 0 ? <></> :
+        <ol className="w-full">
+          {[...Array.from(vote.aggregate)].map(([category, aggregate], index) => (
+            <li key={category}>
+              <PolarizationBar 
+                name={category}
+                showName={true}
+                polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
+                polarizationValue={aggregate}
+                ballots={getBallotsFromCategory(vote, index)}
+                chartType={chartType}>
+              </PolarizationBar>
+            </li>
+          ))}
+        </ol>
+      }
       <div className="grid grid-cols-3 w-full items-center mt-2">
         <div className="text-xs font-light text-gray-400 place-self-center">
-          { (categorizationVote.aggregate[0][1].left + categorizationVote.aggregate[0][1].center + categorizationVote.aggregate[0][1].right).toString() + " voters" }
+          { (vote.aggregate[0][1].left + vote.aggregate[0][1].center + vote.aggregate[0][1].right).toString() + " voters" }
         </div>
         <ChartTypeToggle 
           chartType={chartType}
           setChartType={setChartType}
         />
         <div className="text-xs font-light place-self-center">
-          { "id " + categorizationVote.id.toString() }
+          { "id " + vote.id.toString() }
         </div>
       </div>
     </div>

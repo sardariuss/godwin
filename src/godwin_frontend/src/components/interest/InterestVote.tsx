@@ -5,117 +5,125 @@ import SvgButton                                        from "../base/SvgButton"
 import PutBallotIcon                                    from "../icons/PutBallotIcon";
 import ArrowDownIcon                                    from "../icons/ArrowDownIcon";
 import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
-import { ActorContext }                                 from "../../ActorContext"
+import { ActorContext, Sub }                            from "../../ActorContext"
 import { putBallotErrorToString }                       from "../../utils";
-import { PutBallotError, _SERVICE }                     from "../../../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteData }                     from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { ActorSubclass }                                from "@dfinity/agent";
 import { useState, useEffect, useContext }              from "react";
 
+const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
+  if (vote_data.user_ballot['INTEREST'] !== undefined){
+		return vote_data.user_ballot['INTEREST'].date;
+	}
+  return undefined;
+}
+
+const unwrapBallotAnswer = (vote_data: VoteData) : InterestEnum => {
+  if (vote_data.user_ballot['INTEREST'] !== undefined){
+		return interestToEnum(vote_data.user_ballot['INTEREST'].answer);
+	}
+  return InterestEnum.Neutral;
+}
+
 type Props = {
-  actor: ActorSubclass<_SERVICE>,
-  voteId: bigint;
+  sub: Sub,
+  voteData: VoteData;
 };
 
-const InterestVote = ({actor, voteId}: Props) => {
+const InterestVote = ({sub, voteData}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>             (false);
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>             (false);
-  const [voteDate,      setVoteDate     ] = useState<bigint | null>       (null);
-  const [interest,      setInterest     ] = useState<InterestEnum | null> (null);
+  const [countdownVote, setCountdownVote] = useState<boolean>           (false                       );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>           (false                       );
+  const [voteDate,      setVoteDate     ] = useState<bigint | undefined>(unwrapBallotDate(voteData)  );
+  const [interest,      setInterest     ] = useState<InterestEnum>      (unwrapBallotAnswer(voteData));
 
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
       setInterest(InterestEnum.Up);
-      setCountdownVote(true);
     } else if (interest === InterestEnum.Down) {
       setInterest(InterestEnum.Neutral);
-      setCountdownVote(false);
     }
   }
 
   const decrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
       setInterest(InterestEnum.Down);
-      setCountdownVote(true);
     } else if (interest === InterestEnum.Up) {
       setInterest(InterestEnum.Neutral);
-      setCountdownVote(false);
     }
   }
 
   const refreshBallot = () : Promise<void> => {
-    return actor.getInterestBallot(voteId).then((result) => {
-      setInterest(
-        old => { return result['ok'] !== undefined && result['ok'].answer[0] !== undefined ? 
-          interestToEnum(result['ok'].answer[0]) : old === null ? InterestEnum.Neutral : old});
-      setVoteDate(result['ok'] !== undefined ? result['ok'].date : null);
+    return sub.actor.getInterestBallot(voteData.id).then((result) => {
+      if (result['ok'] !== undefined){
+        if (result['ok'].answer[0] !== undefined){
+          setInterest(interestToEnum(result['ok'].answer[0]));
+        }
+        if (result['ok'].date !== undefined){
+          setVoteDate(result['ok'].date);
+        }
+      }
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (interest === null || interest === InterestEnum.Neutral) throw new Error("Invalid interest");
-    return actor.putInterestBallot(voteId, enumToInterest(interest)).then((result) => {
+    if (interest === InterestEnum.Neutral) throw new Error("Invalid interest");
+    return sub.actor.putInterestBallot(voteData.id, enumToInterest(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
   }
 
   useEffect(() => {
-    refreshBallot();
-  }, []);
+    setCountdownVote(interest !== InterestEnum.Neutral);
+  }, [interest]);
 
 	return (
-    <div>
-    {
-      interest === null ? <></> :
-      <div className="grid grid-cols-3 w-full content-center items-center">
-        <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-          <div className={`w-10 flex -m-2 justify-center ${voteDate !== null ? "hidden" : ""}`}>
-            <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
-              <ArrowUpIcon/>
-            </SvgButton>
-          </div>
-          <InterestBallot answer={interest} dateNs={voteDate}/>
-          <div className={`w-10 flex -m-2 justify-center ${voteDate !== null ? "hidden" : ""}`}>
-            <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
-              <ArrowDownIcon/>
-            </SvgButton>
-          </div>
+    <div className="grid grid-cols-3 w-full content-center items-center">
+      <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+        <div className={`w-10 flex -m-2 justify-center ${voteDate !== undefined ? "hidden" : ""}`}>
+          <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
+            <ArrowUpIcon/>
+          </SvgButton>
         </div>
-        <div className={`col-span-1 justify-center`}>
-          {
-            voteDate !== null || interest === InterestEnum.Neutral ? 
-              <></> :
-              <UpdateProgress<PutBallotError> 
-                delay_duration_ms={countdownDurationMs}
-                update_function={putBallot}
-                error_to_string={putBallotErrorToString}
-                callback_function={refreshBallot}
-                run_countdown={countdownVote}
-                set_run_countdown={setCountdownVote}
-                trigger_update={triggerVote}
-                set_trigger_update={setTriggerVote}
-                cost={BigInt(100_000_000)}
-              >
-                <SvgButton 
-                  onClick={() => setTriggerVote(true)}
-                  disabled={false}
-                  hidden={false}
-                >
-                  <div className="w-6 h-6">
-                    <PutBallotIcon/>
-                  </div>
-                </SvgButton>
-              </UpdateProgress>
-          }
+        <InterestBallot answer={interest} dateNs={voteDate}/>
+        <div className={`w-10 flex -m-2 justify-center ${voteDate !== undefined ? "hidden" : ""}`}>
+          <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
+            <ArrowDownIcon/>
+          </SvgButton>
         </div>
       </div>
-    }
+      <div className={`col-span-1 justify-center`}>
+        {
+          voteDate !== undefined || interest === InterestEnum.Neutral ? 
+            <></> :
+            <UpdateProgress<PutBallotError> 
+              delay_duration_ms={countdownDurationMs}
+              update_function={putBallot}
+              error_to_string={putBallotErrorToString}
+              callback_function={refreshBallot}
+              run_countdown={countdownVote}
+              set_run_countdown={setCountdownVote}
+              trigger_update={triggerVote}
+              set_trigger_update={setTriggerVote}
+              cost={BigInt(100_000_000)}
+            >
+              <SvgButton 
+                onClick={() => setTriggerVote(true)}
+                disabled={false}
+                hidden={false}
+              >
+                <div className="w-6 h-6">
+                  <PutBallotIcon/>
+                </div>
+              </SvgButton>
+            </UpdateProgress>
+        }
+      </div>
     </div>
   );
 };

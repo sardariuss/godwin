@@ -20,7 +20,7 @@ const SubBanner = ({sub} : Props) => {
       <div className="relative w-full overflow-clip bg-gray-200 dark:bg-gray-700 py-1">
         <div className="dark:text-white font-normal whitespace-nowrap"
           style={{transform: `translate(` + `${(shift - diff) * 100}` + `vw, 0)`}}>
-          { sub.categories.map((category, index) => 
+          { [...Array.from(sub.categories)].map((category, index) => 
             <span key={category[0]}>
               <span className="text-xs font-medium">{category[1].left.name.toLocaleLowerCase()  + " " }</span>
               <span>{category[1].left.symbol}</span>
@@ -28,7 +28,7 @@ const SubBanner = ({sub} : Props) => {
               <span>{category[1].right.symbol}</span>
               <span className="text-xs font-medium">{" " + category[1].right.name.toLocaleLowerCase() }</span>
               {
-                index < sub.categories.length - 1 ? 
+                index < sub.categories.size - 1 ? 
                 <span>{" · "}</span> : <></>
               }
             </span>

@@ -42,7 +42,7 @@ module {
       creation_date               = date;
       categories                  = Categories.initRegister(parameters.categories);
       momentum_args               = Ref.init<InterestMomentumArgs>({ 
-        last_pick_date = date;
+        last_pick_date_ns = date;
         last_pick_score = 1.0; 
         num_votes_opened = 0;
         minimum_score = if (parameters.minimum_interest_score > 0.0) { parameters.minimum_interest_score; } else {

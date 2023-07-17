@@ -1,5 +1,6 @@
+import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, CategoryArray__1, SchedulerParameters }         from "../declarations/godwin_sub/godwin_sub.did";
+import { _SERVICE as SubService, Category, CategoryInfo, SchedulerParameters }   from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
 import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
@@ -20,7 +21,7 @@ import React                                                                    
 export type Sub = {
   actor: ActorSubclass<SubService>;
   name: string;
-  categories: CategoryArray__1;
+  categories: Map<Category, CategoryInfo>;
   scheduler_parameters: SchedulerParameters;
 };
 
@@ -137,7 +138,7 @@ export function useAuthClient() {
         },
       });
       let name = await actor.getName();
-      let categories = await actor.getCategories();
+      let categories = toMap(await actor.getCategories());
       let scheduler_parameters = await actor.getSchedulerParameters();
       newSubs.set(id, {actor, name, categories, scheduler_parameters});
     }));

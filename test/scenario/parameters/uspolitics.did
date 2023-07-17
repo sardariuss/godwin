@@ -8,7 +8,7 @@ record {
     };
   };
   scheduler = record {
-    question_pick_rate        = variant { HOURS = 1    : nat };
+    question_pick_period        = variant { HOURS = 1    : nat };
     censor_timeout            = variant { MINUTES = 20 : nat };
     candidate_status_duration = variant { HOURS = 4    : nat };
     open_status_duration      = variant { HOURS = 1    : nat };

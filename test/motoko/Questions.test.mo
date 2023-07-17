@@ -51,7 +51,7 @@ suite("Questions module test suite", func() {
         compare(
           questions.createQuestion(question.author, question.date, question.text),
           question,
-          Testify.question);
+          Testify.question.equal);
       });
     };
   });
@@ -61,7 +61,7 @@ suite("Questions module test suite", func() {
         compare(
           questions.findQuestion(question.id),
           ?question,
-          optionalTestify(Testify.question));
+          optionalTestify(Testify.question.equal));
       });
     };
   });
@@ -71,7 +71,7 @@ suite("Questions module test suite", func() {
         compare(
           questions.findQuestion(question.id + array_questions.size()),
           null,
-          optionalTestify(Testify.question));
+          optionalTestify(Testify.question.equal));
       });
     };
   });
@@ -79,7 +79,7 @@ suite("Questions module test suite", func() {
     compare(
       questions.canCreateQuestion(Principal.fromText("2vxsx-fae"), 0, "Hopefully this is a short enough question"),
       ?#PrincipalIsAnonymous,
-      optionalTestify(Testify.openQuestionError));
+      optionalTestify(Testify.openQuestionError.equal));
   });
   test("It shall not be possible to create a question that has more characters than maximum set", func() {
     compare(
@@ -92,7 +92,7 @@ suite("Questions module test suite", func() {
         }
       ),
       ?#TextTooLong,
-      optionalTestify(Testify.openQuestionError));
+      optionalTestify(Testify.openQuestionError.equal));
   });
   suite("Test that retrieving the questions from the author works", func() {
     for(question in Array.vals(array_questions)) {
@@ -100,7 +100,7 @@ suite("Questions module test suite", func() {
         compare(
           Set.peekFront(questions.getQuestionIdsFromAuthor(principals[question.id])),
           ?question.id,
-          optionalTestify(Testify.nat));
+          optionalTestify(Testify.nat.equal));
       });
     };
   });
@@ -110,7 +110,7 @@ suite("Questions module test suite", func() {
         compare(
           question,
           array_questions[question.id],
-          Testify.question);
+          Testify.question.equal);
       });
     };
   });

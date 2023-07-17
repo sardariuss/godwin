@@ -2,6 +2,7 @@ import Types               "Types";
 import Votes               "Votes";
 import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
+import InterestRules       "InterestRules";
 import PayRules            "../PayRules";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
@@ -11,19 +12,17 @@ import KeyConverter        "../questions/KeyConverter";
 
 import UtilsTypes          "../../utils/Types";
 
-import Set                 "mo:map/Set";
 import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
-import Float               "mo:base/Float";
 import Nat                 "mo:base/Nat";
 import Option              "mo:base/Option";
+import Debug               "mo:base/Debug";
 
 module {
 
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
-  type Set<K>                 = Set.Set<K>;
   type Map<K, V>              = Map.Map<K, V>;
   
   type VoteId                 = Types.VoteId;
@@ -57,11 +56,10 @@ module {
   
   public type Register        = Votes.Register<Interest, Appeal>;
 
-  let DECAY_WEIGHT      = 0.5; // Arbitrarily set
-  let DECAY_RESISTANCE  = 1.0; // Arbitrarily set
-
   let PRICE_OPENING_VOTE = 1_000_000_000; // @todo: make this a parameter
   let PRICE_PUT_BALLOT   = 100_000_000; // @todo: make this a parameter
+
+  let HOTNESS_TIME_UNIT_NS = 86_400_000_000_000; // 24 hours in nanoseconds @todo: make this a parameter
 
   public func initRegister() : Register {
     Votes.initRegister<Interest, Appeal>();
@@ -110,7 +108,7 @@ module {
         case(#err(err)) { #err(err); };
         case(#ok(vote_id)) {
           let question_id = on_success(vote_id);
-          _queries.add(KeyConverter.toInterestScoreKey(question_id, 0.0));
+          _queries.add(KeyConverter.toHotnessKey(question_id, _votes.getVote(vote_id).aggregate.hotness));
           #ok((question_id, vote_id));
         };
       };
@@ -121,7 +119,7 @@ module {
       await* _votes.closeVote(vote_id, date);
       let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
-      _queries.remove(KeyConverter.toInterestScoreKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.score));
+      _queries.remove(KeyConverter.toHotnessKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.hotness));
       // Pay out the buyer
       let (refund_amount, reward_amount) = _pay_rules.computeOpenVotePayout(vote.aggregate, Map.size(vote.ballots));
       await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
@@ -129,12 +127,14 @@ module {
 
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {    
       
-      let old_appeal = _votes.getVote(vote_id).aggregate.score;
+      let old_hotness = _votes.getVote(vote_id).aggregate.hotness;
 
       Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
-        let new_appeal = _votes.getVote(vote_id).aggregate.score;
         let question_id = _joins.getQuestionIteration(vote_id).0;
-        _queries.replace(?KeyConverter.toInterestScoreKey(question_id, old_appeal), ?KeyConverter.toInterestScoreKey(question_id, new_appeal));
+        _queries.replace(
+          ?KeyConverter.toHotnessKey(question_id, old_hotness),
+          ?KeyConverter.toHotnessKey(question_id, _votes.getVote(vote_id).aggregate.hotness)
+        );
       });
     };
 
@@ -175,19 +175,43 @@ module {
       #ok;
     };
 
-    public func emptyAggregate() : Appeal {
-      { ups = 0; downs = 0; score = 0.0; last_score_switch = null; };
+    public func emptyAggregate(date: Time) : Appeal {
+      let hot_timestamp = InterestRules.computeHotTimestamp(date, HOTNESS_TIME_UNIT_NS);
+      let { score; hotness; } = InterestRules.computeScoreAndHotness(0, 0, hot_timestamp);
+      {
+        ups = 0;
+        downs = 0; 
+        score;
+        negative_score_date = null;
+        hot_timestamp;
+        hotness;
+      };
     };
 
-    public func onPutBallot(aggregate: Appeal, new_ballot: Ballot, old_ballot: ?Ballot) : Appeal {
-      var appeal = aggregate;
-      // Add the new ballot to the appeal
-      appeal := addInterest(appeal, new_ballot);
-      // If there was an old ballot, remove it from the appeal
+    public func onPutBallot(appeal: Appeal, new_ballot: Ballot, old_ballot: ?Ballot) : Appeal {
+      
+      // One should not be able to replace their ballot
       Option.iterate(old_ballot, func(ballot: Ballot) {
-        appeal := subInterest(appeal, ballot);
+        Debug.trap("Cannot replace interest ballot");
       });
-      appeal;
+
+      // Update the number of ups or downs depending on the ballot
+      let ups   = if (new_ballot.answer == #UP)   { Nat.add(appeal.ups, 1);   } else { appeal.ups;   };
+      let downs = if (new_ballot.answer == #DOWN) { Nat.add(appeal.downs, 1); } else { appeal.downs; };
+    
+      // Compute the scores
+      let { score; hotness; } = InterestRules.computeScoreAndHotness(ups, downs, appeal.hot_timestamp);
+
+      let negative_score_date = if (score >= 0.0) { 
+        null; // More ups than downs, the date shall be null
+      } else if (Option.isNull(appeal.negative_score_date)) {
+        ?new_ballot.date; // The score just became negative, use the current date
+      } else {
+        appeal.negative_score_date; // Keep the date of the last time the score turned negative
+      };
+
+      // Return the modified appeal
+      { appeal with ups; downs; score; hotness; negative_score_date; };
     };
 
     public func onVoteClosed(aggregate: Appeal, date: Time) : Appeal {
@@ -201,60 +225,6 @@ module {
     public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {
       vote.status == #CLOSED or caller == voter;
     };
-  };
-
-  func initInterest() : Appeal {
-    { ups = 0; downs = 0; score = 0.0; last_score_switch = null; };
-  };
-
-  func addInterest(appeal: Appeal, ballot: Ballot) : Appeal {
-    let ups   = if (ballot.answer == #UP)   { Nat.add(appeal.ups, 1);   } else { appeal.ups;   };
-    let downs = if (ballot.answer == #DOWN) { Nat.add(appeal.downs, 1); } else { appeal.downs; };
-    let score = computeScore(ups, downs);
-
-    let last_score_switch = if (appeal.last_score_switch == null or ups == downs){
-      ?ballot.date;
-      } else {
-      appeal.last_score_switch;
-    };
-
-    { ups; downs; score; last_score_switch; };
-  };
-
-  func subInterest(appeal: Appeal, ballot: Ballot) : Appeal {
-    let ups   = if (ballot.answer == #UP)   { Nat.sub(appeal.ups, 1);   } else { appeal.ups;   };
-    let downs = if (ballot.answer == #DOWN) { Nat.sub(appeal.downs, 1); } else { appeal.downs; };
-    let score = computeScore(ups, downs);
-
-    { appeal with ups; downs; score; };
-  };
-
-  func computeScore(ups: Nat, downs: Nat) : Float {
-    let total = Float.fromInt(ups + downs);
-    if (total == 0.0) { return 0.0; };
-    let x = Float.fromInt(ups) / total;
-    let growth_rate = 20.0;
-    let mid_point = 0.5;
-    // https://stackoverflow.com/a/3787645: this will underflow to 0 for large negative values of x,
-    // but that may be OK depending on your context since the exact result is nearly zero in that case.
-    let sigmoid = (2.0 / (1.0 + Float.exp(-1.0 * growth_rate * (x - mid_point)))) - 1.0;
-    total * sigmoid;
-  };
-
-  
-  public func computeSelectionScore(args: InterestMomentumArgs, pick_rate: Time, now: Time): Float {
-    let { last_pick_date; last_pick_score; num_votes_opened; minimum_score; } = args;
-    let score = computeMomentumCoef(last_pick_date, pick_rate, num_votes_opened, now) * last_pick_score;
-    if (score > minimum_score) { score; } else { minimum_score; };
-  };
-
-  // https://www.desmos.com/calculator/jcddnwyqbk
-  public func computeMomentumCoef(last_pick_date: Time, pick_rate: Time, num_votes_opened: Nat, now: Time): Float {
-    let time_passed = Float.fromInt(now - last_pick_date) / Float.fromInt(pick_rate);
-    ( 
-        (1 - DECAY_WEIGHT) * (1.0 / time_passed)
-      +      DECAY_WEIGHT  * Float.exp((-time_passed + 1) / (DECAY_RESISTANCE * (Float.fromInt(num_votes_opened) + 1)))
-    );
   };
   
 };

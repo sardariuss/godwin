@@ -44,7 +44,7 @@ module {
 
   public func build(register: Register) : QuestionQueries {
 
-    addOrderBy(register, #INTEREST_SCORE);
+    addOrderBy(register, #HOTNESS);
     // @todo: #STATUS(#CANDIDATE) and #STATUS(#CLOSED) could be removed when the scenario is removed
     addOrderBy(register, #STATUS(#CANDIDATE));
     addOrderBy(register, #STATUS(#OPEN));
@@ -73,7 +73,7 @@ module {
       case(#STATUS(#OPEN)                ){ "STATUS(OPEN)";        };
       case(#STATUS(#CLOSED)              ){ "STATUS(CLOSED)";      };
       case(#STATUS(#REJECTED))            { "STATUS(REJECTED)";    };
-      case(#INTEREST_SCORE)               { "INTEREST_SCORE";      };
+      case(#HOTNESS)               { "HOTNESS";      };
       case(#ARCHIVE)                      { "ARCHIVE";             };
       case(#OPINION_VOTE)                 { "OPINION_VOTE";        };
     };
@@ -96,7 +96,7 @@ module {
           case(#REJECTED(_))   { #STATUS(#REJECTED);  };
         };
       };
-      case(#INTEREST_SCORE(_)) { #INTEREST_SCORE;     };
+      case(#HOTNESS(_)) { #HOTNESS;     };
       case(#ARCHIVE(_))        { #ARCHIVE;            };
       case(#OPINION_VOTE(_))   { #OPINION_VOTE;       };
     };
@@ -108,7 +108,7 @@ module {
       case(#TEXT)           { compareTextEntries       (unwrapText(a),             unwrapText(b)             ); };
       case(#DATE)           { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
       case(#STATUS(_))      { compareDateEntries       (unwrapStatusEntry(a),      unwrapStatusEntry(b)      ); };
-      case(#INTEREST_SCORE) { compareInterestScores    (unwrapInterestScore(a),    unwrapInterestScore(b)    ); };
+      case(#HOTNESS) { compareInterestScores    (unwrapInterestScore(a),    unwrapInterestScore(b)    ); };
       case(#ARCHIVE)        { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
       case(#OPINION_VOTE)   { compareOpinionVoteEntries(unwrapOpinionVoteEntry(a), unwrapOpinionVoteEntry(b) ); };
     };
@@ -120,7 +120,7 @@ module {
       case(#TEXT(entry))           { entry.question_id; };
       case(#DATE(entry))           { entry.question_id; };
       case(#STATUS(entry))         { entry.question_id; };
-      case(#INTEREST_SCORE(entry)) { entry.question_id; };
+      case(#HOTNESS(entry)) { entry.question_id; };
       case(#ARCHIVE(entry))        { entry.question_id; };
       case(#OPINION_VOTE(entry))   { entry.question_id; };
     };
@@ -153,7 +153,7 @@ module {
   };
   func unwrapInterestScore(key: Key) : InterestScore {
     switch(key){
-      case(#INTEREST_SCORE(interest_score)) { interest_score; };
+      case(#HOTNESS(interest_score)) { interest_score; };
       case(_) { Debug.trap("Failed to unwrap appeal score"); };
     };
   };
@@ -183,7 +183,7 @@ module {
       Nat.compare(a.question_id, b.question_id));
   };
   func compareOpinionVoteEntries(a: OpinionVoteEntry, b: OpinionVoteEntry) : Order {
-    // Reverse the compare on is_late to put the early votes at the end
+    // Reverse the compare on is_late to put the late votes at the end
     strictCompare<Bool>(b.is_late, a.is_late, Bool.compare, 
       strictCompare<Int>(a.date, b.date, Int.compare, 
         Nat.compare(a.question_id, b.question_id)));

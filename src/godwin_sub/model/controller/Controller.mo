@@ -2,16 +2,17 @@ import Event               "Event";
 import Schema              "Schema";
 import Types               "../Types";
 import Model               "../Model";
+import StatusManager       "../StatusManager";
 import Categories          "../Categories";
 import QuestionTypes       "../questions/Types";
 import Questions           "../questions/Questions";
 import KeyConverter        "../questions/KeyConverter";
-import StatusManager       "../questions/StatusManager";
 import VoteTypes           "../votes/Types";
 import Categorizations     "../votes/Categorizations";
 import Votes               "../votes/Votes";
 import Decay               "../votes/Decay";
 import Interests           "../votes/Interests";
+import InterestRules       "../votes/InterestRules";
 import SubaccountGenerator "../token/SubaccountGenerator";
 import PolarizationMap     "../votes/representation/PolarizationMap";
 
@@ -20,6 +21,7 @@ import Utils               "../../utils/Utils";
 import StateMachine        "../../utils/StateMachine";
 
 import Map                 "mo:map/Map";
+import StableBuffer        "mo:stablebuffer/StableBuffer";
 
 import Result              "mo:base/Result";
 import Principal           "mo:base/Principal";
@@ -55,13 +57,18 @@ module {
   type Duration                    = Types.Duration;
   type VoteKind                    = Types.VoteKind;
   type SchedulerParameters         = Types.SchedulerParameters;
-  type StatusInput                 = Types.StatusInput;
   type BallotConvictionInput       = Types.BallotConvictionInput;
+  type VoteAggregate               = Types.VoteAggregate;
+  type QueryQuestionItem           = Types.QueryQuestionItem;
+  type StatusHistory               = Types.StatusHistory;
+  type StatusInfo                  = Types.StatusInfo;
+  type StatusVoteAggregates        = Types.StatusVoteAggregates;
+  type StatusData                  = Types.StatusData;
+  type VoteData                    = Types.VoteData;
+  type VoteKindBallot              = Types.VoteKindBallot;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
-  type StatusHistory               = QuestionTypes.StatusHistory; // @todo
-  type StatusInfo                  = QuestionTypes.StatusInfo;
   type Key                         = QuestionTypes.Key;
   type OrderBy                     = QuestionTypes.OrderBy;
   type Category                    = VoteTypes.Category;
@@ -74,6 +81,7 @@ module {
   type Appeal                      = VoteTypes.Appeal;
   type Polarization                = VoteTypes.Polarization;
   type CursorMap                   = VoteTypes.CursorMap;
+  type VoteLink                    = VoteTypes.VoteLink;
   type OpinionAnswer               = VoteTypes.OpinionAnswer;
   type PolarizationMap             = VoteTypes.PolarizationMap;
   type InterestBallot              = VoteTypes.InterestBallot;
@@ -117,7 +125,7 @@ module {
     };
 
     public func getSelectionScore(now: Time) : Float {
-      Interests.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_rate), now);
+      InterestRules.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_period), now);
     };
 
     public func getCategories() : Categories.Categories {
@@ -169,7 +177,7 @@ module {
         // Create the question
         let question = _model.getQuestions().createQuestion(caller, date, text);
         // Set the status
-        ignore _model.getStatusManager().setStatus(question.id, #CANDIDATE, date, ?#INTEREST_VOTE(vote_id));
+        ignore _model.getStatusManager().setStatus(question.id, #CANDIDATE, date, [{ vote_kind = #INTEREST; vote_id; }]);
         // Add to the status queries
         _model.getQueries().add(KeyConverter.toStatusKey(question.id, #CANDIDATE, date));
         // Return the question
@@ -183,7 +191,7 @@ module {
     };
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, Text)]> {
-      let result = StateMachine.initEventResult<Status, StatusInput>();
+      let result = StateMachine.initEventResult<Status, [VoteLink]>();
       await* submitEvent(question_id, #REOPEN_QUESTION(#data({date; caller;})), date, result);
       switch(result.get()){
         case(#err(err)) { return #err(err); };
@@ -215,10 +223,20 @@ module {
       await* _model.getCategorizationVotes().putBallot(principal, vote_id, { answer = cursors; date; });
     };
 
-    public func getStatusHistory(question_id: Nat) : Result<StatusHistory, ReopenQuestionError> {
+    public func getStatusHistory(question_id: Nat) : Result<[StatusData], ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
         case(null) { #err(#PrincipalIsAnonymous); }; // @todo
-        case(?question) { #ok(_model.getStatusManager().getStatusHistory(question_id)); };
+        case(?question) { 
+          let history = StableBuffer.toArray(_model.getStatusManager().getStatusHistory(question_id));
+          #ok(Array.mapEntries<StatusInfo, StatusData>(
+            history, 
+            func(status_info: StatusInfo, index: Nat) : StatusData {
+              {
+                status_info; 
+                previous_status = if (index > 0) { ?{ vote_aggregates = revealStatusAggregates(history[index - 1]) }; } else { null; };
+              };
+            }));
+        };
       };
     };
 
@@ -232,18 +250,6 @@ module {
 
     public func revealCategorizationVote(vote_id: VoteId) : Result<Vote<CursorMap, PolarizationMap>, RevealVoteError> {
       _model.getCategorizationVotes().revealVote(vote_id);
-    };
-
-    public func findInterestVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _model.getInterestJoins().findVoteId(question_id, iteration);
-    };
-
-    public func findOpinionVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _model.getOpinionJoins().findVoteId(question_id, iteration);
-    };
-
-    public func findCategorizationVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _model.getCategorizationJoins().findVoteId(question_id, iteration);
     };
 
     public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
@@ -263,8 +269,59 @@ module {
       });
     };
 
-    public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
-      _model.getQueries().select(order_by, direction, limit, previous_id, null);
+    func revealStatusAggregates(status_info: StatusInfo) : [VoteAggregate] {
+      let aggregates_buffer = Buffer.Buffer<VoteAggregate>(0);
+      for({vote_id; vote_kind;} in Array.vals(status_info.votes)){
+        let aggregate = switch(vote_kind){
+          // @todo: use reveal vote instead of getVote
+          case(#INTEREST)       { #INTEREST(_model.getInterestVotes().getVote(vote_id).aggregate);                                };
+          case(#OPINION)        { #OPINION(_model.getOpinionVotes().getVote(vote_id).aggregate);                                  };
+          case(#CATEGORIZATION) { #CATEGORIZATION(Utils.trieToArray(_model.getCategorizationVotes().getVote(vote_id).aggregate)); };
+        };
+        aggregates_buffer.add({ vote_id; aggregate; });
+      };
+      Buffer.toArray(aggregates_buffer); 
+    };
+
+    func toQueryQuestionItem(user: ?Principal, question_id: QuestionId) : QueryQuestionItem {
+      switch(_model.getQuestions().findQuestion(question_id)){
+        case(null) { Debug.trap("Question not found"); };
+        case(?question) {
+          let status_data = {
+            // Get the current status info
+            status_info = _model.getStatusManager().getCurrentStatus(question_id);
+            // Get the previous votes aggregates
+            previous_status = switch(_model.getStatusManager().getPreviousStatus(question_id)) {
+              case(null) { null; };
+              case(?status_info){ ?{ vote_aggregates = revealStatusAggregates(status_info); }; };
+            };
+          };
+          // Get the open votes
+          let votes_buffer = Buffer.Buffer<(VoteKind, VoteData)>(0);
+          Option.iterate(_model.getInterestJoins().getLastVote(question_id), func(vote_id: VoteId){
+            let vote = _model.getInterestVotes().getVote(vote_id);
+            votes_buffer.add((#INTEREST,       { id = vote.id; status = vote.status; 
+              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<Interest>) : VoteKindBallot { #INTEREST(b);      }); } ); }));
+          });
+          Option.iterate(_model.getOpinionJoins().getLastVote(question_id), func(vote_id: VoteId){
+            let vote = _model.getOpinionVotes().getVote(vote_id);
+            votes_buffer.add((#OPINION,        { id = vote.id; status = vote.status; 
+              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: OpinionBallot) : VoteKindBallot { #OPINION(b);       }); } ); }));
+          });
+          Option.iterate(_model.getCategorizationJoins().getLastVote(question_id), func(vote_id: VoteId){
+            let vote = _model.getCategorizationVotes().getVote(vote_id);
+            votes_buffer.add((#CATEGORIZATION, { id = vote.id; status = vote.status; 
+              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<CursorMap>) : VoteKindBallot { #CATEGORIZATION({ date = b.date; answer = Utils.trieToArray(b.answer) }); }); } ); }));
+          });
+          { question; status_data; votes = Buffer.toArray(votes_buffer); };
+        };
+      };
+    };
+
+    public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
+      Utils.mapScanLimitResult<QuestionId, QueryQuestionItem>(
+        _model.getQueries().select(order_by, direction, limit, previous_id, null),
+        func(question_id: QuestionId) : QueryQuestionItem { toQueryQuestionItem(null, question_id); });
     };
 
     // @todo: should filter based on the question status in order to properly hide the author ?
@@ -277,11 +334,11 @@ module {
       });
     };
 
-    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
       
       let (order_by, has_vote, joins) = switch(vote_kind){
         case(#INTEREST)       {
-          (#INTEREST_SCORE, func(vote_id: VoteId) : Bool { Map.has(_model.getInterestVotes().getVoterBallots(principal), Map.nhash, vote_id); },       _model.getInterestJoins())
+          (#HOTNESS, func(vote_id: VoteId) : Bool { Map.has(_model.getInterestVotes().getVoterBallots(principal), Map.nhash, vote_id); },       _model.getInterestJoins())
         };
         case(#OPINION)        { 
           (#OPINION_VOTE,   func(vote_id: VoteId) : Bool { Map.has(_model.getOpinionVotes().getVoterBallots(principal), Map.nhash, vote_id); },        _model.getOpinionJoins())
@@ -301,7 +358,9 @@ module {
         true;
       };
 
-      _model.getQueries().select(order_by, direction, limit, previous_id, ?filter);
+      Utils.mapScanLimitResult<QuestionId, QueryQuestionItem>(
+        _model.getQueries().select(order_by, direction, limit, previous_id, ?filter),
+        func(question_id: QuestionId) : QueryQuestionItem { toQueryQuestionItem(?principal, question_id); });
     };
 
     public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId
@@ -358,7 +417,7 @@ module {
 
     public func run(time: Time) : async* () {
       for (question in _model.getQuestions().iter()){
-        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, StatusInput>());
+        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, [VoteLink]>());
       };
     };
 
@@ -389,7 +448,7 @@ module {
             };
             case(?status){
               // Set the new status
-              let iteration = _model.getStatusManager().setStatus(question_id, status, date, info);
+              let iteration = _model.getStatusManager().setStatus(question_id, status, date, Option.get(info, []));
               switch(status){
                 case(#CLOSED) {
                   // Add the question to the archive queries

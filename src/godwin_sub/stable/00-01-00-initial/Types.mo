@@ -117,7 +117,7 @@ module {
       #CLOSED;
       #REJECTED;
     };
-    #INTEREST_SCORE;
+    #HOTNESS;
     #ARCHIVE;
     #OPINION_VOTE;
   };
@@ -127,7 +127,7 @@ module {
     #TEXT: TextEntry;
     #DATE: DateEntry;
     #STATUS: StatusEntry;
-    #INTEREST_SCORE: InterestScore;
+    #HOTNESS: InterestScore;
     #ARCHIVE: DateEntry;
     #OPINION_VOTE: OpinionVoteEntry;
   };
@@ -180,7 +180,9 @@ module {
     ups: Nat;
     downs: Nat;
     score: Float;
-    last_score_switch: ?Time;
+    negative_score_date: ?Time;
+    hot_timestamp: Float;
+    hotness: Float;
   };
 
   public type DateEntry        = { question_id: Nat; date: Time; };
@@ -200,10 +202,22 @@ module {
     };
   };
 
+  public type VoteKind = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
+  };
+
+  public type VoteLink = {
+    vote_kind: VoteKind;
+    vote_id: Nat;
+  };
+
   public type StatusInfo = {
     status: Status;
     date: Time;
     iteration: Nat;
+    votes: [VoteLink];
   };
 
   public type StatusHistory = Buffer<StatusInfo>;
@@ -217,7 +231,7 @@ module {
   };
 
   public type InterestMomentumArgs = {
-    last_pick_date : Time;
+    last_pick_date_ns : Time;
     last_pick_score: Float;
     num_votes_opened: Nat;
     minimum_score: Float;
@@ -243,7 +257,7 @@ module {
   };
 
   public type SchedulerParameters = {
-    question_pick_rate        : Duration;
+    question_pick_period        : Duration;
     censor_timeout            : Duration;
     candidate_status_duration : Duration;
     open_status_duration      : Duration;

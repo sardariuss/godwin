@@ -6,9 +6,9 @@ import CONSTANTS                                                                
 import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap, VoteKind } from "../../utils";
 import { Category, Polarization }                                                                   from "../../../declarations/godwin_sub/godwin_sub.did";
 
+import { fromNullable }                                                                             from "@dfinity/utils";
 import { Principal }                                                                                from "@dfinity/principal";
 import { useEffect, useState }                                                                      from "react";
-import { fromNullable } from "@dfinity/utils";
 
 type ConvictionsProps = {
   principal: Principal;
@@ -52,7 +52,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
       // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
       total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
 
-      sub.categories.forEach(([category, _]) => {
+      [...Array.from(sub.categories)].forEach(([category, _]) => {
         let weight = toMap(categorization).get(category) ?? 0;
         // Add the weighted ballot to the ballots array
         let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
@@ -89,18 +89,18 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
           <div className="flex flex-col w-full">
             <ol className="w-full">
             {
-              [...Array.from(polarizationMap.entries())].map((elem, index) => (
+              [...Array.from(polarizationMap.entries())].map(([category, polarization], index) => (
                 (
-                  <li key={elem[0]} style={{
+                  <li key={category} style={{
                       filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
                                hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
                       }}>
                     <PolarizationBar 
-                      name={elem[0]}
+                      name={category}
                       showName={true}
-                      polarizationInfo={toPolarizationInfo(sub.categories[index][1], CONSTANTS.CATEGORIZATION_INFO.center)}
-                      polarizationValue={elem[1]}
-                      ballots={ballotsMap.get(elem[0]) ?? []}
+                      polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
+                      polarizationValue={polarization}
+                      ballots={ballotsMap.get(category) ?? []}
                       chartType={chartType}>
                     </PolarizationBar>
                   </li>

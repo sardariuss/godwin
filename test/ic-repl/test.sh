@@ -7,7 +7,7 @@ identity default;
 // Install the backend canister
 let arguments = record {
   scheduler = record {
-    question_pick_rate = variant { SECONDS = 0 };
+    question_pick_period = variant { SECONDS = 0 };
     candidate_status_duration = variant { DAYS = 1 }; // To prevent the questions to be rejected
     open_status_duration = variant { SECONDS = 0 };
     categorization_duration = variant { SECONDS = 0 };

@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -38,6 +38,13 @@ export const VoteKinds = [
   VoteKind.CATEGORIZATION,
 ];
 
+export const voteKindFromCandidVariant = (idl: VoteKindIdl) => {
+  if (idl['INTEREST'] !== undefined) return VoteKind.INTEREST;
+  if (idl['OPINION'] !== undefined) return VoteKind.OPINION;
+  if (idl['CATEGORIZATION'] !== undefined) return VoteKind.CATEGORIZATION;
+  throw new Error('Invalid voteKind');
+};
+
 export const voteKindToString = (voteKind: VoteKind) => {
   if (voteKind === VoteKind.INTEREST) return 'Interest';
   if (voteKind === VoteKind.OPINION) return 'Opinion';
@@ -56,7 +63,7 @@ export const orderByToString = (orderBy: QuestionOrderBy) => {
   if (orderBy['AUTHOR'] !== undefined) return 'Author';
   if (orderBy['DATE'] !== undefined) return 'Date';
   if (orderBy['TEXT'] !== undefined) return 'Text';
-  if (orderBy['INTEREST_SCORE'] !== undefined) return 'Interest score';
+  if (orderBy['HOTNESS'] !== undefined) return 'Interest score';
   if (orderBy['STATUS'] !== undefined) return 'Status: ' + statusToString(orderBy['STATUS']);
   if (orderBy['OPINION_VOTE'] !== undefined) return 'Opinion vote';
   throw new Error('Invalid orderBy');
@@ -74,6 +81,15 @@ export const statusToString = (status: Status) => {
   if (status['CLOSED'] !== undefined               ) return 'Closed';
   if (status['REJECTED']['TIMED_OUT'] !== undefined) return 'Timed out';
   if (status['REJECTED']['CENSORED'] !== undefined ) return 'Censored';
+  throw new Error('Invalid status');
+};
+
+export const statusEnumToString = (status: StatusEnum) => {
+  if (status === StatusEnum.CANDIDATE) return 'Candidate';
+  if (status === StatusEnum.OPEN) return 'Open';
+  if (status === StatusEnum.CLOSED) return 'Closed';
+  if (status === StatusEnum.TIMED_OUT) return 'Timed out';
+  if (status === StatusEnum.CENSORED) return 'Censored';
   throw new Error('Invalid status');
 };
 
@@ -113,14 +129,13 @@ export const openQuestionErrorToString = (error: OpenQuestionError) => {
 
 export const putBallotErrorToString = (error: PutBallotError) => {
   if (error['ChangeBallotNotAllowed']!== undefined) return 'ChangeBallotNotAllowed';
-  if (error['AlreadyVoted']         !== undefined) return 'AlreadyVoted';
-  if (error['NoSubacountLinked']    !== undefined) return 'NoSubacountLinked';
-  if (error['InvalidBallot']        !== undefined) return 'InvalidBallot';
-  if (error['VoteClosed']           !== undefined) return 'VoteClosed';
-  if (error['VoteNotFound']         !== undefined) return 'VoteNotFound';
-  if (error['PrincipalIsAnonymous'] !== undefined) return 'PrincipalIsAnonymous';
-  if (error['VoteLinkNotFound']     !== undefined) return 'VoteLinkNotFound';
-  if (error['PayinError']           !== undefined) return 'PayinError: ' + payInErrorToString(error['PayinError']);
+  if (error['NoSubacountLinked']     !== undefined) return 'NoSubacountLinked';
+  if (error['InvalidBallot']         !== undefined) return 'InvalidBallot';
+  if (error['VoteClosed']            !== undefined) return 'VoteClosed';
+  if (error['VoteNotFound']          !== undefined) return 'VoteNotFound';
+  if (error['PrincipalIsAnonymous']  !== undefined) return 'PrincipalIsAnonymous';
+  if (error['VoteLocked']            !== undefined) return 'VoteLocked';
+  if (error['PayinError']            !== undefined) return 'PayinError: ' + payInErrorToString(error['PayinError']);
   throw new Error('Invalid PutBallotError');
 };
 
@@ -138,7 +153,7 @@ export const payInErrorToString = (error: PayinError) => {
   throw new Error('Invalid PayinError');
 };
 
-export const toMap = (arr: any[]) => {
+export const toMap = (arr: Array<any>) => {
   let map = new Map<any, any>();
   arr.forEach((elem) => {
     map.set(elem[0], elem[1]);

@@ -167,7 +167,7 @@ module {
       #ok;
     };
 
-    public func emptyAggregate() : Aggregate {
+    public func emptyAggregate(date: Time) : Aggregate {
       { polarization = Polarization.nil(); is_locked = null; };
     };
 

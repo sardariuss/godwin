@@ -1,10 +1,11 @@
 import Event         "Event";
+import StatusManager "../StatusManager";
 import Types         "../Types";
 import Model         "../Model";
 import Status        "../questions/Status";
-import StatusManager "../questions/StatusManager";
 import KeyConverter  "../questions/KeyConverter";
 import Interests     "../votes/Interests";
+import InterestRules "../votes/InterestRules";
 import Opinions      "../votes/Opinions";
 
 import Duration      "../../utils/Duration";
@@ -23,18 +24,18 @@ module {
   type Status                  = Types.Status;
   type QuestionId              = Types.QuestionId;
   type VoteId                  = Types.VoteId;
-  type StatusInput             = Types.StatusInput;
+  type VoteLink                = Types.VoteLink;
   type Model                   = Model.Model;
   type Event                   = Event.Event;
   
-  public type Schema           = StateMachine.Schema<Status, Event, StatusInput, QuestionId>;
-  public type TransitionResult = StateMachine.TransitionResult<StatusInput>;
-  public type EventResult      = StateMachine.EventResult<Status, StatusInput>;
+  public type Schema           = StateMachine.Schema<Status, Event, [VoteLink], QuestionId>;
+  public type TransitionResult = StateMachine.TransitionResult<[VoteLink]>;
+  public type EventResult      = StateMachine.EventResult<Status, [VoteLink]>;
 
   public class SchemaBuilder(_model: Model) {
 
     public func build() : Schema {
-      let schema = StateMachine.init<Status, Event, StatusInput, QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
+      let schema = StateMachine.init<Status, Event, [VoteLink], QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#TIMED_OUT),  candidateStatusEnded, [#TIME_UPDATE(#id)    ]);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#CENSORED),   censored,             [#TIME_UPDATE(#id)    ]);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#OPEN,                  selected,             [#TIME_UPDATE(#id)    ]);
@@ -77,10 +78,9 @@ module {
         // Close the categorization vote
         await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, status_info.iteration), date);
         // Update the key for the opinion queries
-        let previous_key = KeyConverter.toOpinionVoteKey(question_id, status_info.date, false);
         _model.getQueries().replace(
-          ?previous_key,
-          ?KeyConverter.toOpinionVoteKey(question_id, unwrapTime(event), true));
+          ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, false),
+          ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
         result.set(#ok(null));
       });
     };
@@ -109,7 +109,7 @@ module {
         result.set(#err("Appeal score is positive")); return;
       };
 
-      let time_score_switch = switch(appeal.last_score_switch){
+      let time_score_switch = switch(appeal.negative_score_date){
         case(null){ result.set(#err("Appeal score has not switched yet")); return; };
         case(?time_switch) { time_switch; };
       };
@@ -128,8 +128,8 @@ module {
       let date = unwrapTime(event);
       
       // Verify it is the most interesting question
-      switch(_model.getQueries().iter(#INTEREST_SCORE, #BWD).next()){
-        case (null) { result.set(#err("The question is not listed in the #INTEREST_SCORE order by queries")); return; };
+      switch(_model.getQueries().iter(#HOTNESS, #BWD).next()){
+        case (null) { result.set(#err("The question is not listed in the #HOTNESS order by queries")); return; };
         case(?most_interesting) {
           if (question_id != most_interesting) {
             result.set(#err("The question is currently not the most interesting question")); return;
@@ -137,8 +137,8 @@ module {
         };
       };
 
-      let status_info = _model.getStatusManager().getCurrentStatus(question_id);
-      let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
+      let current_status = _model.getStatusManager().getCurrentStatus(question_id);
+      let vote_id = _model.getInterestJoins().getVoteId(question_id, current_status.iteration);
       let question_score = _model.getInterestVotes().getVote(vote_id).aggregate.score;
 
       // Verify the score is positive
@@ -149,42 +149,40 @@ module {
       let momentum_args = _model.getMomentumArgs();
 
       // Verify the score is greater or equal to the required score
-      if (question_score < Interests.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_rate), date)){
+      if (question_score < InterestRules.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_period), date)){
         result.set(#err("The question's score is too low")); return;
       };
 
       // Close the interest vote
-      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date);
+      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current_status.iteration), date);
 
-      // If it is not the first iteration, close the previous opinion vote
-      if (status_info.iteration > 0){
-        switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){
-          case(null) { Debug.trap("If this is not the first selection, the history shall already contain an OPEN status"); };
-          case(?status_info){
-            await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
-            // Remove the key for the opinion queries
-            _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
-          };
+      // If there was a previous opinion vote, close it
+      switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){
+        case(null) { /* Nothing to do */ };
+        case(?status_info){
+          await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
+          // Remove the key for the opinion queries
+          _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
         };
       };
 
       // Open up the opinion and categorization votes
-      let opinion_vote_id        = _model.getOpinionVotes().newVote(date);
-      let categorization_vote_id = _model.getCategorizationVotes().newVote(date);
+      let opinion_vote_link        = { vote_kind = #OPINION;        vote_id = _model.getOpinionVotes().newVote(date); };
+      let categorization_vote_link = { vote_kind = #CATEGORIZATION; vote_id = _model.getCategorizationVotes().newVote(date); };
 
       // Add the key for the opinion queries
       _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
 
       // Update the momentum args
       _model.setMomentumArgs({
-        last_pick_date = date;
+        last_pick_date_ns = date;
         last_pick_score = question_score;
         num_votes_opened = momentum_args.num_votes_opened + 1;
         minimum_score = momentum_args.minimum_score;
       });
 
       // Perform the transition
-      result.set(#ok(?#CURSOR_VOTES({ opinion_vote_id; categorization_vote_id; } )));
+      result.set(#ok(?[opinion_vote_link, categorization_vote_link]));
     };
 
     func reopenQuestion(question_id: Nat, event: Event, result: TransitionResult) : async* () {
@@ -205,7 +203,7 @@ module {
       switch(await* _model.getInterestVotes().openVote(caller, date, func(VoteId) : QuestionId { question.id; })){
         case(#err(err)) { result.set(#err("Fail to open interest vote")); };
         case(#ok((_, vote_id))) {
-          result.set(#ok(?#INTEREST_VOTE(vote_id))); 
+          result.set(#ok(?[{ vote_kind = #INTEREST; vote_id; }])); 
         };
       };
     };

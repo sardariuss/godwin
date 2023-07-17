@@ -58,7 +58,7 @@ const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBall
         <div className="col-span-2 grid grid-cols-2 w-full space-x-10 items-center">
           <div className="w-full col-span-1 justify-self-center">
             <CursorBallot 
-              cursorInfo={fromNullable(ballot.answer) !== undefined ? getStrongestCategoryCursorInfo(toMap(fromNullable(ballot.answer)), toMap(sub.categories)) : null}
+              cursorInfo={fromNullable(ballot.answer) !== undefined ? getStrongestCategoryCursorInfo(toMap(fromNullable(ballot.answer)), sub.categories) : null}
               dateNs={ballot.date}/>
           </div>
           <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">

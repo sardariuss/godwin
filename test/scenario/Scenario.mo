@@ -12,17 +12,20 @@ import Debug     "mo:base/Debug";
 import Nat       "mo:base/Nat";
 import Result    "mo:base/Result";
 import Error     "mo:base/Error";
+import Array     "mo:base/Array";
 
 import Fuzz      "mo:fuzz";
-import Array     "mo:base/Array";
 
 module {
 
-  type Principal = Principal.Principal;
-  type Time      = Int;
-  type Facade    = Facade.Facade;
-  type Duration  = Types.Duration;
-  type Fuzzer    = Fuzz.Fuzzer;
+  type Principal         = Principal.Principal;
+  type Time              = Int;
+  type Facade            = Facade.Facade;
+  type Duration          = Types.Duration;
+  type QueryQuestionItem = Types.QueryQuestionItem;
+  type VoteKind          = Types.VoteKind;
+  type VoteId            = Types.VoteId;
+  type Fuzzer            = Fuzz.Fuzzer;
 
   let SEED = 0;
 
@@ -53,10 +56,8 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
-        let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
-        let iteration = status_history[status_history.size() - 1].iteration;
-        let interest_vote_id = Utils.unwrapOk(facade.findInterestVoteId(question_id, iteration));
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
+        let interest_vote_id = unwrapVoteId(queried_question, #INTEREST);
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, interest_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(interest_vote_id));
@@ -68,11 +69,9 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
-        let status_history = Utils.unwrapOk(facade.getStatusHistory(question_id));
-        let iteration = status_history[status_history.size() - 1].iteration;
-        let opinion_vote_id = Utils.unwrapOk(facade.findOpinionVoteId(question_id, iteration));
-        let categorization_vote_id = Utils.unwrapOk(facade.findCategorizationVoteId(question_id, iteration));
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
+        let opinion_vote_id = unwrapVoteId(queried_question, #OPINION);
+        let categorization_vote_id = unwrapVoteId(queried_question, #CATEGORIZATION);
         for (principal in Array.vals(principals)) {
           if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, opinion_vote_id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(opinion_vote_id));
@@ -91,7 +90,8 @@ module {
         };
       };
 
-      for (question_id in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+        let question_id = queried_question.question.id;
         if (Random.random(fuzzer) < 0.1){
           let principal = Random.randomUser(fuzzer, principals);
           Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
@@ -102,6 +102,15 @@ module {
       await* facade.run(time);
 
     };
+  };
+
+  func unwrapVoteId(queried_question: QueryQuestionItem, vote_kind: VoteKind) : VoteId {
+    for ((kind, vote_data) in Array.vals(queried_question.votes)){
+      if (kind == vote_kind){
+        return vote_data.id;
+      };
+    };
+    Debug.trap("Cannot find vote id for given vote kind");
   };
 
   func putBallotErrorToString(putBallotError: Types.PutBallotError) : Text {

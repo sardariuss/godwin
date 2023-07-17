@@ -3,6 +3,8 @@ import Opinions         "../../src/godwin_sub/model/votes/Opinions";
 import Votes            "../../src/godwin_sub/model/votes/Votes";
 import Decay            "../../src/godwin_sub/model/votes/Decay";
 import Polarization     "../../src/godwin_sub/model/votes/representation/Polarization";
+import Ref              "../../src/godwin_sub/utils/Ref";
+import Wref             "../../src/godwin_sub/utils/wrappers/WRef";
 
 import Principals                               "common/Principals";
 import { compare; optionalTestify; Testify; } = "common/Testify";
@@ -32,29 +34,31 @@ await suite("Opinions module test suite", func(): async () {
   type Cursor           = Types.Cursor;
   type OpinionAnswer    = Types.OpinionAnswer;
   type OpinionAggregate = Types.OpinionAggregate;
+  type DecayParameters  = Types.DecayParameters;
 
   let now = Time.now();
   let principals = Principals.init();
-  let decay_parameters = Decay.initParameters(#DAYS(365), now);
-  let opinions = Opinions.build(Opinions.initRegister(), decay_parameters);
+  let vote_decay        = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(365), now)));
+  let late_ballot_decay = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(7), now)  ));
+  let opinions = Opinions.build(Opinions.initRegister(), vote_decay, late_ballot_decay);
 
   await test("New vote 0", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(0, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 1", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(1, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 2", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
       ?Votes.initVote<OpinionAnswer, OpinionAggregate>(2, { polarization = Polarization.nil(); is_locked = null; }),
-      optionalTestify(Testify.opinionVote));
+      optionalTestify(Testify.opinionVote.equal));
   });
   await test("Add ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 123456789; answer = { cursor = 0.0; is_late = null; } };
@@ -62,7 +66,7 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
-      optionalTestify(Testify.opinionBallot));
+      optionalTestify(Testify.opinionBallot.equal));
   });
   await test("Update ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 12121212; answer = { cursor = 1.0; is_late = null; } };
@@ -70,7 +74,7 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
-      optionalTestify(Testify.opinionBallot));
+      optionalTestify(Testify.opinionBallot.equal));
   });
   await test("Vote aggregate vote 1", func() : async () {
     let vote_id = 1;
@@ -87,14 +91,14 @@ await suite("Opinions module test suite", func(): async () {
     compare(
       opinions.getVote(vote_id).aggregate.polarization,
       { left = 2.0; center = 4.5; right = 3.5; },
-      Testify.polarization);
+      Testify.polarization.equal);
   });
   await test("Reveal ballots", func() : async () {
     for (principal in Array.vals(principals)){
       compare(
         opinions.revealBallots(principal, principal, #FWD, 10, null).keys.size(),
         if (principal == principals[0]) 2 else 1,
-        Testify.nat);
+        Testify.nat.equal);
     };
   });
   await test("Get voter ballots", func() : async () {
@@ -102,7 +106,7 @@ await suite("Opinions module test suite", func(): async () {
       compare(
         Map.size(opinions.getVoterBallots(principal)),
         if (principal == principals[0]) 2 else 1,
-        Testify.nat);
+        Testify.nat.equal);
     };
   });
   

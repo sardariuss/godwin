@@ -29,17 +29,42 @@ module {
   type Polarization      = VoteTypes.Polarization;
   type OpinionAnswer     = VoteTypes.OpinionAnswer;
 
-  let FLOAT_EPSILON : Float = 1e-9;
+  let FLOAT_EPSILON : Float = 1e-12;
+
+  // Utility Functions, needs to be declared before used
+  private func intToText(i : Int) : Text {
+    if (i == 0) return "0";
+    let negative = i < 0;
+    var t = "";
+    var n = if (negative) { -i } else { i };
+    while (0 < n) {
+      t := (switch (n % 10) {
+        case 0 { "0" };
+        case 1 { "1" };
+        case 2 { "2" };
+        case 3 { "3" };
+        case 4 { "4" };
+        case 5 { "5" };
+        case 6 { "6" };
+        case 7 { "7" };
+        case 8 { "8" };
+        case 9 { "9" };
+        case _ { Prim.trap("unreachable") };
+      }) # t;
+      n /= 10;
+    };
+    if (negative) { "-" # t } else { t };
+  };
 
   public type Testify<T> = {
     toText : (t : T) -> Text;
-    equal  : (x : T, y : T) -> Bool;
+    compare  : (x : T, y : T) -> Bool;
   };
 
   public func testify<T>(
     toText : (t : T) -> Text,
-    equal  : (x : T, y : T) -> Bool
-  ) : Testify<T> = { toText; equal };
+    compare  : (x : T, y : T) -> Bool
+  ) : Testify<T> = { toText; compare };
 
   public func optionalTestify<T>(
     testify : Testify<T>,
@@ -48,20 +73,20 @@ module {
       case (null) { "null" };
       case (? t)  { "?" # testify.toText(t) }
     };
-    equal = func (x : ?T, y : ?T) : Bool = switch (x) {
+    compare = func (x : ?T, y : ?T) : Bool = switch (x) {
       case (null) switch (y) {
         case (null) { true };
         case (_)  { false };
       };
       case (? x) switch(y) {
         case (null) { false };
-        case (? y)  { testify.equal(x, y) };
+        case (? y)  { testify.compare(x, y) };
       };
     };
   };
 
   public func compare<T>(actual: T, expected: T, testify: Testify<T>){
-    if (not testify.equal(actual, expected)){
+    if (not testify.compare(actual, expected)){
       Debug.print("Actual: " # testify.toText(actual));
       Debug.print("Expected: " # testify.toText(expected));
       assert(false);
@@ -103,197 +128,256 @@ module {
   /// Submodule of primitive testify functions (excl. 'Any', 'None' and 'Null').
   /// https://github.com/dfinity/motoko/blob/master/src/prelude/prelude.mo
   public module Testify {
-    public let bool : Testify<Bool> = {
-      toText = func (t : Bool) : Text { if (t) { "true" } else { "false" } };
-      equal  = func (x : Bool, y : Bool) : Bool { x == y };
-    };
 
-    public let nat : Testify<Nat> = {
-      toText = func (n : Nat) : Text = intToText(n);
-      equal  = func (x : Nat, y : Nat) : Bool { x == y };
-    };
-
-    public let nat8 : Testify<Nat8> = {
-      toText = func (n : Nat8) : Text = nat.toText(Prim.nat8ToNat(n));
-      equal  = func (x : Nat8, y : Nat8) : Bool { x == y };
-    };
-
-    public let nat16 : Testify<Nat16> = {
-      toText = func (n : Nat16) : Text = nat.toText(Prim.nat16ToNat(n));
-      equal  = func (x : Nat16, y : Nat16) : Bool { x == y };
-    };
-
-    public let nat32 : Testify<Nat32> = {
-      toText = func (n : Nat32) : Text = nat.toText(Prim.nat32ToNat(n));
-      equal  = func (x : Nat32, y : Nat32) : Bool { x == y };
-    };
-
-    public let nat64 : Testify<Nat64> = {
-      toText = func (n : Nat64) : Text = nat.toText(Prim.nat64ToNat(n));
-      equal  = func (x : Nat64, y : Nat64) : Bool { x == y };
-    };
-
-    public let int : Testify<Int> = {
-      toText = func (i : Int) : Text = intToText(i);
-      equal  = func (x : Int, y : Int) : Bool { x == y };
-    };
-
-    public let int8 : Testify<Int8> = {
-      toText = func (i : Int8) : Text = int.toText(Prim.int8ToInt(i));
-      equal  = func (x : Int8, y : Int8) : Bool { x == y };
-    };
-
-    public let int16 : Testify<Int16> = {
-      toText = func (i : Int16) : Text = int.toText(Prim.int16ToInt(i));
-      equal  = func (x : Int16, y : Int16) : Bool { x == y };
-    };
-
-    public let int32 : Testify<Int32> = {
-      toText = func (i : Int32) : Text = int.toText(Prim.int32ToInt(i));
-      equal  = func (x : Int32, y : Int32) : Bool { x == y };
-    };
-
-    public let int64 : Testify<Int64> = {
-      toText = func (i : Int64) : Text =  int.toText(Prim.int64ToInt(i));
-      equal  = func (x : Int64, y : Int64) : Bool { x == y };
-    };
-
-    public let float : Testify<Float> = {
-      toText = func (f : Float) : Text = Prim.floatToText(f);
-      equal  = func (x : Float, y : Float) : Bool { x == y };
-    };
-
-    public let char : Testify<Char> = {
-      toText = func (c : Char) : Text = Prim.charToText(c);
-      equal  = func (x : Char, y : Char) : Bool { x == y };
-    };
-
-    public let text : Testify<Text> = {
-      toText = func (t : Text) : Text { t };
-      equal  = func (x : Text, y : Text) : Bool { x == y };
-    };
-
-    public let blob : Testify<Blob> = {
-      toText = func (b : Blob) : Text { encodeBlob(b) };
-      equal  = func (x : Blob, y : Blob) : Bool { x == y };
-    };
-
-    public let error : Testify<Error> = {
-      toText = func (e : Error) : Text { Prim.errorMessage(e) };
-      equal  = func (x : Error, y : Error) : Bool {
-        Prim.errorCode(x)  == Prim.errorCode(y) and 
-        Prim.errorMessage(x) == Prim.errorMessage(y);
+    public let bool = {
+      equal : Testify<Bool> = {
+        toText = func (t : Bool) : Text { if (t) { "true" } else { "false" } };
+        compare  = func (x : Bool, y : Bool) : Bool { x == y };
       };
     };
 
-    public let principal : Testify<Principal> = {
-      toText = func (p : Principal) : Text { debug_show(p) };
-      equal  = func (x : Principal, y : Principal) : Bool { x == y };
-    };
-
-    public let question : Testify<Question> = {
-      toText = func (t : Question) : Text { Questions.toText(t); };
-      equal  = func (x : Question, y : Question) : Bool { Questions.equal(x, y) };
-    };
-
-    public let openQuestionError : Testify<OpenQuestionError> = {
-      toText = func (t : OpenQuestionError) : Text { switch(t){
-        case (#PrincipalIsAnonymous) { return "PrincipalIsAnonymous"; };
-        case (#TextTooLong) { return "TextTooLong"; };
-      } };
-      equal  = func (x : OpenQuestionError, y : OpenQuestionError) : Bool { x == y; };
-    };
-
-    public let scanLimitResult : Testify<ScanLimitResult> = {
-      toText = func (result : ScanLimitResult) : Text {
-        var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        buffer.add("keys = [");
-        for (id in Array.vals(result.keys)) {
-          buffer.add(Nat.toText(id) # ", ");
-        };
-        buffer.add("], next = ");
-        switch(result.next){
-          case(null){ buffer.add("null"); };
-          case(?id) { buffer.add(Nat.toText(id)); };
-        };
-        Text.join("", buffer.vals());
+    public let nat = {
+      equal : Testify<Nat> = {
+        toText = intToText;
+        compare  = func (x : Nat, y : Nat) : Bool { x == y };
       };
-      equal = func (qr1: ScanLimitResult, qr2: ScanLimitResult) : Bool { 
-        let equal_keys = Array.equal(qr1.keys, qr2.keys, func(id1: Nat, id2: Nat) : Bool {
-          Nat.equal(id1, id2);
-        });
-        let equal_next = switch(qr1.next) {
-          case(null) { 
-            switch(qr2.next) {
-              case(null) { true };
-              case(_) { false; };
+    };
+
+    public let nat8 = {
+      equal : Testify<Nat8> = {
+        toText = func (n : Nat8) : Text = intToText(Prim.nat8ToNat(n));
+        compare  = func (x : Nat8, y : Nat8) : Bool { x == y };
+      };
+    };
+
+    public let nat16 = {
+      equal : Testify<Nat16> = {
+        toText = func (n : Nat16) : Text = intToText(Prim.nat16ToNat(n));
+        compare  = func (x : Nat16, y : Nat16) : Bool { x == y };
+      };
+    };
+
+    public let nat32 = {
+        equal : Testify<Nat32> = {
+        toText = func (n : Nat32) : Text = intToText(Prim.nat32ToNat(n));
+        compare  = func (x : Nat32, y : Nat32) : Bool { x == y };
+      };
+    };
+
+    public let nat64 = {
+      equal : Testify<Nat64> = {
+        toText = func (n : Nat64) : Text = intToText(Prim.nat64ToNat(n));
+        compare  = func (x : Nat64, y : Nat64) : Bool { x == y };
+      };
+    };
+
+    public let int = {
+      equal : Testify<Int> = {
+        toText = intToText;
+        compare  = func (x : Int, y : Int) : Bool { x == y };
+      };
+    };
+
+    public let int8 = {
+      equal : Testify<Int8> = {
+        toText = func (i : Int8) : Text = intToText(Prim.int8ToInt(i));
+        compare  = func (x : Int8, y : Int8) : Bool { x == y };
+      };
+    };
+
+    public let int16 = {
+      equal : Testify<Int16> = {
+        toText = func (i : Int16) : Text = intToText(Prim.int16ToInt(i));
+        compare  = func (x : Int16, y : Int16) : Bool { x == y };
+      };
+    };
+
+    public let int32 = {
+      equal : Testify<Int32> = {
+        toText = func (i : Int32) : Text = intToText(Prim.int32ToInt(i));
+        compare  = func (x : Int32, y : Int32) : Bool { x == y };
+      };
+    };
+
+    public let int64 = {
+      equal : Testify<Int64> = {
+        toText = func (i : Int64) : Text =  intToText(Prim.int64ToInt(i));
+        compare  = func (x : Int64, y : Int64) : Bool { x == y };
+      };
+    };
+
+    public let float = {
+      equal : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { Float.equalWithin(x, y, FLOAT_EPSILON); };
+      };
+      greaterThan : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { x > y };
+      };
+      greaterThanOrEqual : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { x >= y };
+      };
+      lessThan : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { x < y };
+      };
+      lessThanOrEqual : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { x <= y };
+      };
+    };
+
+    public let floatEpsilon9 = {
+      equal : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { Float.equalWithin(x, y, 1e-9); };
+      };
+    };
+
+    public let floatEpsilon6 = {
+      equal : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { Float.equalWithin(x, y, 1e-6); };
+      };
+    };
+
+    public let floatEpsilon3 = {
+      equal : Testify<Float> = {
+        toText = func (f : Float) : Text = Prim.floatToText(f);
+        compare  = func (x : Float, y : Float) : Bool { Float.equalWithin(x, y, 1e-3); };
+      };
+    };
+
+    public let char = {
+      equal : Testify<Char> = {
+        toText = func (c : Char) : Text = Prim.charToText(c);
+        compare  = func (x : Char, y : Char) : Bool { x == y };
+      };
+    };
+
+    public let text = {
+      equal : Testify<Text> = {
+        toText = func (t : Text) : Text { t };
+        compare  = func (x : Text, y : Text) : Bool { x == y };
+      };
+    };
+
+    public let blob = {
+      equal : Testify<Blob> = {
+        toText = func (b : Blob) : Text { encodeBlob(b) };
+        compare  = func (x : Blob, y : Blob) : Bool { x == y };
+      };
+    };
+
+    public let error = {
+      equal : Testify<Error> = {
+        toText = func (e : Error) : Text { Prim.errorMessage(e) };
+        compare  = func (x : Error, y : Error) : Bool {
+          Prim.errorCode(x)  == Prim.errorCode(y) and 
+          Prim.errorMessage(x) == Prim.errorMessage(y);
+        };
+      };
+    };
+
+    public let principal = {
+      equal : Testify<Principal> = {
+        toText = func (p : Principal) : Text { debug_show(p) };
+        compare  = func (x : Principal, y : Principal) : Bool { x == y };
+      };
+    };
+
+    public let question = {
+      equal : Testify<Question> = {
+        toText = func (t : Question) : Text { Questions.toText(t); };
+        compare  = func (x : Question, y : Question) : Bool { Questions.equal(x, y) };
+      };
+    };
+
+    public let openQuestionError = {
+      equal : Testify<OpenQuestionError> = {
+        toText = func (t : OpenQuestionError) : Text { switch(t){
+          case (#PrincipalIsAnonymous) { return "PrincipalIsAnonymous"; };
+          case (#TextTooLong) { return "TextTooLong"; };
+        } };
+        compare  = func (x : OpenQuestionError, y : OpenQuestionError) : Bool { x == y; };
+      };
+    };
+
+    public let scanLimitResult = {
+      equal : Testify<ScanLimitResult> = {
+        toText = func (result : ScanLimitResult) : Text {
+          var buffer : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+          buffer.add("keys = [");
+          for (id in Array.vals(result.keys)) {
+            buffer.add(Nat.toText(id) # ", ");
+          };
+          buffer.add("], next = ");
+          switch(result.next){
+            case(null){ buffer.add("null"); };
+            case(?id) { buffer.add(Nat.toText(id)); };
+          };
+          Text.join("", buffer.vals());
+        };
+        compare = func (qr1: ScanLimitResult, qr2: ScanLimitResult) : Bool { 
+          let equal_keys = Array.equal(qr1.keys, qr2.keys, func(id1: Nat, id2: Nat) : Bool {
+            Nat.equal(id1, id2);
+          });
+          let equal_next = switch(qr1.next) {
+            case(null) { 
+              switch(qr2.next) {
+                case(null) { true };
+                case(_) { false; };
+              };
+            };
+            case(?next1) {
+              switch(qr2.next) {
+                case(null) { false };
+                case(?next2) { Nat.equal(next1, next2); };
+              };
             };
           };
-          case(?next1) {
-            switch(qr2.next) {
-              case(null) { false };
-              case(?next2) { Nat.equal(next1, next2); };
-            };
+          equal_keys and equal_next;
+        };
+      };
+    };
+
+    public let opinionBallot = {
+      equal : Testify<OpinionBallot> = {
+        toText = opinionBallotToText;
+        compare  = opinionBallotsEqual;
+      };
+    };
+
+    public let opinionVote = {
+      equal : Testify<VoteTypes.OpinionVote> = {
+        toText = func (v : VoteTypes.OpinionVote) : Text { 
+          let status = switch(v.status) { case(#OPEN) { "OPEN"; }; case(#CLOSED) { "CLOSED"; }; };
+          let ballots = Buffer.Buffer<Text>(Map.size(v.ballots));
+          for ((principal, ballot) in Map.entries(v.ballots)) {
+            ballots.add("[" # Principal.toText(principal) # ", " # opinionBallotToText(ballot) # "] ");
           };
+          "id: " # Nat.toText(v.id) #
+          " aggregate: { polarization: " # Polarization.toText(v.aggregate.polarization) # ", is_locked: " # optToText(v.aggregate.is_locked, Float.toText) # " }" #
+          " status: " # status #
+          " ballots: " # Text.join("", ballots.vals());
         };
-        equal_keys and equal_next;
-      };
-    };
-
-    public let opinionBallot : Testify<OpinionBallot> = {
-      toText = opinionBallotToText;
-      equal  = opinionBallotsEqual;
-    };
-
-    public let opinionVote : Testify<VoteTypes.OpinionVote> = {
-      toText = func (v : VoteTypes.OpinionVote) : Text { 
-        let status = switch(v.status) { case(#OPEN) { "OPEN"; }; case(#CLOSED) { "CLOSED"; }; };
-        let ballots = Buffer.Buffer<Text>(Map.size(v.ballots));
-        for ((principal, ballot) in Map.entries(v.ballots)) {
-          ballots.add("[" # Principal.toText(principal) # ", " # opinionBallotToText(ballot) # "] ");
+        compare  = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
+          v1.id == v2.id and
+          v1.aggregate.polarization == v2.aggregate.polarization and
+          optEqual(v1.aggregate.is_locked, v2.aggregate.is_locked, equalFloat) and
+          v1.status == v2.status and
+          Utils.mapEqual<Principal, OpinionBallot>(v1.ballots, v2.ballots, Map.phash, opinionBallotsEqual)
         };
-        "id: " # Nat.toText(v.id) #
-        " aggregate: { polarization: " # Polarization.toText(v.aggregate.polarization) # ", is_locked: " # optToText(v.aggregate.is_locked, Float.toText) # " }" #
-        " status: " # status #
-        " ballots: " # Text.join("", ballots.vals());
-      };
-      equal  = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
-        v1.id == v2.id and
-        v1.aggregate.polarization == v2.aggregate.polarization and
-        optEqual(v1.aggregate.is_locked, v2.aggregate.is_locked, equalFloat) and
-        v1.status == v2.status and
-        Utils.mapEqual<Principal, OpinionBallot>(v1.ballots, v2.ballots, Map.phash, opinionBallotsEqual)
       };
     };
 
-    public let polarization : Testify<Polarization> = {
-      toText = Polarization.toText; 
-      equal = Polarization.equal;
-    };
-
-    // Utility Functions
-    private func intToText(i : Int) : Text {
-      if (i == 0) return "0";
-      let negative = i < 0;
-      var t = "";
-      var n = if (negative) { -i } else { i };
-      while (0 < n) {
-        t := (switch (n % 10) {
-          case 0 { "0" };
-          case 1 { "1" };
-          case 2 { "2" };
-          case 3 { "3" };
-          case 4 { "4" };
-          case 5 { "5" };
-          case 6 { "6" };
-          case 7 { "7" };
-          case 8 { "8" };
-          case 9 { "9" };
-          case _ { Prim.trap("unreachable") };
-        }) # t;
-        n /= 10;
+    public let polarization = {
+      equal : Testify<Polarization> = {
+        toText = Polarization.toText; 
+        compare = Polarization.equal;
       };
-      if (negative) { "-" # t } else { t };
     };
 
     private let hex : [Char] = [

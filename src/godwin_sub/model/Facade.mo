@@ -1,5 +1,4 @@
 import Types               "Types";
-import QuestionTypes       "questions/Types";
 import VoteTypes           "votes/Types";
 import Controller          "controller/Controller";
 import Categories          "Categories";
@@ -39,6 +38,7 @@ module {
   type CategoryArray                = Types.CategoryArray;
   type InterestVote                 = Types.InterestVote;
   type OpinionVote                  = Types.OpinionVote;
+  type StatusData                   = Types.StatusData;
   type CategorizationVote           = Types.CategorizationVote;
   type InterestBallot               = Types.InterestBallot;
   type OpinionAnswer                = Types.OpinionAnswer;
@@ -57,11 +57,11 @@ module {
   type SchedulerParameters          = Types.SchedulerParameters;
   type Duration                     = Types.Duration;
   type BallotConvictionInput        = Types.BallotConvictionInput;
-  type Question                     = QuestionTypes.Question;
-  type Status                       = QuestionTypes.Status;
-  type StatusHistoryMap             = QuestionTypes.StatusHistory;
-  type StatusInfo                   = QuestionTypes.StatusInfo;
-  type StatusHistory                = QuestionTypes.StatusHistory;
+  type QueryQuestionItem            = Types.QueryQuestionItem;
+  type StatusHistory                = Types.StatusHistory;
+  type StatusInfo                   = Types.StatusInfo;
+  type Question                     = Types.Question;
+  type Status                       = Types.Status;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
@@ -134,7 +134,7 @@ module {
       _controller.getQuestion(question_id);
     };
 
-    public func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?Nat) : ScanLimitResult<VoteId> {
+    public func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
       _controller.queryQuestions(order_by, direction, limit, previous_id);
     };
 
@@ -177,11 +177,8 @@ module {
       await* _controller.putCategorizationBallot(principal, vote_id, date, Utils.arrayToTrie(cursors, Categories.key, Categories.equal));
     };
 
-    public func getStatusHistory(question_id: Nat) : Result<[StatusInfo], ReopenQuestionError> {
-      Result.mapOk<StatusHistory, [StatusInfo], ReopenQuestionError>(
-        _controller.getStatusHistory(question_id), func(history: StableBuffer<StatusInfo>) : [StatusInfo] {
-          StableBuffer.toArray<StatusInfo>(history);
-        });
+    public func getStatusHistory(question_id: Nat) : Result<[StatusData], ReopenQuestionError> {
+      _controller.getStatusHistory(question_id);
     };
 
     public func revealInterestVote(vote_id: VoteId) : Result<InterestVote, RevealVoteError> {
@@ -202,18 +199,6 @@ module {
       });
     };
 
-    public func findInterestVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findInterestVoteId(question_id, iteration);
-    };
-
-    public func findOpinionVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findOpinionVoteId(question_id, iteration);
-    };
-
-    public func findCategorizationVoteId(question_id: QuestionId, iteration: Nat) : Result<VoteId, FindVoteError> {
-      _controller.findCategorizationVoteId(question_id, iteration);
-    };
-
     public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedInterestBallot> {
       _controller.queryInterestBallots(caller, voter, direction, limit, previous_id);
     };
@@ -228,7 +213,7 @@ module {
         func({vote_id; date; answer; transactions_record;}: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
           { 
             vote_id;
-            date ;
+            date;
             answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
             transactions_record; 
           };
@@ -244,7 +229,7 @@ module {
       _controller.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
     };
 
-    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionId> {
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
       _controller.queryFreshVotes(principal, vote_kind, direction, limit, previous_id);
     };
 

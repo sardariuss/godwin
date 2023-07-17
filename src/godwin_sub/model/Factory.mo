@@ -4,7 +4,7 @@ import PayRules               "PayRules";
 import Model                  "Model";
 import Categories             "Categories";
 import Facade                 "Facade";
-import StatusManager          "questions/StatusManager";
+import StatusManager          "StatusManager";
 import Questions              "questions/Questions";
 import QuestionQueriesFactory "questions/QueriesFactory";
 import Controller             "controller/Controller";

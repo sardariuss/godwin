@@ -7,7 +7,7 @@ module {
   // For convenience: from types module
   type Status = Types.Status;
 
-  public func statusToText(status: Status) : Text {
+  public func toText(status: Status) : Text {
     switch(status){
       case(#CANDIDATE)            { "CANDIDATE";           };
       case(#OPEN)                 { "OPEN";                };
@@ -17,14 +17,14 @@ module {
     };
   };
 
-  public func hashStatus(a: Status) : Nat32 { Map.thash.0(statusToText(a)); };
-  public func equalStatus(a: Status, b: Status) : Bool { Map.thash.1(statusToText(a), statusToText(b)); };
+  public func hashStatus(a: Status) : Nat32 { Map.thash.0(toText(a)); };
+  public func equalStatus(a: Status, b: Status) : Bool { Map.thash.1(toText(a), toText(b)); };
   public let status_hash : Map.HashUtils<Status> = ( func(a) = hashStatus(a), func(a, b) = equalStatus(a, b), func() = #CANDIDATE);
 
   public func optStatusToText(opt_status: ?Status) : Text {
     switch(opt_status){
       case(null) { "NULL"; };
-      case(?status) { statusToText(status); };
+      case(?status) { toText(status); };
     };
   };
 
