@@ -13,7 +13,7 @@ import { StatusData, SchedulerParameters, VoteAggregate,
   OpinionAggregate as OpinionAggregateDid, PolarizationArray, Appeal }               from "../../declarations/godwin_sub/godwin_sub.did";
 
 import Countdown                                                                     from "react-countdown";
-import { useState }                                                                  from "react";
+import React, { useState }                                                           from "react";
 import { fromNullable }                                                              from "@dfinity/utils";
 
 type Props = {
@@ -131,11 +131,10 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
             </div>
           </div>
           <div className="flex flex-col w-full">
-            <div className="flex flex-row items-center gap-x-1 w-full">
+            <div className="flex flex-row items-center gap-x-1 w-full justify-start">
               <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
                 { statusEnumToString(status) } 
               </div>
-              <div className={`flex flex-row items-center gap-x-1`}>
               {
                 previousInterestVote !== undefined ?
                   <AppealDigest 
@@ -169,15 +168,14 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
                     selected={ selectedVote === VoteKind.CATEGORIZATION}
                   /> : <> </>
               }
-              </div>
             </div>
-            <div className="flex flex-row justify-between">
+            <div className="flex flex-row justify-start space-x-1">
               <div className={`text-xs font-extralight 
                 ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
                   { date }
               </div>
               { statusEndDate !== undefined && !isHistory ?
-                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "ends " + formatTimeDiff(props.total / 1000) }</div>}>
+                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "(ends " + formatTimeDiff(props.total / 1000) + ")"}</div>}>
                   <div>{ /* @todo */}</div>
                 </Countdown> : <></>
               }

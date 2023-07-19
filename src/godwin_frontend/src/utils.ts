@@ -1,5 +1,5 @@
 import { Category } from "../declarations/godwin_master/godwin_master.did";
-import { PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -345,3 +345,16 @@ export const isAlphanumeric = (str: string) : boolean => {
   const regExp = /^[A-Za-z0-9]+$/;
   return str.match(regExp) !== null;
 };
+
+export enum VoteStatusEnum {
+  OPEN,
+  LOCKED,
+  CLOSED,
+}
+
+export const voteStatusToEnum = (status: VoteStatus) : VoteStatusEnum => {
+  if (status['OPEN']   !== undefined) return VoteStatusEnum.OPEN;
+  if (status['LOCKED'] !== undefined) return VoteStatusEnum.LOCKED;
+  if (status['CLOSED'] !== undefined) return VoteStatusEnum.CLOSED;
+  throw new Error('Invalid vote status');
+}

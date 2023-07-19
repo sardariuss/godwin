@@ -48,6 +48,7 @@ module {
   public type Polarization                 = VoteTypes.Polarization;
   public type VoteKind                     = VoteTypes.VoteKind;
   public type VoteLink                     = VoteTypes.VoteLink;
+  public type VoteStatus                   = VoteTypes.VoteStatus;
   public type CursorArray                  = [(VoteTypes.Category, VoteTypes.Cursor)];
   public type PolarizationArray            = [(VoteTypes.Category, VoteTypes.Polarization)];
   public type InterestBallot               = VoteTypes.InterestBallot;
@@ -163,7 +164,7 @@ module {
 
   public type VoteData = {
     id: VoteId;
-    status: VoteTypes.Status;
+    status: VoteStatus;
     user_ballot: ?VoteKindBallot;
   };
 

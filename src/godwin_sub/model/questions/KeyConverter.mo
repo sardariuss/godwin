@@ -60,7 +60,7 @@ module {
       case(#TEXT          ({question_id})) { question_id; };
       case(#DATE          ({question_id})) { question_id; };
       case(#STATUS        ({question_id})) { question_id; };
-      case(#HOTNESS({question_id})) { question_id; };
+      case(#HOTNESS({question_id}))        { question_id; };
       case(#ARCHIVE       ({question_id})) { question_id; };
       case(#OPINION_VOTE  ({question_id})) { question_id; };
     };

@@ -115,13 +115,13 @@ module {
   func opinionBallotToText(b : OpinionBallot) : Text { 
     Votes.ballotToText(b, func(answer: OpinionAnswer): Text {
       "{ cursor = " # Cursor.toText(answer.cursor) #
-      ", is_late = " # optToText(answer.is_late, Float.toText) # " }";
+      ", late_decay = " # optToText(answer.late_decay, Float.toText) # " }";
     });
   };
 
   func opinionBallotsEqual(b1 : OpinionBallot, b2 : OpinionBallot) : Bool { 
     Votes.ballotsEqual(b1, b2, func(answer1: OpinionAnswer, answer2: OpinionAnswer) : Bool {
-      answer1.cursor == answer2.cursor and optEqual(answer1.is_late, answer2.is_late, equalFloat);
+      answer1.cursor == answer2.cursor and optEqual(answer1.late_decay, answer2.late_decay, equalFloat);
     });
   };
 
@@ -359,14 +359,14 @@ module {
             ballots.add("[" # Principal.toText(principal) # ", " # opinionBallotToText(ballot) # "] ");
           };
           "id: " # Nat.toText(v.id) #
-          " aggregate: { polarization: " # Polarization.toText(v.aggregate.polarization) # ", is_locked: " # optToText(v.aggregate.is_locked, Float.toText) # " }" #
+          " aggregate: { polarization: " # Polarization.toText(v.aggregate.polarization) # ", decay: " # optToText(v.aggregate.decay, Float.toText) # " }" #
           " status: " # status #
           " ballots: " # Text.join("", ballots.vals());
         };
         compare  = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
           v1.id == v2.id and
           v1.aggregate.polarization == v2.aggregate.polarization and
-          optEqual(v1.aggregate.is_locked, v2.aggregate.is_locked, equalFloat) and
+          optEqual(v1.aggregate.decay, v2.aggregate.decay, equalFloat) and
           v1.status == v2.status and
           Utils.mapEqual<Principal, OpinionBallot>(v1.ballots, v2.ballots, Map.phash, opinionBallotsEqual)
         };

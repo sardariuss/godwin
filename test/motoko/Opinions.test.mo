@@ -45,23 +45,23 @@ await suite("Opinions module test suite", func(): async () {
   await test("New vote 0", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
-      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(0, { polarization = Polarization.nil(); is_locked = null; }),
+      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(0, { polarization = Polarization.nil(); decay = null; }),
       optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 1", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
-      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(1, { polarization = Polarization.nil(); is_locked = null; }),
+      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(1, { polarization = Polarization.nil(); decay = null; }),
       optionalTestify(Testify.opinionVote.equal));
   });
   await test("New vote 2", func() : async () {
     compare(
       Result.toOption(opinions.findVote(opinions.newVote(now))),
-      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(2, { polarization = Polarization.nil(); is_locked = null; }),
+      ?Votes.initVote<OpinionAnswer, OpinionAggregate>(2, { polarization = Polarization.nil(); decay = null; }),
       optionalTestify(Testify.opinionVote.equal));
   });
   await test("Add ballot to vote 0", func() : async () {
-    let ballot : OpinionBallot = { date = 123456789; answer = { cursor = 0.0; is_late = null; } };
+    let ballot : OpinionBallot = { date = 123456789; answer = { cursor = 0.0; late_decay = null; } };
     assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.answer.cursor, ballot.date));
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
@@ -69,7 +69,7 @@ await suite("Opinions module test suite", func(): async () {
       optionalTestify(Testify.opinionBallot.equal));
   });
   await test("Update ballot to vote 0", func() : async () {
-    let ballot : OpinionBallot = { date = 12121212; answer = { cursor = 1.0; is_late = null; } };
+    let ballot : OpinionBallot = { date = 12121212; answer = { cursor = 1.0; late_decay = null; } };
     assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.answer.cursor, ballot.date));
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),

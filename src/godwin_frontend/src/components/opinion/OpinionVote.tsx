@@ -4,7 +4,8 @@ import UpdateProgress                           from "../UpdateProgress";
 import SvgButton                                from "../base/SvgButton";
 import ReturnIcon                               from "../icons/ReturnIcon";
 import PutBallotIcon                            from "../icons/PutBallotIcon";
-import { putBallotErrorToString, toCursorInfo } from "../../utils";
+import { putBallotErrorToString, toCursorInfo,
+  VoteStatusEnum, voteStatusToEnum }            from "../../utils";
 import CONSTANTS                                from "../../Constants";
 import { Sub }                                  from "../../ActorContext";
 import { PutBallotError, VoteData, Cursor }     from "../../../declarations/godwin_sub/godwin_sub.did";
@@ -58,6 +59,10 @@ const OpinionVote = ({sub, voteData}: Props) => {
     });
   }
 
+  const isLate = () : boolean => {
+    return voteStatusToEnum(voteData.status) === VoteStatusEnum.LOCKED;
+  }
+
 	return (
     <div>
     {
@@ -66,7 +71,7 @@ const OpinionVote = ({sub, voteData}: Props) => {
         <div className={`pl-6`}>
         {
           voteDate !== undefined ?
-          <CursorBallot cursorInfo={toCursorInfo(cursor, CONSTANTS.OPINION_INFO)} dateNs={voteDate} isLate={false}/> :
+          <CursorBallot cursorInfo={toCursorInfo(cursor, CONSTANTS.OPINION_INFO)} dateNs={voteDate} isLate={isLate()}/> :
           <CursorSlider
             cursor = { cursor }
             polarizationInfo={ CONSTANTS.OPINION_INFO }
@@ -74,7 +79,7 @@ const OpinionVote = ({sub, voteData}: Props) => {
             setCursor={ setCursor }
             onMouseUp={ () => { setCountdownVote(true)} }
             onMouseDown={ () => { setCountdownVote(false)} }
-            isLate={false}
+            isLate={isLate()}
           />
         }
         </div>

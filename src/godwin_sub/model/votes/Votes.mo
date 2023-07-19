@@ -33,6 +33,7 @@ module {
   type Ballot<T>                 = Types.Ballot<T>;
   type RevealedBallot<T>         = Types.RevealedBallot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
+  type VoteStatus                = Types.VoteStatus;
   type GetVoteError              = Types.GetVoteError;
   type FindBallotError           = Types.FindBallotError;
   type RevealVoteError           = Types.RevealVoteError;
@@ -100,25 +101,16 @@ module {
       index;
     };
 
+    public func lockVote(id: VoteId, date: Time) {
+      setStatus(id, date, #LOCKED);
+    };
+
     public func closeVote(id: VoteId, date: Time) : async*() {
-      switch(Map.get(_register.votes, Map.nhash, id)){
-        case(null) { Debug.trap("Could not find a vote with ID '" # Nat.toText(id) # "'"); };
-        case(?vote) {
-          // Close the vote
-          switch(vote.status){
-            case(#CLOSED) { Debug.trap("The vote with ID '" # Nat.toText(id) # "' is already closed"); };
-            case(#OPEN) { 
-              vote.status := #CLOSED;
-              vote.aggregate := _policy.onVoteClosed(vote.aggregate, date);
-            };
-          };
-          Map.set(_register.votes, Map.nhash, id, vote); // @todo: not required ?
-          // Payout if any
-          switch(_pay_to_vote){
-            case(null) {};
-            case(?pay_to_vote) { await* pay_to_vote.payout(vote); };
-          };
-        };
+      setStatus(id, date, #CLOSED);
+      // Payout if any
+      switch(_pay_to_vote){
+        case(null) {};
+        case(?pay_to_vote) { await* pay_to_vote.payout(getVote(id)); };
       };
     };
 
@@ -143,10 +135,11 @@ module {
         case(null) { return #err(#VoteNotFound); };
         case(?v) { v };
       };
-      // Check it is not closed
-      switch(vote.status){
+      // Return an error if the vote is closed, else determine if the ballot will be added to the aggregate
+      let add_to_aggregate = switch(vote.status){
+        case(#OPEN)   { true;                     };
+        case(#LOCKED) { false;                    };
         case(#CLOSED) { return #err(#VoteClosed); };
-        case(_) {};
       };
       // Verify the principal is not anonymous
       if (Principal.isAnonymous(principal)){
@@ -171,7 +164,9 @@ module {
           // Add the ballot
           let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
           // Update the aggregate
-          vote.aggregate := _policy.onPutBallot(vote.aggregate, ballot, old_ballot);
+          if(add_to_aggregate){
+            vote.aggregate := _policy.addToAggregate(vote.aggregate, ballot, old_ballot);
+          };
           // Link the vote to the voter
           let history = Option.get(Map.get(_register.voters_history, Map.phash, principal), Set.new<VoteId>(Map.nhash));
           Set.add(history, Map.nhash, id);
@@ -188,7 +183,7 @@ module {
 
     public func getVote(id: VoteId) : Vote<T, A> {
       switch(Map.get(_register.votes, Map.nhash, id)){
-        case(null) { Debug.trap("Could not find a vote with ID '" # Nat.toText(id) # "'"); };
+        case(null) { Debug.trap("Could not find a vote '" # Nat.toText(id) # "'"); };
         case(?vote) { vote; };
       };
     };
@@ -208,7 +203,7 @@ module {
       for (vote_id in Set.keys(vote_ids)){
         let vote = getVote(vote_id);
         switch(Map.get(vote.ballots, Map.phash, principal)){
-          case(null) { Debug.trap("Could not find a ballot for vote with ID '" # Nat.toText(vote_id) # "'"); };
+          case(null) { Debug.trap("Could not find a ballot for vote '" # Nat.toText(vote_id) # "'"); };
           case(?ballot) { Map.set(voter_ballots, Map.nhash, vote_id, ballot); };
         };
       };
@@ -217,7 +212,7 @@ module {
 
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
       Result.chain<Vote<T, A>, Vote<T, A>, RevealVoteError>(findVote(id), func(vote) {
-        if(not _policy.canRevealVote(vote)){
+        if(vote.status == #OPEN){
           #err(#VoteOpen); // @todo
         } else {
           #ok(vote);
@@ -260,6 +255,23 @@ module {
         case(null) { null; };
         case(?pay_to_vote) { pay_to_vote.findTransactionsRecord(principal, id); };
       };
+    };
+
+    func setStatus(vote_id: VoteId, date: Time, new: VoteStatus) {
+      let vote = getVote(vote_id);
+      let error = "Cannot set status for vote '" # Nat.toText(vote_id) # "' : ";
+
+      switch((vote.status, new)){
+        case(_, #OPEN) { Debug.trap(error # "cannot reopen a vote"); };
+        case(#LOCKED, #LOCKED) { Debug.trap(error # "it is already locked"); };
+        case(#CLOSED, #LOCKED) { Debug.trap(error # "cannot lock a closed vote"); };
+        case(#CLOSED, #CLOSED) { Debug.trap(error # "it is already closed"); };
+        case(_, _) { };
+      };
+
+      vote.status := new;
+      vote.aggregate := _policy.onStatusChanged(new, vote.aggregate, date);
+      Map.set(_register.votes, Map.nhash, vote_id, vote); // @todo: not required ?
     };
 
   };

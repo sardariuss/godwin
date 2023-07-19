@@ -386,10 +386,10 @@ module {
 
       // Function to convert a ballot to a conviction input
       let to_ballot_conviction_input = func(vote_id: VoteId, ballot: OpinionBallot) : ?BallotConvictionInput {
-        let { answer = { cursor; is_late; }; date; } = ballot;
+        let { answer = { cursor; late_decay; }; date; } = ballot;
         // Get the opinion decay
         let opinion_vote = _model.getOpinionVotes().getVote(vote_id);
-        let vote_decay = switch(opinion_vote.aggregate.is_locked){
+        let vote_decay = switch(opinion_vote.aggregate.decay){
           case(null) { return null; }; // Do not consider the vote if it is not locked or closed
           case(?decay) { decay / current_vote_decay; };
         };
@@ -407,7 +407,7 @@ module {
           };
         };
         // Compute the ballot decay if applicable
-        let late_ballot_decay = Option.map(is_late, func(late_decay: Float) : Float { (late_decay / current_late_ballot_decay); });
+        let late_ballot_decay = Option.map(late_decay, func(late_decay: Float) : Float { (late_decay / current_late_ballot_decay); });
         // Return the whole input
         ?{ cursor; date; categorization; vote_decay; late_ballot_decay; };
       };

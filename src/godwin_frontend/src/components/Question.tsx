@@ -1,14 +1,15 @@
-import { UserAction }                                                    from "./MainQuestions";
-import OpinionVote                                                       from "./opinion/OpinionVote";
-import CategorizationVote                                                from "./categorization/CategorizationVote";
-import StatusHistoryComponent                                            from "./StatusHistory";
-import ReopenButton                                                      from "./ReopenButton";
-import InterestVote                                                      from "./interest/InterestVote";
-import { StatusEnum, VoteKind, statusToEnum, voteKindFromCandidVariant } from "../utils";
-import { Sub }                                                           from "../ActorContext";
-import { QueryQuestionItem, VoteKind__1, VoteData }                      from "../../declarations/godwin_sub/godwin_sub.did";
+import { UserAction }                                            from "./MainQuestions";
+import OpinionVote                                               from "./opinion/OpinionVote";
+import CategorizationVote                                        from "./categorization/CategorizationVote";
+import StatusHistoryComponent                                    from "./StatusHistory";
+import ReopenButton                                              from "./ReopenButton";
+import InterestVote                                              from "./interest/InterestVote";
+import { StatusEnum, VoteKind, statusToEnum,
+	 voteKindFromCandidVariant, VoteStatusEnum, voteStatusToEnum } from "../utils";
+import { Sub }                                                   from "../ActorContext";
+import { QueryQuestionItem, VoteKind__1, VoteData }              from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { useEffect, useState }                                           from "react";
+import { useEffect, useState }                                   from "react";
 
 export type QuestionInput = {
 	sub: Sub,
@@ -76,9 +77,9 @@ const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) 
 					}
 				</div>
 				{
-					activeVote === VoteKind.OPINION && voteData !== undefined && voteData.status["OPEN"] !== undefined ? 
+					activeVote === VoteKind.OPINION && voteData !== undefined && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED ? 
 						<OpinionVote sub={sub} voteData={voteData} /> :
-					activeVote === VoteKind.CATEGORIZATION && voteData !== undefined && voteData.status["OPEN"] !== undefined ?
+					activeVote === VoteKind.CATEGORIZATION && voteData !== undefined && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED?
 						<CategorizationVote sub={sub} voteData={voteData}/> : <></>
 				}
 				<StatusHistoryComponent sub={sub} questionId={queried_question.question.id} currentStatusData={queried_question.status_data}/>
@@ -103,7 +104,7 @@ const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) 
 				*/}
 			</div>
 			{
-				activeVote === VoteKind.INTEREST && voteData !== undefined && voteData.status["OPEN"] !== undefined ?
+				activeVote === VoteKind.INTEREST && voteData !== undefined && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED ?
 				<div className="w-1/5 mr-5">
 					<InterestVote sub={sub} voteData={voteData}/>
 				</div> : <></>

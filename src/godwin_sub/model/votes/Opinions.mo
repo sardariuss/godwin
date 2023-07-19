@@ -32,6 +32,7 @@ module {
   type Vote               = Types.OpinionVote;
   type Aggregate          = Types.OpinionAggregate;
   type IVotePolicy        = Types.IVotePolicy<Answer, Aggregate>;
+  type VoteStatus         = Types.VoteStatus;
   type PutBallotError     = Types.PutBallotError;
   type DecayParameters    = Types.DecayParameters;
   type RevealedBallot     = Types.RevealedBallot<Answer>;
@@ -57,7 +58,7 @@ module {
     Opinions(
       Votes.Votes<Answer, Aggregate>(
         vote_register,
-        VotePolicy(),
+        VotePolicy(vote_decay),
         null
       ),
       vote_decay,
@@ -83,16 +84,7 @@ module {
     };
 
     public func lockVote(id: VoteId, date: Time) {
-      let vote = _votes.getVote(id);
-      if (Option.isSome(vote.aggregate.is_locked)){
-        Debug.trap("The vote is already locked");
-      };
-      vote.aggregate := { vote.aggregate with is_locked = ?Decay.computeDecay(getVoteDecay(), date); };
-    };
-
-    public func isLocked(id: VoteId) : ?Float {
-      let vote = _votes.getVote(id);
-      vote.aggregate.is_locked;
+      _votes.lockVote(id, date);
     };
 
     public func closeVote(id: VoteId, date: Time) : async*() {
@@ -100,8 +92,11 @@ module {
     };
 
     public func putBallot(principal: Principal, id: VoteId, cursor: Cursor, date: Time) : async* Result<(), PutBallotError> {
-      let is_late = if (Option.isSome(isLocked(id))) { ?Decay.computeDecay(getLateBallotDecay(), date); } else { null; };
-      await* _votes.putBallot(principal, id, { answer = { cursor; is_late; }; date; });
+      let late_decay = switch(getVote(id).status){
+        case(#LOCKED) { ?Decay.computeDecay(_late_ballot_decay.get(), date); };
+        case(_) { null; };
+      };
+      await* _votes.putBallot(principal, id, { answer = { cursor; late_decay; }; date; });
     };
 
     public func findVote(id: VoteId) : Result<Vote, GetVoteError> {
@@ -134,7 +129,7 @@ module {
 
   };
 
-  class VotePolicy() : IVotePolicy {
+  class VotePolicy(_vote_decay: WRef<DecayParameters>) : IVotePolicy {
 
     public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
 
@@ -143,39 +138,30 @@ module {
         return #err(#InvalidBallot);
       };
 
-      switch((vote.aggregate.is_locked, ballot.answer.is_late)){
-        case((null, ?late)) {    // Unlocked vote, late ballot
-          Debug.trap("Unlocked votes cannot accept late ballots");
-        };
-        case((?locked, null)) {  // Locked vote, on-time ballot
-          Debug.trap("Locked votes only accept late ballots");
-        };
-        case((?locked, ?late)) { // Locked vote, late ballot
-          switch(Map.get(vote.ballots, Map.phash, principal)){
-            case(null) {};
-            case(?old) {
-              // If the user had given an official vote (when the vote was not locked yet), he cannot update his ballot
-              if (Option.isNull(old.answer.is_late)) { 
-                return #err(#ChangeBallotNotAllowed);
-              };
+      // If it is a late ballot and there is a previous 'official' ballot, forbid the change
+      if (Option.isSome(ballot.answer.late_decay)){
+        switch(Map.get(vote.ballots, Map.phash, principal)){
+          case(null) {};
+          case(?old) {
+            if (Option.isNull(old.answer.late_decay)) { 
+              return #err(#ChangeBallotNotAllowed);
             };
           };
         };
-        case(_) {};
       };
 
       #ok;
     };
 
     public func emptyAggregate(date: Time) : Aggregate {
-      { polarization = Polarization.nil(); is_locked = null; };
+      { polarization = Polarization.nil(); decay = null; };
     };
 
-    public func onPutBallot(aggregate: Aggregate, new_ballot: Ballot, old_ballot: ?Ballot) : Aggregate {
-      if (Option.isSome(aggregate.is_locked)){
+    public func addToAggregate(aggregate: Aggregate, new_ballot: Ballot, old_ballot: ?Ballot) : Aggregate {
+      if (Option.isSome(aggregate.decay)){
         return aggregate;
       };
-      if (Option.isSome(new_ballot.answer.is_late)){
+      if (Option.isSome(new_ballot.answer.late_decay)){
         Debug.trap("A late ballot should never alter to the opinion aggregate");
       };
       var polarization = aggregate.polarization;
@@ -188,12 +174,11 @@ module {
       { aggregate with polarization; };
     };
 
-    public func onVoteClosed(aggregate: Aggregate, date: Time) : Aggregate {
+    public func onStatusChanged(status: VoteStatus, aggregate: Aggregate, date: Time) : Aggregate {
+      if (status == #LOCKED){
+        return { aggregate with decay = ?Decay.computeDecay(_vote_decay.get(), date); };
+      };
       aggregate;
-    };
-
-    public func canRevealVote(vote: Vote) : Bool {
-      vote.status == #CLOSED or vote.aggregate.is_locked != null;
     };
 
     public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {

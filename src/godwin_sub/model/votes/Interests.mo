@@ -34,6 +34,7 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
+  type VoteStatus                 = Types.VoteStatus;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
   type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
@@ -185,7 +186,7 @@ module {
       };
     };
 
-    public func onPutBallot(appeal: Appeal, new_ballot: Ballot, old_ballot: ?Ballot) : Appeal {
+    public func addToAggregate(appeal: Appeal, new_ballot: Ballot, old_ballot: ?Ballot) : Appeal {
       
       // One should not be able to replace their ballot
       Option.iterate(old_ballot, func(ballot: Ballot) {
@@ -211,16 +212,12 @@ module {
       { appeal with ups; downs; score; hotness; negative_score_date; };
     };
 
-    public func onVoteClosed(aggregate: Appeal, date: Time) : Appeal {
+    public func onStatusChanged(status: VoteStatus, aggregate: Appeal, date: Time) : Appeal {
       aggregate;
     };
 
-    public func canRevealVote(vote: Vote) : Bool {
-      vote.status == #CLOSED;
-    };
-
     public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {
-      vote.status == #CLOSED or caller == voter;
+      vote.status != #OPEN or caller == voter;
     };
   };
   

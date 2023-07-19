@@ -66,14 +66,15 @@ module {
   public type VoteHistory = [VoteId];
   public type VoterHistory = Set<VoteId>;
 
-  public type Status = {
+  public type VoteStatus = {
     #OPEN;
+    #LOCKED;
     #CLOSED;
   };
 
   public type Vote<T, A> = {
     id: VoteId;
-    var status: Status;
+    var status: VoteStatus;
     ballots: Map<Principal, Ballot<T>>;
     var aggregate: A;
   };
@@ -86,21 +87,20 @@ module {
   public type IVotePolicy<T, A> = {
     canPutBallot: (Vote<T, A>, Principal, Ballot<T>) -> Result<(), PutBallotError>;
     emptyAggregate: (Time) -> A;
-    onPutBallot: (A, Ballot<T>,  ?Ballot<T>) -> A;
-    onVoteClosed: (A, Time) -> A;
-    canRevealVote: (Vote<T, A>) -> Bool;
+    addToAggregate: (A, Ballot<T>,  ?Ballot<T>) -> A;
+    onStatusChanged: (VoteStatus, A, Time) -> A;
     canRevealBallot: (Vote<T, A>, Principal, Principal) -> Bool;
   };
 
   public type InterestBallot = Ballot<Interest>;
   public type OpinionAnswer = {
     cursor: Cursor;
-    is_late: ?Float;
+    late_decay: ?Float;
   };
   public type OpinionBallot = Ballot<OpinionAnswer>;
   public type OpinionAggregate = {
     polarization: Polarization;
-    is_locked: ?Float;
+    decay: ?Float;
   };
   public type CategorizationBallot = Ballot<CursorMap>;
 

@@ -25,6 +25,7 @@ module {
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
+  type VoteStatus             = Types.VoteStatus;
   type Ballot                 = Types.CategorizationBallot;
   type Vote                   = Types.CategorizationVote;
   type IVotePolicy            = Types.IVotePolicy<CursorMap, PolarizationMap>;
@@ -87,7 +88,7 @@ module {
       PolarizationMap.nil(_categories);
     };
 
-    public func onPutBallot(aggregate: PolarizationMap, new_ballot: Ballot, old_ballot: ?Ballot) : PolarizationMap {
+    public func addToAggregate(aggregate: PolarizationMap, new_ballot: Ballot, old_ballot: ?Ballot) : PolarizationMap {
       var polarization_map = aggregate;
       // Add the new ballot to the polarization
       polarization_map := PolarizationMap.addCursorMap(polarization_map, new_ballot.answer);
@@ -98,16 +99,12 @@ module {
       polarization_map;
     };
 
-    public func onVoteClosed(aggregate: PolarizationMap, date: Time) : PolarizationMap {
+    public func onStatusChanged(status: VoteStatus, aggregate: PolarizationMap, date: Time) : PolarizationMap {
       aggregate;
     };
 
-    public func canRevealVote(vote: Vote) : Bool {
-      vote.status == #CLOSED;
-    };
-
     public func canRevealBallot(vote: Vote, caller: Principal, voter: Principal) : Bool {
-      vote.status == #CLOSED or caller == voter;
+      vote.status != #OPEN or caller == voter;
     };
   };
 

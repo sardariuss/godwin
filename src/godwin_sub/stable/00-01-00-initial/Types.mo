@@ -147,6 +147,7 @@ module {
 
   public type VoteStatus = {
     #OPEN;
+    #LOCKED;
     #CLOSED;
   };
 
@@ -297,12 +298,12 @@ module {
 
   public type OpinionAnswer = {
     cursor: Cursor;
-    is_late: ?Float;
+    late_decay: ?Float;
   };
 
   public type OpinionAggregate = { 
     polarization: Polarization;
-    is_locked: ?Float;
+    decay: ?Float;
   };
 
   public type Polarization = {
