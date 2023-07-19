@@ -51,9 +51,9 @@ module {
       });
       scheduler_params            = Ref.init<SchedulerParameters>(parameters.scheduler);
       price_params                = Ref.init<PriceParameters>(parameters.prices);
-      decay_params                = {
-        opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(parameters.opinion.vote_half_life, date));
-        late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(parameters.opinion.late_ballot_half_life, date));
+      convictions_params                = {
+        opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(parameters.convictions.vote_half_life, date));
+        late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(parameters.convictions.late_ballot_half_life, date));
       };
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);

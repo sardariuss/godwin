@@ -4,6 +4,7 @@ module {
   public type ScanLimitResult<K> = { keys : [K]; next : ?K };
 
   public type Duration = {
+    #YEARS: Nat;
     #DAYS: Nat;
     #HOURS: Nat;
     #MINUTES: Nat;

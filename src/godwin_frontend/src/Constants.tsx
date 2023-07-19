@@ -69,6 +69,19 @@ const CONSTANTS = {
   SICK_FILTER: {
     SEPIA_PERCENT: 40,
     HUE_ROTATE_DEG: 39,
+  },
+  MAX_NUM_CATEGORIES: 8,
+  DEFAULT_CATEGORY_EMOJI: '❔',
+  DEFAULT_SCHEDULER_PARAMETERS: {
+    question_pick_period:      { 'HOURS'  : BigInt(12)},
+    censor_timeout:            { 'HOURS'  : BigInt(4) },
+    candidate_status_duration: { 'DAYS'   : BigInt(3) },
+    open_status_duration:      { 'DAYS'   : BigInt(2) },
+    rejected_status_duration:  { 'DAYS'   : BigInt(5) },
+  },
+  DEFAULT_CONVICTIONS_PARAMETERS: {
+    vote_half_life:        { 'YEARS'  : BigInt(1)  },
+    late_ballot_half_life: { 'DAYS'   : BigInt(7)  },
   }
 };
 

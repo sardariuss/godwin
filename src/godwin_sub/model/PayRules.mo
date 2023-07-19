@@ -14,19 +14,19 @@ import Text          "mo:base/Text";
 
 module {
 
-  type Ref<K>                    = Ref.Ref<K>;
-  type WRef<K>                   = WRef.WRef<K>;
+  type Ref<K>          = Ref.Ref<K>;
+  type WRef<K>         = WRef.WRef<K>;
 
-  type PriceParameters           = Types.PriceParameters;
-  type Appeal                    = VoteTypes.Appeal;
-  type Interest                  = VoteTypes.Interest;
-  type CursorMap                 = VoteTypes.CursorMap;
-  type Cursor                    = VoteTypes.Cursor;
-  type Polarization              = VoteTypes.Polarization;
-  type PolarizationMap           = VoteTypes.PolarizationMap;
-  type Category                  = VoteTypes.Category;
-  type Balance                   = PayTypes.Balance;
-  type PayoutArgs                = PayTypes.PayoutArgs;
+  type PriceParameters = Types.PriceParameters;
+  type Appeal          = VoteTypes.Appeal;
+  type Interest        = VoteTypes.Interest;
+  type CursorMap       = VoteTypes.CursorMap;
+  type Cursor          = VoteTypes.Cursor;
+  type Polarization    = VoteTypes.Polarization;
+  type PolarizationMap = VoteTypes.PolarizationMap;
+  type Category        = VoteTypes.Category;
+  type Balance         = PayTypes.Balance;
+  type PayoutArgs      = PayTypes.PayoutArgs;
 
   func key(c: Category) : Trie.Key<Category> { { hash = Text.hash(c); key = c; } };
 

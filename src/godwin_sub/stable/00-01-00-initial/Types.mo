@@ -34,7 +34,7 @@ module {
     momentum_args               : Ref<InterestMomentumArgs>;
     price_params                : Ref<PriceParameters>;
     scheduler_params            : Ref<SchedulerParameters>;
-    decay_params                : {
+    convictions_params          : {
       opinion_vote                 : Ref<DecayParameters>;
       late_opinion_ballot          : Ref<DecayParameters>;
     };
@@ -223,6 +223,7 @@ module {
   public type StatusHistory = Buffer<StatusInfo>;
 
   public type Duration = {
+    #YEARS: Nat;
     #DAYS: Nat;
     #HOURS: Nat;
     #MINUTES: Nat;
@@ -237,16 +238,18 @@ module {
     minimum_score: Float;
   };
 
+  public type ConvictionsParameters = {
+    vote_half_life: Duration;
+    late_ballot_half_life: Duration;
+  };
+
   public type Parameters = {
     name: Text;
     categories: CategoryArray;
     scheduler: SchedulerParameters;
     questions: QuestionsParameters;
     prices: PriceParameters;
-    opinion: {
-      vote_half_life: Duration;
-      late_ballot_half_life: Duration;
-    };
+    convictions: ConvictionsParameters;
     minimum_interest_score: Float;
   };
 

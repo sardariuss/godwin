@@ -2,6 +2,7 @@ import Header                          from "./Header";
 import Footer                          from "./Footer";
 import OpenQuestionPopup               from "./OpenQuestionPopup";
 import MainQuestions                   from "./MainQuestions";
+import CreateSub                       from "./CreateSub";
 import UserComponent                   from "./user/User";
 import ListSubs                        from "./ListSubs";
 import { ActorContext, useAuthClient } from "../ActorContext";
@@ -65,24 +66,20 @@ function App() {
             <Routes>
               <Route
                 path="/g/:subgodwin"
-                element={
-                  <MainQuestions/>
-                }
+                element={ <MainQuestions/> }
               />
-                {
-                  <Route
-                    path="/profile/:user"
-                    element={
-                      <UserComponent/>
-                    }
-                  />
-                }
+              <Route
+                path="/profile/:user"
+                element={ <UserComponent/> }
+              />
               <Route
                 path="/"
-                element={
-                  <ListSubs></ListSubs>
-                }
-              />      
+                element={ <ListSubs/> }
+              />
+              <Route
+                path="/newsub"
+                element={ <CreateSub/> }
+              />
             </Routes>
           </div>
           <OpenQuestionPopup showAskQuestion={showAskQuestion} setShowAskQuestion={setShowAskQuestion}></OpenQuestionPopup>

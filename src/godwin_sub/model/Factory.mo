@@ -69,8 +69,8 @@ module {
     
     let opinions = Opinions.build(
       state.votes.opinion.register,
-      WRef.WRef(state.decay_params.opinion_vote),
-      WRef.WRef(state.decay_params.late_opinion_ballot));
+      WRef.WRef(state.convictions_params.opinion_vote),
+      WRef.WRef(state.convictions_params.late_opinion_ballot));
     
     let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
     

@@ -1,9 +1,9 @@
-import Balance                   from "./base/Balance";
-import { ActorContext }          from "../ActorContext"
+import Balance                          from "./base/Balance";
+import { ActorContext }                 from "../ActorContext"
 
-import { Link }                  from "react-router-dom";
-import { useContext, useEffect } from "react";
-import CONSTANTS                 from "../Constants";
+import { Link }                         from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import CONSTANTS                        from "../Constants";
 
 type Props = {
   login: () => (void),
@@ -82,12 +82,17 @@ function Header({login, setShowAskQuestion}: Props) {
                 </button>
               </li>
               { isAuthenticated ? 
-              <li>
-                <button type="button" onClick={(e) => setShowAskQuestion(true)} className="button-blue">
-                  Propose a vote
-                </button>
-              </li> : <></>
+                <li>
+                  <button type="button" onClick={(e) => setShowAskQuestion(true)} className="button-blue">
+                    Propose a vote
+                  </button>
+                </li> : <></>
               }
+              <li>
+                <Link to={"/newsub"} className="button-blue">
+                  Create sub
+                </Link>
+              </li>
               <li>
                 { isAuthenticated && authClient !== undefined ? 
                   <Link to={"/profile/" + authClient.getIdentity().getPrincipal().toString()} className="block text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">

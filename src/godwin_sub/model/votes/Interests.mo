@@ -56,9 +56,6 @@ module {
   
   public type Register        = Votes.Register<Interest, Appeal>;
 
-  let PRICE_OPENING_VOTE = 1_000_000_000; // @todo: make this a parameter
-  let PRICE_PUT_BALLOT   = 100_000_000; // @todo: make this a parameter
-
   let HOTNESS_TIME_UNIT_NS = 86_400_000_000_000; // 24 hours in nanoseconds @todo: make this a parameter
 
   public func initRegister() : Register {
