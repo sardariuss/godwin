@@ -6,6 +6,9 @@ import { compare; Testify; } = "common/Testify";
 import { test; suite; }        "mo:test";
 
 import Array                   "mo:base/Array";
+import Float                   "mo:base/Float";
+import Iter                    "mo:base/Iter";
+import Nat                     "mo:base/Nat";
 
 suite("InterestRules module test suite", func() {
 
@@ -122,22 +125,81 @@ suite("InterestRules module test suite", func() {
 
   });
 
-  suite("Test computeSelectionScore", func(){
+  suite("Test computeSelectionScore with", func(){
 
-    test("If the date of the last pick is the same as now, the max float shall be returned", func(){
-      let pick_period = 5000;
-      let momentum_args  = {
-        last_pick_date_ns = 10000;
-        last_pick_score = 10.0;
-        num_votes_opened = 0;
-        minimum_score = 1.0;
-      };
-      let selection_score = InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns);
-      compare(selection_score, Math.maxFloat(), Testify.floatEpsilon6.equal);
+    let pick_period = 5000;
+    let momentum_args  = {
+      last_pick_date_ns = 10000;
+      last_pick_score = 12.5;
+      num_votes_opened = 0;
+      minimum_score = 1.0;
+    };
+
+    test("If the current date is the same as the last pick date, the max float shall be returned", func(){
+      compare(
+        InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns),
+        Math.maxFloat(),
+        Testify.floatEpsilon6.equal);
     });
 
-    // @todo: complete test on selection score
-    
+    test("If the current date is exactly one pick period after the last pick date, the score shall be equal to the last pick score", func(){
+      compare(
+        InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns + pick_period),
+        momentum_args.last_pick_score,
+        Testify.floatEpsilon6.equal);
+    });
+
+    test("If the computed score is smaller than the minimum score, the minimum score shall be returned", func(){
+      // Use the same settings as the previous test, but raise the minimum score
+      let modified_args = { momentum_args with minimum_score = 15.0; };
+      compare(
+        InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + pick_period),
+        modified_args.minimum_score,
+        Testify.floatEpsilon6.equal);
+    });
+
+    test("Before one pick period, the greater the number of votes, the faster the score decays", func(){
+      let modified_args_1 = { momentum_args with num_votes_opened = 10; };
+      let modified_args_2 = { momentum_args with num_votes_opened = 20; };
+      let now = momentum_args.last_pick_date_ns + pick_period / 2;
+      compare(
+        InterestRules.computeSelectionScore(modified_args_1, pick_period, now),
+        InterestRules.computeSelectionScore(modified_args_2, pick_period, now),
+        Testify.float.greaterThan);
+    });
+
+    test("After one pick period, the greater the number of votes, the slower the score decays", func(){
+      let modified_args_1 = { momentum_args with num_votes_opened = 10; };
+      let modified_args_2 = { momentum_args with num_votes_opened = 20; };
+      let now = momentum_args.last_pick_date_ns + pick_period * 2;
+      compare(
+        InterestRules.computeSelectionScore(modified_args_1, pick_period, now),
+        InterestRules.computeSelectionScore(modified_args_2, pick_period, now),
+        Testify.float.lessThan);
+    });
+
+    let expected_values = [
+      { num_votes_opened = 0;   x = 0.12;  y = 5.37211651988;   },
+      { num_votes_opened = 0;   x = 2.0;   y = 0.433939720586;  },
+      { num_votes_opened = 0;   x = 46.0;  y = 0.0108695652174; },
+      { num_votes_opened = 0;   x = 46.0;  y = 0.0108695652174; },
+      { num_votes_opened = 36;  x = 13.0;  y = 0.399969394845;  },
+      { num_votes_opened = 930; x = 0.5;   y = 1.50026860058;   },
+      { num_votes_opened = 470; x = 3.7;   y = 0.632277092765;  },
+      { num_votes_opened = 470; x = 435.0; y = 0.200121475107;  },
+    ];
+
+    for(i in Iter.range(0, expected_values.size() - 1)){
+      let {num_votes_opened; x; y;} = expected_values[i];
+      let modified_args = { momentum_args with num_votes_opened; minimum_score = 0.0; };
+      test("Test some values (" # Nat.toText(i + 1) # ")", func(){
+        compare(
+          InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + Float.toInt(Float.fromInt(pick_period) * x)),
+          modified_args.last_pick_score * y,
+          Testify.floatEpsilon6.equal);
+      });
+    };
+
   });
 
 });
