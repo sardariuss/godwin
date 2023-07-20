@@ -1,7 +1,9 @@
+import React from "react";
+
 type Props = {
   onClick   : (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-  disabled  : boolean;
-  hidden    : boolean;
+  disabled? : boolean;
+  hidden?   : boolean;
   children? : React.ReactNode;
 }
 

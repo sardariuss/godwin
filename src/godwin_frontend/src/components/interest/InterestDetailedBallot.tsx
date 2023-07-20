@@ -7,7 +7,7 @@ import { Sub }                              from "../../ActorContext";
 import CONSTANTS                            from "../../Constants";
 import { Question, RevealedInterestBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect }              from "react";
+import React, { useState, useEffect }       from "react";
 import { fromNullable }                     from "@dfinity/utils";
 
 

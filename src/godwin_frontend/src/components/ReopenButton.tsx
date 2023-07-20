@@ -1,13 +1,13 @@
-import Balance                  from "./base/Balance"
-import { _SERVICE, Status }     from "../../declarations/godwin_sub/godwin_sub.did"
-import Spinner                  from "./Spinner";
-import { ActorContext }         from "../ActorContext";
+import Balance                         from "./base/Balance"
+import { _SERVICE, Status }            from "../../declarations/godwin_sub/godwin_sub.did"
+import Spinner                         from "./Spinner";
+import { ActorContext }                from "../ActorContext";
 
-import { Tooltip }              from "@mui/material";
+import { Tooltip }                     from "@mui/material";
 import ErrorOutlineIcon         from '@mui/icons-material/ErrorOutline';
 
-import { ActorSubclass }        from "@dfinity/agent"
-import { useState, useContext } from "react"
+import { ActorSubclass }               from "@dfinity/agent"
+import React, { useState, useContext } from "react"
 
 type ReopenButtonInput = {
   actor: ActorSubclass<_SERVICE>,

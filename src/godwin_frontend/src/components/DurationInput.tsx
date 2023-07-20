@@ -1,6 +1,6 @@
-import { Duration } from "../../declarations/godwin_sub/godwin_sub.did";
+import { Duration }                   from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 type Parameter = {
   unit: string,

@@ -164,6 +164,7 @@ module {
 
   public type VoteData = {
     id: VoteId;
+    iteration: Nat;
     status: VoteStatus;
     user_ballot: ?VoteKindBallot;
   };

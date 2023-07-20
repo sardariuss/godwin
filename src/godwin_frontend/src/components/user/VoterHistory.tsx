@@ -7,7 +7,7 @@ import { Sub }                                                                  
 import { RevealedInterestBallot, RevealedOpinionBallot, RevealedCategorizationBallot, Direction } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { Principal }                                                                              from "@dfinity/principal";
-import { useState } from "react";
+import React, { useState }                                                                        from "react";
 
 type QueryFunction<T> = (direction: Direction, limit: bigint, next: T | undefined) => Promise<ScanResults<T>>;
 

@@ -1,15 +1,17 @@
-import { CursorInfo, }             from "../../utils";
-import { timeAgo }                 from "../../utils/DateUtils";
 import HiddenIcon                  from "../icons/HiddenIcon";
+import { CursorInfo }              from "../../utils";
+import { timeAgo }                 from "../../utils/DateUtils";
 import { TransactionsRecord }      from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import TransactionsRecordComponent from "../token/TransactionsRecord";
 
+import React                       from "react";
+
 export type CursorBallotProps = {
   cursorInfo: CursorInfo | null;
   dateNs: bigint | null;
-  isLate: boolean;
-  tx_record: TransactionsRecord | undefined;
+  isLate?: boolean;
+  tx_record?: TransactionsRecord;
 };
 
 const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record} : CursorBallotProps) => {

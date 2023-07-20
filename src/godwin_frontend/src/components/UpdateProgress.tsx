@@ -66,7 +66,7 @@ type Props<Error> = {
   error_to_string   : (Error)   => string;
   set_run_countdown : (boolean) => void;
   set_trigger_update: (boolean) => void;
-  cost              : bigint | undefined;
+  cost?             : bigint;
 }
 
 const UpdateProgress = <Error,>({

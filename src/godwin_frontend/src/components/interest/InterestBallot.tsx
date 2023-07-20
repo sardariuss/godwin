@@ -2,7 +2,7 @@ import { InterestEnum, getInterestInfo, InterestInfo } from "./InterestTypes";
 import HiddenIcon                                      from "../icons/HiddenIcon";
 import { timeAgo }                                     from "../../utils/DateUtils";
 
-import { useState, useEffect }                         from "react";
+import React, { useState, useEffect }                  from "react";
 
 export type InterestBallotInput = {
   answer: InterestEnum | undefined;

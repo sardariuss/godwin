@@ -1,5 +1,4 @@
 import CONSTANTS        from "../../Constants";
-import { toCursorInfo } from "../../utils";
 import { Interest }     from "./../../../declarations/godwin_sub/godwin_sub.did";
 
 export enum InterestEnum {
@@ -32,23 +31,3 @@ export const enumToInterest = (interestEnum: InterestEnum) : Interest => {
   throw new Error('Invalid interestEnum');
 }
 
-// @todo: temporary
-export type CursorInfo = {
-  value: number;
-  name: string;
-  symbol: string;
-  colors: {
-    left: string;
-    right: string;
-  };
-};
-
-// @todo: temporary
-export const interestToCursorInfo = (interest: InterestEnum | null) : CursorInfo => {
-  if (interest === InterestEnum.Up) {
-    return toCursorInfo(1.0, CONSTANTS.INTEREST_INFO);
-  } if (interest === InterestEnum.Down) {
-    return toCursorInfo(-1.0, CONSTANTS.INTEREST_INFO);
-  }
-  return toCursorInfo(0.0, CONSTANTS.INTEREST_INFO);
-}

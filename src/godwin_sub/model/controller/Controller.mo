@@ -298,19 +298,19 @@ module {
           };
           // Get the open votes
           let votes_buffer = Buffer.Buffer<(VoteKind, VoteData)>(0);
-          Option.iterate(_model.getInterestJoins().getLastVote(question_id), func(vote_id: VoteId){
+          Option.iterate(_model.getInterestJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
             let vote = _model.getInterestVotes().getVote(vote_id);
-            votes_buffer.add((#INTEREST,       { id = vote.id; status = vote.status; 
+            votes_buffer.add((#INTEREST,       { id = vote.id; status = vote.status; iteration;
               user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<Interest>) : VoteKindBallot { #INTEREST(b);      }); } ); }));
           });
-          Option.iterate(_model.getOpinionJoins().getLastVote(question_id), func(vote_id: VoteId){
+          Option.iterate(_model.getOpinionJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
             let vote = _model.getOpinionVotes().getVote(vote_id);
-            votes_buffer.add((#OPINION,        { id = vote.id; status = vote.status; 
+            votes_buffer.add((#OPINION,        { id = vote.id; status = vote.status; iteration;
               user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: OpinionBallot) : VoteKindBallot { #OPINION(b);       }); } ); }));
           });
-          Option.iterate(_model.getCategorizationJoins().getLastVote(question_id), func(vote_id: VoteId){
+          Option.iterate(_model.getCategorizationJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
             let vote = _model.getCategorizationVotes().getVote(vote_id);
-            votes_buffer.add((#CATEGORIZATION, { id = vote.id; status = vote.status; 
+            votes_buffer.add((#CATEGORIZATION, { id = vote.id; status = vote.status; iteration;
               user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<CursorMap>) : VoteKindBallot { #CATEGORIZATION({ date = b.date; answer = Utils.trieToArray(b.answer) }); }); } ); }));
           });
           { question; status_data; votes = Buffer.toArray(votes_buffer); };
