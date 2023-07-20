@@ -13,7 +13,7 @@ export const EmojiPickerPopover = ({ emoji, onChange }) => {
 
   return (
     <div className="flex flex-col picker w-10 items-center hover:cursor-pointer" onClick={() => toggle(true)}>
-      <div id={"picker bg-red-300 text-3xl text-center"}>
+      <div className="text-xl text-center">
         {emoji}
       </div>
 

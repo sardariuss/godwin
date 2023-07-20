@@ -9,7 +9,7 @@ import { StatusEnum, VoteKind, statusToEnum,
 import { Sub }                                                   from "../ActorContext";
 import { QueryQuestionItem, VoteKind__1, VoteData }              from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { useEffect, useState }                                   from "react";
+import React, { useEffect, useState }                            from "react";
 
 export type QuestionInput = {
 	sub: Sub,
@@ -26,19 +26,19 @@ const getVoteData = (vote_links: [VoteKind__1, VoteData][], vote_kind: VoteKind)
 
 const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) => {
 
-  const [activeVote,         setActiveVote        ] = useState<VoteKind | undefined>(undefined);
-	const [voteData,           setVoteData          ] = useState<VoteData | undefined>(undefined);
-	const [showReopenQuestion, setShowReopenQuestion] = useState<boolean             >(false    );
+  const [activeVote,         setActiveVote        ] = useState<VoteKind | null | undefined>(undefined); // Use also null to avoid showing the status history preemptively
+	const [voteData,           setVoteData          ] = useState<VoteData | undefined>       (undefined);
+	const [showReopenQuestion, setShowReopenQuestion] = useState<boolean             >       (false    );
 
 	const refreshActiveVote = () => {
 		setActiveVote(
 			user_action === UserAction.SELECT ?     VoteKind.INTEREST       :
 			user_action === UserAction.VOTE ?       VoteKind.OPINION        :
-			user_action === UserAction.CATEGORIZE ? VoteKind.CATEGORIZATION : undefined);
+			user_action === UserAction.CATEGORIZE ? VoteKind.CATEGORIZATION : null);
 	}
 
 	const refreshVoteId = () => {
-		setVoteData(activeVote !== undefined ? getVoteData(queried_question.votes, activeVote) : undefined);
+		setVoteData(activeVote !== undefined && activeVote !== null ? getVoteData(queried_question.votes, activeVote) : undefined);
 	}
 
 	const refreshShowReopenQuestion = () => {
@@ -61,7 +61,7 @@ const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) 
 	}, [user_action, queried_question]);
 
 	return (
-		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 
+		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center
 			${activeVote === VoteKind.INTEREST || showReopenQuestion ? "" : "pr-10"}`}>
 			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
 				${activeVote === VoteKind.INTEREST ? "w-4/5" : "w-full"}`}>
@@ -82,7 +82,10 @@ const QuestionComponent = ({sub, queried_question, user_action}: QuestionInput) 
 					activeVote === VoteKind.CATEGORIZATION && voteData !== undefined && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED?
 						<CategorizationVote sub={sub} voteData={voteData}/> : <></>
 				}
-				<StatusHistoryComponent sub={sub} questionId={queried_question.question.id} currentStatusData={queried_question.status_data}/>
+				{
+					activeVote === null ?
+					<StatusHistoryComponent sub={sub} questionId={queried_question.question.id} currentStatusData={queried_question.status_data}/> : <></>
+				}
 				{/*
 					<div className="flex flex-row grow justify-around items-center text-gray-400 dark:fill-gray-400">
 						<div className="flex w-1/3 justify-center items-center">
