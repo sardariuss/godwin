@@ -41,13 +41,14 @@ module {
   type MintError                      = Types.MintError;
   type MintResult                     = Types.MintResult;
   type Mint                           = Types.Mint;
+  type ITokenInterface                = Types.ITokenInterface;
 
   public func build(principal: Principal) : TokenInterface {
     let master : MasterInterface = actor(Principal.toText(principal));
     TokenInterface(master);
   };
 
-  public class TokenInterface(_master: MasterInterface) {
+  public class TokenInterface(_master: MasterInterface) : ITokenInterface {
 
     public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async* TransferFromMasterResult {
       try {
@@ -148,7 +149,6 @@ module {
       };
 
       let mint_batch = try {
-        // Call the token reap_account method
         await _master.mintBatch({
           to = Buffer.toArray(to_accounts);
           memo = null; // @todo: memo
@@ -173,6 +173,21 @@ module {
       };
 
       results;
+    };
+
+    public func mint(to: Principal, amount: Balance) : async* MintResult {
+      let args = {
+        to = getMasterAccount(?to);
+        amount;
+        memo = null; // @todo: memo
+        created_at_time = null;
+      };
+      
+      let mint = try {
+        await _master.mint(args);
+      } catch(e) {
+        #err(#CanisterCallError(Error.code(e)));
+      };
     };
 
     func getMasterAccount(principal: ?Principal) : Account {

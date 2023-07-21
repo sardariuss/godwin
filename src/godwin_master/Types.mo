@@ -19,7 +19,7 @@ module {
 
   public type TransferError = TokenTypes.TransferError or {
     #NotAllowed;
-  };
+  }; // @todo: add the CanisterCallError
 
   public type SetUserNameError = {
     #AnonymousNotAllowed;
@@ -41,6 +41,7 @@ module {
   public type MasterInterface = actor {
     pullTokens: shared(Principal, TokenTypes.Balance, ?Blob) -> async TransferResult;
     mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
+    mint: shared(TokenTypes.Mint) -> async TransferResult;
   };
 
   public func transferErrorToText(error: TransferError) : Text {

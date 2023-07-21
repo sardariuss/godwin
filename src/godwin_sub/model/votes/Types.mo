@@ -60,6 +60,12 @@ module {
     hotness: Float;
   };
 
+  public type InterestVoteClosure = {
+    #SELECTED;
+    #TIMED_OUT;
+    #CENSORED;
+  };
+
   public type VoteId = Nat;
   public let voteHash = Map.nhash;
 

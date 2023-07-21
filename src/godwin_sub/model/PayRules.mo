@@ -5,6 +5,7 @@ import Polarization  "votes/representation/Polarization";
 
 import Ref           "../utils/Ref";
 import WRef          "../utils/wrappers/WRef";
+import Math          "../utils/Math";
 
 import Trie          "mo:base/Trie";
 import Debug         "mo:base/Debug";
@@ -14,28 +15,68 @@ import Text          "mo:base/Text";
 
 module {
 
-  type Ref<K>          = Ref.Ref<K>;
-  type WRef<K>         = WRef.WRef<K>;
+  type Ref<K>              = Ref.Ref<K>;
+  type WRef<K>             = WRef.WRef<K>;
 
-  type PriceParameters = Types.PriceParameters;
-  type Appeal          = VoteTypes.Appeal;
-  type Interest        = VoteTypes.Interest;
-  type CursorMap       = VoteTypes.CursorMap;
-  type Cursor          = VoteTypes.Cursor;
-  type Polarization    = VoteTypes.Polarization;
-  type PolarizationMap = VoteTypes.PolarizationMap;
-  type Category        = VoteTypes.Category;
-  type Balance         = PayTypes.Balance;
-  type PayoutArgs      = PayTypes.PayoutArgs;
+  type PriceParameters     = Types.PriceParameters;
+  type Appeal              = VoteTypes.Appeal;
+  type Interest            = VoteTypes.Interest;
+  type CursorMap           = VoteTypes.CursorMap;
+  type Cursor              = VoteTypes.Cursor;
+  type Polarization        = VoteTypes.Polarization;
+  type PolarizationMap     = VoteTypes.PolarizationMap;
+  type Category            = VoteTypes.Category;
+  type InterestVoteClosure = VoteTypes.InterestVoteClosure;
+  type Balance             = PayTypes.Balance;
+  type PayoutArgs          = PayTypes.PayoutArgs;
 
   func key(c: Category) : Trie.Key<Category> { { hash = Text.hash(c); key = c; } };
 
   let SIGMOID_COEF         = 10.0;
   let SIGMOID_INTERSECTION = 0.333333333333333333333333333;
-  let CONFIDENCE_COEF      = 0.666666666666666666666666666;
+
+  let CONFIDENCE_MODIFIER = {
+    coef     = 0.5;
+    exponent = 2.5;
+  };
+
+  let INTEREST_REWARD = {
+    LOGIT_NORMAL_PDF = {
+      sigma = 0.8;
+      mu    = 0.0;
+    };
+    COEF = 0.5;
+  };
 
   public func build(price_params: Ref<PriceParameters>) : PayRules {
     PayRules(WRef.WRef(price_params));
+  };
+
+  type InterestDistribution = {
+    shares: {
+      up:   Float;
+      down: Float;
+    };
+    reward_ratio: Float;
+  };
+
+  // see www.desmos.com/calculator/bscykwqpgr
+  public func computeInterestDistribution(appeal: Appeal) : InterestDistribution {
+    let { ups; downs; } = appeal;
+
+    let loosers = Float.fromInt(if (ups >= downs){ downs; } else { ups;   });
+    let winners = Float.fromInt(if (ups >= downs){ ups;   } else { downs; });
+
+    let looser_share = loosers / winners;
+    let winner_share = 1.0 + (1.0 - looser_share) * looser_share;
+
+    {
+      shares = {
+        up   = if (ups >= downs){ winner_share; } else { looser_share; };
+        down = if (ups >= downs){ looser_share; } else { winner_share; };
+      };
+      reward_ratio = INTEREST_REWARD.COEF + Math.logitNormalPDF(loosers / (winners + loosers), INTEREST_REWARD.LOGIT_NORMAL_PDF);
+    };
   };
 
   public class PayRules(_price_params: WRef<PriceParameters>) {
@@ -52,33 +93,43 @@ module {
       _price_params.get().categorization_vote_price_e8s;
     };
 
-    public func computeOpenVotePayout(result: Appeal, num_voters: Nat) : (Nat, Nat) {
-      var payout_args = {
-        refund_share = if (result.score >= 0) { 1.0; } else { 0.0; };
-        reward_tokens = 0; // @todo: _price_params.open_vote_price if question is selected!
+    // see www.desmos.com/calculator/qbdqmwbff1
+    public func computeAuthorPayout(appeal: Appeal, closure: InterestVoteClosure) : PayoutArgs {
+
+      let num_voters = appeal.ups + appeal.downs;
+
+      // If there is no voter, refund the full amount, no reward
+      if (num_voters == 0){
+        return { refund_share = 1.0; reward_tokens = 0; };
       };
-      // If there is no voter, we payout the full amount, otherwise we attenuate the payout
-      if (num_voters > 0){
-        payout_args := attenuateOrAmplify(payout_args, num_voters);
+
+      let payout_args = {
+        // Refund the full amount if the vote has not been censored
+        refund_share  = if (closure == #CENSORED){ 0.0; } else { 1.0 };
+        // If the question has been selected, reward the price it took to open the question
+        // multiplied by the square root of the score
+        reward_tokens = if (closure != #SELECTED){ 0; } else {
+          Int.abs(Float.toInt((Float.sqrt(appeal.score) - 1) * Float.fromInt(getOpenVotePrice())));
+        };
       };
-      (
-        Int.abs(Float.toInt(payout_args.refund_share * Float.fromInt(getOpenVotePrice()))),
-        payout_args.reward_tokens
-      );
+     
+      attenuatePayout(payout_args, num_voters);
     };
 
-    public func computeInterestVotePayout(ballot: Interest, result: Appeal, num_voters: Nat) : PayoutArgs {
-      let share = switch(ballot){
-        case(#UP){   if (result.score >= 0) { 1.0; } else { 0.0; }; };
-        case(#DOWN){ if (result.score <= 0) { 1.0; } else { 0.0; }; };
-      };
+    public func computeInterestVotePayout(distribution: InterestDistribution, num_voters: Nat, ballot: Interest) : PayoutArgs {
       
-      let payout_args = {
-        refund_share = share;
-        reward_tokens = Int.abs(Float.toInt(share * Float.fromInt(getInterestVotePrice())));
+      if (num_voters == 0){
+        Debug.trap("It is impossible to payout voters if there is no voter");
       };
 
-      attenuateOrAmplify(payout_args, num_voters);
+      let { shares; reward_ratio; } = distribution;
+     
+      let payout_args = {
+        refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
+        reward_tokens = Int.abs(Float.toInt(reward_ratio * Float.fromInt(getInterestVotePrice())));
+      };
+
+      attenuatePayout(payout_args, num_voters);
     };
 
     public func computeCategorizationPayout(ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
@@ -112,22 +163,25 @@ module {
         reward_tokens = Int.abs(Float.toInt(payout.reward * Float.fromInt(getCategorizationVotePrice())));
       };
 
-      attenuateOrAmplify(payout_args, num_voters);
+      attenuatePayout(payout_args, num_voters);
     };
 
   };
 
-  // see: https://www.desmos.com/calculator/lnu9rkuxjd
-  // @todo: the reward seems bugged: too high or too low
-  func attenuateOrAmplify(payout_args: PayoutArgs, num_voters: Nat) : PayoutArgs {
+  // see: https://www.desmos.com/calculator/iv87gjyqlx
+  func attenuatePayout(payout_args: PayoutArgs, num_voters: Nat) : PayoutArgs {
     // It is impossible to attenuate if there is no voter
-    if (num_voters == 0){ Debug.trap("Cannot attenuate or amplify the payout: there is 0 voters"); };
+    if (num_voters == 0){ Debug.trap("Cannot attenuate payout: there is 0 voters"); };
+
+    let { refund_share; reward_tokens; } = payout_args;
+    let { coef; exponent; } = CONFIDENCE_MODIFIER;
 
     let log_num_voters = Float.log(Float.fromInt(num_voters));
-    let result_confidence = 1.0 - Float.exp(-log_num_voters * CONFIDENCE_COEF);
+    let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
+
     {
-      refund_share = payout_args.refund_share * result_confidence + (1.0 - result_confidence);
-      reward_tokens = Int.abs(Float.toInt(Float.fromInt(payout_args.reward_tokens) * result_confidence * log_num_voters));
+      refund_share  = refund_share * confidence + 1.0 * (1.0 - confidence);
+      reward_tokens = Int.abs(Float.toInt(Float.fromInt(reward_tokens) * confidence));
     };
   };
 

@@ -139,14 +139,14 @@ suite("InterestRules module test suite", func() {
       compare(
         InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns),
         Math.maxFloat(),
-        Testify.floatEpsilon6.equal);
+        Testify.floatEpsilon9.equal);
     });
 
     test("If the current date is exactly one pick period after the last pick date, the score shall be equal to the last pick score", func(){
       compare(
         InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns + pick_period),
         momentum_args.last_pick_score,
-        Testify.floatEpsilon6.equal);
+        Testify.floatEpsilon9.equal);
     });
 
     test("If the computed score is smaller than the minimum score, the minimum score shall be returned", func(){
@@ -155,7 +155,7 @@ suite("InterestRules module test suite", func() {
       compare(
         InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + pick_period),
         modified_args.minimum_score,
-        Testify.floatEpsilon6.equal);
+        Testify.floatEpsilon9.equal);
     });
 
     test("Before one pick period, the greater the number of votes, the faster the score decays", func(){
@@ -178,6 +178,7 @@ suite("InterestRules module test suite", func() {
         Testify.float.lessThan);
     });
 
+    // Values computed via https://www.desmos.com/calculator/kschnspkyn
     let expected_values = [
       { num_votes_opened = 0;   x = 0.12;  y = 5.37211651988;   },
       { num_votes_opened = 0;   x = 2.0;   y = 0.433939720586;  },
@@ -196,7 +197,7 @@ suite("InterestRules module test suite", func() {
         compare(
           InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + Float.toInt(Float.fromInt(pick_period) * x)),
           modified_args.last_pick_score * y,
-          Testify.floatEpsilon6.equal);
+          Testify.floatEpsilon9.equal);
       });
     };
 

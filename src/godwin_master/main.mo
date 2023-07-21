@@ -18,7 +18,7 @@ import ExperimentalCycles "mo:base/ExperimentalCycles";
 
 import GodwinToken        "canister:godwin_token";
 
-shared({caller = _controller}) actor class GodwinMaster() = this {
+shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterInterface = this {
 
   type Parameters            = SubTypes.Parameters;
   type Result<Ok, Err>       = Result.Result<Ok, Err>;
@@ -144,6 +144,15 @@ shared({caller = _controller}) actor class GodwinMaster() = this {
     };
 
     toBaseResult(await GodwinToken.mint_batch(args));
+  };
+
+  public shared({caller}) func mint(args: GodwinToken.Mint) : async TransferResult {
+
+    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
+      return #err(#NotAllowed);
+    };
+
+    toBaseResult(await GodwinToken.mint(args));
   };
 
   public query func getUserAccount(user: Principal) : async GodwinToken.Account {

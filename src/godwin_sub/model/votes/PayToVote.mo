@@ -27,10 +27,12 @@ module {
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type Balance                = PayTypes.Balance;
 
+  public type PayoutFunction<T, A> = (T, A, Nat) -> PayoutArgs;
+
   public class PayToVote<T, A>(
     _pay_for_element: PayForElement.PayForElement,
     _payin_price: Balance,
-    _compute_payout: (T, A, Nat) -> PayoutArgs
+    _compute_payout: PayoutFunction<T, A>
   ) {
 
     public func payin(vote_id: VoteId, principal: Principal) : async* Result<(), PutBallotError> {

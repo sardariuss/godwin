@@ -15,6 +15,7 @@ import Buffer              "mo:base/Buffer";
 import Iter                "mo:base/Iter";
 import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
+import Option              "mo:base/Option";
 
 module {
 
@@ -36,6 +37,9 @@ module {
   type SubaccountPrefix        = Types.SubaccountPrefix;
   type TransactionsRecord      = Types.TransactionsRecord;
   type MintResult              = Types.MintResult;
+  type PayoutArgs              = Types.PayoutArgs;
+  type ReapAccountRecipient    = Types.ReapAccountRecipient;
+  type ReapAccountResult       = Types.ReapAccountResult;
   type TransactionsRecords     = TransactionsRecords.TransactionsRecords;
   
   type Id = Nat;
@@ -79,21 +83,15 @@ module {
       };
     };
 
-    public func payout(id: Id, refund: Balance, reward: Balance) : async* () {
-      let (principal, subaccount) = switch(_lock_register.getOpt(id)){
+    public func payout(id: Id, args: PayoutArgs) : async* () {
+      let (to, subaccount) = switch(_lock_register.getOpt(id)){
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      let transfer_result = await* _token_interface.transferToMaster(subaccount, principal, refund);
-      
-      // @todo: have a function for single mint
-      let mint_result = await* _token_interface.mintBatch(Buffer.fromArray([{ to = principal; amount = reward; }]));
-      let reward_result = switch(Trie.get(mint_result, key(principal), Principal.equal)){
-        case(null) { Debug.trap("@todo: No reward for user") };
-        case(?r) { r; };
-      };
-      
-      _user_transactions.setPayout(principal, id, transfer_result, reward_result);
+      let reap_result = await* _token_interface.reapSubaccount(subaccount, Buffer.fromArray<ReapAccountRecipient>([{to; share = args.refund_share;}]));
+      let refund = Option.chain(Trie.get(reap_result, key(to), Principal.equal), func(res: ?ReapAccountResult) : ?ReapAccountResult { res; });
+      let reward = await* _token_interface.mint(to, args.reward_tokens);
+      _user_transactions.setPayout(to, id, refund, ?reward);
       _lock_register.delete(id);
     };
 

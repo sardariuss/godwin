@@ -63,7 +63,7 @@ module {
       await* passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
         let status_info = _model.getStatusManager().getCurrentStatus(question_id);
         // Close the interest vote
-        await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date);
+        await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, #TIMED_OUT);
         // Perform the transition
         result.set(#ok(null));
       });
@@ -119,7 +119,7 @@ module {
       };
 
       // Close the interest vote
-      await* _model.getInterestVotes().closeVote(vote_id, date);
+      await* _model.getInterestVotes().closeVote(vote_id, date, #CENSORED);
 
       result.set(#ok(null));
     };
@@ -154,7 +154,7 @@ module {
       };
 
       // Close the interest vote
-      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current_status.iteration), date);
+      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current_status.iteration), date, #SELECTED);
 
       // If there was a previous opinion vote, close it
       switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){

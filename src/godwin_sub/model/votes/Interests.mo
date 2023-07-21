@@ -34,10 +34,12 @@ module {
   type OpenVoteError          = Types.OpenVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
-  type VoteStatus                 = Types.VoteStatus;
+  type VoteStatus             = Types.VoteStatus;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
   type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
+  type InterestVoteClosure    = Types.InterestVoteClosure;
+
   type Votes<T, A>            = Votes.Votes<T, A>;
   
   type QuestionVoteJoins      = QuestionVoteJoins.QuestionVoteJoins;
@@ -46,9 +48,11 @@ module {
   type QuestionId             = QuestionTypes.QuestionId;
   type QuestionQueries        = QuestionTypes.QuestionQueries;
   type ITokenInterface        = PayTypes.ITokenInterface;
-  type PayForNew              = PayForNew.PayForNew;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type PayoutArgs             = PayTypes.PayoutArgs;
+  type PayForNew              = PayForNew.PayForNew;
+
+  type PayoutFunction         = PayToVote.PayoutFunction<Interest, Appeal>;
 
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
@@ -83,7 +87,7 @@ module {
             #PUT_INTEREST_BALLOT,
           ),
           pay_rules.getInterestVotePrice(),
-          pay_rules.computeInterestVotePayout
+          getPayoutFunction(pay_rules)
         )
       ),
       pay_for_new,
@@ -112,15 +116,14 @@ module {
       };
     };
 
-    public func closeVote(vote_id: Nat, date: Time) : async* () {
+    public func closeVote(vote_id: Nat, date: Time, closure: InterestVoteClosure) : async* () {
       // Close the vote
       await* _votes.closeVote(vote_id, date);
       let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
       _queries.remove(KeyConverter.toHotnessKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.hotness));
       // Pay out the buyer
-      let (refund_amount, reward_amount) = _pay_rules.computeOpenVotePayout(vote.aggregate, Map.size(vote.ballots));
-      await* _pay_for_new.payout(vote_id, refund_amount, reward_amount);
+      await* _pay_for_new.payout(vote_id, _pay_rules.computeAuthorPayout(vote.aggregate, closure));
     };
 
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {    
@@ -164,6 +167,13 @@ module {
       _votes.getVoterBallots(principal);
     };
 
+  };
+
+  func getPayoutFunction(pay_rules: PayRules) : PayoutFunction {
+    func(interest: Interest, appeal: Appeal, num_voters: Nat) : PayoutArgs {
+      let distribution = PayRules.computeInterestDistribution(appeal);
+      pay_rules.computeInterestVotePayout(distribution, num_voters, interest);
+    };
   };
 
   class VotePolicy() : IVotePolicy {
