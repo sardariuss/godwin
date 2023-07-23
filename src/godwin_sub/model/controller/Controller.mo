@@ -60,6 +60,7 @@ module {
   type BallotConvictionInput       = Types.BallotConvictionInput;
   type VoteAggregate               = Types.VoteAggregate;
   type QueryQuestionItem           = Types.QueryQuestionItem;
+  type QueryVoteItem               = Types.QueryVoteItem;
   type StatusHistory               = Types.StatusHistory;
   type StatusInfo                  = Types.StatusInfo;
   type StatusVoteAggregates        = Types.StatusVoteAggregates;
@@ -283,7 +284,7 @@ module {
       Buffer.toArray(aggregates_buffer); 
     };
 
-    func toQueryQuestionItem(user: ?Principal, question_id: QuestionId) : QueryQuestionItem {
+    func toQueryQuestionItem(question_id: QuestionId) : QueryQuestionItem {
       switch(_model.getQuestions().findQuestion(question_id)){
         case(null) { Debug.trap("Question not found"); };
         case(?question) {
@@ -296,24 +297,49 @@ module {
               case(?status_info){ ?{ vote_aggregates = revealStatusAggregates(status_info); }; };
             };
           };
-          // Get the open votes
-          let votes_buffer = Buffer.Buffer<(VoteKind, VoteData)>(0);
-          Option.iterate(_model.getInterestJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
-            let vote = _model.getInterestVotes().getVote(vote_id);
-            votes_buffer.add((#INTEREST,       { id = vote.id; status = vote.status; iteration;
-              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<Interest>) : VoteKindBallot { #INTEREST(b);      }); } ); }));
-          });
-          Option.iterate(_model.getOpinionJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
-            let vote = _model.getOpinionVotes().getVote(vote_id);
-            votes_buffer.add((#OPINION,        { id = vote.id; status = vote.status; iteration;
-              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: OpinionBallot) : VoteKindBallot { #OPINION(b);       }); } ); }));
-          });
-          Option.iterate(_model.getCategorizationJoins().getLastVote(question_id), func((iteration, vote_id): (Nat, VoteId)){
-            let vote = _model.getCategorizationVotes().getVote(vote_id);
-            votes_buffer.add((#CATEGORIZATION, { id = vote.id; status = vote.status; iteration;
-              user_ballot = Option.chain(user, func(p: Principal) : ?VoteKindBallot { Option.map(Map.get(vote.ballots, Map.phash, p), func(b: Ballot<CursorMap>) : VoteKindBallot { #CATEGORIZATION({ date = b.date; answer = Utils.trieToArray(b.answer) }); }); } ); }));
-          });
-          { question; status_data; votes = Buffer.toArray(votes_buffer); };
+          { question; status_data; };
+        };
+      };
+    };
+
+    func toQueryVoteItem(question_id: QuestionId, user: Principal, vote_kind: VoteKind) : QueryVoteItem {
+      switch(_model.getQuestions().findQuestion(question_id)){
+        case(null) { Debug.trap("Question not found"); };
+        case(?question) {
+          // Get the vote
+          let vote = switch(vote_kind){
+            case(#INTEREST){
+             switch(_model.getInterestJoins().getLastVote(question_id)){
+              case(null) { Debug.trap("There is no vote"); };
+              case(?(iteration, vote_id)){
+                let vote = _model.getInterestVotes().getVote(vote_id);
+                let user_ballot = Option.map(Map.get(vote.ballots, Map.phash, user), func(b: Ballot<Interest>) : VoteKindBallot { #INTEREST(b); });
+                (#INTEREST, { id = vote.id; status = vote.status; iteration; user_ballot; });
+                };
+              };
+            };
+            case(#OPINION){
+             switch(_model.getOpinionJoins().getLastVote(question_id)){
+              case(null) { Debug.trap("There is no vote"); };
+              case(?(iteration, vote_id)){
+                let vote = _model.getOpinionVotes().getVote(vote_id);
+                let user_ballot = Option.map(Map.get(vote.ballots, Map.phash, user), func(b: OpinionBallot) : VoteKindBallot { #OPINION(b); });
+                (#OPINION,        { id = vote.id; status = vote.status; iteration; user_ballot; } );
+                };
+              };
+            };
+            case(#CATEGORIZATION){
+             switch(_model.getCategorizationJoins().getLastVote(question_id)){
+              case(null) { Debug.trap("There is no vote"); };
+              case(?(iteration, vote_id)){
+                let vote = _model.getCategorizationVotes().getVote(vote_id);
+                let user_ballot = Option.map(Map.get(vote.ballots, Map.phash, user), func(b: Ballot<CursorMap>) : VoteKindBallot { #CATEGORIZATION({ date = b.date; answer = Utils.trieToArray(b.answer) }); });
+                (#CATEGORIZATION, { id = vote.id; status = vote.status; iteration;  user_ballot; });
+                };
+              };
+            };
+          };
+          { question; vote; };
         };
       };
     };
@@ -321,7 +347,7 @@ module {
     public func queryQuestions(order_by: OrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
       Utils.mapScanLimitResult<QuestionId, QueryQuestionItem>(
         _model.getQueries().select(order_by, direction, limit, previous_id, null),
-        func(question_id: QuestionId) : QueryQuestionItem { toQueryQuestionItem(null, question_id); });
+        func(question_id: QuestionId) : QueryQuestionItem { toQueryQuestionItem(question_id); });
     };
 
     // @todo: should filter based on the question status in order to properly hide the author ?
@@ -334,7 +360,7 @@ module {
       });
     };
 
-    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryVoteItem> {
       
       let (order_by, has_vote, joins) = switch(vote_kind){
         case(#INTEREST)       {
@@ -358,9 +384,9 @@ module {
         true;
       };
 
-      Utils.mapScanLimitResult<QuestionId, QueryQuestionItem>(
+      Utils.mapScanLimitResult<QuestionId, QueryVoteItem>(
         _model.getQueries().select(order_by, direction, limit, previous_id, ?filter),
-        func(question_id: QuestionId) : QueryQuestionItem { toQueryQuestionItem(?principal, question_id); });
+        func(question_id: QuestionId) : QueryVoteItem { toQueryVoteItem(question_id, principal, vote_kind); });
     };
 
     public func queryInterestBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId

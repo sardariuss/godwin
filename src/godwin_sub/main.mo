@@ -49,6 +49,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type Polarization                 = Types.Polarization;
   type CursorArray                  = Types.CursorArray;
   type QueryQuestionItem            = Types.QueryQuestionItem;
+  type QueryVoteItem                = Types.QueryVoteItem;
   type GetUserVotesError            = Types.GetUserVotesError;
   type CategoryInfo                 = Types.CategoryInfo;
   type CategoryArray                = Types.CategoryArray;
@@ -197,7 +198,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().queryQuestions(order_by, direction, limit, previous_id);
   };
 
-  public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryQuestionItem> {
+  public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
     getFacade().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
   };
 

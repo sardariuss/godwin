@@ -172,7 +172,11 @@ module {
   public type QueryQuestionItem = {
     question: Question;
     status_data: StatusData;
-    votes: [(VoteKind, VoteData)];
+  };
+
+  public type QueryVoteItem = {
+    question: Question;
+    vote: (VoteKind, VoteData);
   };
 
   public type PrincipalError = {

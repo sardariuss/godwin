@@ -58,6 +58,7 @@ module {
   type Duration                     = Types.Duration;
   type BallotConvictionInput        = Types.BallotConvictionInput;
   type QueryQuestionItem            = Types.QueryQuestionItem;
+  type QueryVoteItem                = Types.QueryVoteItem;
   type StatusHistory                = Types.StatusHistory;
   type StatusInfo                   = Types.StatusInfo;
   type Question                     = Types.Question;
@@ -229,7 +230,7 @@ module {
       _controller.queryQuestionsFromAuthor(principal, direction, limit, previous_id);
     };
 
-    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryQuestionItem> {
+    public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryVoteItem> {
       _controller.queryFreshVotes(principal, vote_kind, direction, limit, previous_id);
     };
 

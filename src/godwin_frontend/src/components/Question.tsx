@@ -7,7 +7,7 @@ import InterestVote                                              from "./interes
 import { StatusEnum, VoteKind, statusToEnum,
 	 voteKindFromCandidVariant, VoteStatusEnum, voteStatusToEnum } from "../utils";
 import { Sub }                                                   from "../ActorContext";
-import { QueryQuestionItem, VoteKind__1, VoteData }              from "../../declarations/godwin_sub/godwin_sub.did";
+import { QueryQuestionItem, Question, StatusData, VoteKind__1, VoteData }              from "../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useEffect, useState }                            from "react";
 
