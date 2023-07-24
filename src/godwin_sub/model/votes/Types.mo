@@ -90,6 +90,11 @@ module {
     answer: T;
   };
 
+  public type IVotersHistory = {
+    addVote: (Principal, VoteId) -> ();
+    getVoterHistory: (Principal) -> [VoteId];
+  };
+
   public type IVotePolicy<T, A> = {
     canPutBallot: (Vote<T, A>, Principal, Ballot<T>) -> Result<(), PutBallotError>;
     emptyAggregate: (Time) -> A;
@@ -124,7 +129,6 @@ module {
     vote_id: VoteId;
     date: Time;
     answer: ?T;
-    transactions_record: ?PayTypes.TransactionsRecord;
   };
 
   public type BallotChangeAuthorization = {

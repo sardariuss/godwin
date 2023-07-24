@@ -170,18 +170,6 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().revealCategorizationVote(vote_id);
   };
 
-  public query({caller}) func queryInterestBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedInterestBallot> {
-    getFacade().queryInterestBallots(caller, voter, direction, limit, previous_id);
-  };
-
-  public query({caller}) func queryOpinionBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedOpinionBallot> {
-    getFacade().queryOpinionBallots(caller, voter, direction, limit, previous_id);
-  };
-
-  public query({caller}) func queryCategorizationBallots(voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<RevealedCategorizationBallot> {
-    getFacade().queryCategorizationBallots(caller, voter, direction, limit, previous_id);
-  };
-
   public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
     getFacade().getQuestionIteration(vote_kind, vote_id);
   };
@@ -200,6 +188,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
     getFacade().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
+  };
+
+  public query({caller}) func queryVoterBallots(vote_kind: VoteKind, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
+    getFacade().queryVoterBallots(vote_kind, caller, voter, direction, limit, previous_id);
   };
 
   public shared func run() : async() {

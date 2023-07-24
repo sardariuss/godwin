@@ -58,7 +58,7 @@ module {
 
       for (principal in Array.vals(principals)) {
         for ({vote} in Array.vals(facade.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(vote.1.id));
             switch(await* facade.putInterestBallot(principal, vote.1.id, time, Random.randomInterest(fuzzer))){
               case(#ok(_)){};
@@ -67,7 +67,7 @@ module {
           };
         };
         for ({vote} in Array.vals(facade.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(vote.1.id));
             switch(await* facade.putOpinionBallot(principal, vote.1.id, time, Random.randomOpinion(fuzzer))){
               case(#ok(_)){};
@@ -76,7 +76,7 @@ module {
           };
         };
         for ({vote} in Array.vals(facade.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.1){
+          if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
             switch(await* facade.putCategorizationBallot(principal, vote.1.id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
               case(#ok(_)){};

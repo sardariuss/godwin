@@ -32,6 +32,7 @@ module {
   type Vote               = Types.OpinionVote;
   type Aggregate          = Types.OpinionAggregate;
   type IVotePolicy        = Types.IVotePolicy<Answer, Aggregate>;
+  type IVotersHistory     = Types.IVotersHistory;
   type VoteStatus         = Types.VoteStatus;
   type PutBallotError     = Types.PutBallotError;
   type DecayParameters    = Types.DecayParameters;
@@ -52,12 +53,14 @@ module {
 
   public func build(
     vote_register: Votes.Register<Answer, Aggregate>,
+    voters_history: IVotersHistory,
     vote_decay: WRef<DecayParameters>,
     late_ballot_decay: WRef<DecayParameters>
   ) : Opinions {
     Opinions(
       Votes.Votes<Answer, Aggregate>(
         vote_register,
+        voters_history,
         VotePolicy(vote_decay),
         null
       ),
@@ -123,8 +126,8 @@ module {
       _votes.revealBallot(caller, voter, vote_id);
     };
 
-    public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot> {
-      _votes.revealBallots(caller, voter, direction, limit, previous_id);
+    public func hasBallot(principal: Principal, vote_id: VoteId) : Bool {
+      _votes.hasBallot(principal, vote_id);
     };
 
   };

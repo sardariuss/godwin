@@ -1,12 +1,13 @@
 import Types               "Types";
 import StatusManager       "StatusManager";
+import Categories          "Categories";
 import Categorizations     "votes/Categorizations";
 import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
 import Votes               "votes/Votes";
 import Joins               "votes/QuestionVoteJoins";
+import VotersHistory       "votes/VotersHistory";
 import VoteTypes           "votes/Types";
-import Categories          "Categories";
 import SubaccountGenerator "token/SubaccountGenerator";
 import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
@@ -31,6 +32,7 @@ module {
   type OpinionVotes         = Opinions.Opinions;
   type CategorizationVotes  = Categorizations.Categorizations;
   type Joins                = Joins.QuestionVoteJoins;
+  type VotersHistory        = VotersHistory.VotersHistory;
 
   public class Model(
     _name: WRef<Text>,
@@ -46,7 +48,10 @@ module {
     _categorization_votes: CategorizationVotes,
     _interest_joins: Joins,
     _opinion_joins: Joins,
-    _categorization_joins: Joins
+    _categorization_joins: Joins,
+    _interest_voters_history: VotersHistory,
+    _opinion_voters_history: VotersHistory,
+    _categorization_voters_history: VotersHistory
   ) = {
 
     public func getName() : Text {
@@ -119,6 +124,18 @@ module {
 
     public func getCategorizationJoins(): Joins {
       _categorization_joins;
+    };
+
+    public func getInterestVotersHistory() : VotersHistory {
+      _interest_voters_history;
+    };
+
+    public func getOpinionVotersHistory() : VotersHistory {
+      _opinion_voters_history;
+    };
+
+    public func getCategorizationVotersHistory() : VotersHistory {
+      _categorization_voters_history;
     };
 
   };

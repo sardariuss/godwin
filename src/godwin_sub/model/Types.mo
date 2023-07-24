@@ -143,9 +143,9 @@ module {
   };
 
   public type VoteKindBallot = {
-    #INTEREST: InterestBallot;
-    #OPINION: OpinionBallot;
-    #CATEGORIZATION: CategorizationBallot;
+    #INTEREST: RevealedInterestBallot;
+    #OPINION: RevealedOpinionBallot;
+    #CATEGORIZATION: RevealedCategorizationBallot;
   };
 
   public type VoteAggregate = {
