@@ -12,6 +12,7 @@ import ListComponents from "./base/ListComponents";
 
 import { useParams }                                                           from "react-router-dom";
 import React, { useState, useContext, useEffect }                              from "react";
+import { fromNullable }                                                        from "@dfinity/utils";
 
 export enum MainTab {
   HOME,
@@ -92,25 +93,29 @@ const MainQuestions = () => {
 
   const convertQuestionScanResults = (scan_results: ScanLimitResult<QueryQuestionItem>) : ScanResults<QuestionInput> => {
     return convertScanResults(fromScanLimitResult(scan_results), (item: QueryQuestionItem) : QuestionInput => {
-      return { 
+      return {
         sub,
+        question_id: item.question.id,
         question: item.question,
         statusData: item.status_data,
-        showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT
+        showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT,
+        canVote: false
       }}
     );
   }
 
   const convertVoteScanResults = (scan_results: ScanLimitResult<QueryVoteItem>) : ScanResults<QuestionInput> => {
     return convertScanResults(fromScanLimitResult(scan_results), (item: QueryVoteItem) : QuestionInput => {
-      return { 
+      return {
         sub,
-        question: item.question,
+        question_id: item.question_id,
+        question: fromNullable(item.question),
         vote: { 
           kind: voteKindFromCandidVariant(item.vote[0]),
           data: item.vote[1]
         }, 
-        showReopenQuestion: false 
+        showReopenQuestion: false,
+        canVote: true
       }});
   }
 

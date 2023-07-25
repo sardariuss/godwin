@@ -8,42 +8,52 @@ import ArrowUpIcon                                      from "../icons/ArrowUpIc
 import { ActorContext, Sub }                            from "../../ActorContext"
 import { putBallotErrorToString }                       from "../../utils";
 import { getDocElementById }                            from "../../utils/DocumentUtils";
-import { PutBallotError, VoteData }                     from "../../../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteData, Interest }           from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useEffect, useContext }       from "react";
 import { createPortal }                                 from 'react-dom';
+import { fromNullable }                                 from "@dfinity/utils";
 
 const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
-  if (vote_data.user_ballot['INTEREST'] !== undefined){
-		return vote_data.user_ballot['INTEREST'].date;
+  let ballot = fromNullable(vote_data.user_ballot);
+  if (ballot !== undefined && ballot['INTEREST'] !== undefined){
+		return ballot['INTEREST'].date;
 	}
   return undefined;
 }
 
-const unwrapBallotAnswer = (vote_data: VoteData) : InterestEnum => {
-  if (vote_data.user_ballot['INTEREST'] !== undefined){
-		return interestToEnum(vote_data.user_ballot['INTEREST'].answer);
+const unwrapBallotAnswer = (vote_data: VoteData, canVote: boolean) : InterestEnum | undefined => {
+  let ballot = fromNullable(vote_data.user_ballot);
+  if (ballot !== undefined && ballot['INTEREST'] !== undefined){
+    let answer : Interest | undefined = fromNullable(ballot['INTEREST'].answer);
+    if (answer !== undefined){
+      return interestToEnum(answer);
+    }
 	}
-  return InterestEnum.Neutral;
+  if (canVote){
+    return InterestEnum.Neutral;
+  }
+  return undefined;
 }
 
 type Props = {
   sub: Sub,
   voteData: VoteData;
+  canVote: boolean;
   voteElementId: string;
   ballotElementId: string;
 };
 
-const InterestVote = ({sub, voteData, voteElementId, ballotElementId}: Props) => {
+const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>           (false                       );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>           (false                       );
-  const [voteDate,      setVoteDate     ] = useState<bigint | undefined>(unwrapBallotDate(voteData)  );
-  const [interest,      setInterest     ] = useState<InterestEnum>      (unwrapBallotAnswer(voteData));
+  const [countdownVote, setCountdownVote] = useState<boolean>                 (false                                );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                 (false                                );
+  const [voteDate,      setVoteDate     ] = useState<bigint | undefined>      (unwrapBallotDate(voteData)           );
+  const [interest,      setInterest     ] = useState<InterestEnum | undefined>(unwrapBallotAnswer(voteData, canVote));
 
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
@@ -75,7 +85,8 @@ const InterestVote = ({sub, voteData, voteElementId, ballotElementId}: Props) =>
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (interest === InterestEnum.Neutral) throw new Error("Invalid interest");
+    if (interest === undefined)            throw new Error("Cannot put ballot: interest is undefined");
+    if (interest === InterestEnum.Neutral) throw new Error("Cannot put ballot: interest is neutral");
     return sub.actor.putInterestBallot(voteData.id, enumToInterest(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
@@ -101,17 +112,17 @@ const InterestVote = ({sub, voteData, voteElementId, ballotElementId}: Props) =>
     {
       createPortal(
         <>
-          { voteDate === undefined ?
+          { voteDate === undefined && interest !== undefined ?
             <div className="grid grid-cols-3 w-full content-center items-center">
               <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-                <div className={`w-10 flex -m-2 justify-center ${voteDate !== undefined ? "hidden" : ""}`}>
+                <div className={`w-10 flex -m-2 justify-center`}>
                   <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
                     <ArrowUpIcon/>
                   </SvgButton>
                 </div>
                 <InterestBallot answer={interest} dateNs={voteDate}/>
-                <div className={`w-10 flex -m-2 justify-center ${voteDate !== undefined ? "hidden" : ""}`}>
+                <div className={`w-10 flex -m-2 justify-center`}>
                   <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
                     <ArrowDownIcon/>
                   </SvgButton>
@@ -119,8 +130,7 @@ const InterestVote = ({sub, voteData, voteElementId, ballotElementId}: Props) =>
               </div>
               <div className={`col-span-1 justify-center`}>
                 {
-                  voteDate !== undefined || interest === InterestEnum.Neutral ? 
-                    <></> :
+                  interest === InterestEnum.Neutral ? <></> :
                     <UpdateProgress<PutBallotError> 
                       delay_duration_ms={countdownDurationMs}
                       update_function={putBallot}

@@ -12,6 +12,7 @@ import { CursorArray, Category, CategoryInfo, PutBallotError, VoteData } from ".
 
 import React, { useContext, useState }                                   from "react";
 import { createPortal }                                                  from 'react-dom';
+import { fromNullable }                                                  from "@dfinity/utils";
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   let categorization: CursorArray = [];
@@ -22,36 +23,45 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
 }
 
 const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
-  if (vote_data.user_ballot['CATEGORIZATION'] !== undefined){
-		return vote_data.user_ballot['CATEGORIZATION'].date;
+  let ballot = fromNullable(vote_data.user_ballot);
+  if (ballot !== undefined && ballot['CATEGORIZATION'] !== undefined){
+		return ballot['CATEGORIZATION'].date;
 	}
   return undefined;
 }
 
-const unwrapBallotCategorization = (vote_data: VoteData, categories: Map<Category, CategoryInfo>) : CursorArray => {
-  if (vote_data.user_ballot['CATEGORIZATION'] !== undefined){
-		return vote_data.user_ballot['CATEGORIZATION'].answer;
+const unwrapBallotCategorization = (vote_data: VoteData, canVote, categories: Map<Category, CategoryInfo>) : CursorArray | undefined => {
+  let ballot = fromNullable(vote_data.user_ballot);
+  if (ballot !== undefined && ballot['CATEGORIZATION'] !== undefined){
+    let answer : CursorArray | undefined = fromNullable(ballot['CATEGORIZATION'].answer);
+    if (answer !== undefined){
+      return answer;
+    }
 	}
-  return initCategorization(categories);
+  if (canVote) {
+    return initCategorization(categories);
+  }
+  return undefined;
 }
 
 type Props = {
   sub: Sub;
   voteData: VoteData;
+  canVote: boolean;
   voteElementId: string;
   ballotElementId: string;
 };
 
-const CategorizationVote = ({sub, voteData, voteElementId, ballotElementId}: Props) => {
+const CategorizationVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: Props) => {
 
   const {refreshBalance}   = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote,  setCountdownVote ] = useState<boolean>           (false                                               );
-  const [triggerVote,    setTriggerVote   ] = useState<boolean>           (false                                               );
-  const [voteDate,       setVoteDate      ] = useState<bigint | undefined>(unwrapBallotDate(voteData)                          );
-  const [categorization, setCategorization] = useState<CursorArray>       (unwrapBallotCategorization(voteData, sub.categories));
+  const [countdownVote,  setCountdownVote ] = useState<boolean>                (false                                                        );
+  const [triggerVote,    setTriggerVote   ] = useState<boolean>                (false                                                        );
+  const [voteDate,       setVoteDate      ] = useState<bigint | undefined>     (unwrapBallotDate(voteData)                                   );
+  const [categorization, setCategorization] = useState<CursorArray | undefined>(unwrapBallotCategorization(voteData, canVote, sub.categories));
 
   const resetCategorization = () => {
     setCategorization(initCategorization(sub.categories));
@@ -59,6 +69,9 @@ const CategorizationVote = ({sub, voteData, voteElementId, ballotElementId}: Pro
 
   const setCategoryCursor = (category_index: number, cursor: number) => {
     setCategorization(old_categorization => {
+      if (old_categorization === undefined){
+        return undefined;
+      }
       let new_categorization = [...old_categorization];
       new_categorization[category_index] = [new_categorization[category_index][0], cursor];
       return new_categorization;
@@ -79,6 +92,7 @@ const CategorizationVote = ({sub, voteData, voteElementId, ballotElementId}: Pro
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
+    if (categorization === undefined) throw new Error("Cannot put ballot: categorization is undefined");
     return sub.actor.putCategorizationBallot(voteData.id, categorization).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
@@ -91,7 +105,7 @@ const CategorizationVote = ({sub, voteData, voteElementId, ballotElementId}: Pro
       createPortal(
         <>
           { voteDate !== undefined ?
-              <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(toMap(categorization), sub.categories)} dateNs={voteDate}/> : <></>
+              <CursorBallot cursorInfo={categorization !== undefined ? getStrongestCategoryCursorInfo(toMap(categorization), sub.categories) : undefined} dateNs={voteDate}/> : <></>
           }
         </>,
         getDocElementById(ballotElementId)
@@ -100,7 +114,7 @@ const CategorizationVote = ({sub, voteData, voteElementId, ballotElementId}: Pro
     {
       createPortal(
         <>
-          { voteDate === undefined ?
+          { voteDate === undefined && categorization !== undefined ?
             <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
             <div className={`justify-center w-6 h-6`}>
               <SvgButton onClick={ () => { resetCategorization(); setCountdownVote(false);}} disabled={ triggerVote } hidden={false}>

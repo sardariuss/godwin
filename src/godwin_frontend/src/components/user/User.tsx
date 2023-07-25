@@ -1,21 +1,21 @@
-import Convictions                         from "./Convictions";
-import { VoterHistory }                    from "./VoterHistory";
-import { AuthorQuestions }                 from "./AuthorQuestions";
-import UserName                            from "./UserName";
-import CopyIcon                            from "../icons/CopyIcon";
-import SvgButton                           from "../base/SvgButton"
-import LogoutIcon                          from "../icons/LogoutIcon";
-import { MainTabButton }                   from "../MainTabButton";
-import SubNameBanner                       from "../SubNameBanner";
-import { getEncodedAccount }               from "../../utils/LedgerUtils";
-import { VoteKind }                        from "../../utils";
-import { ActorContext }                    from "../../ActorContext"
-import { Account }                         from "../../../declarations/godwin_master/godwin_master.did";
+import Convictions                                from "./Convictions";
+import { VoterHistory }                           from "./VoterHistory";
+import { AuthorQuestions }                        from "./AuthorQuestions";
+import UserName                                   from "./UserName";
+import CopyIcon                                   from "../icons/CopyIcon";
+import SvgButton                                  from "../base/SvgButton"
+import LogoutIcon                                 from "../icons/LogoutIcon";
+import { MainTabButton }                          from "../MainTabButton";
+import SubNameBanner                              from "../SubNameBanner";
+import { getEncodedAccount }                      from "../../utils/LedgerUtils";
+import { VoteKind }                               from "../../utils";
+import { ActorContext }                           from "../../ActorContext"
+import { Account }                                from "../../../declarations/godwin_master/godwin_master.did";
 
-import { useEffect, useState, useContext } from "react";
-import { useParams }                       from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { useParams }                              from "react-router-dom";
 
-import { Principal }                       from "@dfinity/principal";
+import { Principal }                              from "@dfinity/principal";
 
 export enum UserFilter {
   CONVICTIONS,
@@ -150,11 +150,11 @@ const UserComponent = () => {
                   </div>
                   {
                     currentUserFilter === UserFilter.CONVICTIONS ?
-                      <Convictions sub={sub} principal={principal}/> :
+                      <Convictions sub={sub} principal={principal} isLoggedUser={isLoggedUser}/> :
                     currentUserFilter === UserFilter.INTERESTS ?
-                      <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.INTEREST}/> :
+                      <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.INTEREST}/> :
                     currentUserFilter === UserFilter.CATEGORIZATIONS ?
-                      <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.CATEGORIZATION}/> :
+                      <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.CATEGORIZATION}/> :
                     currentUserFilter === UserFilter.QUESTIONS ? 
                       <AuthorQuestions sub={sub} principal={principal}/> :
                     <></>

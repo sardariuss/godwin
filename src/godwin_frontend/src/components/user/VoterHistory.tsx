@@ -7,17 +7,19 @@ import { Direction, QueryVoteItem, }                                       from 
 
 
 import { Principal }                                                       from "@dfinity/principal";
+import { fromNullable }                                                    from "@dfinity/utils";
 import React, { useState, useEffect }                                      from "react";
+
+type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: QuestionInput | undefined) => Promise<ScanResults<QuestionInput>>;
 
 type VoterHistoryProps = {
   principal: Principal;
   sub: Sub;
+  isLoggedUser: boolean;
   voteKind: VoteKind;
 };
 
-type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: QuestionInput | undefined) => Promise<ScanResults<QuestionInput>>;
-
-export const VoterHistory = ({principal, sub, voteKind }: VoterHistoryProps) => {
+export const VoterHistory = ({principal, sub, isLoggedUser, voteKind}: VoterHistoryProps) => {
 
   const [queryQuestionInput, setQueryQuestionInput] = useState<QueryQuestionInputFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 
@@ -25,23 +27,25 @@ export const VoterHistory = ({principal, sub, voteKind }: VoterHistoryProps) => 
     return convertScanResults(fromScanLimitResult(scan_results), (item: QueryVoteItem) : QuestionInput => {
       return { 
         sub,
-        question: item.question,
+        question_id: item.question_id,
+        question: fromNullable(item.question),
         vote: { 
           kind: voteKindFromCandidVariant(item.vote[0]),
           data: item.vote[1]
         }, 
-        showReopenQuestion: false 
+        showReopenQuestion: false,
+        canVote: isLoggedUser
       }});
   }
 
   const refreshQueryQuestions = () => {
     setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
-      sub.actor.queryVoterBallots(voteKindToCandidVariant(voteKind), principal, direction, limit, next? [next.question.id] : []).then(convertVoteScanResults));
+      sub.actor.queryVoterBallots(voteKindToCandidVariant(voteKind), principal, direction, limit, next? [next.question_id] : []).then(convertVoteScanResults));
   }
 
   useEffect(() => {
     refreshQueryQuestions();
-  }, [sub, voteKind, principal]);
+  }, [sub, isLoggedUser, voteKind, principal]);
 
   return (
     <div className="w-full flex flex-col">
@@ -50,7 +54,7 @@ export const VoterHistory = ({principal, sub, voteKind }: VoterHistoryProps) => 
         query_components: queryQuestionInput,
         generate_input: (item: QuestionInput) => { return item },
         build_component: QuestionComponent,
-        generate_key: (item: QuestionInput) => { return item.question.id.toString() }
+        generate_key: (item: QuestionInput) => { return item.question_id.toString() }
       })
     }
     </div>

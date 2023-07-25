@@ -175,7 +175,8 @@ module {
   };
 
   public type QueryVoteItem = {
-    question: Question;
+    question_id: QuestionId;
+    question: ?Question;
     vote: (VoteKind, VoteData);
   };
 

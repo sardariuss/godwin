@@ -8,8 +8,8 @@ import TransactionsRecordComponent from "../token/TransactionsRecord";
 import React                       from "react";
 
 export type CursorBallotProps = {
-  cursorInfo: CursorInfo | null;
-  dateNs: bigint | null;
+  cursorInfo: CursorInfo | undefined;
+  dateNs: bigint;
   isLate?: boolean;
   tx_record?: TransactionsRecord;
 };
@@ -20,7 +20,7 @@ const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record} : CursorBallotProp
     <div className="flex flex-row items-center w-full grow">
       <div className="flex flex-col items-center w-full justify-items-center">
         {
-          cursorInfo === null ? 
+          cursorInfo === undefined ? 
           <div className="w-6 h-6 icon-svg">
             <HiddenIcon/>
           </div> : 
@@ -42,14 +42,11 @@ const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record} : CursorBallotProp
               </div>
             </div>
         }
-        {
-          dateNs === null ?  <></> :
-          <div className="flex flex-row items-center">
-            <div className="text-xs mt-1 font-extralight dark:text-gray-400 whitespace-nowrap">
-              { timeAgo(new Date(Number(dateNs) / 1000000)) }
-            </div>
+        <div className="flex flex-row items-center">
+          <div className="text-xs mt-1 font-extralight dark:text-gray-400 whitespace-nowrap">
+            { timeAgo(new Date(Number(dateNs) / 1000000)) }
           </div>
-        }
+        </div>
         {
           tx_record === undefined ? <></> :
           <TransactionsRecordComponent tx_record={tx_record}/>

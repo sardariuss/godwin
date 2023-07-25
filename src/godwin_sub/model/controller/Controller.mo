@@ -345,14 +345,13 @@ module {
 
       Utils.mapScanLimitResult<QuestionId, QueryVoteItem>(
         _model.getQueries().select(order_by, direction, limit, previous_id, ?filter),
-        func(question_id: QuestionId) : QueryVoteItem { 
-          switch(_model.getQuestions().findQuestion(question_id)){
-            case(null) { Debug.trap("Question not found"); };
-            case(?question) {
-              let (iteration, id) = joins.getLastVote(question_id);
-              // The ballot will always be null because we filter out the votes that the user has already voted on
-              { question; vote = (vote_kind, { id; status = votes.getVote(id).status; iteration; user_ballot = null; }) };
-            };
+        func(question_id: QuestionId) : QueryVoteItem {
+          let (iteration, id) = joins.getLastVote(question_id);
+          // The ballot will always be null because we filter out the votes that the user has already voted on
+          {
+            question_id;
+            question = _model.getQuestions().findQuestion(question_id); 
+            vote = (vote_kind, { id; status = votes.getVote(id).status; iteration; user_ballot = null; }) 
           };
         }
       );
@@ -378,8 +377,9 @@ module {
         };
       };
       Utils.mapScanLimitResult(scan_answered_questions, func((question_id, vote_map): (QuestionId, Map<Nat, VoteId>)) : QueryVoteItem {
-        { 
-          question = _model.getQuestions().getQuestion(question_id);
+        {
+          question_id; 
+          question = _model.getQuestions().findQuestion(question_id);
           vote = switch(vote_kind){
             case(#INTEREST){
               let (iteration, id) = _model.getInterestJoins().getLastVote(question_id);

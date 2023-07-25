@@ -1,5 +1,6 @@
 import OpinionVote                        from "./opinion/OpinionVote";
 import CategorizationVote                 from "./categorization/CategorizationVote";
+import CONSTANTS                          from "../Constants";
 import StatusHistoryComponent             from "./StatusHistory";
 import ReopenButton                       from "./ReopenButton";
 import InterestVote                       from "./interest/InterestVote";
@@ -11,19 +12,21 @@ import React, { useEffect, useState }     from "react";
 
 export type QuestionInput = {
 	sub: Sub,
-	question: Question,
+	question_id: bigint,
+	question: Question | undefined,
 	statusData?: StatusData,
 	vote?: {
 		kind: VoteKind,
 		data: VoteData,
 	},
 	showReopenQuestion?: boolean,
+	canVote: boolean,
 };
 
-const QuestionComponent = ({sub, question, statusData, vote, showReopenQuestion}: QuestionInput) => {
+const QuestionComponent = ({sub, question_id, question, statusData, vote, showReopenQuestion, canVote}: QuestionInput) => {
 	
-	const [rightPlaceHolderId ] = useState<string>(question.id + "_right_placeholder" );
-	const [bottomPlaceHolderId] = useState<string>(question.id + "_bottom_placeholder");
+	const [rightPlaceHolderId ] = useState<string>(question_id + "_right_placeholder" );
+	const [bottomPlaceHolderId] = useState<string>(question_id + "_bottom_placeholder");
 
 	// @todo: hack to be able to initialize the placeholders before initializing the vote components
 	const [voteKind, 				 setVoteKind            ] = useState<VoteKind | undefined>(undefined);
@@ -45,28 +48,28 @@ const QuestionComponent = ({sub, question, statusData, vote, showReopenQuestion}
 				${(vote !== undefined && voteKind === VoteKind.INTEREST) ? "w-4/5" : "w-full"}`} id={bottomPlaceHolderId}>
 				<div className="flex flex-row justify-between grow">
 					<div className={`w-full justify-start text-sm font-normal break-words`}>
-          	{question.text}
+          	{question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
         	</div>
 					{
 						showReopenQuestion ?
 							<div className="flex flex-row grow self-start justify-end mr-5">
-								<ReopenButton actor={sub.actor} questionId={question.id} onReopened={()=>{}}/>
+								<ReopenButton actor={sub.actor} questionId={question_id} onReopened={()=>{}}/>
 							</div> : <></>
 					}
 				</div>
 				{
 					statusData !== undefined ?
-						<StatusHistoryComponent sub={sub} questionId={question.id} currentStatusData={statusData}/> : <></>
+						<StatusHistoryComponent sub={sub} questionId={question_id} currentStatusData={statusData}/> : <></>
 				}
 			</div>
 			{
 				voteKind === undefined ? <></> :
 					voteKind === VoteKind.INTEREST && voteData !== undefined ?
-						<InterestVote       sub={sub} voteData={voteData} voteElementId={rightPlaceHolderId}  ballotElementId={rightPlaceHolderId}/> : 
+						<InterestVote       sub={sub} voteData={voteData} canVote={canVote} voteElementId={rightPlaceHolderId}  ballotElementId={rightPlaceHolderId}/> : 
 					voteKind === VoteKind.OPINION && voteData !== undefined ?
-						<OpinionVote        sub={sub} voteData={voteData} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> :
+						<OpinionVote        sub={sub} voteData={voteData} canVote={canVote} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> :
 					voteKind === VoteKind.CATEGORIZATION && voteData !== undefined ?
-						<CategorizationVote sub={sub} voteData={voteData} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> : <></>
+						<CategorizationVote sub={sub} voteData={voteData} canVote={canVote} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> : <></>
 			}
 		</div>
 	);
