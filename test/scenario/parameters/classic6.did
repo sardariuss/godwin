@@ -18,20 +18,13 @@ record {
     };
   };
   scheduler = record {
-    question_pick_period      = variant { HOURS   = 2  : nat    };
-    censor_timeout            = variant { MINUTES = 30 : nat    };
-    candidate_status_duration = variant { HOURS   = 8  : nat    };
-    open_status_duration      = variant { HOURS   = 4  : nat    };
-    rejected_status_duration  = variant { HOURS   = 8  : nat    };
+    question_pick_period      = variant { HOURS   = 2  : nat };
+    censor_timeout            = variant { MINUTES = 30 : nat };
+    candidate_status_duration = variant { HOURS   = 8  : nat };
+    open_status_duration      = variant { HOURS   = 4  : nat };
+    rejected_status_duration  = variant { HOURS   = 8  : nat };
   };
-  questions = record {
-    character_limit = 240 : nat;
-  };
-  prices = record {
-    open_vote_price_e8s           = 1_000_000_000 : nat;
-    interest_vote_price_e8s       = 100_000_000   : nat;
-    categorization_vote_price_e8s = 300_000_000   : nat;
-  };
+  character_limit = 240 : nat;
   convictions = record {
     vote_half_life        = variant { DAYS = 365 : nat };
     late_ballot_half_life = variant { DAYS = 7   : nat };

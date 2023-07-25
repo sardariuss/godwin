@@ -52,14 +52,7 @@ const CreateSub = () => {
       scheduler: schedulerParameters,
       convictions: convictionsParameters,
       minimum_interest_score: 1.0,
-      prices: {
-        open_vote_price_e8s: BigInt(10),
-        interest_vote_price_e8s: BigInt(10),
-        categorization_vote_price_e8s: BigInt(10),
-      },
-      questions: {
-        character_limit: BigInt(200)
-      }
+      character_limit: BigInt(200)
     }).then((result) => {
       console.log(result);
       refreshBalance();
@@ -73,7 +66,7 @@ const CreateSub = () => {
       <CreateSubButton show={showGeneral} setShow={setShowGeneral} label={"General"}>
         <div className="flex flex-row justify-evenly w-full items-center place-items-center">
           <TextInput label="Name"        id={"name"}       value={name}        onInputChange={setName}/>
-          <TextInput label="Identitifer" id={"identifier"} value={identifier}  onInputChange={setIdentifier} isValid={(id) => { return isAlphanumeric(id); }}/>
+          <TextInput label="Identitifer" id={"identifier"} value={identifier}  onInputChange={setIdentifier}/>
         </div>
       </CreateSubButton>
       <CreateSubButton show={showDimensions} setShow={setShowDimensions} label={"Dimensions"}>

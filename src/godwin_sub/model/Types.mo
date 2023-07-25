@@ -92,10 +92,6 @@ module {
     categorization_vote_price_e8s: Nat;
   };
 
-  public type QuestionsParameters = {
-    character_limit: Nat;
-  };
-
   public type BallotConvictionInput = {
     cursor: Cursor;
     date: Time;
@@ -104,12 +100,11 @@ module {
     late_ballot_decay: ?Float;
   };
 
-  public type Parameters = {
+  public type SubParameters = {
     name: Text;
     categories: CategoryArray;
     scheduler: SchedulerParameters;
-    questions: QuestionsParameters;
-    prices: PriceParameters;
+    character_limit: Nat;
     convictions: ConvictionsParameters;
     minimum_interest_score: Float;
   };

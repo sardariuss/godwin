@@ -78,7 +78,8 @@ module {
 
   public type InitArgs = {
     master: Principal;
-    parameters: Parameters;
+    sub_parameters: SubParameters;
+    price_parameters: PriceParameters;
   };
   public type UpgradeArgs = {
   };
@@ -244,12 +245,11 @@ module {
     late_ballot_half_life: Duration;
   };
 
-  public type Parameters = {
+  public type SubParameters = {
     name: Text;
     categories: CategoryArray;
     scheduler: SchedulerParameters;
-    questions: QuestionsParameters;
-    prices: PriceParameters;
+    character_limit: Nat;
     convictions: ConvictionsParameters;
     minimum_interest_score: Float;
   };
@@ -272,10 +272,6 @@ module {
     open_vote_price_e8s: Nat;
     interest_vote_price_e8s: Nat;
     categorization_vote_price_e8s: Nat;
-  };
-
-  public type QuestionsParameters = {
-    character_limit: Nat;
   };
 
   public type Category = Text;

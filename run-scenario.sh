@@ -12,11 +12,12 @@ eval "$AIRDROP_UPGRADE_2"
 
 # Create first sub godwin
 export SUB_PARAMETERS=$(cat ./test/scenario/parameters/classic6.did)
+export PRICES_PARAMETERS=$(cat ./test/scenario/parameters/prices.did)
 export SUB_COMMAND="dfx canister call godwin_master createSubGodwin '(\"classic6\", "$SUB_PARAMETERS")'"
 export SUB_RESULT=$(eval "$SUB_COMMAND")
 export SUB=${SUB_RESULT:27:27}
 
-export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/scenario_sub/scenario_sub.wasm\" --mode=upgrade --yes --argument='("${SUB_PARAMETERS}")'"
+export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/scenario_sub/scenario_sub.wasm\" --mode=upgrade --yes --argument='("${SUB_PARAMETERS}", "${PRICES_PARAMETERS}")'"
 eval "$SUB_UPGRADE_1"
 export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { MINUTES = 830 : nat } , variant { MINUTES = 10 : nat } )'"
 eval "$RUN_SUB_SCENARIO"

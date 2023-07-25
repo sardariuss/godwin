@@ -13,12 +13,14 @@ import Time          "mo:base/Time";
 import Principal     "mo:base/Principal";
 import Debug         "mo:base/Debug";
 
-actor class GodwinSubScenario(parameters: Types.Parameters) = {
+actor class GodwinSubScenario(
+  sub_parameters: Types.SubParameters,
+  price_parameters: Types.PriceParameters
+){
 
   // For convenience: from base module
   type Time = Time.Time;
 
-  let _parameters = parameters;
   stable var _state: MigrationTypes.State = Migrations.install(Time.now(), #none); // State already exists, so this line won't be run
 
   public shared func runScenario(
@@ -29,7 +31,7 @@ actor class GodwinSubScenario(parameters: Types.Parameters) = {
 
     // Reset the state where the start date is deduced from the scenario duration
     let start_date = now - Duration.toTime(scenario_duration);
-    _state := Migrations.install(start_date, #init({master = Principal.fromActor(GodwinMaster); parameters = _parameters;}));
+    _state := Migrations.install(start_date, #init({master = Principal.fromActor(GodwinMaster); sub_parameters; price_parameters;}));
 
     let facade = switch(_state){
       case(#v0_1_0(state)) { Factory.build(state); };

@@ -342,11 +342,6 @@ export const durationToNanoSeconds = (duration: Duration) : bigint => {
   throw new Error('Invalid duration');
 }
 
-export const isAlphanumeric = (str: string) : boolean => {
-  const regExp = /^[A-Za-z0-9]+$/;
-  return str.match(regExp) !== null;
-};
-
 export enum VoteStatusEnum {
   OPEN,
   LOCKED,

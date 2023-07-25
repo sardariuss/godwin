@@ -22,7 +22,7 @@ module {
 
   type State                      = MigrationTypes.State;
 
-  type Parameters                 = Types.Parameters;
+  type SubParameters              = Types.SubParameters;
   type SchedulerParameters        = Types.SchedulerParameters;
   type PriceParameters            = Types.PriceParameters;
   type DecayParameters            = Types.DecayParameters;
@@ -35,30 +35,32 @@ module {
   type DowngradeArgs              = Types.DowngradeArgs;
 
   public func init(date: Time, args: InitArgs) : State {
-    let {master; parameters;} = args;
+    let { master; sub_parameters; price_parameters; } = args;
+    let { name; categories; scheduler; character_limit; convictions; minimum_interest_score; } = sub_parameters;
+
     #v0_1_0({
-      name                        = Ref.init<Text>(parameters.name);
+      name                        = Ref.init<Text>(name);
       master                      = Ref.init<Principal>(master);
       creation_date               = date;
-      categories                  = Categories.initRegister(parameters.categories);
+      categories                  = Categories.initRegister(categories);
       momentum_args               = Ref.init<InterestMomentumArgs>({ 
         last_pick_date_ns = date;
         last_pick_score = 1.0; 
         num_votes_opened = 0;
-        minimum_score = if (parameters.minimum_interest_score > 0.0) { parameters.minimum_interest_score; } else {
+        minimum_score = if (minimum_interest_score > 0.0) { minimum_interest_score; } else {
           Debug.trap("Cannot intialize momentum args with a minimum score inferior or equal to 0");
         };
       });
-      scheduler_params            = Ref.init<SchedulerParameters>(parameters.scheduler);
-      price_params                = Ref.init<PriceParameters>(parameters.prices);
+      scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
+      price_params                = Ref.init<PriceParameters>(price_parameters);
       convictions_params                = {
-        opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(parameters.convictions.vote_half_life, date));
-        late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(parameters.convictions.late_ballot_half_life, date));
+        opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(convictions.vote_half_life, date));
+        late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(convictions.late_ballot_half_life, date));
       };
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);
       };
-      questions                      = Questions.initRegister(parameters.questions.character_limit);
+      questions                      = Questions.initRegister(character_limit);
       queries                     = {
         register                     = QuestionQueriesFactory.initRegister();
       };

@@ -1,20 +1,52 @@
 import Result     "mo:base/Result";
 import Nat64      "mo:base/Nat64";
 import Nat        "mo:base/Nat";
-import Buffer     "mo:base/Buffer";
-import Blob       "mo:base/Blob";
-import Principal  "mo:base/Principal";
-import Debug      "mo:base/Debug";
 
 import TokenTypes "../godwin_token/Types";
+import UtilsTypes "../godwin_sub/utils/Types";
 
 module {
 
-  type Result<Ok, Err> = Result.Result<Ok, Err>;
+  type Result<Ok, Err>       = Result.Result<Ok, Err>;
+
+  type Duration              = UtilsTypes.Duration;
+
+  public type ValidationParams = {
+    username: {
+      min_length: Nat;
+      max_length: Nat;
+    };
+    subgodwin: {
+      scheduler_params: {
+        minimum_duration: Duration;
+        maximum_duration: Duration;
+      };
+      convictions_params: {
+        minimum_duration: Duration;
+        maximum_duration: Duration;
+      };
+      question_char_limit: {
+        maximum: Nat;
+      };
+      minimum_interest_score: {
+        minimum: Float;
+      };
+    };
+  };
+
+  public type AddGodwinSubError = {
+    #NotAuthorized;
+    #AlreadyAdded;
+  };
 
   public type CreateSubGodwinError = {
     #InvalidIdentifier;
     #IdentifierAlreadyTaken;
+    #CategoryDuplicate;
+    #DurationTooShort: ({minimum_duration: Duration;});
+    #DurationTooLong: ({maximum_duration: Duration;});
+    #CharacterLimitTooLong: ({maximum: Nat;});
+    #MinimumInterestScoreTooLow: ({minimum: Float;});
   };
 
   public type TransferError = TokenTypes.TransferError or {
@@ -44,6 +76,7 @@ module {
     mint: shared(TokenTypes.Mint) -> async TransferResult;
   };
 
+  // @todo
   public func transferErrorToText(error: TransferError) : Text {
     switch error {
       case (#TooOld) { "TooOld" };
@@ -56,25 +89,6 @@ module {
       case (#GenericError({error_code; message;})) { "GenericError (error_code=" # Nat.toText(error_code) # ", message=" # message # ")"; };
       case (#NotAllowed) { "NotAllowed" };
     };
-  };
-
-  // @todo: this should be part of another module
-  // Subaccount shall be a blob of 32 bytes
-  public func toSubaccount(principal: Principal) : Blob {
-    let blob_principal = Blob.toArray(Principal.toBlob(principal));
-    // According to IC interface spec: "As far as most uses of the IC are concerned they are
-    // opaque binary blobs with a length between 0 and 29 bytes"
-    if (blob_principal.size() > 32) {
-      Debug.trap("Cannot convert principal to subaccount: principal length is greater than 32 bytes");
-    };
-    let buffer = Buffer.Buffer<Nat8>(32);
-    buffer.append(Buffer.fromArray(blob_principal));
-    // Add padding until 32 bytes
-    while(buffer.size() < 32) {
-      buffer.add(0);
-    };
-    // Return the buffer as a blob
-    Blob.fromArray(Buffer.toArray(buffer));
   };
 
   public type TokenResult<Ok, Err> = {

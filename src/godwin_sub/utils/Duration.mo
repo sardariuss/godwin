@@ -7,7 +7,7 @@ module {
   // For convenience: from base module
   type Time = Int;
 
-  type Duration = Types.Duration;
+  public type Duration = Types.Duration;
   
   public func toTime(duration: Duration) : Time {
     switch(duration) {

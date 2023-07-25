@@ -1,10 +1,13 @@
 import Types              "Types";
+import Validator          "Validator";
 
 import GodwinSub          "../godwin_sub/main";
 import SubTypes           "../godwin_sub/model/Types";
-import TextUtils          "../godwin_sub/utils/Text";
+import UtilsTypes         "../godwin_sub/utils/Types";
+import Account            "../godwin_sub/utils/Account";
 
 import Map                "mo:map/Map";
+import Set                "mo:map/Set";
 
 import Result             "mo:base/Result";
 import Principal          "mo:base/Principal";
@@ -20,20 +23,25 @@ import GodwinToken        "canister:godwin_token";
 
 shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterInterface = this {
 
-  type Parameters            = SubTypes.Parameters;
   type Result<Ok, Err>       = Result.Result<Ok, Err>;
   type Map<K, V>             = Map.Map<K, V>;
-  type GodwinSub             = GodwinSub.GodwinSub;
+  type Set<K>                = Set.Set<K>;
+
+  type CategoryArray         = SubTypes.CategoryArray;
+  type SchedulerParameters   = SubTypes.SchedulerParameters;
+  type ConvictionsParameters = SubTypes.ConvictionsParameters;
+  type SubParameters         = SubTypes.SubParameters;
   type Balance               = Types.Balance;
   type CreateSubGodwinResult = Types.CreateSubGodwinResult;
   type TransferResult        = Types.TransferResult;
   type MintBatchResult       = Types.MintBatchResult;
+  type CreateSubGodwinError  = Types.CreateSubGodwinError;
+  type AddGodwinSubError     = Types.AddGodwinSubError;
   type SetUserNameError      = Types.SetUserNameError;
+  type Duration              = UtilsTypes.Duration;
+  type GodwinSub             = GodwinSub.GodwinSub;
 
-  let MIN_USERNAME_LENGTH = 3;
-  let MAX_USERNAME_LENGTH = 32;
-
-  let { toSubaccount; toBaseResult; } = Types;
+  let { toBaseResult; } = Types;
 
   let pthash: Map.HashUtils<(Principal, Text)> = (
     // +% is the same as addWrap, meaning it wraps on overflow
@@ -47,21 +55,49 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
 
   stable let _user_names = Map.new<Principal, Text>(Map.phash);
 
+  stable let _validation_params = {
+    username = {
+      min_length = 3;
+      max_length = 32;
+    };
+    subgodwin = {
+      scheduler_params = {
+        minimum_duration = #MINUTES(10);
+        maximum_duration = #YEARS(1);
+      };
+      convictions_params = {
+        minimum_duration = #DAYS(1);
+        maximum_duration = #YEARS(100);
+      };
+      question_char_limit = {
+        maximum = 4000;
+      };
+      minimum_interest_score = {
+        minimum = 1.0;
+      };
+    };
+  };
+
+  let _validator = Validator.Validator(_validation_params);
+
   public query func getCyclesBalance() : async Nat {
     ExperimentalCycles.balance();
   };
 
-  public shared({caller}) func createSubGodwin(identifier: Text, parameters: Parameters) : async CreateSubGodwinResult  {
-    
-    // The identifier shall be alphanumeric because it will be used in the url.
-    if (not TextUtils.isAlphaNumeric(identifier)){
-      return #err(#InvalidIdentifier);
+  public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters) : async CreateSubGodwinResult  {
+
+    switch(_validator.validateSubGodwinParams(identifier, sub_parameters, Set.fromIter(Map.keys(_sub_godwins), pthash))){
+      case(#err(err)) { return #err(err); };
+      case(#ok()) {};
     };
 
-    if (Option.isSome(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.1 == identifier; }))){
-      return #err(#IdentifierAlreadyTaken);
+    // @todo
+    let price_parameters = {
+      open_vote_price_e8s           = 1_000_000_000;
+      interest_vote_price_e8s       = 100_000_000;
+      categorization_vote_price_e8s = 300_000_000;
     };
-
+  
     // Add 50B cycles; creating the canister seem to take 8B, installation 6B.
     // @todo: probably want to be more conservative in prod
     ExperimentalCycles.add(50_000_000_000);
@@ -71,31 +107,13 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
-    }})(#init({ master = Principal.fromActor(this); parameters; }));
+    }})(#init({ master = Principal.fromActor(this); sub_parameters; price_parameters; }));
 
     let principal = Principal.fromActor(new_sub);
 
     Map.set(_sub_godwins, pthash, (principal, identifier), new_sub);
 
     #ok(principal);
-  };
-
-  type AddGodwinSubError = {
-    #NotAuthorized;
-    #AlreadyAdded;
-  };
-
-  // @todo: verify the names are unique
-  public shared({caller}) func addGodwinSub(principal: Principal, identifier: Text) : async Result<(), AddGodwinSubError> {
-    if (caller != _controller){
-      return #err(#NotAuthorized);
-    };
-    if(Option.isSome(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
-      return #err(#AlreadyAdded);
-    };
-    let sub : GodwinSub = actor(Principal.toText(principal));
-    Map.set(_sub_godwins, pthash, (principal, identifier), sub);
-    #ok;
   };
 
   // In anticipation of next versions
@@ -127,7 +145,7 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
         amount;
         created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
         fee = ?10_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
-        from_subaccount = ?toSubaccount(user);
+        from_subaccount = ?Account.toSubaccount(user);
         memo = null;
         to = {
           owner = caller;
@@ -156,42 +174,51 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
   };
 
   public query func getUserAccount(user: Principal) : async GodwinToken.Account {
-    { owner = Principal.fromActor(this); subaccount = ?toSubaccount(user) };
+    { owner = Principal.fromActor(this); subaccount = ?Account.toSubaccount(user) };
   };
 
   public query func getUserName(user: Principal) : async ?Text {
     Map.get(_user_names, Map.phash, user);
   };
 
-  // @todo: have a user name regexp (that e.g. does not allow only whitespaces, etc.)
   public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
-    // Check if the principal is anonymous
-    if (Principal.isAnonymous(caller)){
-      return #err(#AnonymousNotAllowed);
-    };
-    // Check if not too short
-    if (name.size() < MIN_USERNAME_LENGTH){
-      return #err(#NameTooShort({ min_length = MIN_USERNAME_LENGTH; }));
-    };
-    // Check if not too long
-    if (name.size() > MAX_USERNAME_LENGTH){
-      return #err(#NameTooLong({ max_length = MAX_USERNAME_LENGTH; }));
-    };
-    // Check it this is the same name as before
-    switch(Map.get(_user_names, Map.phash, caller)){
-      case(?old_name) {
-        if (old_name == name){
-          return #ok;
-        };
-      };
-      case(null){};
-    };
-    // Check if the name is already taken
-    if (Map.some(_user_names, func(key: Principal, value: Text) : Bool { value == name; })){
-      return #err(#NameAlreadyTaken);
-    };
-    Map.set(_user_names, Map.phash, caller, name);
-    #ok;
+    Result.mapOk<(), (), SetUserNameError>(_validator.validateUserName(caller, name, _user_names), func() {
+      Map.set(_user_names, Map.phash, caller, name);
+    });
+  };
+
+  // Validation functions
+
+  public query func validateSubIdentifier(identifier: Text) : async Result<(), CreateSubGodwinError> {
+    _validator.validateSubIdentifier(identifier, Set.fromIter(Map.keys(_sub_godwins), pthash));
+  };
+
+  public query func validateSubName(name: Text) : async Result<(), CreateSubGodwinError> {
+    _validator.validateSubName(name);
+  };
+
+  public query func validateCategories(categories: CategoryArray) : async Result<(), CreateSubGodwinError> {
+    _validator.validateCategories(categories);
+  };
+
+  public query func validateSchedulerDuration(duration: Duration) : async Result<(), CreateSubGodwinError> {
+    _validator.validateSchedulerDuration(duration);
+  };
+
+  public query func validateConvictionDuration(duration: Duration) : async Result<(), CreateSubGodwinError> {
+    _validator.validateConvictionDuration(duration);
+  };
+
+  public query func validateCharacterLimit(character_limit: Nat) : async Result<(), CreateSubGodwinError> {
+    _validator.validateCharacterLimit(character_limit);
+  };
+
+  public query func validateMinimumInterestScore(minimum_interest_score: Float) : async Result<(), CreateSubGodwinError> {
+    _validator.validateMinimumInterestScore(minimum_interest_score);
+  };
+
+  public query({caller}) func validateUserName(name: Text) : async Result<(), SetUserNameError> {
+    _validator.validateUserName(caller, name, _user_names);
   };
 
 };

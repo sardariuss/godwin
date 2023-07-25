@@ -16,7 +16,7 @@ module {
   type Trie<K, V>      = Trie.Trie<K, V>;
 
   public type MasterInterface = MasterTypes.MasterInterface;
-  public let { toSubaccount; toBaseResult; } = MasterTypes;
+  public let { toBaseResult; } = MasterTypes;
 
   public type SubaccountPrefix = {
     #OPEN_QUESTION;

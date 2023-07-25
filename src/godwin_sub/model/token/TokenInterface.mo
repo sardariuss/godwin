@@ -1,5 +1,7 @@
 import Types       "Types";
 
+import Account     "../../utils/Account";
+
 import GodwinToken "canister:godwin_token";
 
 import Map         "mo:map/Map";
@@ -23,7 +25,7 @@ module {
   type Principal                      = Principal.Principal;
   func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
-  let { toSubaccount; toBaseResult; } = Types;
+  let { toBaseResult; } = Types;
   type MasterInterface                = Types.MasterInterface;
   type Subaccount                     = Types.Subaccount;
   type Balance                        = Types.Balance;
@@ -90,7 +92,7 @@ module {
           // Add to the recipients 
           to_accounts.add({ account = getMasterAccount(?to); share; });
           // Keep the mapping of subaccount <-> principal
-          Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
+          Map.set(map_recipients, Map.bhash, Account.toSubaccount(to), to);
           // Initialize the results map in case no error is found
           results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; }))).0;
         } else {
@@ -140,7 +142,7 @@ module {
         // Add to the recipients 
         to_accounts.add({ account = getMasterAccount(?to); amount; });
         // Keep the mapping of subaccount <-> principal
-        Map.set(map_recipients, Map.bhash, toSubaccount(to), to);
+        Map.set(map_recipients, Map.bhash, Account.toSubaccount(to), to);
         // Initialize the results map in case no error is found
         results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleMintLost({ amount; }))).0;
         } else {
@@ -191,7 +193,7 @@ module {
     };
 
     func getMasterAccount(principal: ?Principal) : Account {
-      { owner = Principal.fromActor(_master); subaccount = Option.map(principal, func(p: Principal) : Blob { toSubaccount(p); }); };
+      { owner = Principal.fromActor(_master); subaccount = Option.map(principal, func(p: Principal) : Blob { Account.toSubaccount(p); }); };
     };
 
   };

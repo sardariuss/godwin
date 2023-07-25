@@ -1,6 +1,8 @@
 import TokenTypes   "../godwin_token/Types";
 import MasterTypes  "../godwin_master/Types";
 
+import Account      "../godwin_sub/utils/Account";
+
 import Set          "mo:map/Set";
 
 import Result       "mo:base/Result";
@@ -28,7 +30,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
 
   public type AirdropResult = Result.Result<TokenTypes.TxIndex, AirdropError>;
   
-  let { toSubaccount; toBaseResult; } = MasterTypes;
+  let { toBaseResult; } = MasterTypes;
 
   stable var _controller          = controller;
   stable var _amount_e8s_per_user = amount_e8s_per_user;
@@ -98,7 +100,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
     let transfer_result = toBaseResult(await GodwinToken.icrc1_transfer({
       to = {
         owner = Principal.fromActor(GodwinMaster);
-        subaccount = ?toSubaccount(principal);
+        subaccount = ?Account.toSubaccount(principal);
       };
       from_subaccount = null;
       amount = _amount_e8s_per_user;
