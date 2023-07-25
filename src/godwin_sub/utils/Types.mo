@@ -17,4 +17,15 @@ module {
     mu: Float;
   };
 
+  public type RealNumber = {
+    #NUMBER: Float;
+    #POSITIVE_INFINITY;
+    #NEGATIVE_INFINITY;
+  };
+
+  public type LogitParameters = {
+    k: Float;
+    l: Float;
+  };
+
 };

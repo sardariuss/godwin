@@ -178,7 +178,7 @@ suite("InterestRules module test suite", func() {
         Testify.float.lessThan);
     });
 
-    // Values computed via https://www.desmos.com/calculator/kschnspkyn
+    // Values obtained via https://www.desmos.com/calculator/kschnspkyn
     let expected_values = [
       { num_votes_opened = 0;   x = 0.12;  y = 5.37211651988;   },
       { num_votes_opened = 0;   x = 2.0;   y = 0.433939720586;  },

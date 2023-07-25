@@ -1,11 +1,17 @@
-import Types "Types";
+import Types  "Types";
 
-import Float "mo:base/Float";
-import Debug "mo:base/Debug";
+import Float  "mo:base/Float";
+import Debug  "mo:base/Debug";
+import Option "mo:base/Option";
 
 module {
 
   type LogitNormalParams = Types.LogitNormalParams;
+  type RealNumber        = Types.RealNumber;
+  type LogitParameters   = Types.LogitParameters;
+
+  let EPSILON = 1e-12;
+  let DEFAULT_LOGIT_PARAMETERS : LogitParameters = { k = 1.0; l = 0.0; };
 
   public func minFloat() : Float {
     return -340282346638528859811704183484516925440.0; 
@@ -15,10 +21,27 @@ module {
     return  340282346638528859811704183484516925440.0; 
   };
 
-  let EPSILON = 1e-12;
+  public func parametrizedLogit(x: Float, logit_parameters: ?LogitParameters) : RealNumber {
 
-  public func logit(x: Float) : Float {
-    Float.log(x / (1.0 - x));
+    let { k; l; } = Option.get(logit_parameters, DEFAULT_LOGIT_PARAMETERS);
+    
+    // Handle the limit cases
+    if (Float.equalWithin(x, -l/k, EPSILON)){
+      return #NEGATIVE_INFINITY;
+    };
+    if (Float.equalWithin(x, 1.0/k, EPSILON)){
+      return #POSITIVE_INFINITY;
+    };
+    
+    // Compute the inner expression
+    let y = (k * x + l) / (1.0 - k * x);
+    
+    if (y < 0.0){
+      Debug.trap("Cannot compute the log of a negative number");
+    };
+
+    // Return the full logit result
+    #NUMBER(Float.log(y));
   };
 
   public func logBase10(x: Float) : Float {
@@ -46,7 +69,7 @@ module {
     sign * y;
   };
 
-  public func logitNormalPDF(x: Float, params: LogitNormalParams) : Float {
+  public func logitNormalPDF(x: Float, params: LogitNormalParams, logit_parameters: ?LogitParameters) : Float {
 
     let { sigma; mu; } = params;
 
@@ -55,21 +78,18 @@ module {
       Debug.trap("LogitNormalParams: sigma must be positive");
     };
 
-    // Verify the input
-    if (x < 0.0 or x > 1.0) {
-      Debug.trap("LogitNormalPDF: x must be between 0 and 1");
+    switch(parametrizedLogit(x, logit_parameters)){
+      // Handle the limit cases
+      case (#NEGATIVE_INFINITY) return 0.0;
+      case (#POSITIVE_INFINITY) return 0.0;
+      // Compute the PDF
+      case (#NUMBER(logit)){
+        1.0 / (sigma * Float.sqrt(2.0 * Float.pi)) * Float.exp(-0.5 * Float.pow((logit - mu) / sigma, 2.0)) / (x * (1.0 - x));
+      };
     };
-
-    // Handle the special cases
-    if (Float.equalWithin(x, 0.0, EPSILON) or Float.equalWithin(x, 1.0, EPSILON)) {
-      return 0.0;
-    };
-
-    // Compute the PDF
-    1.0 / (sigma * Float.sqrt(2.0 * Float.pi)) * Float.exp(-0.5 * Float.pow((logit(x) - mu) / sigma, 2.0)) / (x * (1.0 - x));
   };
 
-  public func logitNormalCDF(x: Float, params: LogitNormalParams) : Float {
+  public func logitNormalCDF(x: Float, params: LogitNormalParams, logit_parameters: ?LogitParameters) : Float {
 
     let { sigma; mu; } = params;
     
@@ -78,21 +98,15 @@ module {
       Debug.trap("LogitNormalParams: sigma must be positive");
     };
 
-    // Verify the input
-    if (x < 0.0 or x > 1.0) {
-      Debug.trap("LogitNormalCDF: x must be between 0 and 1");
+    switch(parametrizedLogit(x, logit_parameters)){
+      // Handle the limit cases
+      case (#NEGATIVE_INFINITY) return 0.0;
+      case (#POSITIVE_INFINITY) return 1.0;
+      // Compute the CDF
+      case (#NUMBER(logit)){
+        0.5 * (1.0 + erf((logit - mu) / (sigma * Float.sqrt(2.0))));
+      };
     };
-
-    // Handle the special cases
-    if (Float.equalWithin(x, 0.0, EPSILON)){
-      return 0.0;
-    };
-    if (Float.equalWithin(x, 1.0, EPSILON)) {
-      return 1.0;
-    };
-
-    // Compute the CDF
-    0.5 * (1.0 + erf((logit(x) - mu) / (sigma * Float.sqrt(2.0))));
   };
 
 };

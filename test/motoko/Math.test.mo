@@ -1,20 +1,26 @@
+import Types     "../../src/godwin_sub/utils/Types";
 import Math      "../../src/godwin_sub/utils/Math";
 
 import { compare; Testify; } = "common/Testify";
 
 import Array     "mo:base/Array";
+import Float     "mo:base/Float";
 
 import { test; suite; } "mo:test";
 
 suite("Math module test suite", func() {
 
-  let logit_values = [
-    (0.1 , -2.197224577336),
-    (0.3 , -0.847297860387),
-    (0.5 ,  0.0           ),
-    (0.55,  0.200670695462),
-    (0.75,  1.098612288668),
-    (0.95,  2.944438979166),
+  type RealNumber = Types.RealNumber;
+
+  let logit_values : [(Float, RealNumber)] = [
+    (0.0,  #NEGATIVE_INFINITY      ),
+    (0.1 , #NUMBER(-2.197224577336)),
+    (0.3 , #NUMBER(-0.847297860387)),
+    (0.5 , #NUMBER( 0.0           )),
+    (0.55, #NUMBER( 0.200670695462)),
+    (0.75, #NUMBER( 1.098612288668)),
+    (0.95, #NUMBER( 2.944438979166)),
+    (1.0,  #POSITIVE_INFINITY      )
   ];
 
   let log_base10_values = [
@@ -59,9 +65,14 @@ suite("Math module test suite", func() {
     ({ sigma = 4.5; mu = -3.0; }, 1.0, 1.0                ),
   ];
 
+  test("Verify min and max floats are actual numbers", func() {
+    compare(Float.isNaN(Math.minFloat()), false, Testify.bool.equal);
+    compare(Float.isNaN(Math.maxFloat()), false, Testify.bool.equal);
+  });
+
   test("Test logit", func() {
     for ((x, y) in Array.vals(logit_values)) {
-      compare(Math.logit(x), y, Testify.float.equal);
+      compare(Math.parametrizedLogit(x, null), y, Testify.realNumber.equal);
     };
   });
 
@@ -81,14 +92,14 @@ suite("Math module test suite", func() {
 
   test("Test logit normal PDF", func() {
     for ((params, x, y) in Array.vals(normal_pdf_values)) {
-      compare(Math.logitNormalPDF(x, params), y, Testify.floatEpsilon9.equal);
+      compare(Math.logitNormalPDF(x, params, null), y, Testify.floatEpsilon9.equal);
     };
   });
 
   test("Test logit normal CDF", func() {
     for ((params, x, y) in Array.vals(normal_cdf_values)) {
       // Implementation of CDF uses the ERF approximation, so use epsilon 6
-      compare(Math.logitNormalCDF(x, params), y, Testify.floatEpsilon6.equal);
+      compare(Math.logitNormalCDF(x, params, null), y, Testify.floatEpsilon6.equal);
     };
   });
 

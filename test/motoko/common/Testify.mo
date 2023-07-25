@@ -6,6 +6,7 @@ import Cursor        "../../../src/godwin_sub/model/votes/representation/Cursor"
 import Polarization  "../../../src/godwin_sub/model/votes/representation/Polarization";
 
 import Utils         "../../../src/godwin_sub/utils/Utils";
+import UtilsTypes    "../../../src/godwin_sub/utils/Types";
 
 import Map           "mo:map/Map";
 
@@ -28,6 +29,7 @@ module {
   type OpinionBallot     = VoteTypes.OpinionBallot;
   type Polarization      = VoteTypes.Polarization;
   type OpinionAnswer     = VoteTypes.OpinionAnswer;
+  type RealNumber        = UtilsTypes.RealNumber;
 
   let FLOAT_EPSILON : Float = 1e-12;
 
@@ -226,6 +228,24 @@ module {
       lessThanOrEqual : Testify<Float> = {
         toText = func (f : Float) : Text = Prim.floatToText(f);
         compare  = func (x : Float, y : Float) : Bool { x <= y };
+      };
+    };
+
+    public let realNumber = {
+      equal: Testify<RealNumber> = {
+        toText = func (real_number : RealNumber) : Text = switch(real_number){          
+          case(#POSITIVE_INFINITY) { "POSITIVE_INFINITY"; };
+          case(#NEGATIVE_INFINITY) { "NEGATIVE_INFINITY"; };
+          case(#NUMBER(x)) { "NUMBER: " # Float.toText(x); };
+        };
+        compare  = func (x : RealNumber, y : RealNumber) : Bool { 
+          switch(x, y){
+            case(#POSITIVE_INFINITY, #POSITIVE_INFINITY) { true; };
+            case(#NEGATIVE_INFINITY, #NEGATIVE_INFINITY) { true; };
+            case(#NUMBER(x), #NUMBER(y)) { Float.equalWithin(x, y, FLOAT_EPSILON); };
+            case(_, _) { false; };
+          };
+        };
       };
     };
 

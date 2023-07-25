@@ -29,23 +29,35 @@ module {
   type InterestVoteClosure = VoteTypes.InterestVoteClosure;
   type Balance             = PayTypes.Balance;
   type PayoutArgs          = PayTypes.PayoutArgs;
+  
+  type Payout              = { refund: Float; reward: Float; };
 
   func key(c: Category) : Trie.Key<Category> { { hash = Text.hash(c); key = c; } };
 
-  let SIGMOID_COEF         = 10.0;
-  let SIGMOID_INTERSECTION = 0.333333333333333333333333333;
+  func nullPayout() : Payout { { refund = 0.0; reward = 0.0; }; };
+  func sumPayouts(x: Payout, y: Payout) : Payout { { refund = x.refund + y.refund; reward = x.reward + y.reward; }; };
 
-  let CONFIDENCE_MODIFIER = {
-    coef     = 0.5;
-    exponent = 2.5;
+  let INTEREST_PAYOUT_PARAMS = {
+    REWARD_PARAMS ={
+      LOGIT_NORMAL_PDF_PARAMS = {
+        sigma = 0.8;
+        mu    = 0.0;
+      };
+      COEF = 0.5;
+    };
   };
 
-  let INTEREST_REWARD = {
-    LOGIT_NORMAL_PDF = {
+  let CATEGORIZATION_PAYOUT_PARAMS = {
+    SIDE_CONTRIBUTION_LIMIT =  0.333333333333333333333333333;
+    LOGIT_NORMAL_CDF_PARAMS = {
       sigma = 0.8;
       mu    = 0.0;
     };
-    COEF = 0.5;
+  };
+
+  let ATTENUATE_MODIFIER_PARAMS = {
+    coef     = 0.5; // The greater, the less number of voters it takes to fully apply the payout rules
+    exponent = 2.5; // The greater, the more the payout rules are attenuated for small number of voters
   };
 
   public func build(price_params: Ref<PriceParameters>) : PayRules {
@@ -60,7 +72,7 @@ module {
     reward_ratio: Float;
   };
 
-  // see www.desmos.com/calculator/bscykwqpgr
+  // see www.desmos.com/calculator/lhubb03yud
   public func computeInterestDistribution(appeal: Appeal) : InterestDistribution {
     let { ups; downs; } = appeal;
 
@@ -70,13 +82,16 @@ module {
     let looser_share = loosers / winners;
     let winner_share = 1.0 + (1.0 - looser_share) * looser_share;
 
-    {
-      shares = {
-        up   = if (ups >= downs){ winner_share; } else { looser_share; };
-        down = if (ups >= downs){ looser_share; } else { winner_share; };
-      };
-      reward_ratio = INTEREST_REWARD.COEF + Math.logitNormalPDF(loosers / (winners + loosers), INTEREST_REWARD.LOGIT_NORMAL_PDF);
+    let shares = {
+      up   = if (ups >= downs){ winner_share; } else { looser_share; };
+      down = if (ups >= downs){ looser_share; } else { winner_share; };
     };
+
+    let { LOGIT_NORMAL_PDF_PARAMS; COEF; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
+
+    let reward_ratio = COEF * Math.logitNormalPDF(loosers / (winners + loosers), LOGIT_NORMAL_PDF_PARAMS, null);
+
+    { shares; reward_ratio; };
   };
 
   public class PayRules(_price_params: WRef<PriceParameters>) {
@@ -93,7 +108,7 @@ module {
       _price_params.get().categorization_vote_price_e8s;
     };
 
-    // see www.desmos.com/calculator/qbdqmwbff1
+    // see www.desmos.com/calculator/xcvnh9oxrq
     public func computeAuthorPayout(appeal: Appeal, closure: InterestVoteClosure) : PayoutArgs {
 
       let num_voters = appeal.ups + appeal.downs;
@@ -134,26 +149,14 @@ module {
 
     public func computeCategorizationPayout(ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
 
-      type Payout = { refund: Float; reward: Float; };
-
-      let accumulate_payout = func(category: Category, polarization: Polarization, payout: Payout) : Payout {
-        // Compute the cursor weights via the sigmoids
-        let cursor_weights = switch(Trie.get(ballot, key(category), Text.equal)){
-          case(null) { Polarization.nil(); };
-          case(?cursor) { computeCursorWeights(cursor); };
-        };
-        // Transform the categorization polarization into a cursor
-        let categorization_cursor = Polarization.toCursor(polarization);
-        // Compute the share of the refund for this category
-        let side_coef = categorization_cursor * (if (categorization_cursor >= 0.0) { cursor_weights.right } else { -cursor_weights.left });
-        let center_coef = (1.0 - Float.abs(categorization_cursor)) * cursor_weights.center;
-        { 
-          refund = payout.refund + side_coef + center_coef;
-          reward = payout.reward + side_coef;
-        };
+      let accumulate_payout = func(category: Category, result: Polarization, payout: Payout) : Payout {
+        sumPayouts(payout, switch(Trie.get(ballot, key(category), Text.equal)){
+          case(null) { nullPayout(); };
+          case(?answer) { computeCategoryShare(answer, Polarization.toCursor(result)); };
+        });
       };
 
-      let payout = Trie.fold<Category, Polarization, Payout>(result, accumulate_payout, { refund = 0.0; reward = 0.0; });
+      let payout = Trie.fold<Category, Polarization, Payout>(result, accumulate_payout, nullPayout());
 
       if (payout.refund < 0.0){ Debug.trap("Negative refund"); };
       if (payout.reward < 0.0){ Debug.trap("Negative reward"); };
@@ -168,13 +171,35 @@ module {
 
   };
 
-  // see: https://www.desmos.com/calculator/iv87gjyqlx
+  // see www.desmos.com/calculator/voiqqttaog
+  func computeCategoryShare(answer: Cursor, result: Cursor) : Payout {
+
+    let { SIDE_CONTRIBUTION_LIMIT; LOGIT_NORMAL_CDF_PARAMS; } = CATEGORIZATION_PAYOUT_PARAMS;
+
+    let left  = if (answer >  SIDE_CONTRIBUTION_LIMIT ) { 0.0; } else {
+      Math.logitNormalCDF(answer, LOGIT_NORMAL_CDF_PARAMS, ?{ k = -1.0; l = SIDE_CONTRIBUTION_LIMIT; });
+    };
+    let right = if (answer < -SIDE_CONTRIBUTION_LIMIT)  { 0.0; } else {
+      Math.logitNormalCDF(answer, LOGIT_NORMAL_CDF_PARAMS, ?{ k =  1.0; l = SIDE_CONTRIBUTION_LIMIT; });
+    };
+    let center = 1.0 - left - right;
+    
+    let abs_result = Float.abs(result);
+    let side_coef = if (abs_result >= 0) right else left;
+
+    {
+      refund = abs_result * side_coef + (1.0 - abs_result) * center;
+      reward = abs_result * side_coef; // Do not reward the center
+    };
+  };
+
+  // see www.desmos.com/calculator/iv87gjyqlx
   func attenuatePayout(payout_args: PayoutArgs, num_voters: Nat) : PayoutArgs {
     // It is impossible to attenuate if there is no voter
     if (num_voters == 0){ Debug.trap("Cannot attenuate payout: there is 0 voters"); };
 
     let { refund_share; reward_tokens; } = payout_args;
-    let { coef; exponent; } = CONFIDENCE_MODIFIER;
+    let { coef; exponent; } = ATTENUATE_MODIFIER_PARAMS;
 
     let log_num_voters = Float.log(Float.fromInt(num_voters));
     let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
@@ -183,14 +208,6 @@ module {
       refund_share  = refund_share * confidence + 1.0 * (1.0 - confidence);
       reward_tokens = Int.abs(Float.toInt(Float.fromInt(reward_tokens) * confidence));
     };
-  };
-
-  // see: https://www.desmos.com/calculator/peuethg7ja
-  func computeCursorWeights(user_cursor: Cursor) : Polarization {
-    let left   = 1.0 / ( 1 + Float.exp(SIGMOID_COEF * ( user_cursor + SIGMOID_INTERSECTION)));
-    let right  = 1.0 / ( 1 + Float.exp(SIGMOID_COEF * (-user_cursor + SIGMOID_INTERSECTION)));
-    let center = 1.0 - left - right;
-    { left; center; right; };
   };
 
 };

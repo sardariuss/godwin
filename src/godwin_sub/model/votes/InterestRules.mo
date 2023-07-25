@@ -46,13 +46,13 @@ module {
 
     // Compute the original score, use for the selection of the question
     let interest_coef = if (total == 0.0) { 0.0; } else {
-      (2 * Math.logitNormalCDF(x, INTEREST_SCORE.LOGIT_NORMAL_CDF) - 1);
+      (2 * Math.logitNormalCDF(x, INTEREST_SCORE.LOGIT_NORMAL_CDF, null) - 1);
     };
     let score = total * interest_coef;
 
     // Compute the modified score (for hot ranking only)
     let hot_modifier = if (total == 0.0) { 0.0; } else {
-      Math.logitNormalPDF(x, HOTNESS.SCORE_MODIFIER.LOGIT_NORMAL_PDF);
+      Math.logitNormalPDF(x, HOTNESS.SCORE_MODIFIER.LOGIT_NORMAL_PDF, null);
     };
     let modified_score = total * (interest_coef + HOTNESS.SCORE_MODIFIER.WEIGHT * hot_modifier);
 
