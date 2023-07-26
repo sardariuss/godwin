@@ -15,20 +15,21 @@ import Text          "mo:base/Text";
 
 module {
 
-  type Ref<K>              = Ref.Ref<K>;
-  type WRef<K>             = WRef.WRef<K>;
+  type Ref<K>               = Ref.Ref<K>;
+  type WRef<K>              = WRef.WRef<K>;
 
-  type PriceParameters     = Types.PriceParameters;
-  type Appeal              = VoteTypes.Appeal;
-  type Interest            = VoteTypes.Interest;
-  type CursorMap           = VoteTypes.CursorMap;
-  type Cursor              = VoteTypes.Cursor;
-  type Polarization        = VoteTypes.Polarization;
-  type PolarizationMap     = VoteTypes.PolarizationMap;
-  type Category            = VoteTypes.Category;
-  type InterestVoteClosure = VoteTypes.InterestVoteClosure;
-  type Balance             = PayTypes.Balance;
-  type PayoutArgs          = PayTypes.PayoutArgs;
+  type PriceParameters      = Types.PriceParameters;
+  type Appeal               = VoteTypes.Appeal;
+  type Interest             = VoteTypes.Interest;
+  type CursorMap            = VoteTypes.CursorMap;
+  type Cursor               = VoteTypes.Cursor;
+  type Polarization         = VoteTypes.Polarization;
+  type PolarizationMap      = VoteTypes.PolarizationMap;
+  type Category             = VoteTypes.Category;
+  type InterestVoteClosure  = VoteTypes.InterestVoteClosure;
+  type InterestDistribution = VoteTypes.InterestDistribution;
+  type Balance              = PayTypes.Balance;
+  type PayoutArgs           = PayTypes.PayoutArgs;
   
   type Payout              = { refund: Float; reward: Float; };
 
@@ -43,7 +44,7 @@ module {
         sigma = 0.8;
         mu    = 0.0;
       };
-      COEF = 0.5;
+      COEF = 0.423752;
     };
   };
 
@@ -64,20 +65,22 @@ module {
     PayRules(WRef.WRef(price_params));
   };
 
-  type InterestDistribution = {
-    shares: {
-      up:   Float;
-      down: Float;
-    };
-    reward_ratio: Float;
-  };
+  // Allow to specify only what's required to compute the interest distribution
+  type ReducedAppeal = {ups: Nat; downs: Nat};
 
   // see www.desmos.com/calculator/lhubb03yud
-  public func computeInterestDistribution(appeal: Appeal) : InterestDistribution {
+  public func computeInterestDistribution(appeal: ReducedAppeal) : InterestDistribution {
+
     let { ups; downs; } = appeal;
 
-    let loosers = Float.fromInt(if (ups >= downs){ downs; } else { ups;   });
-    let winners = Float.fromInt(if (ups >= downs){ ups;   } else { downs; });
+    // Prevent division by 0
+    if (ups + downs == 0){ Debug.trap("Cannot compute interest distribution: there is 0 voter"); };
+
+    let { winners; loosers; } = if (ups >= downs){ 
+      { winners = Float.fromInt(ups);   loosers = Float.fromInt(downs); };
+    } else {
+      { winners = Float.fromInt(downs); loosers = Float.fromInt(ups); };
+    };
 
     let looser_share = loosers / winners;
     let winner_share = 1.0 + (1.0 - looser_share) * looser_share;
@@ -87,9 +90,9 @@ module {
       down = if (ups >= downs){ looser_share; } else { winner_share; };
     };
 
-    let { LOGIT_NORMAL_PDF_PARAMS; COEF; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
+    let { LOGIT_NORMAL_PDF_PARAMS; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
 
-    let reward_ratio = COEF * Math.logitNormalPDF(loosers / (winners + loosers), LOGIT_NORMAL_PDF_PARAMS, null);
+    let reward_ratio = Math.logitNormalPDF(loosers / (winners + loosers), LOGIT_NORMAL_PDF_PARAMS, null);
 
     { shares; reward_ratio; };
   };
@@ -108,7 +111,7 @@ module {
       _price_params.get().categorization_vote_price_e8s;
     };
 
-    // see www.desmos.com/calculator/xcvnh9oxrq
+    // see www.desmos.com/calculator/vkyld4yntw
     public func computeAuthorPayout(appeal: Appeal, closure: InterestVoteClosure) : PayoutArgs {
 
       let num_voters = appeal.ups + appeal.downs;
@@ -138,10 +141,11 @@ module {
       };
 
       let { shares; reward_ratio; } = distribution;
+      let { COEF; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
      
       let payout_args = {
         refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
-        reward_tokens = Int.abs(Float.toInt(reward_ratio * Float.fromInt(getInterestVotePrice())));
+        reward_tokens = Int.abs(Float.toInt(COEF * reward_ratio * Float.fromInt(getInterestVotePrice())));
       };
 
       attenuatePayout(payout_args, num_voters);

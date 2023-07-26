@@ -23,13 +23,14 @@ import Prim          "mo:⛔";
 
 module {
 
-  type ScanLimitResult   = QuestionTypes.ScanLimitResult;
-  type Question          = QuestionTypes.Question;
-  type OpenQuestionError = QuestionTypes.OpenQuestionError;
-  type OpinionBallot     = VoteTypes.OpinionBallot;
-  type Polarization      = VoteTypes.Polarization;
-  type OpinionAnswer     = VoteTypes.OpinionAnswer;
-  type RealNumber        = UtilsTypes.RealNumber;
+  type ScanLimitResult      = QuestionTypes.ScanLimitResult;
+  type Question             = QuestionTypes.Question;
+  type OpenQuestionError    = QuestionTypes.OpenQuestionError;
+  type OpinionBallot        = VoteTypes.OpinionBallot;
+  type Polarization         = VoteTypes.Polarization;
+  type OpinionAnswer        = VoteTypes.OpinionAnswer;
+  type InterestDistribution = VoteTypes.InterestDistribution;
+  type RealNumber           = UtilsTypes.RealNumber;
 
   let FLOAT_EPSILON : Float = 1e-12;
 
@@ -383,7 +384,7 @@ module {
           " status: " # status #
           " ballots: " # Text.join("", ballots.vals());
         };
-        compare  = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
+        compare = func (v1 : VoteTypes.OpinionVote, v2 : VoteTypes.OpinionVote) : Bool { 
           v1.id == v2.id and
           v1.aggregate.polarization == v2.aggregate.polarization and
           optEqual(v1.aggregate.decay, v2.aggregate.decay, equalFloat) and
@@ -397,6 +398,20 @@ module {
       equal : Testify<Polarization> = {
         toText = Polarization.toText; 
         compare = Polarization.equal;
+      };
+    };
+
+    public let interestDistribution = {
+      equal: Testify<InterestDistribution> = {
+        toText  = func (distrib : InterestDistribution) : Text {
+          "Shares: [up = " # Float.toText(distrib.shares.up) # ", down = " # Float.toText(distrib.shares.down) # "], " #
+          "Reward ratio: " # Float.toText(distrib.reward_ratio);
+        };
+        compare = func (d1: InterestDistribution, d2: InterestDistribution) : Bool {
+          Float.equalWithin(d1.shares.up,    d2.shares.up,    FLOAT_EPSILON) and
+          Float.equalWithin(d1.shares.down,  d2.shares.down,  FLOAT_EPSILON) and
+          Float.equalWithin(d1.reward_ratio, d2.reward_ratio,  1e-5); // Reward uses ERF which is not so precise
+        };
       };
     };
 

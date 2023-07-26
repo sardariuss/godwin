@@ -66,6 +66,14 @@ module {
     #CENSORED;
   };
 
+  public type InterestDistribution = {
+    shares: {
+      up:   Float;
+      down: Float;
+    };
+    reward_ratio: Float;
+  };
+
   public type VoteId = Nat;
   public let voteHash = Map.nhash;
 
