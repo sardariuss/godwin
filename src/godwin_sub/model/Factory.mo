@@ -1,4 +1,3 @@
-import VoteTypes              "votes/Types";
 import QuestionTypes          "questions/Types";
 import PayRules               "PayRules";
 import Model                  "Model";
@@ -8,7 +7,9 @@ import StatusManager          "StatusManager";
 import Questions              "questions/Questions";
 import QuestionQueriesFactory "questions/QueriesFactory";
 import Controller             "controller/Controller";
+import VoteTypes              "votes/Types";
 import Votes                  "votes/Votes";
+import VotersHistory          "votes/VotersHistory";
 import QuestionVoteJoins      "votes/QuestionVoteJoins";
 import Interests              "votes/Interests";
 import Categorizations        "votes/Categorizations";
@@ -54,10 +55,12 @@ module {
       state.opened_questions.transactions
     );
 
-    let interest_join = QuestionVoteJoins.build(state.joins.interests);
+    let interest_join = QuestionVoteJoins.build(state.votes.interest.joins);
+    let interest_voters_history = VotersHistory.VotersHistory(state.votes.interest.voters_history, interest_join);
     
     let interests = Interests.build(
       state.votes.interest.register,
+      interest_voters_history,
       state.votes.interest.transactions,
       token_interface,
       pay_to_open_question,
@@ -65,17 +68,21 @@ module {
       queries,
       pay_rules);
     
-    let opinion_join = QuestionVoteJoins.build(state.joins.opinions);
+    let opinion_join = QuestionVoteJoins.build(state.votes.opinion.joins);
+    let opinion_voters_history = VotersHistory.VotersHistory(state.votes.opinion.voters_history, opinion_join);
     
     let opinions = Opinions.build(
       state.votes.opinion.register,
+      opinion_voters_history,
       WRef.WRef(state.convictions_params.opinion_vote),
       WRef.WRef(state.convictions_params.late_opinion_ballot));
     
-    let categorization_join = QuestionVoteJoins.build(state.joins.categorizations);
+    let categorization_join = QuestionVoteJoins.build(state.votes.categorization.joins);
+    let categorization_voters_history = VotersHistory.VotersHistory(state.votes.categorization.voters_history, categorization_join);
     
     let categorizations = Categorizations.build(
       state.votes.categorization.register,
+      categorization_voters_history,
       state.votes.categorization.transactions,
       token_interface,
       categories,
@@ -103,7 +110,10 @@ module {
       categorizations,
       interest_join,
       opinion_join,
-      categorization_join
+      categorization_join,
+      interest_voters_history,
+      opinion_voters_history,
+      categorization_voters_history
     );
 
     let controller = Controller.build(model);

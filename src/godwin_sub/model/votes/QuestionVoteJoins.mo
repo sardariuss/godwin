@@ -84,8 +84,11 @@ module {
       };
     };
 
-    public func getLastVote(question_id: QuestionId) : ?(Nat, VoteId) {
-      Map.peek(getQuestionVotes(question_id));
+    public func getLastVote(question_id: QuestionId) : (Nat, VoteId) {
+      switch(Map.peek(getQuestionVotes(question_id))){
+        case(null) { Debug.trap("No votes for this question"); };
+        case(?last) { last; };
+      };
     };
 
     public func getVoteId(question_id: QuestionId, iteration: Nat) : VoteId {

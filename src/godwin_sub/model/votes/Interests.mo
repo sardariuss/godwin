@@ -39,6 +39,7 @@ module {
   type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
   type InterestVoteClosure    = Types.InterestVoteClosure;
+  type IVotersHistory         = Types.IVotersHistory;
 
   type Votes<T, A>            = Votes.Votes<T, A>;
   
@@ -69,6 +70,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<Interest, Appeal>,
+    voters_history: IVotersHistory,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     pay_for_new: PayForNew,
@@ -79,6 +81,7 @@ module {
     Interests(
       Votes.Votes(
         vote_register,
+        voters_history,
         VotePolicy(),
         ?PayToVote.PayToVote<Interest, Appeal>(
           PayForElement.build(
@@ -159,12 +162,12 @@ module {
       _pay_for_new.findTransactionsRecord(principal, id);
     };
 
-    public func revealBallots(caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<RevealedBallot> {
-      _votes.revealBallots(caller, voter, direction, limit, previous_id);
-    };
-
     public func getVoterBallots(principal: Principal) : Map<VoteId, Ballot> {
       _votes.getVoterBallots(principal);
+    };
+
+    public func hasBallot(principal: Principal, vote_id: VoteId) : Bool {
+      _votes.hasBallot(principal, vote_id);
     };
 
   };
@@ -179,7 +182,10 @@ module {
   class VotePolicy() : IVotePolicy {
 
     public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
-      // The interest variant is always valid.
+      // Verify the user did not vote already
+      if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
+        return #err(#ChangeBallotNotAllowed);
+      };
       #ok;
     };
 

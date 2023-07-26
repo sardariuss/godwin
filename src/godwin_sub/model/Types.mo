@@ -138,9 +138,9 @@ module {
   };
 
   public type VoteKindBallot = {
-    #INTEREST: InterestBallot;
-    #OPINION: OpinionBallot;
-    #CATEGORIZATION: CategorizationBallot;
+    #INTEREST: RevealedInterestBallot;
+    #OPINION: RevealedOpinionBallot;
+    #CATEGORIZATION: RevealedCategorizationBallot;
   };
 
   public type VoteAggregate = {
@@ -167,7 +167,12 @@ module {
   public type QueryQuestionItem = {
     question: Question;
     status_data: StatusData;
-    votes: [(VoteKind, VoteData)];
+  };
+
+  public type QueryVoteItem = {
+    question_id: QuestionId;
+    question: ?Question;
+    vote: (VoteKind, VoteData);
   };
 
   public type PrincipalError = {

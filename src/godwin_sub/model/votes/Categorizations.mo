@@ -29,19 +29,20 @@ module {
   type Ballot                 = Types.CategorizationBallot;
   type Vote                   = Types.CategorizationVote;
   type IVotePolicy            = Types.IVotePolicy<CursorMap, PolarizationMap>;
+  type IVotersHistory         = Types.IVotersHistory;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
   type PayRules               = PayRules.PayRules;
 
-  type ScanLimitResult<K>        = UtilsTypes.ScanLimitResult<K>;
-  type Direction                 = UtilsTypes.Direction;
+  type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
+  type Direction              = UtilsTypes.Direction;
 
-  type GetVoteError              = Types.GetVoteError;
-  type RevealVoteError           = Types.RevealVoteError;
-  type FindBallotError           = Types.FindBallotError;
-  type PutBallotError            = Types.PutBallotError;
-  type RevealedBallot<T>         = Types.RevealedBallot<T>;
+  type GetVoteError           = Types.GetVoteError;
+  type RevealVoteError        = Types.RevealVoteError;
+  type FindBallotError        = Types.FindBallotError;
+  type PutBallotError         = Types.PutBallotError;
+  type RevealedBallot<T>      = Types.RevealedBallot<T>;
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
@@ -52,6 +53,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<CursorMap, PolarizationMap>,
+    voters_history: IVotersHistory,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
@@ -59,6 +61,7 @@ module {
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
+      voters_history,
       VotePolicy(categories),
       ?PayToVote.PayToVote<CursorMap, PolarizationMap>(
         PayForElement.build(
@@ -77,6 +80,10 @@ module {
   ) : IVotePolicy {
 
     public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
+      // Verify the user did not vote already
+      if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
+        return #err(#ChangeBallotNotAllowed);
+      };
       // Verify the ballot is valid
       if (not CursorMap.isValid(ballot.answer, _categories)){
         return #err(#InvalidBallot);

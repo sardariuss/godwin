@@ -56,33 +56,29 @@ module {
         };
       };
 
-      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CANDIDATE), #FWD, 1000, null).keys)){
-        let interest_vote_id = unwrapVoteId(queried_question, #INTEREST);
-        for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, interest_vote_id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(interest_vote_id));
-            switch(await* facade.putInterestBallot(principal, interest_vote_id, time, Random.randomInterest(fuzzer))){
+      for (principal in Array.vals(principals)) {
+        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, vote.1.id))){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(vote.1.id));
+            switch(await* facade.putInterestBallot(principal, vote.1.id, time, Random.randomInterest(fuzzer))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put interest ballot: " # putBallotErrorToString(err)); };
             };
           };
         };
-      };
-
-      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#OPEN), #FWD, 1000, null).keys)){
-        let opinion_vote_id = unwrapVoteId(queried_question, #OPINION);
-        let categorization_vote_id = unwrapVoteId(queried_question, #CATEGORIZATION);
-        for (principal in Array.vals(principals)) {
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, opinion_vote_id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(opinion_vote_id));
-            switch(await* facade.putOpinionBallot(principal, opinion_vote_id, time, Random.randomOpinion(fuzzer))){
+        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, vote.1.id))){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(vote.1.id));
+            switch(await* facade.putOpinionBallot(principal, vote.1.id, time, Random.randomOpinion(fuzzer))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
             };
           };
-          if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, categorization_vote_id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(categorization_vote_id));
-            switch(await* facade.putCategorizationBallot(principal, categorization_vote_id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
+        };
+        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, vote.1.id))){
+            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
+            switch(await* facade.putCategorizationBallot(principal, vote.1.id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
             };
@@ -102,15 +98,6 @@ module {
       await* facade.run(time);
 
     };
-  };
-
-  func unwrapVoteId(queried_question: QueryQuestionItem, vote_kind: VoteKind) : VoteId {
-    for ((kind, vote_data) in Array.vals(queried_question.votes)){
-      if (kind == vote_kind){
-        return vote_data.id;
-      };
-    };
-    Debug.trap("Cannot find vote id for given vote kind");
   };
 
   func putBallotErrorToString(putBallotError: Types.PutBallotError) : Text {

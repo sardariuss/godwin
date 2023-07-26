@@ -66,9 +66,9 @@ export const ListComponents = <T, Input>({query_components, generate_input, buil
     <ol className="w-full flex flex-col">
       {[...results.ids].map((element) => (
         <li key={generate_key(element)}>
-          {
-            React.createElement(build_component, generate_input(element))
-          }
+        {
+          React.createElement(build_component, generate_input(element))
+        }
         </li>
       ))}
     </ol>

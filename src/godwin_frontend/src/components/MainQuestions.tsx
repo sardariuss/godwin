@@ -1,14 +1,18 @@
 import { TabButton }                                                           from "./TabButton";
 import { MainTabButton }                                                       from "./MainTabButton";
-import ListQuestions                                                           from "./ListQuestions";
 import OpenQuestion                                                            from "./OpenQuestion";
 import SubBanner                                                               from "./SubBanner";
 import { ActorContext, Sub }                                                   from "../ActorContext";
-import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant } from "../utils";
-import { QuestionOrderBy, Direction, QueryQuestionItem }                       from "../../declarations/godwin_sub/godwin_sub.did";
+import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant, voteKindFromCandidVariant,
+  convertScanResults, ScanLimitResult, statusToEnum, StatusEnum }              from "../utils";
+import { QuestionOrderBy, Direction, QueryQuestionItem, QueryVoteItem }        from "../../declarations/godwin_sub/godwin_sub.did";
+import QuestionComponent, { QuestionInput }                                    from "./Question";
+
+import ListComponents from "./base/ListComponents";
 
 import { useParams }                                                           from "react-router-dom";
-import { useState, useContext, useEffect }                                     from "react";
+import React, { useState, useContext, useEffect }                              from "react";
+import { fromNullable }                                                        from "@dfinity/utils";
 
 export enum MainTab {
   HOME,
@@ -26,34 +30,14 @@ const mainTabToText = (mainTab: MainTab) => {
 
 const mainTabs = [MainTab.HOME, MainTab.BROWSE];
 
-export enum UserAction {
-  SELECT,
-  VOTE,
-  CATEGORIZE,
-  REOPEN_QUESTION
-};
-
-const voteKindToUserAction = (vote_kind: VoteKind) => {
+const voteKindAction = (vote_kind: VoteKind) => {
   switch (vote_kind) {
     case VoteKind.INTEREST:
-      return UserAction.SELECT;
-    case VoteKind.OPINION:
-      return UserAction.VOTE;
-    case VoteKind.CATEGORIZATION:
-      return UserAction.CATEGORIZE;
-  }
-}
-
-const userActionToText = (user_action: UserAction) => {
-  switch (user_action) {
-    case UserAction.SELECT:
       return "Select";
-    case UserAction.VOTE:
+    case VoteKind.OPINION:
       return "Vote";
-    case UserAction.CATEGORIZE:
+    case VoteKind.CATEGORIZATION:
       return "Categorize";
-    case UserAction.REOPEN_QUESTION:
-      return "Reopen";
   }
 }
 
@@ -94,7 +78,7 @@ const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   }
 }
 
-type QueryFunction = (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => Promise<ScanResults<QueryQuestionItem>>;
+type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: QuestionInput | undefined) => Promise<ScanResults<QuestionInput>>;
 
 const MainQuestions = () => {
 
@@ -104,8 +88,48 @@ const MainQuestions = () => {
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(MainTab.HOME);
   const [currentHomeFilter, setCurrentHomeFilter] = useState<VoteKind>(VoteKind.INTEREST);
   const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter>(BrowseFilter.CANDIDATE);
-  const [currentUserAction, setCurrentUserAction] = useState<UserAction | undefined>(undefined);
-  const [queryQuestions, setQueryQuestions] = useState<QueryFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
+  
+  const [queryQuestionInput, setQueryQuestionInput] = useState<QueryQuestionInputFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
+
+  const convertQuestionScanResults = (scan_results: ScanLimitResult<QueryQuestionItem>) : ScanResults<QuestionInput> => {
+    return convertScanResults(fromScanLimitResult(scan_results), (item: QueryQuestionItem) : QuestionInput => {
+      return {
+        sub,
+        question_id: item.question.id,
+        question: item.question,
+        statusData: item.status_data,
+        showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT,
+        canVote: false
+      }}
+    );
+  }
+
+  const convertVoteScanResults = (scan_results: ScanLimitResult<QueryVoteItem>) : ScanResults<QuestionInput> => {
+    return convertScanResults(fromScanLimitResult(scan_results), (item: QueryVoteItem) : QuestionInput => {
+      return {
+        sub,
+        question_id: item.question_id,
+        question: fromNullable(item.question),
+        vote: { 
+          kind: voteKindFromCandidVariant(item.vote[0]),
+          data: item.vote[1]
+        }, 
+        showReopenQuestion: false,
+        canVote: true
+      }});
+  }
+
+  const refreshQueryQuestions = () => {
+    if (sub === undefined) {
+      setQueryQuestionInput(() => () => Promise.resolve({ ids : [], next: undefined}));
+    } else if (currentMainTab === MainTab.BROWSE) {
+      setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
+        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question.id] : []).then(convertQuestionScanResults));
+    } else if (currentMainTab === MainTab.HOME) {
+      setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
+        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question.id] : []).then(convertVoteScanResults));
+    }
+  }
 
   useEffect(() => {
     if (subgodwin !== undefined) {
@@ -114,16 +138,7 @@ const MainQuestions = () => {
   }, [subgodwin, subs]);
 
   useEffect(() => {
-    if (sub === undefined) {
-      setQueryQuestions(() => () => Promise.resolve({ ids : [], next: undefined}));
-    } else if (currentMainTab === MainTab.HOME) {
-      setQueryQuestions(() => (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => 
-        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question.id] : []).then(fromScanLimitResult));
-    } else if (currentMainTab === MainTab.BROWSE) {
-      setQueryQuestions(() => (direction: Direction, limit: bigint, next: QueryQuestionItem | undefined) => 
-        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question.id] : []).then(fromScanLimitResult));
-    }
-    setCurrentUserAction(currentMainTab === MainTab.HOME ? voteKindToUserAction(currentHomeFilter) : UserAction.REOPEN_QUESTION);
+    refreshQueryQuestions();
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
 	return (
@@ -148,7 +163,7 @@ const MainQuestions = () => {
               {
                 currentMainTab === MainTab.HOME ?
                 <div className="border-b dark:border-gray-700">
-                  <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null}></OpenQuestion>
+                  <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null} canSelectSub={false}></OpenQuestion>
                 </div> : <></>
               }
               <div className="border-b dark:border-gray-700">
@@ -157,7 +172,7 @@ const MainQuestions = () => {
                   currentMainTab === MainTab.HOME ? (
                     vote_kind_filters.map((filter, index) => (
                       <li key={index} className="w-1/3">
-                        <TabButton label={userActionToText(voteKindToUserAction(filter))} isCurrent={filter == currentHomeFilter} setIsCurrent={() => setCurrentHomeFilter(filter)}/>
+                        <TabButton label={voteKindAction(filter)} isCurrent={filter == currentHomeFilter} setIsCurrent={() => setCurrentHomeFilter(filter)}/>
                       </li>))
                   ) : (
                     browse_filters.map((filter, index) => (
@@ -173,11 +188,14 @@ const MainQuestions = () => {
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
           <div className="w-full flex">
-            <ListQuestions 
-              sub={sub}
-              query_questions={queryQuestions}
-              user_action={currentUserAction}
-            />
+          {
+            React.createElement(ListComponents<QuestionInput, QuestionInput>, {
+              query_components: queryQuestionInput,
+              generate_input: (item: QuestionInput) => { return item },
+              build_component: QuestionComponent,
+              generate_key: (item: QuestionInput) => { return item.question.id.toString() }
+            })
+          }
           </div>
         </div>
       </div>

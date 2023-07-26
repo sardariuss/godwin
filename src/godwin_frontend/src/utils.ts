@@ -291,7 +291,7 @@ export const polarizationToColorRange = (polarizationInfo: PolarizationInfo) : P
   };
 };
 
-interface ScanLimitResult<T> {
+export interface ScanLimitResult<T> {
   'keys' : Array<T>,
   'next' : [] | [T],
 };
@@ -304,6 +304,12 @@ export type ScanResults<T> = {
 export const fromScanLimitResult = <T,>(query_result: ScanLimitResult<T>) : ScanResults<T> => {
   let ids = Array.from(query_result.keys);
   let next = fromNullable(query_result.next);
+  return { ids, next };
+}
+
+export const convertScanResults = <T1, T2, >(scan_results: ScanResults<T1>, convert: (T1) => T2) : ScanResults<T2> => {
+  let ids = scan_results.ids.map(convert);
+  let next = scan_results.next === undefined ? undefined : convert(scan_results.next);
   return { ids, next };
 }
 

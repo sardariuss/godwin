@@ -8,14 +8,15 @@ import { Category, Polarization }                                               
 
 import { fromNullable }                                                                             from "@dfinity/utils";
 import { Principal }                                                                                from "@dfinity/principal";
-import { useEffect, useState }                                                                      from "react";
+import React, { useEffect, useState }                                                               from "react";
 
 type ConvictionsProps = {
-  principal: Principal;
   sub: Sub;
+  principal: Principal;
+  isLoggedUser: boolean;
 };
 
-const Convictions = ({principal, sub} : ConvictionsProps) => {
+const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
 
   const [chartType,       setChartType      ] = useState<ChartTypeEnum>               (ChartTypeEnum.Bar                 );
   const [polarizationMap, setPolarizationMap] = useState<Map<Category, Polarization>> (new Map<Category, Polarization> ());
@@ -122,7 +123,7 @@ const Convictions = ({principal, sub} : ConvictionsProps) => {
             </div>
           </div>
         </div>
-        <VoterHistory sub={sub} principal={principal} voteKind={VoteKind.OPINION}/>
+        <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.OPINION}/>
       </div>
     </div>
 	);

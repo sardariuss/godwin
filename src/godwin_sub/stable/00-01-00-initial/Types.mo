@@ -52,20 +52,21 @@ module {
     votes                       : {
       interest                     : {
         register                      : InterestVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
         transactions                  : Map<Principal, Map<VoteId, TransactionsRecord>>;
        };
       opinion                      : {
         register                      : OpinionVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
       };
       categorization               : {
         register                      : CategorizationVoteRegister;
+        voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
+        joins                         : JoinsRegister;
         transactions                  : Map<Principal, Map<VoteId, TransactionsRecord>>;
       };
-    };
-    joins                       : {
-      interests                    : JoinsRegister;
-      opinions                     : JoinsRegister;
-      categorizations              : JoinsRegister;
     };
   };
 
@@ -142,7 +143,6 @@ module {
 
   public type VoteRegister<T, A> = {
     votes: Map<VoteId, Vote<T, A>>;
-    voters_history: Map<Principal, Set<VoteId>>;
     var index: VoteId;
   };
 
