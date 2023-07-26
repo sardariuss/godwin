@@ -17,6 +17,14 @@ module {
       max_length: Nat;
     };
     subgodwin: {
+      identifier: {
+        min_length: Nat;
+        max_length: Nat;
+      };
+      subname: {
+        min_length: Nat;
+        max_length: Nat;
+      };
       scheduler_params: {
         minimum_duration: Duration;
         maximum_duration: Duration;
@@ -40,8 +48,11 @@ module {
   };
 
   public type CreateSubGodwinError = {
+    #IdentifierTooShort: ({min_length: Nat;});
+    #IdentifierTooLong: ({max_length: Nat;});
     #InvalidIdentifier;
     #IdentifierAlreadyTaken;
+    #NoCategories;
     #CategoryDuplicate;
     #DurationTooShort: ({minimum_duration: Duration;});
     #DurationTooLong: ({maximum_duration: Duration;});

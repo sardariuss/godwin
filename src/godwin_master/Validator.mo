@@ -12,6 +12,7 @@ import Result             "mo:base/Result";
 import Array              "mo:base/Array";
 import Principal          "mo:base/Principal";
 import Option             "mo:base/Option";
+import Text               "mo:base/Text";
 
 module {
 
@@ -57,6 +58,13 @@ module {
     };
 
     public func validateSubIdentifier(new: Text, sub_identifiers: Set<(Principal, Text)>) : Result<(), CreateSubGodwinError> {
+      let { min_length; max_length; } = _validation.subgodwin.identifier;
+      if (Text.size(new) < min_length){
+        return #err(#IdentifierTooShort({min_length}));
+      };
+      if (Text.size(new) > max_length){
+        return #err(#IdentifierTooLong({max_length}));
+      };
       if (not TextUtils.isAlphaNumeric(new)){
         return #err(#InvalidIdentifier);
       };
@@ -73,6 +81,10 @@ module {
     public func validateCategories(categories: CategoryArray) : Result<(), CreateSubGodwinError> {
       
       let set = Set.fromIter<Text>(Array.vals(Array.map(categories, func((c, _) : (Category, CategoryInfo)) : Category { c; })), Set.thash);
+
+      if (Set.size(set) == 0){
+        return #err(#NoCategories);
+      };
       
       if (Set.size(set) > categories.size()){
         return #err(#CategoryDuplicate);

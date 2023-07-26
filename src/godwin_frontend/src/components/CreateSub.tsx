@@ -3,9 +3,11 @@ import DurationInput                                                          fr
 import CreateSubButton                                                        from "./CreateSubButton";
 import { ColorPickerPopover }                                                 from "./ColorPickerPopover";
 import { EmojiPickerPopover }                                                 from "./EmojiPickerPopover";
+import Spinner                                                                from "./Spinner";
+import Balance                                                                from "./base/Balance";
 import SvgButton                                                              from "./base/SvgButton";
-import { isAlphanumeric }                                                     from "../utils";
 import CONSTANTS                                                              from "../Constants";
+import { createSubResultToError }                                             from "../utils";
 import { ActorContext }                                                       from "../ActorContext"
 import { Category, CategoryInfo, SchedulerParameters, ConvictionsParameters } from "../../declarations/godwin_sub/godwin_sub.did";
 
@@ -15,8 +17,8 @@ const createDimension = () : [Category, CategoryInfo] => {
   return [
     "",
     {
-      left:  {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY_EMOJI, color: ""},
-      right: {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY_EMOJI, color: ""}
+      left:  {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY.EMOJI, color: CONSTANTS.DEFAULT_CATEGORY.COLOR},
+      right: {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY.EMOJI, color: CONSTANTS.DEFAULT_CATEGORY.COLOR}
     }
   ];
 }
@@ -31,10 +33,12 @@ const CreateSub = () => {
   const [schedulerParameters,   setSchedulerParameters  ] = useState<SchedulerParameters>       (CONSTANTS.DEFAULT_SCHEDULER_PARAMETERS  );
   const [convictionsParameters, setConvictionsParameters] = useState<ConvictionsParameters>     (CONSTANTS.DEFAULT_CONVICTIONS_PARAMETERS);
   
-  const [showGeneral,           setShowGeneral          ] = useState<boolean>                   (true                                    );
+  const [showGeneral,           setShowGeneral          ] = useState<boolean>                   (false                                   );
   const [showDimensions,        setShowDimensions       ] = useState<boolean>                   (false                                   );
   const [showSchedulerParams,   setShowSchedulerParams  ] = useState<boolean>                   (false                                   );
   const [showConvictionsParams, setShowConvictionsParams] = useState<boolean>                   (false                                   );
+
+  const [submitting,            setSubmitting           ] = useState<boolean>                   (false                                   );
 
   const updateCategory = (index: number, to_update: [Category, CategoryInfo]) => {
     setCategories( old => { 
@@ -46,6 +50,7 @@ const CreateSub = () => {
   }
 
   const createSubGodwin = async () => {
+    setSubmitting(true);
     master.createSubGodwin(identifier, { 
       name,
       categories,
@@ -58,35 +63,70 @@ const CreateSub = () => {
       refreshBalance();
     }).catch((err) => {
       console.log(err);
+    }).finally(() => {
+      setSubmitting(false);
     });
+  }
+
+  const validateText = async(input: string) : Promise<string | undefined> => {
+    return Promise.resolve(input.length === 0 ? "Text is empty" : undefined);
   }
 
   return (
     <div className="flex flex-col items-center justify-center content-center">
       <CreateSubButton show={showGeneral} setShow={setShowGeneral} label={"General"}>
-        <div className="flex flex-row justify-evenly w-full items-center place-items-center">
-          <TextInput label="Name"        id={"name"}       value={name}        onInputChange={setName}/>
-          <TextInput label="Identitifer" id={"identifier"} value={identifier}  onInputChange={setIdentifier}/>
+        <div className="flex flex-row justify-evenly w-full items-center place-items-center pb-2">
+          <TextInput 
+            label="Name"
+            id={"name"}
+            input={name}
+            onInputChange={setName}
+            validate={(input) => { return master.validateSubName(input).then(createSubResultToError) }}
+          />
+          <TextInput 
+            label="Identitifer" 
+            id={"identifier"} 
+            input={identifier}  
+            onInputChange={setIdentifier} 
+            validate={(input) => { return master.validateSubIdentifier(input).then(createSubResultToError) }}
+          />
         </div>
       </CreateSubButton>
       <CreateSubButton show={showDimensions} setShow={setShowDimensions} label={"Dimensions"}>
         <ol className="flex flex-col divide-y divide-gray-300 dark:divide-gray-300 w-1/2">
           {
             categories.map(([category, info], index) => (
-            <li className="grid grid-cols-14" key={index.toString()}>
+            <li className="grid grid-cols-14 pb-2" key={index.toString()}>
               <div className="pt-2 grid col-span-12 grid-cols-12 text-gray-900 dark:text-white items-center place-items-center gap-x-2">
                 <div className="col-span-3 justify-self-start place-self-start">
-                  <TextInput label={ "Dimension " + (index + 1).toString()}     id={"category" + index.toString()} value={category }         onInputChange={(input) => { category = input;          updateCategory(index, [category, info]); }}/>
+                  <TextInput 
+                    label={ "Dimension " + (index + 1).toString()}
+                    id={"category" + index.toString()} input={category }
+                    onInputChange={(input) => { category = input; updateCategory(index, [category, info]); }}
+                    validate={validateText}
+                  />
                 </div>
-                <div className="col-span-4 flex flex-row gap-x-2">
-                  <TextInput label="Left name"    id={"lname"    + index.toString()} value={info.left.name   } onInputChange={(input) => { info.left.name    = input; updateCategory(index, [category, info]); }} dir={"rtl"}/>
+                <div className="col-span-4 flex flex-row gap-x-2 items-center">
+                  <TextInput 
+                    label="Left axis"
+                    id={"lname" + index.toString()} input={info.left.name}
+                    onInputChange={(input) => { info.left.name = input; updateCategory(index, [category, info]); }} 
+                    dir={"rtl"}
+                    validate={validateText}
+                  />
                   <ColorPickerPopover color={info.left.color} onChange={(input) => { info.left.color  = input; updateCategory(index, [category, info]); }} />
                   <EmojiPickerPopover emoji={info.left.symbol} onChange={(input) => { info.left.symbol = input; updateCategory(index, [category, info]); }}/>
                 </div>
-                <div className="col-span-4 flex flex-row gap-x-2">
+                <div className="col-span-4 flex flex-row gap-x-2 items-center">
                   <EmojiPickerPopover emoji={info.right.symbol} onChange={(input) => { info.right.symbol = input; updateCategory(index, [category, info]); }}/>
                   <ColorPickerPopover color={info.right.color } onChange={(input) => { info.right.color  = input; updateCategory(index, [category, info]); }}/>
-                  <TextInput label="Right name"   id={"rname"    + index.toString()} value={info.right.name  } onInputChange={(input) => { info.right.name   = input; updateCategory(index, [category, info]); }}/>
+                  <TextInput 
+                    label="Right axis"
+                    id={"rname" + index.toString()}
+                    input={info.right.name}
+                    onInputChange={(input) => { info.right.name = input; updateCategory(index, [category, info]); }}
+                    validate={validateText} 
+                  />
                 </div>
                 <div className="col-span-1 justify-self-end grid grid-cols-2 gap-x-2 items-center">
                   <div className={`w-5 h-5`}>
@@ -107,22 +147,50 @@ const CreateSub = () => {
         </ol>
       </CreateSubButton>
       <CreateSubButton show={showSchedulerParams} setShow={setShowSchedulerParams} label={"Scheduler parameters"}>
-        <div className="flex flex-col w-1/3">
-          <DurationInput label={"Question pick period"}      value={schedulerParameters.question_pick_period     } onInputChange={(input)=> { setSchedulerParameters(params => { params.question_pick_period      = input; return params; } )}}/>
-          <DurationInput label={"Censoring timeout"}         value={schedulerParameters.censor_timeout           } onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}}/>
-          <DurationInput label={"Candidate status duration"} value={schedulerParameters.candidate_status_duration} onInputChange={(input)=> { setSchedulerParameters(params => { params.candidate_status_duration = input; return params; } )}}/>
-          <DurationInput label={"Open status duration"}      value={schedulerParameters.open_status_duration     } onInputChange={(input)=> { setSchedulerParameters(params => { params.open_status_duration      = input; return params; } )}}/>
-          <DurationInput label={"Rejected status duration"}  value={schedulerParameters.rejected_status_duration } onInputChange={(input)=> { setSchedulerParameters(params => { params.rejected_status_duration  = input; return params; } )}}/>
+        <div className="flex flex-col w-1/3 gap-y-1 mb-3">
+          <DurationInput label={"Question pick period"}      input={schedulerParameters.question_pick_period     } 
+            onInputChange={(input)=> { setSchedulerParameters(params => { params.question_pick_period      = input; return params; } )}} 
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+          <DurationInput label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
+            onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}} 
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+          <DurationInput label={"Candidate status duration"} input={schedulerParameters.candidate_status_duration} 
+            onInputChange={(input)=> { setSchedulerParameters(params => { params.candidate_status_duration = input; return params; } )}} 
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+          <DurationInput label={"Open status duration"}      input={schedulerParameters.open_status_duration     } 
+            onInputChange={(input)=> { setSchedulerParameters(params => { params.open_status_duration      = input; return params; } )}} 
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+          <DurationInput label={"Rejected status duration"}  input={schedulerParameters.rejected_status_duration } 
+            onInputChange={(input)=> { setSchedulerParameters(params => { params.rejected_status_duration  = input; return params; } )}} 
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
       <CreateSubButton show={showConvictionsParams} setShow={setShowConvictionsParams} label={"Convictions parameters"}>
-        <div className="flex flex-col w-1/3">
-          <DurationInput label={"Opinion vote half-life"}        value={convictionsParameters.vote_half_life       } onInputChange={(input)=> { setConvictionsParameters(params => { params.vote_half_life        = input; return params; } )}}/>
-          <DurationInput label={"Late opinion ballot half-life"} value={convictionsParameters.late_ballot_half_life} onInputChange={(input)=> { setConvictionsParameters(params => { params.late_ballot_half_life = input; return params; } )}}/>
+        <div className="flex flex-col w-1/3 gap-y-1 mb-3">
+          <DurationInput label={"Opinion vote half-life"}        input={convictionsParameters.vote_half_life       } 
+            onInputChange={(input)=> { setConvictionsParameters(params => { params.vote_half_life        = input; return params; } )}} 
+            validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
+          <DurationInput label={"Late opinion ballot half-life"} input={convictionsParameters.late_ballot_half_life} 
+            onInputChange={(input)=> { setConvictionsParameters(params => { params.late_ballot_half_life = input; return params; } )}} 
+            validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
-      <button className="flex button-blue my-2" onClick={(e) => {createSubGodwin();}}>
-        Create sub
+      <button 
+        className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center my-2"
+        type="submit"
+        onClick={(e) => createSubGodwin()}
+        disabled={submitting}
+      >
+        {
+          submitting ?
+          <div className="w-5 h-5">
+            <Spinner/>
+          </div> :
+          <div className="flex flex-row items-center gap-x-1 text-white">
+            Create sub
+            <Balance amount={BigInt(1_000_000_000)}/>
+          </div>
+        }
       </button>
     </div>
   );

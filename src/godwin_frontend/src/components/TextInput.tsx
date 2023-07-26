@@ -1,34 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type TextInputProps = {
   id: string;
   label: string;
   dir?: "ltr" | "rtl";
+  input: string;
   onInputChange: (string) => void;
-  value: string;
-  isValid?: (string) => boolean;
+  validate?: (string) => Promise<string | undefined>;
 }
 
-const TextInput = ({id, label, dir, onInputChange, value, isValid}: TextInputProps) => {
+const TextInput = ({id, label, dir, onInputChange, input, validate}: TextInputProps) => {
 
-  const [text, setText] = useState<string>(value);
-
+  const [text,    setText   ] = useState<string>(input);
+  const [error, setError] = useState<string | undefined>(undefined);
+  
   // Update from within
   const updateText = (new_text: string) => {
+    if (validate !== undefined){
+      validate(new_text).then((res) => {
+        setError(res);
+      });
+    }
     setText(new_text);
     onInputChange(new_text);
   };
 
-  // Update from outside
+  // Update text from outside
   useEffect(() => {
-    if (text !== value){
-      setText(value);
+    if (text !== input){
+      updateText(input);
     };
-  }, [value]);
+  }, [input]);
+
+  useEffect(() => {
+    // Initial validation
+    updateText(input);
+  }, []);
 
   return (
     <div dir={dir?? "ltr"}>
-      <div className="relative">
+      <div className="relative pb-1">
         <input 
           type="text" 
           id={id}
@@ -44,7 +55,7 @@ const TextInput = ({id, label, dir, onInputChange, value, isValid}: TextInputPro
         >
           {label}
         </label>
-        <p className={`mt-2 text-xs text-red-600 dark:text-red-400 ${isValid === undefined ? "hidden" : isValid(text) ? "hidden" : ""}`}><span className="font-medium">Error: </span>Some error message.</p>
+        <p className={`absolute font-medium -mt-2 text-xs text-red-600 dark:text-red-400 ${error === undefined ? "hidden" : ""}`}>{error}</p>
       </div>
     </div>
   );

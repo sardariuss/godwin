@@ -71,7 +71,10 @@ const CONSTANTS = {
     HUE_ROTATE_DEG: 39,
   },
   MAX_NUM_CATEGORIES: 8,
-  DEFAULT_CATEGORY_EMOJI: '❔',
+  DEFAULT_CATEGORY: {
+    EMOJI: '❔',
+    COLOR: '#000000',
+  },
   DEFAULT_SCHEDULER_PARAMETERS: {
     question_pick_period:      { 'HOURS'  : BigInt(12)},
     censor_timeout:            { 'HOURS'  : BigInt(4) },

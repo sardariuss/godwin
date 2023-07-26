@@ -61,6 +61,14 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
       max_length = 32;
     };
     subgodwin = {
+      identifier = {
+        min_length = 3;
+        max_length = 32;
+      };
+      subname = {
+        min_length = 3;
+        max_length = 60;
+      };
       scheduler_params = {
         minimum_duration = #MINUTES(10);
         maximum_duration = #YEARS(1);

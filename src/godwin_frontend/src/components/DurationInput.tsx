@@ -2,17 +2,7 @@ import { Duration }                   from "../../declarations/godwin_sub/godwin
 
 import React, { useState, useEffect } from "react";
 
-type Parameter = {
-  unit: string,
-  min: number,
-  max: number,
-};
-
-const parameters : Parameter[] = [
-  { unit: 'HOURS',   min: 1,   max: 120  },
-  { unit: 'DAYS',    min: 1,   max: 1000 },
-  { unit: 'YEARS',   min: 1,   max: 100  },
-];
+const units : string[] = ['YEARS', 'DAYS', 'HOURS', 'MINUTES'];
 
 const getDurationUnit = (duration: Duration) : string => {
   if (duration['YEARS']   !== undefined) return 'YEARS';
@@ -34,56 +24,62 @@ const getDurationAmount = (duration: Duration) : bigint => {
   throw new Error("Invalid duration");
 }
 
+const updateUnit = (duration: Duration, unit: string) : Duration => {
+  if (unit === 'YEARS')   return {'YEARS':   getDurationAmount(duration)};
+  if (unit === 'DAYS')    return {'DAYS':    getDurationAmount(duration)};
+  if (unit === 'HOURS')   return {'HOURS':   getDurationAmount(duration)};
+  if (unit === 'MINUTES') return {'MINUTES': getDurationAmount(duration)};
+  if (unit === 'SECONDS') return {'SECONDS': getDurationAmount(duration)};
+  if (unit === 'NS')      return {'NS':      getDurationAmount(duration)};
+  throw new Error("Invalid duration");
+}
+
+const updateAmount = (duration: Duration, amount: number) : Duration => {
+  if (getDurationUnit(duration) === 'YEARS')   return {'YEARS':   BigInt(amount)};
+  if (getDurationUnit(duration) === 'DAYS')    return {'DAYS':    BigInt(amount)};
+  if (getDurationUnit(duration) === 'HOURS')   return {'HOURS':   BigInt(amount)};
+  if (getDurationUnit(duration) === 'MINUTES') return {'MINUTES': BigInt(amount)};
+  if (getDurationUnit(duration) === 'SECONDS') return {'SECONDS': BigInt(amount)};
+  if (getDurationUnit(duration) === 'NS')      return {'NS':      BigInt(amount)};
+  throw new Error("Invalid duration");
+}
+
 type DurationInputProps = {
   label: string;
   onInputChange: (Duration) => void;
-  value: Duration;
+  input: Duration;
+  validate?: (string) => Promise<string | undefined>;
 };
 
-const DurationInput = ({label, value, onInputChange} : DurationInputProps) => {
+const DurationInput = ({label, input, onInputChange, validate} : DurationInputProps) => {
 
-  const [selectedParameter, setSelectedParameter] = useState<Parameter>(parameters[0]    );
-  const [selectedAmount,    setSelectedAmount   ] = useState<number>   (parameters[0].min);
+  const [duration, setDuration] = useState<Duration>(input);
 
-  // Update from within
-  const updateUnit = (new_unit: string) => {
-    setSelectedParameter(old => { return parameters.find(({unit}) => unit === new_unit ) ?? old; });
-  }
-
-  // Update from within
-  const updateAmount = (new_amount: number) => {
-    setSelectedAmount(new_amount < selectedParameter.min ? selectedParameter.min : new_amount > selectedParameter.max ? selectedParameter.max : new_amount);
-  }
+  const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     // Callback to parent
-    onInputChange({[selectedParameter.unit]: BigInt(selectedAmount)});
-    // Make sure to revalidate the amount when the unit changes
-    updateAmount(selectedAmount);
-  }, [selectedParameter]);
-
-  useEffect(() => {
-    // Callback to parent
-    onInputChange({[selectedParameter.unit]: BigInt(selectedAmount)});
-  }, [selectedAmount]);
-
-  // Update from outside
-  useEffect(() => {
-    updateUnit(getDurationUnit(value));
-    updateAmount(Number(getDurationAmount(value)));
-  }, []);
+    onInputChange(duration);
+    // Validation
+    validate?.(duration).then((res) => {
+      setError(res);
+    });
+  }, [duration]);
 
   return (
-    <div className="grid grid-cols-3 gap-x-2 items-center">
-      <label className="block text-sm font-medium text-gray-900 dark:text-white">{label}</label>
-      <input dir="rtl" className="w-16 justify-self-end appearance-none dark:bg-transparent dark:text-white" type="number" min={selectedParameter.min} max={selectedParameter.max} onChange={(e) => updateAmount(Number(e.target.value))} value={selectedAmount}></input>
-      <select value={selectedParameter.unit} onChange={(e) => {updateUnit(e.target.value)}} id="states" className="w-24 justify-self-start bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg border-l-gray-100 dark:border-l-gray-700 border-l-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-        {
-          parameters.map(({unit}, index) => (
-            <option key={index.toString()} className="w-24" value={unit}>{unit}</option>
-          ))
-        }
-      </select>
+    <div className="relative">
+      <div className="grid grid-cols-3 gap-x-2 items-center">
+        <label className="block text-sm font-medium text-gray-900 dark:text-white">{label}</label>
+        <input dir="rtl" className="w-16 justify-self-end appearance-none dark:bg-transparent dark:text-white" type="number" min={0} onChange={(e) => setDuration(old => { return updateAmount(old, Number(e.target.value)); })} value={Number(getDurationAmount(duration))}></input>
+        <select value={getDurationUnit(duration)} onChange={(e) => {setDuration(old => { return updateUnit(old, e.target.value); });}} id="states" className="w-24 justify-self-start bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg border-l-gray-100 dark:border-l-gray-700 border-l-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+          {
+            units.map((unit, index) => (
+              <option key={index.toString()} className="w-24" value={unit}>{unit}</option>
+            ))
+          }
+        </select>
+      </div>
+      <p className={`absolute font-medium -mt-2 text-xs text-red-600 dark:text-red-400 ${error === undefined ? "hidden" : ""}`}>{error}</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { Category } from "../declarations/godwin_master/godwin_master.did";
 import { VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { Category, CreateSubGodwinError, Result_1 } from "../declarations/godwin_master/godwin_master.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 
@@ -114,16 +114,16 @@ export const statusToEnum = (status: Status) => {
 export const openQuestionErrorToString = (error: OpenQuestionError) => {
   if (error['TextTooLong']          !== undefined) return 'TextTooLong';
   if (error['PrincipalIsAnonymous'] !== undefined) return 'PrincipalIsAnonymous';
-  if (error['GenericError']           !== undefined) return 'GenericError: (message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString() + ")";
+  if (error['GenericError']           !== undefined) return 'GenericError: message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString();
   if (error['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
   if (error['NotAllowed']             !== undefined) return 'NotAllowed';
-  if (error['BadBurn']                !== undefined) return 'BadBurn: (min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString() + ")";
-  if (error['Duplicate']              !== undefined) return 'Duplicate: (duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString() + ")";
-  if (error['BadFee']                 !== undefined) return 'BadFee: (expected_fee=' + Number(error['BadFee']['expected_fee']).toString() + ")";
-  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: (ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString() + ")";
+  if (error['BadBurn']                !== undefined) return 'BadBurn: min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString();
+  if (error['Duplicate']              !== undefined) return 'Duplicate: duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString();
+  if (error['BadFee']                 !== undefined) return 'BadFee: expected_fee=' + Number(error['BadFee']['expected_fee']).toString();
+  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString();
   if (error['TooOld']                 !== undefined) return 'TooOld';
   if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
-  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
+  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: balance=' + Number(error['InsufficientFunds']['balance']).toString();
   throw new Error('Invalid PutBallotError');
 };
 
@@ -140,16 +140,16 @@ export const putBallotErrorToString = (error: PutBallotError) => {
 };
 
 export const payInErrorToString = (error: PayinError) => {
-  if (error['GenericError']           !== undefined) return 'GenericError: (message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString() + ")";
+  if (error['GenericError']           !== undefined) return 'GenericError: message=' + error['GenericError']['message'] + ', error_code=' + Number(error['GenericError']['error_code']).toString();
   if (error['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
   if (error['NotAllowed']             !== undefined) return 'NotAllowed';
-  if (error['BadBurn']                !== undefined) return 'BadBurn: (min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString() + ")";
-  if (error['Duplicate']              !== undefined) return 'Duplicate: (duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString() + ")";
-  if (error['BadFee']                 !== undefined) return 'BadFee: (expected_fee=' + Number(error['BadFee']['expected_fee']).toString() + ")";
-  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: (ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString() + ")";
+  if (error['BadBurn']                !== undefined) return 'BadBurn: min_burn_amount=' + Number(error['BadBurn']['min_burn_amount']).toString();
+  if (error['Duplicate']              !== undefined) return 'Duplicate: duplicate_of=' + Number(error['Duplicate']['duplicate_of']).toString();
+  if (error['BadFee']                 !== undefined) return 'BadFee: expected_fee=' + Number(error['BadFee']['expected_fee']).toString();
+  if (error['CreatedInFuture']        !== undefined) return 'CreatedInFuture: ledger_time=' + Number(error['CreatedInFuture']['ledger_time']).toString();
   if (error['TooOld']                 !== undefined) return 'TooOld';
   if (error['CanisterCallError']      !== undefined) return 'CanisterCallError';
-  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: (balance=' + Number(error['InsufficientFunds']['balance']).toString() + ")";
+  if (error['InsufficientFunds']      !== undefined) return 'InsufficientFunds: balance=' + Number(error['InsufficientFunds']['balance']).toString();
   throw new Error('Invalid PayinError');
 };
 
@@ -353,4 +353,38 @@ export const voteStatusToEnum = (status: VoteStatus) : VoteStatusEnum => {
   if (status['LOCKED'] !== undefined) return VoteStatusEnum.LOCKED;
   if (status['CLOSED'] !== undefined) return VoteStatusEnum.CLOSED;
   throw new Error('Invalid vote status');
+}
+
+export const durationToString = (duration: Duration) : string => {
+  if (duration['YEARS']   !== undefined) { return Number(duration['YEARS']).toString()   + ' years';   };
+  if (duration['DAYS']    !== undefined) { return Number(duration['DAYS']).toString()    + ' days';    };
+  if (duration['HOURS']   !== undefined) { return Number(duration['HOURS']).toString()   + ' hours';   };
+  if (duration['MINUTES'] !== undefined) { return Number(duration['MINUTES']).toString() + ' minutes'; };
+  if (duration['SECONDS'] !== undefined) { return Number(duration['SECONDS']).toString() + ' seconds'; };
+  if (duration['NS']      !== undefined) { return Number(duration['NS']).toString()      + ' ns';      };
+  throw new Error('Invalid duration');
+}
+
+export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : string => {
+  if (error['DurationTooShort']           !== undefined) return 'Duration is too short: minimum is ' + durationToString(error['DurationTooShort']['minimum_duration']);
+  if (error['MinimumInterestScoreTooLow'] !== undefined) return 'Minimum interest score is too low: minimum is ' + Number(error['MinimumInterestScoreTooLow']['minimum']).toString();
+  if (error['CategoryDuplicate']          !== undefined) return 'Cannot have duplicate categories';
+  if (error['CharacterLimitTooLong']      !== undefined) return 'Character limit is too long: maximum is ' + Number(error['CharacterLimitTooLong']['maximum']).toString();
+  if (error['IdentifierTooLong']          !== undefined) return 'Identifier is too long: maximum is ' + Number(error['IdentifierTooLong']['maximum']).toString();
+  if (error['IdentifierTooShort']         !== undefined) return 'Identifier is too short: minimum is ' + Number(error['IdentifierTooShort']['minimum']).toString();
+  if (error['IdentifierAlreadyTaken']     !== undefined) return 'Identifier is already taken';
+  if (error['InvalidIdentifier']          !== undefined) return 'Invalid identifier';
+  if (error['DurationTooLong']            !== undefined) return 'Duration is too long: maximum is ' + durationToString(error['DurationTooLong']['maximum_duration']);
+  if (error['NoCategories']               !== undefined) return 'Cannot create a sub without categories';
+  throw new Error('Invalid CreateSubGodwinError');
+}
+
+export const createSubResultToError = (result: Result_1) : string | undefined => {
+  if (result['ok'] !== undefined){
+    return undefined;
+  } else if (result['err'] !== undefined){
+    return createSubGodwinErrorToString(result['err']);
+  } else {
+    throw new Error("Invalid createSubGodwin result");
+  }
 }
