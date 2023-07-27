@@ -87,7 +87,7 @@ const OpinionVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceho
         <>
           { 
             !showVote && ballot !== undefined ?
-            <div className={`flex flex-row justify-center items-center w-full`}>
+            <div className={`flex flex-row justify-center items-center w-32 pr-10`}>
               <CursorBallot
                 cursorInfo={ optCursorInfo(fromNullable(ballot.answer)?.cursor) } 
                 dateNs={ballot.date}
@@ -117,32 +117,37 @@ const OpinionVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceho
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-              <CursorSlider
-                  cursor = { cursor }
-                  polarizationInfo={ CONSTANTS.OPINION_INFO }
-                  disabled={ triggerVote }
-                  setCursor={ setCursor }
-                  onMouseUp={ () => { setCountdownVote(true)} }
-                  onMouseDown={ () => { setCountdownVote(false)} }
-                  isLate={isLateVote(voteData)}
-                />
-              <UpdateProgress<PutBallotError> 
-                  delay_duration_ms={COUNTDOWN_DURATION_MS}
-                  update_function={putBallot}
-                  error_to_string={putBallotErrorToString}
-                  callback_function={refreshBallot}
-                  run_countdown={countdownVote}
-                  set_run_countdown={setCountdownVote}
-                  trigger_update={triggerVote}
-                  set_trigger_update={setTriggerVote}
-                >
-                <div className="w-6 h-6">
-                  <SvgButton onClick={() => setTriggerVote(true)} disabled={triggerVote} hidden={false}>
-                    <PutBallotIcon/>
-                  </SvgButton>
-                </div>
-              </UpdateProgress>
+            <div className={`grid grid-cols-10 items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+              <div className="col-span-2"> { /* spacer to center the content */ }</div>
+              <div className="col-span-6">
+                <CursorSlider
+                    cursor = { cursor }
+                    polarizationInfo={ CONSTANTS.OPINION_INFO }
+                    disabled={ triggerVote }
+                    setCursor={ setCursor }
+                    onMouseUp={ () => { setCountdownVote(true)} }
+                    onMouseDown={ () => { setCountdownVote(false)} }
+                    isLate={isLateVote(voteData)}
+                  />
+              </div>
+              <div className="col-span-2">
+                <UpdateProgress<PutBallotError> 
+                    delay_duration_ms={COUNTDOWN_DURATION_MS}
+                    update_function={putBallot}
+                    error_to_string={putBallotErrorToString}
+                    callback_function={refreshBallot}
+                    run_countdown={countdownVote}
+                    set_run_countdown={setCountdownVote}
+                    trigger_update={triggerVote}
+                    set_trigger_update={setTriggerVote}
+                  >
+                  <div className="w-6 h-6">
+                    <SvgButton onClick={() => setTriggerVote(true)} disabled={triggerVote} hidden={false}>
+                      <PutBallotIcon/>
+                    </SvgButton>
+                  </div>
+                </UpdateProgress>
+              </div>
             </div> : <></>
           }
         </>,

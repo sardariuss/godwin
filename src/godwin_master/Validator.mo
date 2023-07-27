@@ -75,6 +75,13 @@ module {
     };
 
     public func validateSubName(name: Text) : Result<(), CreateSubGodwinError> {
+      let { min_length; max_length; } = _validation.subgodwin.subname;
+      if (Text.size(name) < min_length){
+        return #err(#NameTooShort({min_length}));
+      };
+      if (Text.size(name) > max_length){
+        return #err(#NameTooLong({max_length}));
+      };
       #ok;
     };
 

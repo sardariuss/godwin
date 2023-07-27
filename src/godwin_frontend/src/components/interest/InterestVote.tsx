@@ -100,21 +100,23 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { !showVote && ballot !== undefined ?
-            <div className={`flex flex-row justify-center items-center w-full`}>
-              <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
-              {
-                !canVote(voteData) ? <></> :
-                voteData.id !== ballot.vote_id ?
-                  <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold`}
-                    onClick={() => { setShowVote(true); }}
-                  > NEW </div> :
-                ballot.can_change ?
-                  <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
-                    <SvgButton onClick={() => { setShowVote(true); }} disabled={false} hidden={false}>
-                      <ReturnIcon/>
-                    </SvgButton>
-                  </div> : <></>
-              }
+            <div className={`grid grid-cols-3 w-36 content-center items-center pr-10`}>
+              <div className={`w-full flex flex-col col-span-2`}>
+                <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
+                {
+                  !canVote(voteData) ? <></> :
+                  voteData.id !== ballot.vote_id ?
+                    <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold`}
+                      onClick={() => { setShowVote(true); }}
+                    > NEW </div> :
+                  ballot.can_change ?
+                    <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
+                      <SvgButton onClick={() => { setShowVote(true); }} disabled={false} hidden={false}>
+                        <ReturnIcon/>
+                      </SvgButton>
+                    </div> : <></>
+                }
+              </div>
             </div> : <></>
           }
         </>,
@@ -125,7 +127,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className="grid grid-cols-3 w-full content-center items-center">
+            <div className={`grid grid-cols-3 w-36 content-center items-center pr-10`}>
               <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
                 <div className={`w-10 flex -m-2 justify-center`}>

@@ -42,13 +42,11 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 	}, [vote]);
 
 	return (
-		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center
-			${(vote !== undefined && voteKind === VoteKind.INTEREST) || showReopenQuestion ? "" : "pr-10"}`} id={rightPlaceholderId}>
-			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
-				${(vote !== undefined && voteKind === VoteKind.INTEREST) ? "w-4/5" : "w-full"}`} id={bottomPlaceholderId}>
+		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center`} id={rightPlaceholderId}>
+			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 w-full`} id={bottomPlaceholderId}>
 				<div className="flex flex-row justify-between grow">
 					<div className={`w-full justify-start text-sm font-normal break-words`}>
-          	{question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
+          	{ question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
         	</div>
 					{
 						showReopenQuestion ?

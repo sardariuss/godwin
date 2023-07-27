@@ -86,43 +86,46 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
 	return (
     <div>
       <div className="flex flex-col w-full">
-        <div className="flex flex-col w-full border-b dark:border-gray-700 py-1">
-          <div className="flex flex-col w-full">
-            <ol className="w-full">
-            {
-              [...Array.from(polarizationMap.entries())].map(([category, polarization], index) => (
-                (
-                  <li key={category} style={{
-                      filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
-                               hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
-                      }}>
-                    <PolarizationBar 
-                      name={category}
-                      showName={true}
-                      polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
-                      polarizationValue={polarization}
-                      ballots={ballotsMap.get(category) ?? []}
-                      chartType={chartType}>
-                    </PolarizationBar>
-                  </li>
-                )
-              ))
-            }
-            </ol>
-          </div>
-          <div className="grid grid-cols-3 w-full items-center mt-2 text-xs font-light text-gray-400">
-            <div className=" place-self-center">
-              { voteNumber.toString() + " votes categorized" }
+        {
+          polarizationMap.size === 0 ? <></> :
+          <div className="flex flex-col w-full border-b dark:border-gray-700 py-1">
+            <div className="flex flex-col w-full">
+              <ol className="w-full">
+              {
+                [...Array.from(polarizationMap.entries())].map(([category, polarization], index) => (
+                  (
+                    <li key={category} style={{
+                        filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
+                                hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
+                        }}>
+                      <PolarizationBar 
+                        name={category}
+                        showName={true}
+                        polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
+                        polarizationValue={polarization}
+                        ballots={ballotsMap.get(category) ?? []}
+                        chartType={chartType}>
+                      </PolarizationBar>
+                    </li>
+                  )
+                ))
+              }
+              </ol>
             </div>
-            <ChartTypeToggle 
-              chartType={chartType}
-              setChartType={setChartType}
-            />
-            <div className=" place-self-center">
-            { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
+            <div className="grid grid-cols-3 w-full items-center mt-2 text-xs font-light text-gray-400">
+              <div className=" place-self-center">
+                { voteNumber.toString() + " votes categorized" }
+              </div>
+              <ChartTypeToggle 
+                chartType={chartType}
+                setChartType={setChartType}
+              />
+              <div className=" place-self-center">
+              { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
+              </div>
             </div>
           </div>
-        </div>
+        }
         <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.OPINION}/>
       </div>
     </div>

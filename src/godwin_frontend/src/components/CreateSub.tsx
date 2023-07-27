@@ -1,5 +1,6 @@
 import TextInput                                                              from "./TextInput";
 import DurationInput                                                          from "./DurationInput";
+import NumberInput                                                            from "./NumberInput";
 import CreateSubButton                                                        from "./CreateSubButton";
 import { ColorPickerPopover }                                                 from "./ColorPickerPopover";
 import { EmojiPickerPopover }                                                 from "./EmojiPickerPopover";
@@ -17,8 +18,8 @@ const createDimension = () : [Category, CategoryInfo] => {
   return [
     "",
     {
-      left:  {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY.EMOJI, color: CONSTANTS.DEFAULT_CATEGORY.COLOR},
-      right: {name: "", symbol: CONSTANTS.DEFAULT_CATEGORY.EMOJI, color: CONSTANTS.DEFAULT_CATEGORY.COLOR}
+      left:  {name: "", symbol: CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CATEGORY.EMOJI, color: CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CATEGORY.COLOR},
+      right: {name: "", symbol: CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CATEGORY.EMOJI, color: CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CATEGORY.COLOR}
     }
   ];
 }
@@ -27,18 +28,20 @@ const CreateSub = () => {
 
   const { master, refreshBalance } = useContext(ActorContext);
 
-  const [name,                  setName                 ] = useState<string>                    (""                                      );
-  const [identifier,            setIdentifier           ] = useState<string>                    (""                                      );
-  const [categories,            setCategories           ] = useState<[Category, CategoryInfo][]>([createDimension()]                     );
-  const [schedulerParameters,   setSchedulerParameters  ] = useState<SchedulerParameters>       (CONSTANTS.DEFAULT_SCHEDULER_PARAMETERS  );
-  const [convictionsParameters, setConvictionsParameters] = useState<ConvictionsParameters>     (CONSTANTS.DEFAULT_CONVICTIONS_PARAMETERS);
+  const [name,                  setName                 ] = useState<string>                    (""                                                         );
+  const [identifier,            setIdentifier           ] = useState<string>                    (""                                                         );
+  const [categories,            setCategories           ] = useState<[Category, CategoryInfo][]>([createDimension()]                                        );
+  const [schedulerParameters,   setSchedulerParameters  ] = useState<SchedulerParameters>       (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.SCHEDULER_PARAMETERS  );
+  const [convictionsParameters, setConvictionsParameters] = useState<ConvictionsParameters>     (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CONVICTIONS_PARAMETERS);
+  const [minimumInterestScore,  setMinimumInterestScore ] = useState<number>                    (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.MINIMUM_INTEREST_SCORE);
+  const [characterLimit,        setCharacterLimit       ] = useState<bigint>                    (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CHARACTER_LIMIT       );
   
-  const [showGeneral,           setShowGeneral          ] = useState<boolean>                   (false                                   );
-  const [showDimensions,        setShowDimensions       ] = useState<boolean>                   (false                                   );
-  const [showSchedulerParams,   setShowSchedulerParams  ] = useState<boolean>                   (false                                   );
-  const [showConvictionsParams, setShowConvictionsParams] = useState<boolean>                   (false                                   );
+  const [showGeneral,           setShowGeneral          ] = useState<boolean>                   (false                                                      );
+  const [showDimensions,        setShowDimensions       ] = useState<boolean>                   (false                                                      );
+  const [showSchedulerParams,   setShowSchedulerParams  ] = useState<boolean>                   (false                                                      );
+  const [showConvictionsParams, setShowConvictionsParams] = useState<boolean>                   (false                                                      );
 
-  const [submitting,            setSubmitting           ] = useState<boolean>                   (false                                   );
+  const [submitting,            setSubmitting           ] = useState<boolean>                   (false                                                      );
 
   const updateCategory = (index: number, to_update: [Category, CategoryInfo]) => {
     setCategories( old => { 
@@ -75,7 +78,7 @@ const CreateSub = () => {
   return (
     <div className="flex flex-col items-center justify-center content-center">
       <CreateSubButton show={showGeneral} setShow={setShowGeneral} label={"General"}>
-        <div className="flex flex-row justify-evenly w-full items-center place-items-center pb-2">
+        <div className="flex flex-col justify-evenly w-full items-center place-items-center gap-y-3 pb-2">
           <TextInput 
             label="Name"
             id={"name"}
@@ -89,6 +92,20 @@ const CreateSub = () => {
             input={identifier}  
             onInputChange={setIdentifier} 
             validate={(input) => { return master.validateSubIdentifier(input).then(createSubResultToError) }}
+          />
+          <NumberInput
+            label="Question character limit"
+            id={"character_limit"}
+            input={Number(characterLimit)}
+            onInputChange={(input: number) => { setCharacterLimit(BigInt(input)); } }
+            validate={(input: number) => { return master.validateCharacterLimit(BigInt(input)).then(createSubResultToError) }}
+          />
+          <NumberInput
+            label="Minimum interest score"
+            id={"minimum_interest_score"}
+            input={minimumInterestScore}
+            onInputChange={setMinimumInterestScore}
+            validate={(input: number) => { return master.validateMinimumInterestScore(input).then(createSubResultToError) }}
           />
         </div>
       </CreateSubButton>
@@ -147,30 +164,30 @@ const CreateSub = () => {
         </ol>
       </CreateSubButton>
       <CreateSubButton show={showSchedulerParams} setShow={setShowSchedulerParams} label={"Scheduler parameters"}>
-        <div className="flex flex-col w-1/3 gap-y-1 mb-3">
-          <DurationInput label={"Question pick period"}      input={schedulerParameters.question_pick_period     } 
+        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+          <DurationInput id={"question_pick_period"}      label={"Question pick period"}      input={schedulerParameters.question_pick_period     } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.question_pick_period      = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
-          <DurationInput label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
+          <DurationInput id={"censor_timeout"}            label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
-          <DurationInput label={"Candidate status duration"} input={schedulerParameters.candidate_status_duration} 
+          <DurationInput id={"candidate_status_duration"} label={"Candidate status duration"} input={schedulerParameters.candidate_status_duration} 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.candidate_status_duration = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
-          <DurationInput label={"Open status duration"}      input={schedulerParameters.open_status_duration     } 
+          <DurationInput id={"open_status_duration"}      label={"Open status duration"}      input={schedulerParameters.open_status_duration     } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.open_status_duration      = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
-          <DurationInput label={"Rejected status duration"}  input={schedulerParameters.rejected_status_duration } 
+          <DurationInput id={"rejected_status_duration"}  label={"Rejected status duration"}  input={schedulerParameters.rejected_status_duration } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.rejected_status_duration  = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
       <CreateSubButton show={showConvictionsParams} setShow={setShowConvictionsParams} label={"Convictions parameters"}>
-        <div className="flex flex-col w-1/3 gap-y-1 mb-3">
-          <DurationInput label={"Opinion vote half-life"}        input={convictionsParameters.vote_half_life       } 
+        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+          <DurationInput id={"vote_half_life"}            label={"Opinion vote half-life"}        input={convictionsParameters.vote_half_life       } 
             onInputChange={(input)=> { setConvictionsParameters(params => { params.vote_half_life        = input; return params; } )}} 
             validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
-          <DurationInput label={"Late opinion ballot half-life"} input={convictionsParameters.late_ballot_half_life} 
+          <DurationInput id={"late_ballot_half_life"}     label={"Late opinion ballot half-life"} input={convictionsParameters.late_ballot_half_life} 
             onInputChange={(input)=> { setConvictionsParameters(params => { params.late_ballot_half_life = input; return params; } )}} 
             validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
         </div>

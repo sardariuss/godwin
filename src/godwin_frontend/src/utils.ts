@@ -372,15 +372,15 @@ export const durationToString = (duration: Duration) : string => {
 }
 
 export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : string => {
-  if (error['DurationTooShort']           !== undefined) return 'Duration is too short: minimum is ' + durationToString(error['DurationTooShort']['minimum_duration']);
-  if (error['MinimumInterestScoreTooLow'] !== undefined) return 'Minimum interest score is too low: minimum is ' + Number(error['MinimumInterestScoreTooLow']['minimum']).toString();
+  if (error['DurationTooShort']           !== undefined) return 'Minimum duration is ' + durationToString(error['DurationTooShort']['minimum_duration']);
+  if (error['DurationTooLong']            !== undefined) return 'Maximum duration is ' + durationToString(error['DurationTooLong']['maximum_duration']);
+  if (error['MinimumInterestScoreTooLow'] !== undefined) return 'Minimum cannot be lower than ' + Number(error['MinimumInterestScoreTooLow']['minimum']).toString();
   if (error['CategoryDuplicate']          !== undefined) return 'Cannot have duplicate categories';
-  if (error['CharacterLimitTooLong']      !== undefined) return 'Character limit is too long: maximum is ' + Number(error['CharacterLimitTooLong']['maximum']).toString();
-  if (error['IdentifierTooLong']          !== undefined) return 'Identifier is too long: maximum is ' + Number(error['IdentifierTooLong']['maximum']).toString();
-  if (error['IdentifierTooShort']         !== undefined) return 'Identifier is too short: minimum is ' + Number(error['IdentifierTooShort']['minimum']).toString();
+  if (error['CharacterLimitTooLong']      !== undefined) return 'Maximum limit is ' + Number(error['CharacterLimitTooLong']['maximum']).toString();
+  if (error['IdentifierTooLong']          !== undefined) return 'Maximum identifier length is ' + Number(error['IdentifierTooLong']['max_length']).toString();
+  if (error['IdentifierTooShort']         !== undefined) return 'Minimum identifier length is ' + Number(error['IdentifierTooShort']['min_length']).toString();
   if (error['IdentifierAlreadyTaken']     !== undefined) return 'Identifier is already taken';
   if (error['InvalidIdentifier']          !== undefined) return 'Invalid identifier';
-  if (error['DurationTooLong']            !== undefined) return 'Duration is too long: maximum is ' + durationToString(error['DurationTooLong']['maximum_duration']);
   if (error['NoCategories']               !== undefined) return 'Cannot create a sub without categories';
   throw new Error('Invalid CreateSubGodwinError');
 }

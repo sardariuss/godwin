@@ -48,16 +48,18 @@ module {
   };
 
   public type CreateSubGodwinError = {
-    #IdentifierTooShort: ({min_length: Nat;});
-    #IdentifierTooLong: ({max_length: Nat;});
-    #InvalidIdentifier;
-    #IdentifierAlreadyTaken;
-    #NoCategories;
-    #CategoryDuplicate;
-    #DurationTooShort: ({minimum_duration: Duration;});
-    #DurationTooLong: ({maximum_duration: Duration;});
-    #CharacterLimitTooLong: ({maximum: Nat;});
-    #MinimumInterestScoreTooLow: ({minimum: Float;});
+    #IdentifierTooShort:        ({min_length       : Nat;     });
+    #IdentifierTooLong:         ({max_length       : Nat;     });
+    #NameTooShort:              ({min_length       : Nat;     });
+    #NameTooLong:               ({max_length       : Nat;     });
+    #InvalidIdentifier;         
+    #IdentifierAlreadyTaken;    
+    #NoCategories;              
+    #CategoryDuplicate;         
+    #DurationTooShort:           ({minimum_duration: Duration;});
+    #DurationTooLong:            ({maximum_duration: Duration;});
+    #CharacterLimitTooLong:      ({maximum         : Nat;     });
+    #MinimumInterestScoreTooLow: ({minimum         : Float;   });
   };
 
   public type TransferError = TokenTypes.TransferError or {
