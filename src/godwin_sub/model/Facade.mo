@@ -164,10 +164,11 @@ module {
     };
       
     public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealedCategorizationBallot, FindBallotError> {
-      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func({vote_id; date; answer;}: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
+      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func({vote_id; date; answer; can_change; }: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
         { 
           vote_id;
-          date ;
+          date;
+          can_change;
           answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
         };
       });

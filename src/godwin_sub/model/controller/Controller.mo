@@ -347,11 +347,12 @@ module {
         _model.getQueries().select(order_by, direction, limit, previous_id, ?filter),
         func(question_id: QuestionId) : QueryVoteItem {
           let (iteration, id) = joins.getLastVote(question_id);
-          // The ballot will always be null because we filter out the votes that the user has already voted on
+          let vote = votes.getVote(id);
           {
             question_id;
             question = _model.getQuestions().findQuestion(question_id); 
-            vote = (vote_kind, { id; status = votes.getVote(id).status; iteration; user_ballot = null; }) 
+            // The ballot will always be null because we filter out the votes that the user has already voted on
+            vote = (vote_kind, { id; status = vote.status; iteration; user_ballot = null; });
           };
         }
       );
@@ -417,9 +418,7 @@ module {
                 case(?(iteration, vote_id)){ 
                   switch(_model.getCategorizationVotes().revealBallot(caller, voter, vote_id)){
                     case(#err(_)) { Debug.trap("Attempt to reveal ballot failed"); };
-                    case(#ok(b)) { ?#CATEGORIZATION({ 
-                      vote_id = b.vote_id;
-                      date = b.date;
+                    case(#ok(b)) { ?#CATEGORIZATION({ b with 
                       answer = Option.map(b.answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
                     }); };
                   };

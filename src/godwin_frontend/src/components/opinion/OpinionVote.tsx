@@ -5,34 +5,21 @@ import SvgButton                                               from "../base/Svg
 import ReturnIcon                                              from "../icons/ReturnIcon";
 import PutBallotIcon                                           from "../icons/PutBallotIcon";
 import { putBallotErrorToString, toCursorInfo,
-  VoteStatusEnum, voteStatusToEnum }                           from "../../utils";
+  VoteStatusEnum, voteStatusToEnum, CursorInfo }               from "../../utils";
 import { getDocElementById }                                   from "../../utils/DocumentUtils";
 import CONSTANTS                                               from "../../Constants";
 import { Sub }                                                 from "../../ActorContext";
-import { PutBallotError, VoteData, Cursor, OpinionAnswer }     from "../../../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteData, Cursor, 
+  RevealedOpinionBallot }                                      from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState }                                     from "react";
 import { createPortal }                                        from "react-dom";
 import { fromNullable }                                        from "@dfinity/utils";
 
-const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
-  let ballot = fromNullable(vote_data.user_ballot);
-  if (ballot !== undefined && ballot['OPINION'] !== undefined){
-    return ballot['OPINION'].date;
-  }
-  return undefined;
-}
-
-const unwrapBallotCursor = (vote_data: VoteData, canVote: boolean) : Cursor | undefined => {
-  let ballot = fromNullable(vote_data.user_ballot);
-  if (ballot !== undefined && ballot['OPINION'] !== undefined){
-    let answer : OpinionAnswer | undefined = fromNullable(ballot['OPINION'].answer);
-    if (answer !== undefined){
-      return answer.cursor;
-    }
-	}
-  if (canVote){
-    return 0.0;
+const unwrapBallot = (vote_data: VoteData) : RevealedOpinionBallot | undefined => {
+  let vote_kind_ballot = fromNullable(vote_data.user_ballot);
+  if (vote_kind_ballot !== undefined && vote_kind_ballot['OPINION'] !== undefined){
+    return vote_kind_ballot['OPINION'];
   }
   return undefined;
 }
@@ -40,42 +27,57 @@ const unwrapBallotCursor = (vote_data: VoteData, canVote: boolean) : Cursor | un
 type Props = {
   sub: Sub;
   voteData: VoteData;
-  canVote: boolean;
-  voteElementId: string;
-  ballotElementId: string;
+  allowVote: boolean;
+  votePlaceholderId: string;
+  ballotPlaceholderId: string;
 };
 
-const OpinionVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: Props) => {
+const optCursorInfo = (cursor: number | undefined) : CursorInfo | undefined => {
+  if (cursor !== undefined){
+    return toCursorInfo(cursor, CONSTANTS.OPINION_INFO);
+  }
+  return undefined;
+}
+
+const OpinionVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId}: Props) => {
 
   const COUNTDOWN_DURATION_MS = 0;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>           (false                                );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>           (false                                );
-  const [voteDate,      setVoteDate     ] = useState<bigint | undefined>(unwrapBallotDate(voteData)           );
-  const [cursor,        setCursor       ] = useState<Cursor | undefined>(unwrapBallotCursor(voteData, canVote));
+  const [countdownVote, setCountdownVote] = useState<boolean>                          (false                               );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                          (false                               );
+  const [ballot,        setBallot       ] = useState<RevealedOpinionBallot | undefined>(unwrapBallot(voteData)              );
+  const [cursor,        setCursor       ] = useState<Cursor>                           (0.0                                 );
+  const [showVote,      setShowVote     ] = useState<boolean>                          (unwrapBallot(voteData) === undefined);
 
   const refreshBallot = () : Promise<void> => {
     return sub.actor.getOpinionBallot(voteData.id).then((result) => {
       if (result['ok'] !== undefined){
-        if (result['ok'].answer[0] !== undefined){
-          setCursor(result['ok'].answer[0].cursor);
-        }
-        if (result['ok'].date !== undefined){
-          setVoteDate(result['ok'].date);
-        }
-      }
+        setBallot(result['ok']);
+        setShowVote(false);
+      };
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (cursor === undefined) throw new Error("Cannot put ballot: cursor is undefined");
     return sub.actor.putOpinionBallot(voteData.id, cursor).then((result) => {
       return result['err'] ?? null;
     });
   }
 
-  const isLate = () : boolean => {
+  const isLateBallot = (ballot: RevealedOpinionBallot) : boolean => {
+    let answer = fromNullable(ballot.answer);
+    if (answer !== undefined){
+      return fromNullable(answer.late_decay) !== undefined;
+    }
+    return false;
+  }
+
+  const isLateVote = (voteData: VoteData) : boolean => {
     return voteStatusToEnum(voteData.status) === VoteStatusEnum.LOCKED;
+  }
+
+  const canVote = (voteData: VoteData) : boolean => {
+    return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
 	return (
@@ -83,24 +85,38 @@ const OpinionVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: P
     {
       createPortal(
         <>
-          { voteDate !== undefined ?
+          { 
+            !showVote && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-full`}>
-              <CursorBallot cursorInfo={cursor !== undefined ? toCursorInfo(cursor, CONSTANTS.OPINION_INFO) : undefined} dateNs={voteDate} isLate={isLate()}/>
-              <div className="ml-2 w-4 h-4" hidden={!canVote}> {/* @todo: setting a relative size does not seem to work here*/}
-                <SvgButton onClick={() => setVoteDate(undefined)} disabled={false} hidden={false}>
-                  <ReturnIcon/>
-                </SvgButton>
-              </div>
+              <CursorBallot
+                cursorInfo={ optCursorInfo(fromNullable(ballot.answer)?.cursor) } 
+                dateNs={ballot.date}
+                isLate={isLateBallot(ballot)}
+              />
+              {
+                !canVote(voteData) ? <></> :
+                voteData.id !== ballot.vote_id ?
+                  <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold
+                    ${isLateVote(voteData) ? "late-vote": ""}`}
+                    onClick={() => { setShowVote(true); }}
+                  > NEW </div> :
+                ballot.can_change ?
+                  <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
+                    <SvgButton onClick={() => { setShowVote(true); }} disabled={false} hidden={false}>
+                      <ReturnIcon/>
+                    </SvgButton>
+                  </div> : <></>
+              }
             </div> : <></>
           }
         </>,
-        getDocElementById(ballotElementId)
+        getDocElementById(ballotPlaceholderId)
       )
     }
     {
       createPortal(
         <>
-          { voteDate === undefined && cursor !== undefined ?
+          { showVote && canVote(voteData) ?
             <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
               <CursorSlider
                   cursor = { cursor }
@@ -109,7 +125,7 @@ const OpinionVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: P
                   setCursor={ setCursor }
                   onMouseUp={ () => { setCountdownVote(true)} }
                   onMouseDown={ () => { setCountdownVote(false)} }
-                  isLate={isLate()}
+                  isLate={isLateVote(voteData)}
                 />
               <UpdateProgress<PutBallotError> 
                   delay_duration_ms={COUNTDOWN_DURATION_MS}
@@ -130,7 +146,7 @@ const OpinionVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: P
             </div> : <></>
           }
         </>,
-        getDocElementById(voteElementId)
+        getDocElementById(votePlaceholderId)
       )
     }
   </>

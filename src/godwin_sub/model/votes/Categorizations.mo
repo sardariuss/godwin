@@ -79,14 +79,18 @@ module {
     _categories: Categories
   ) : IVotePolicy {
 
-    public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
+    public func isValidBallot(ballot: Ballot) : Result<(), PutBallotError> {
+      // Verify each cursor for every category is valid
+      if (not CursorMap.isValid(ballot.answer, _categories)){
+        return #err(#InvalidBallot);
+      };
+      #ok;
+    };
+
+    public func canVote(vote: Vote, principal: Principal) : Result<(), PutBallotError> {
       // Verify the user did not vote already
       if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
         return #err(#ChangeBallotNotAllowed);
-      };
-      // Verify the ballot is valid
-      if (not CursorMap.isValid(ballot.answer, _categories)){
-        return #err(#InvalidBallot);
       };
       #ok;
     };

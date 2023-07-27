@@ -34,7 +34,7 @@ export const VoterHistory = ({principal, sub, isLoggedUser, voteKind}: VoterHist
           data: item.vote[1]
         }, 
         showReopenQuestion: false,
-        canVote: isLoggedUser
+        allowVote: isLoggedUser
       }});
   }
 

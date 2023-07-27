@@ -114,6 +114,25 @@ module {
       };
     };
 
+    public func canVote(vote_id: VoteId, principal: Principal) : Result<(), PutBallotError> {
+      
+      let vote = getVote(vote_id);
+
+      // Anonymous cannot vote
+      if (Principal.isAnonymous(principal)){
+        return #err(#PrincipalIsAnonymous);
+      };
+      // The vote must not be closed
+      if (vote.status == #CLOSED){
+        return #err(#VoteClosed);
+      };
+      // Verify if the user can vote according to the set policy
+      switch(_policy.canVote(vote, principal)){
+        case(#err(err)) { #err(err); };
+        case(#ok(_)) { #ok; };
+      };
+    };
+
     public func putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
       // Prevent reentry
       if (Set.has(_ballot_locks, pnhash, (principal, id))) {
@@ -126,49 +145,51 @@ module {
       result;
     };
 
-    // @todo: it might be dangerous to check the condition before awaiting the payement, because the condition might have
-    // changed after the await, and updating the state not working in consequence.
-    // Right now it is not the case, it is just a Map.put
-    func _putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+    func _putBallot(principal: Principal, vote_id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
 
-      let vote = switch(Map.get(_register.votes, Map.nhash, id)){
-        case(null) { return #err(#VoteNotFound); };
-        case(?v) { v };
-      };
-      // Return an error if the vote is closed, else determine if the ballot will be added to the aggregate
-      let add_to_aggregate = switch(vote.status){
-        case(#OPEN)   { true;                     };
-        case(#LOCKED) { false;                    };
-        case(#CLOSED) { return #err(#VoteClosed); };
-      };
-      // Verify the principal is not anonymous
-      if (Principal.isAnonymous(principal)){
-        return #err(#PrincipalIsAnonymous);
-      };
-      
-      // Check if the user can put the ballot
-      switch(_policy.canPutBallot(vote, principal, ballot)){
+      // Verify the vote exists
+      let vote = switch(findVote(vote_id)){
         case(#err(err)) { return #err(err); };
         case(#ok(v)) { v; };
       };
 
+      // Verify the ballot is valid
+      switch(_policy.isValidBallot(ballot)){
+        case(#err(err)) { return #err(err); };
+        case(#ok) {};
+      };
+
+      // Verify the user can vote
+      switch(canVote(vote_id, principal)){
+        case(#err(err)) { return #err(err); };
+        case(#ok) {};
+      };
+
+      // Determine if the aggregate shall be updated before calling the async payin.
+      // If done after the payin, it is possible that a user successfully puts a ballot
+      // but that it does not change the result of the vote (in the case the vote closes 
+      // during the payin). We want to prevent that.
+      let update_aggregate = (vote.status == #OPEN);
+
       // Payin if any
       let result = switch(_pay_to_vote){
-        case(null) { #ok(); };
-        case(?pay_to_vote) { await* pay_to_vote.payin(id, principal); };
+        case(null) { #ok; };
+        case(?pay_to_vote) { await* pay_to_vote.payin(vote_id, principal); };
       };
       
       switch(result) {
         case(#err(err)){ #err(err); };
         case(#ok(_)){
-          // Add the ballot
-          let old_ballot = Map.put(vote.ballots, Map.phash, principal, ballot);
-          // Update the aggregate
-          if(add_to_aggregate){
-            vote.aggregate := _policy.addToAggregate(vote.aggregate, ballot, old_ballot);
+          // Get the up-to-date vote (it is required to get it here because it might have changed during the async call)
+          let updated_vote = getVote(vote_id);
+          // Put the ballot
+          let old_ballot = Map.put(updated_vote.ballots, Map.phash, principal, ballot);
+          // Update the aggregate if applicable
+          if(update_aggregate){
+            updated_vote.aggregate := _policy.addToAggregate(updated_vote.aggregate, ballot, old_ballot);
           };
           // Add the vote to the voter's history
-          _voters_history.addVote(principal, id);
+          _voters_history.addVote(principal, vote_id);
           #ok;
         };
       };
@@ -229,7 +250,8 @@ module {
         case(?b) { b; };
       };
       let answer = if(_policy.canRevealBallot(vote, caller, voter)) { ?ballot.answer; } else { null; };
-      #ok({ vote_id; date = ballot.date; answer; });
+      let can_change = Result.isOk(canVote(vote_id, caller));
+      #ok({ vote_id; date = ballot.date; can_change; answer; });
     };
 
     public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {

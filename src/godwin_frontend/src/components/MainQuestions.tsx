@@ -99,7 +99,7 @@ const MainQuestions = () => {
         question: item.question,
         statusData: item.status_data,
         showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT,
-        canVote: false
+        allowVote: false
       }}
     );
   }
@@ -115,7 +115,7 @@ const MainQuestions = () => {
           data: item.vote[1]
         }, 
         showReopenQuestion: false,
-        canVote: true
+        allowVote: true
       }});
   }
 
@@ -193,7 +193,7 @@ const MainQuestions = () => {
               query_components: queryQuestionInput,
               generate_input: (item: QuestionInput) => { return item },
               build_component: QuestionComponent,
-              generate_key: (item: QuestionInput) => { return item.question.id.toString() }
+              generate_key: (item: QuestionInput) => { return item.question_id.toString() }
             })
           }
           </div>

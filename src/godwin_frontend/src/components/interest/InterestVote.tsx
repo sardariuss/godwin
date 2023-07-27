@@ -5,33 +5,30 @@ import SvgButton                                        from "../base/SvgButton"
 import PutBallotIcon                                    from "../icons/PutBallotIcon";
 import ArrowDownIcon                                    from "../icons/ArrowDownIcon";
 import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
+import ReturnIcon                                       from "../icons/ReturnIcon";
 import { ActorContext, Sub }                            from "../../ActorContext"
-import { putBallotErrorToString }                       from "../../utils";
+import { putBallotErrorToString, VoteStatusEnum,
+  voteStatusToEnum }                                    from "../../utils";
 import { getDocElementById }                            from "../../utils/DocumentUtils";
-import { PutBallotError, VoteData, Interest }           from "../../../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteData, Interest, 
+  RevealedInterestBallot }                              from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useEffect, useContext }       from "react";
 import { createPortal }                                 from 'react-dom';
 import { fromNullable }                                 from "@dfinity/utils";
 
-const unwrapBallotDate = (vote_data: VoteData) : bigint  | undefined => {
-  let ballot = fromNullable(vote_data.user_ballot);
-  if (ballot !== undefined && ballot['INTEREST'] !== undefined){
-		return ballot['INTEREST'].date;
-	}
+const unwrapBallot = (vote_data: VoteData) : RevealedInterestBallot | undefined => {
+  let vote_kind_ballot = fromNullable(vote_data.user_ballot);
+  if (vote_kind_ballot !== undefined && vote_kind_ballot['INTEREST'] !== undefined){
+    return vote_kind_ballot['INTEREST'];
+  }
   return undefined;
 }
 
-const unwrapBallotAnswer = (vote_data: VoteData, canVote: boolean) : InterestEnum | undefined => {
-  let ballot = fromNullable(vote_data.user_ballot);
-  if (ballot !== undefined && ballot['INTEREST'] !== undefined){
-    let answer : Interest | undefined = fromNullable(ballot['INTEREST'].answer);
-    if (answer !== undefined){
-      return interestToEnum(answer);
-    }
-	}
-  if (canVote){
-    return InterestEnum.Neutral;
+const getBallotInterest = (ballot: RevealedInterestBallot) : InterestEnum | undefined => {
+  let answer : Interest | undefined = fromNullable(ballot.answer);
+  if (answer !== undefined){
+    return interestToEnum(answer);
   }
   return undefined;
 }
@@ -39,22 +36,23 @@ const unwrapBallotAnswer = (vote_data: VoteData, canVote: boolean) : InterestEnu
 type Props = {
   sub: Sub,
   voteData: VoteData;
-  canVote: boolean;
-  voteElementId: string;
-  ballotElementId: string;
+  allowVote: boolean;
+  votePlaceholderId: string;
+  ballotPlaceholderId: string;
 };
 
-const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: Props) => {
+const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>                 (false                                );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>                 (false                                );
-  const [voteDate,      setVoteDate     ] = useState<bigint | undefined>      (unwrapBallotDate(voteData)           );
-  const [interest,      setInterest     ] = useState<InterestEnum | undefined>(unwrapBallotAnswer(voteData, canVote));
-
+  const [countdownVote, setCountdownVote] = useState<boolean>                           (false                               );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                           (false                               );
+  const [ballot,        setBallot       ] = useState<RevealedInterestBallot | undefined>(unwrapBallot(voteData)              );
+  const [interest,      setInterest     ] = useState<InterestEnum>                      (InterestEnum.Neutral                );
+  const [showVote,      setShowVote     ] = useState<boolean>                           (unwrapBallot(voteData) === undefined);
+  
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
       setInterest(InterestEnum.Up);
@@ -74,23 +72,22 @@ const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: 
   const refreshBallot = () : Promise<void> => {
     return sub.actor.getInterestBallot(voteData.id).then((result) => {
       if (result['ok'] !== undefined){
-        if (result['ok'].answer[0] !== undefined){
-          setInterest(interestToEnum(result['ok'].answer[0]));
-        }
-        if (result['ok'].date !== undefined){
-          setVoteDate(result['ok'].date);
-        }
-      }
+        setBallot(result['ok']);
+        setShowVote(false);
+      };
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    if (interest === undefined)            throw new Error("Cannot put ballot: interest is undefined");
     if (interest === InterestEnum.Neutral) throw new Error("Cannot put ballot: interest is neutral");
     return sub.actor.putInterestBallot(voteData.id, enumToInterest(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
+  }
+
+  const canVote = (voteData: VoteData) : boolean => {
+    return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
   useEffect(() => {
@@ -102,17 +99,32 @@ const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: 
     {
       createPortal(
         <>
-          { voteDate !== undefined ?
-              <InterestBallot answer={interest} dateNs={voteDate}/> : <></>
+          { !showVote && ballot !== undefined ?
+            <div className={`flex flex-row justify-center items-center w-full`}>
+              <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
+              {
+                !canVote(voteData) ? <></> :
+                voteData.id !== ballot.vote_id ?
+                  <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold`}
+                    onClick={() => { setShowVote(true); }}
+                  > NEW </div> :
+                ballot.can_change ?
+                  <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
+                    <SvgButton onClick={() => { setShowVote(true); }} disabled={false} hidden={false}>
+                      <ReturnIcon/>
+                    </SvgButton>
+                  </div> : <></>
+              }
+            </div> : <></>
           }
         </>,
-        getDocElementById(ballotElementId)
+        getDocElementById(ballotPlaceholderId)
       )
     }
     {
       createPortal(
         <>
-          { voteDate === undefined && interest !== undefined ?
+          { showVote && canVote(voteData) ?
             <div className="grid grid-cols-3 w-full content-center items-center">
               <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
@@ -121,7 +133,7 @@ const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: 
                     <ArrowUpIcon/>
                   </SvgButton>
                 </div>
-                <InterestBallot answer={interest} dateNs={voteDate}/>
+                <InterestBallot answer={interest} dateNs={undefined}/>
                 <div className={`w-10 flex -m-2 justify-center`}>
                   <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
                     <ArrowDownIcon/>
@@ -157,7 +169,7 @@ const InterestVote = ({sub, voteData, canVote, voteElementId, ballotElementId}: 
             </div> : <></>
           }
         </>,
-        getDocElementById(voteElementId)
+        getDocElementById(votePlaceholderId)
       )
     }
   </>

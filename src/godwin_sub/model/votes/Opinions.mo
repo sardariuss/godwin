@@ -102,6 +102,10 @@ module {
       await* _votes.putBallot(principal, id, { answer = { cursor; late_decay; }; date; });
     };
 
+    public func canVote(vote_id: VoteId, principal: Principal) : Result<(), PutBallotError> {
+      _votes.canVote(vote_id, principal);
+    };
+
     public func findVote(id: VoteId) : Result<Vote, GetVoteError> {
       _votes.findVote(id);
     };
@@ -134,19 +138,21 @@ module {
 
   class VotePolicy(_vote_decay: WRef<DecayParameters>) : IVotePolicy {
 
-    public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
-
-      // Verify the ballot is valid
+    public func isValidBallot(ballot: Ballot) : Result<(), PutBallotError> {
       if (not Cursor.isValid(ballot.answer.cursor)){
         return #err(#InvalidBallot);
       };
+      #ok;
+    };
 
-      // If it is a late ballot and there is a previous 'official' ballot, forbid the change
-      if (Option.isSome(ballot.answer.late_decay)){
+    public func canVote(vote: Vote, principal: Principal) : Result<(), PutBallotError> {
+
+      // If the vote is locked and the user voted when it was open, forbid the change
+      if (vote.status == #LOCKED){
         switch(Map.get(vote.ballots, Map.phash, principal)){
           case(null) {};
-          case(?old) {
-            if (Option.isNull(old.answer.late_decay)) { 
+          case(?ballot) {
+            if (Option.isNull(ballot.answer.late_decay)) { 
               return #err(#ChangeBallotNotAllowed);
             };
           };

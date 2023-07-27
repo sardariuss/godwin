@@ -20,17 +20,17 @@ export type QuestionInput = {
 		data: VoteData,
 	},
 	showReopenQuestion?: boolean,
-	canVote: boolean,
+	allowVote: boolean,
 };
 
-const QuestionComponent = ({sub, question_id, question, statusData, vote, showReopenQuestion, canVote}: QuestionInput) => {
+const QuestionComponent = ({sub, question_id, question, statusData, vote, showReopenQuestion, allowVote}: QuestionInput) => {
 	
-	const [rightPlaceHolderId ] = useState<string>(question_id + "_right_placeholder" );
-	const [bottomPlaceHolderId] = useState<string>(question_id + "_bottom_placeholder");
+	const [rightPlaceholderId ] = useState<string>(question_id + "_right_placeholder" );
+	const [bottomPlaceholderId] = useState<string>(question_id + "_bottom_placeholder");
 
 	// @todo: hack to be able to initialize the placeholders before initializing the vote components
-	const [voteKind, 				 setVoteKind            ] = useState<VoteKind | undefined>(undefined);
-	const [voteData, 				 setVoteData            ] = useState<VoteData | undefined>(undefined);
+	const [voteKind, setVoteKind] = useState<VoteKind | undefined>(undefined);
+	const [voteData, setVoteData] = useState<VoteData | undefined>(undefined);
 
 	const refreshVote = () => {
 		setVoteKind(vote !== undefined ? vote.kind : undefined);
@@ -43,9 +43,9 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 
 	return (
 		<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center
-			${(vote !== undefined && voteKind === VoteKind.INTEREST) || showReopenQuestion ? "" : "pr-10"}`} id={rightPlaceHolderId}>
+			${(vote !== undefined && voteKind === VoteKind.INTEREST) || showReopenQuestion ? "" : "pr-10"}`} id={rightPlaceholderId}>
 			<div className={`flex flex-col py-1 px-1 justify-between space-y-1 
-				${(vote !== undefined && voteKind === VoteKind.INTEREST) ? "w-4/5" : "w-full"}`} id={bottomPlaceHolderId}>
+				${(vote !== undefined && voteKind === VoteKind.INTEREST) ? "w-4/5" : "w-full"}`} id={bottomPlaceholderId}>
 				<div className="flex flex-row justify-between grow">
 					<div className={`w-full justify-start text-sm font-normal break-words`}>
           	{question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
@@ -65,11 +65,11 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 			{
 				voteKind === undefined ? <></> :
 					voteKind === VoteKind.INTEREST && voteData !== undefined ?
-						<InterestVote       sub={sub} voteData={voteData} canVote={canVote} voteElementId={rightPlaceHolderId}  ballotElementId={rightPlaceHolderId}/> : 
+						<InterestVote       sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={rightPlaceholderId}  ballotPlaceholderId={rightPlaceholderId}/> : 
 					voteKind === VoteKind.OPINION && voteData !== undefined ?
-						<OpinionVote        sub={sub} voteData={voteData} canVote={canVote} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> :
+						<OpinionVote        sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={bottomPlaceholderId} ballotPlaceholderId={rightPlaceholderId}/> :
 					voteKind === VoteKind.CATEGORIZATION && voteData !== undefined ?
-						<CategorizationVote sub={sub} voteData={voteData} canVote={canVote} voteElementId={bottomPlaceHolderId} ballotElementId={rightPlaceHolderId}/> : <></>
+						<CategorizationVote sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={bottomPlaceholderId} ballotPlaceholderId={rightPlaceholderId}/> : <></>
 			}
 		</div>
 	);

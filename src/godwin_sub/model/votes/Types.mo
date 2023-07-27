@@ -104,7 +104,8 @@ module {
   };
 
   public type IVotePolicy<T, A> = {
-    canPutBallot: (Vote<T, A>, Principal, Ballot<T>) -> Result<(), PutBallotError>;
+    isValidBallot: (Ballot<T>) -> Result<(), PutBallotError>; // @todo: have another type of error
+    canVote: (Vote<T, A>, Principal) -> Result<(), PutBallotError>;
     emptyAggregate: (Time) -> A;
     addToAggregate: (A, Ballot<T>,  ?Ballot<T>) -> A;
     onStatusChanged: (VoteStatus, A, Time) -> A;
@@ -136,6 +137,7 @@ module {
   public type RevealedBallot<T> = {
     vote_id: VoteId;
     date: Time;
+    can_change: Bool;
     answer: ?T;
   };
 

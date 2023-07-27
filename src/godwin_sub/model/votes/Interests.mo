@@ -129,6 +129,10 @@ module {
       await* _pay_for_new.payout(vote_id, _pay_rules.computeAuthorPayout(vote.aggregate, closure));
     };
 
+    public func canVote(vote_id: VoteId, principal: Principal) : Result<(), PutBallotError> {
+      _votes.canVote(vote_id, principal);
+    };
+
     public func putBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {    
       
       let old_hotness = _votes.getVote(vote_id).aggregate.hotness;
@@ -181,7 +185,12 @@ module {
 
   class VotePolicy() : IVotePolicy {
 
-    public func canPutBallot(vote: Vote, principal: Principal, ballot: Ballot) : Result<(), PutBallotError> {
+    public func isValidBallot(ballot: Ballot) : Result<(), PutBallotError> {
+      // The interest is an enum, so it is always valid
+      #ok;
+    };
+
+    public func canVote(vote: Vote, principal: Principal) : Result<(), PutBallotError> {
       // Verify the user did not vote already
       if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
         return #err(#ChangeBallotNotAllowed);
