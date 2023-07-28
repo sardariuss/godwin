@@ -5,6 +5,7 @@ import GodwinSub          "../godwin_sub/main";
 import SubTypes           "../godwin_sub/model/Types";
 import UtilsTypes         "../godwin_sub/utils/Types";
 import Account            "../godwin_sub/utils/Account";
+import SubMigrationTypes  "../godwin_sub/stable/Types";
 
 import Map                "mo:map/Map";
 import Set                "mo:map/Set";
@@ -15,45 +16,49 @@ import Time               "mo:base/Time";
 import Nat64              "mo:base/Nat64";
 import Int                "mo:base/Int";
 import Iter               "mo:base/Iter";
-import Prim               "mo:prim";
-import Option             "mo:base/Option";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
+import Buffer             "mo:base/Buffer";
+import Error              "mo:base/Error";
 
 import GodwinToken        "canister:godwin_token";
 
-shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterInterface = this {
+shared({caller = _admin}) actor class GodwinMaster() : async Types.MasterInterface = this {
 
-  type Result<Ok, Err>       = Result.Result<Ok, Err>;
-  type Map<K, V>             = Map.Map<K, V>;
-  type Set<K>                = Set.Set<K>;
+  type Result<Ok, Err>        = Result.Result<Ok, Err>;
+  type Map<K, V>              = Map.Map<K, V>;
 
-  type CategoryArray         = SubTypes.CategoryArray;
-  type SchedulerParameters   = SubTypes.SchedulerParameters;
-  type ConvictionsParameters = SubTypes.ConvictionsParameters;
-  type SubParameters         = SubTypes.SubParameters;
-  type Balance               = Types.Balance;
-  type CreateSubGodwinResult = Types.CreateSubGodwinResult;
-  type TransferResult        = Types.TransferResult;
-  type MintBatchResult       = Types.MintBatchResult;
-  type CreateSubGodwinError  = Types.CreateSubGodwinError;
-  type AddGodwinSubError     = Types.AddGodwinSubError;
-  type SetUserNameError      = Types.SetUserNameError;
-  type Duration              = UtilsTypes.Duration;
-  type GodwinSub             = GodwinSub.GodwinSub;
+  type CategoryArray          = SubTypes.CategoryArray;
+  type SubParameters          = SubTypes.SubParameters;
+  type SubMigrationArgs       = SubMigrationTypes.Args;
+  type Balance                = Types.Balance;
+  type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
+  type TransferResult         = Types.TransferResult;
+  type AccessControlRole      = Types.AccessControlRole;
+  type AccessControlError     = Types.AccessControlError;
+  type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
+  type SingleSubUpgradeResult = Types.SingleSubUpgradeResult;
+  type MintBatchResult        = Types.MintBatchResult;
+  type CreateSubGodwinError   = Types.CreateSubGodwinError;
+  type SetUserNameError       = Types.SetUserNameError;
+  type Duration               = UtilsTypes.Duration;
+  type GodwinSub              = GodwinSub.GodwinSub;
 
   let { toBaseResult; } = Types;
 
-  let pthash: Map.HashUtils<(Principal, Text)> = (
-    // +% is the same as addWrap, meaning it wraps on overflow
-    func(key: (Principal, Text)) : Nat32 = (Prim.hashBlob(Prim.blobOfPrincipal(key.0)) +% Prim.hashBlob(Prim.encodeUtf8(key.1))) & 0x3fffffff,
-    func(a: (Principal, Text), b: (Principal, Text)) : Bool = a.0 == b.0 and a.1 == b.1,
-    func() = (Principal.fromText("2vxsx-fae"), "")
-  );
-
-  // @todo: keeping the actor as value seems useless
-  stable let _sub_godwins = Map.new<(Principal, Text), GodwinSub>(pthash);
+  // Map<Sub, Identifier>
+  stable let _sub_godwins = Map.new<Principal, Text>(Map.phash);
 
   stable let _user_names = Map.new<Principal, Text>(Map.phash);
+
+  // @todo
+  stable let _create_sub_cycles  = 50_000_000_000;
+  stable let _upgrade_sub_cycles = 10_000_000_000;
+
+  stable let _price_parameters = {
+    open_vote_price_e8s           = 1_000_000_000;
+    interest_vote_price_e8s       = 100_000_000;
+    categorization_vote_price_e8s = 300_000_000;
+  };
 
   stable let _validation_params = {
     username = {
@@ -94,58 +99,65 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
 
   public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters) : async CreateSubGodwinResult  {
 
-    switch(_validator.validateSubGodwinParams(identifier, sub_parameters, Set.fromIter(Map.keys(_sub_godwins), pthash))){
+    switch(_validator.validateSubGodwinParams(identifier, sub_parameters, Set.fromIter(Map.vals(_sub_godwins), Map.thash))){
       case(#err(err)) { return #err(err); };
       case(#ok()) {};
     };
-
-    // @todo
-    let price_parameters = {
-      open_vote_price_e8s           = 1_000_000_000;
-      interest_vote_price_e8s       = 100_000_000;
-      categorization_vote_price_e8s = 300_000_000;
-    };
   
-    // Add 50B cycles; creating the canister seem to take 8B, installation 6B.
-    // @todo: probably want to be more conservative in prod
-    ExperimentalCycles.add(50_000_000_000);
+    ExperimentalCycles.add(_create_sub_cycles);
 
     let new_sub = await (system GodwinSub.GodwinSub)(#new {settings = ?{ 
-      controllers = ?[Principal.fromActor(this), _controller];
+      controllers = ?[Principal.fromActor(this), _admin];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
-    }})(#init({ master = Principal.fromActor(this); sub_parameters; price_parameters; }));
+    }})(#init({ master = Principal.fromActor(this); sub_parameters; price_parameters = _price_parameters; }));
 
     let principal = Principal.fromActor(new_sub);
 
-    Map.set(_sub_godwins, pthash, (principal, identifier), new_sub);
+    Map.set(_sub_godwins, Map.phash, principal, identifier);
 
     #ok(principal);
   };
 
   // In anticipation of next versions
-  public shared func upgradeSubGodwins() : async () {
-    for (sub in Map.vals(_sub_godwins)){
-      let updated_sub = await (system GodwinSub.GodwinSub)(#upgrade(sub))(#upgrade({}));
+  public shared({caller}) func upgradeAllSubs(args: SubMigrationArgs) : async UpgradeAllSubsResult {
+    
+    switch(verifyAuthorizedAccess(caller, #ADMIN)){
+      case(#err(err)) { return #err(err); };
+      case(#ok()) {};
     };
-  };
 
-  // In anticipation of next versions
-  public shared func downgradeSubGodwins() : async () {
-    for (sub in Map.vals(_sub_godwins)){
-      let updated_sub = await (system GodwinSub.GodwinSub)(#upgrade(sub))(#downgrade({}));
+    let update_results = Buffer.Buffer<(Principal, SingleSubUpgradeResult)>(0);
+
+    for (principal in Map.keys(_sub_godwins)){
+      
+      let sub : GodwinSub = actor(Principal.toText(principal));
+
+      ExperimentalCycles.add(_upgrade_sub_cycles);
+      
+      let single_sub_result = try {
+        ignore await (system GodwinSub.GodwinSub)(#upgrade(sub))(args);
+        #ok;
+      } catch(e) {
+        #err({code = Error.code(e); message = Error.message(e); });
+      };
+      
+      update_results.add((principal, single_sub_result));
     };
+
+    #ok(Buffer.toArray(update_results));
   };
 
   public query func listSubGodwins() : async [(Principal, Text)] {
-    Iter.toArray(Map.keys(_sub_godwins));
+    Iter.toArray(Map.entries(_sub_godwins));
   };
 
   public shared({caller}) func pullTokens(user: Principal, amount: Balance, subaccount: ?Blob) : async TransferResult {
 
-    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
-      return #err(#NotAllowed);
+    switch(verifyAuthorizedAccess(caller, #SUB)){
+      case(#err(err)) { return #err(err); };
+      case(#ok()) {};
     };
 
     toBaseResult(
@@ -165,8 +177,9 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
 
   public shared({caller}) func mintBatch(args: GodwinToken.MintBatchArgs) : async MintBatchResult {
 
-    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
-      return #err(#NotAllowed);
+    switch(verifyAuthorizedAccess(caller, #SUB)){
+      case(#err(err)) { return #err(err); };
+      case(#ok()) {};
     };
 
     toBaseResult(await GodwinToken.mint_batch(args));
@@ -174,8 +187,9 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
 
   public shared({caller}) func mint(args: GodwinToken.Mint) : async TransferResult {
 
-    if(Option.isNull(Map.find(_sub_godwins, func(key: (Principal, Text), value: GodwinSub) : Bool { key.0 == caller; }))){
-      return #err(#NotAllowed);
+    switch(verifyAuthorizedAccess(caller, #SUB)){
+      case(#err(err)) { return #err(err); };
+      case(#ok()) {};
     };
 
     toBaseResult(await GodwinToken.mint(args));
@@ -198,7 +212,7 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
   // Validation functions
 
   public query func validateSubIdentifier(identifier: Text) : async Result<(), CreateSubGodwinError> {
-    _validator.validateSubIdentifier(identifier, Set.fromIter(Map.keys(_sub_godwins), pthash));
+    _validator.validateSubIdentifier(identifier, Set.fromIter(Map.vals(_sub_godwins), Map.thash));
   };
 
   public query func validateSubName(name: Text) : async Result<(), CreateSubGodwinError> {
@@ -227,6 +241,18 @@ shared({caller = _controller}) actor class GodwinMaster() : async Types.MasterIn
 
   public query({caller}) func validateUserName(name: Text) : async Result<(), SetUserNameError> {
     _validator.validateUserName(caller, name, _user_names);
+  };
+
+  private func verifyAuthorizedAccess(principal: Principal, required_role: AccessControlRole) : Result<(), AccessControlError> {
+    switch(required_role){
+      case(#ADMIN) { if(principal == _admin) { return #ok; }; };
+      case(#SUB) {
+        if(Map.has(_sub_godwins, Map.phash, principal)){
+          return #ok;
+        };
+      };
+    };
+    #err(#AccessDenied({required_role;}));
   };
 
 };

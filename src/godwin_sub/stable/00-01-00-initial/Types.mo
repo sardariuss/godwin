@@ -361,9 +361,16 @@ module {
   };
 
   // master types
-  public type MasterTransferError = TransferError or {
-    #NotAllowed;
+  public type AccessControlRole = {
+    #ADMIN;
+    #SUB;
   };
+
+  public type AccessControlError = {
+    #AccessDenied: ({ required_role: AccessControlRole });
+  };
+
+  public type MasterTransferError = TransferError or AccessControlError;
 
   // sub/model/token types
   public type ReapAccountResult = Result<TxIndex, ReapAccountError>;

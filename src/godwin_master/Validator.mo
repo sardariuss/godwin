@@ -36,7 +36,7 @@ module {
 
   public class Validator(_validation: ValidationParams) {
 
-    public func validateSubGodwinParams(identifier: Text, params: SubParameters, sub_identifiers: Set<(Principal, Text)>) : Result<(), CreateSubGodwinError> {
+    public func validateSubGodwinParams(identifier: Text, params: SubParameters, sub_identifiers: Set<Text>) : Result<(), CreateSubGodwinError> {
 
       type Res = Result<(), CreateSubGodwinError>;
       type Err = CreateSubGodwinError;
@@ -57,7 +57,7 @@ module {
                                 validateMinimumInterestScore(minimum_interest_score); })})})})})})})})})})});
     };
 
-    public func validateSubIdentifier(new: Text, sub_identifiers: Set<(Principal, Text)>) : Result<(), CreateSubGodwinError> {
+    public func validateSubIdentifier(new: Text, sub_identifiers: Set<Text>) : Result<(), CreateSubGodwinError> {
       let { min_length; max_length; } = _validation.subgodwin.identifier;
       if (Text.size(new) < min_length){
         return #err(#IdentifierTooShort({min_length}));
@@ -68,7 +68,7 @@ module {
       if (not TextUtils.isAlphaNumeric(new)){
         return #err(#InvalidIdentifier);
       };
-      if (Option.isSome(Set.find(sub_identifiers, func((_, identifier) : (Principal, Text)) : Bool { identifier == new; }))){
+      if (Set.has(sub_identifiers, Map.thash, new)){
         return #err(#IdentifierAlreadyTaken);
       };
       #ok;

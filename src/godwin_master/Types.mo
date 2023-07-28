@@ -1,6 +1,7 @@
 import Result     "mo:base/Result";
 import Nat64      "mo:base/Nat64";
 import Nat        "mo:base/Nat";
+import Error      "mo:base/Error";
 
 import TokenTypes "../godwin_token/Types";
 import UtilsTypes "../godwin_sub/utils/Types";
@@ -42,6 +43,26 @@ module {
     };
   };
 
+  public type AccessControlRole = {
+    #ADMIN;
+    #SUB;
+  };
+
+  public type AccessControlError = {
+    #AccessDenied: ({ required_role: AccessControlRole });
+  };
+
+  public type UpgradeAllSubsResult = Result<ListSubUpgradesResults, AccessControlError>;
+
+  public type ListSubUpgradesResults = [(Principal, SingleSubUpgradeResult)];
+
+  public type SingleSubUpgradeResult = Result<(), FailedUpgradeError>;
+  
+  public type FailedUpgradeError = {
+    code: Error.ErrorCode;
+    message: Text;
+  };
+
   public type AddGodwinSubError = {
     #NotAuthorized;
     #AlreadyAdded;
@@ -62,9 +83,7 @@ module {
     #MinimumInterestScoreTooLow: ({minimum         : Float;   });
   };
 
-  public type TransferError = TokenTypes.TransferError or {
-    #NotAllowed;
-  }; // @todo: add the CanisterCallError
+  public type TransferError = TokenTypes.TransferError or AccessControlError; // @todo: add the CanisterCallError
 
   public type SetUserNameError = {
     #AnonymousNotAllowed;
@@ -100,7 +119,7 @@ module {
       case (#Duplicate({duplicate_of})) { "Duplicate (duplicate_of=" # Nat.toText(duplicate_of) # ")"; };
       case (#TemporarilyUnavailable) { "TemporarilyUnavailable" };
       case (#GenericError({error_code; message;})) { "GenericError (error_code=" # Nat.toText(error_code) # ", message=" # message # ")"; };
-      case (#NotAllowed) { "NotAllowed" };
+      case (#AccessDenied(_)) { "AccessDenied" };
     };
   };
 

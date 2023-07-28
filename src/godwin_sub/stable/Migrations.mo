@@ -37,7 +37,7 @@ module {
         state := downgrade(state, date, downgrade_args); 
       };
       case(_){ 
-        Debug.print("Migration ignored: use #upgrade and #downgrade args to migrate state");
+        Debug.print("Migration ignored: use #upgrade or #downgrade args to effectively migrate state");
       };
     };
 
