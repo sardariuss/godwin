@@ -69,6 +69,7 @@ module {
   type StatusData                  = Types.StatusData;
   type VoteData                    = Types.VoteData;
   type VoteKindBallot              = Types.VoteKindBallot;
+  type BasePriceParameters         = Types.BasePriceParameters;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -100,7 +101,8 @@ module {
   type RemoveCategoryError         = Types.RemoveCategoryError;
   type GetQuestionError            = Types.GetQuestionError;
   type ReopenQuestionError         = Types.ReopenQuestionError;
-  type VerifyCredentialsError      = Types.VerifyCredentialsError;
+  type AccessControlError          = Types.AccessControlError;
+  type AccessControlRole           = Types.AccessControlRole;
   type SetPickRateError            = Types.SetPickRateError;
   type SetSchedulerParametersError = Types.SetSchedulerParametersError;
   type FindBallotError             = Types.FindBallotError;
@@ -137,7 +139,7 @@ module {
     };
 
     public func addCategory(caller: Principal, category: Category, info: CategoryInfo) : Result<(), AddCategoryError> {
-      Result.chain<(), (), AddCategoryError>(verifyCredentials(caller), func() {
+      Result.chain<(), (), AddCategoryError>(verifyAuthorizedAccess(caller, #MASTER), func() {
         Result.mapOk<(), (), AddCategoryError>(Utils.toResult(not _model.getCategories().has(category), #CategoryAlreadyExists), func() {
           _model.getCategories().set(category, info);
         })
@@ -145,7 +147,7 @@ module {
     };
 
     public func removeCategory(caller: Principal, category: Category) : Result<(), RemoveCategoryError> {
-      Result.chain<(), (), RemoveCategoryError>(verifyCredentials(caller), func () {
+      Result.chain<(), (), RemoveCategoryError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         Result.mapOk<(), (), RemoveCategoryError>(Utils.toResult(_model.getCategories().has(category), #CategoryDoesntExist), func() {
           _model.getCategories().delete(category);
         })
@@ -157,8 +159,18 @@ module {
     };
 
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
-      Result.mapOk<(), (), SetSchedulerParametersError>(verifyCredentials(caller), func () {
+      Result.mapOk<(), (), SetSchedulerParametersError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setSchedulerParameters(params);
+      });
+    };
+
+    public func getBasePriceParameters() : BasePriceParameters {
+      _model.getPayRules().getBasePriceParameters();
+    };
+
+    public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
+      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
+        _model.getPayRules().setBasePriceParameters(params);
       });
     };
 
@@ -474,11 +486,14 @@ module {
       };
     };
 
-    func verifyCredentials(principal: Principal) : Result<(), VerifyCredentialsError> {
-      Result.mapOk<(), (), VerifyCredentialsError>(Utils.toResult(principal == _model.getMaster(), #InsufficientCredentials), (func(){}));
+    private func verifyAuthorizedAccess(principal: Principal, required_role: AccessControlRole) : Result<(), AccessControlError> {
+      switch(required_role){
+        case(#MASTER) { if(principal == _model.getMaster()) { return #ok; }; };
+      };
+      #err(#AccessDenied({required_role;}));
     };
 
-    func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
+    private func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
 
       let current = _model.getStatusManager().getCurrentStatus(question_id);
 

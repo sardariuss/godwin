@@ -1,5 +1,6 @@
 import Types                  "Types";
 import MigrationTypes         "../Types";
+// @todo: do not use model modules
 import Categories             "../../model/Categories";
 import Decay                  "../../model/votes/Decay";
 import Questions              "../../model/questions/Questions";	
@@ -24,7 +25,7 @@ module {
 
   type SubParameters              = Types.SubParameters;
   type SchedulerParameters        = Types.SchedulerParameters;
-  type PriceParameters            = Types.PriceParameters;
+  type BasePriceParameters        = Types.BasePriceParameters;
   type DecayParameters            = Types.DecayParameters;
   type VoteId                     = Types.VoteId;
   type QuestionId                 = Types.QuestionId;
@@ -53,7 +54,7 @@ module {
         };
       });
       scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
-      price_params                = Ref.init<PriceParameters>(price_parameters);
+      price_params                = Ref.init<BasePriceParameters>(price_parameters);
       convictions_params                = {
         opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(convictions.vote_half_life, date));
         late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(convictions.late_ballot_half_life, date));

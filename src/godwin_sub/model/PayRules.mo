@@ -18,7 +18,7 @@ module {
   type Ref<K>               = Ref.Ref<K>;
   type WRef<K>              = WRef.WRef<K>;
 
-  type PriceParameters      = Types.PriceParameters;
+  type BasePriceParameters  = Types.BasePriceParameters;
   type Appeal               = VoteTypes.Appeal;
   type Interest             = VoteTypes.Interest;
   type CursorMap            = VoteTypes.CursorMap;
@@ -61,7 +61,7 @@ module {
     exponent = 2.5; // The greater, the more the payout rules are attenuated for small number of voters
   };
 
-  public func build(price_params: Ref<PriceParameters>) : PayRules {
+  public func build(price_params: Ref<BasePriceParameters>) : PayRules {
     PayRules(WRef.WRef(price_params));
   };
 
@@ -97,7 +97,15 @@ module {
     { shares; reward_ratio; };
   };
 
-  public class PayRules(_price_params: WRef<PriceParameters>) {
+  public class PayRules(_price_params: WRef<BasePriceParameters>) {
+
+    public func getBasePriceParameters(): BasePriceParameters {
+      _price_params.get();
+    };
+
+    public func setBasePriceParameters(params: BasePriceParameters) {
+      _price_params.set(params);
+    };
 
     public func getOpenVotePrice(): Balance {
       _price_params.get().open_vote_price_e8s;

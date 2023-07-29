@@ -86,7 +86,7 @@ module {
     late_ballot_half_life: Duration;
   };
 
-  public type PriceParameters = {
+  public type BasePriceParameters = {
     open_vote_price_e8s: Nat;
     interest_vote_price_e8s: Nat;
     categorization_vote_price_e8s: Nat;
@@ -179,15 +179,19 @@ module {
     #PrincipalIsAnonymous;
   };
 
-  public type VerifyCredentialsError = {
-    #InsufficientCredentials;
+  public type AccessControlRole = {
+    #MASTER;
+  };
+  
+  public type AccessControlError = {
+    #AccessDenied: ({required_role: AccessControlRole;})
   };
 
-  public type AddCategoryError = VerifyCredentialsError or {
+  public type AddCategoryError = AccessControlError or {
     #CategoryAlreadyExists;
   };
 
-  public type RemoveCategoryError = VerifyCredentialsError or {
+  public type RemoveCategoryError = AccessControlError or {
     #CategoryDoesntExist;
   };
 
@@ -200,9 +204,9 @@ module {
     #OpenInterestVoteFailed: OpenVoteError;
   };
 
-  public type SetPickRateError = VerifyCredentialsError;
+  public type SetPickRateError = AccessControlError;
 
-  public type SetSchedulerParametersError = VerifyCredentialsError;
+  public type SetSchedulerParametersError = AccessControlError;
 
   public type GetUserConvictionsError = PrincipalError;
 

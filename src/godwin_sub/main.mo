@@ -30,7 +30,8 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type GetQuestionError             = Types.GetQuestionError;
   type OpenQuestionError            = Types.OpenQuestionError;
   type ReopenQuestionError          = Types.ReopenQuestionError;
-  type VerifyCredentialsError       = Types.VerifyCredentialsError;
+  type AccessControlError           = Types.AccessControlError;
+  type BasePriceParameters          = Types.BasePriceParameters;
   type PrincipalError               = Types.PrincipalError;
   type SetPickRateError             = Types.SetPickRateError;
   type SchedulerParameters          = Types.SchedulerParameters;
@@ -73,9 +74,9 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   _state := Migrations.migrate(_state, Time.now(), args);
 
+  // In subsequent versions, the facade will be set to null if the version of the state is not the last one
   let _facade = switch(_state){
     case(#v0_1_0(state)) { ?Factory.build(state); };
-    case(_) { null; }; // Required in anticipation of next versions
   };
 
   public query func getName() : async Text {
@@ -112,6 +113,14 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
     getFacade().setSchedulerParameters(caller, params);
+  };
+
+  public query func getBasePriceParameters() : async BasePriceParameters {
+    getFacade().getBasePriceParameters();
+  };
+
+  public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {
+    getFacade().setBasePriceParameters(caller, params);
   };
 
   public query func searchQuestions(text: Text, limit: Nat) : async [QuestionId] {

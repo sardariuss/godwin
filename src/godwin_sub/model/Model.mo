@@ -1,6 +1,7 @@
 import Types               "Types";
 import StatusManager       "StatusManager";
 import Categories          "Categories";
+import PayRules            "PayRules";
 import Categorizations     "votes/Categorizations";
 import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
@@ -25,6 +26,7 @@ module {
   type SchedulerParameters  = Types.SchedulerParameters;
   type InterestMomentumArgs = VoteTypes.InterestMomentumArgs;
   type Categories           = Categories.Categories;
+  type PayRules             = PayRules.PayRules;
   type Questions            = Questions.Questions;
   type QuestionQueries      = QuestionTypes.QuestionQueries;
   type StatusManager        = StatusManager.StatusManager;
@@ -40,6 +42,7 @@ module {
     _momentum_args: WRef<InterestMomentumArgs>,
     _scheduler_params: WRef<SchedulerParameters>,
     _categories: Categories,
+    _pay_rules: PayRules,
     _questions: Questions,
     _status_manager: StatusManager,
     _queries: QuestionQueries,
@@ -62,7 +65,7 @@ module {
       _name.set(name);
     };
 
-    public func getMaster(): Principal {
+    public func getMaster() : Principal {
       _master.get();
     };
 
@@ -86,43 +89,47 @@ module {
       _scheduler_params.set(params);
     };
 
-    public func getCategories(): Categories {
+    public func getCategories() : Categories {
       _categories;
     };
 
-    public func getQuestions(): Questions {
+    public func getPayRules() : PayRules {
+      _pay_rules;
+    };
+
+    public func getQuestions() : Questions {
       _questions;
     };
 
-    public func getStatusManager(): StatusManager {
+    public func getStatusManager() : StatusManager {
       _status_manager;
     };
 
-    public func getQueries(): QuestionQueries {
+    public func getQueries() : QuestionQueries {
       _queries;
     };
 
-    public func getInterestVotes(): InterestVotes {
+    public func getInterestVotes() : InterestVotes {
       _interest_votes;
     };
 
-    public func getOpinionVotes(): OpinionVotes {
+    public func getOpinionVotes() : OpinionVotes {
       _opinion_votes;
     };
 
-    public func getCategorizationVotes(): CategorizationVotes {
+    public func getCategorizationVotes() : CategorizationVotes {
       _categorization_votes;
     };
 
-    public func getInterestJoins(): Joins {
+    public func getInterestJoins() : Joins {
       _interest_joins;
     };
 
-    public func getOpinionJoins(): Joins {
+    public func getOpinionJoins() : Joins {
       _opinion_joins;
     };
 
-    public func getCategorizationJoins(): Joins {
+    public func getCategorizationJoins() : Joins {
       _categorization_joins;
     };
 

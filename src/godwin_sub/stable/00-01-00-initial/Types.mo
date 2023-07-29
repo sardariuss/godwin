@@ -32,7 +32,7 @@ module {
     categories                  : Map<Category, CategoryInfo>;
     questions                   : QuestionsRegister;
     momentum_args               : Ref<InterestMomentumArgs>;
-    price_params                : Ref<PriceParameters>;
+    price_params                : Ref<BasePriceParameters>;
     scheduler_params            : Ref<SchedulerParameters>;
     convictions_params          : {
       opinion_vote                 : Ref<DecayParameters>;
@@ -80,7 +80,7 @@ module {
   public type InitArgs = {
     master: Principal;
     sub_parameters: SubParameters;
-    price_parameters: PriceParameters;
+    price_parameters: BasePriceParameters;
   };
   public type UpgradeArgs = {
   };
@@ -268,7 +268,7 @@ module {
     rejected_status_duration  : Duration;
   };
 
-  public type PriceParameters = {
+  public type BasePriceParameters = {
     open_vote_price_e8s: Nat;
     interest_vote_price_e8s: Nat;
     categorization_vote_price_e8s: Nat;

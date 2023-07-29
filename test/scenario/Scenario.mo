@@ -126,7 +126,7 @@ module {
       case(#Duplicate(_))             { "Duplicate";                                     };
       case(#TemporarilyUnavailable)   { "TemporarilyUnavailable";                        };
       case(#GenericError(_))          { "GenericError";                                  };
-      case(#NotAllowed)               { "NotAllowed";                                    };
+      case(#AccessDenied(_))          { "AccessDenied";                                  };
     };
   };
 

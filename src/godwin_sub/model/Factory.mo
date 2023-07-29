@@ -102,6 +102,7 @@ module {
       WRef.WRef(state.momentum_args),
       WRef.WRef(state.scheduler_params),
       categories,
+      pay_rules,
       questions,
       status_manager,
       queries,

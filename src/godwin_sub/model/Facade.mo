@@ -63,6 +63,7 @@ module {
   type StatusInfo                   = Types.StatusInfo;
   type Question                     = Types.Question;
   type Status                       = Types.Status;
+  type BasePriceParameters          = Types.BasePriceParameters;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
@@ -78,7 +79,7 @@ module {
   type RemoveCategoryError          = Types.RemoveCategoryError;
   type GetQuestionError             = Types.GetQuestionError;
   type ReopenQuestionError          = Types.ReopenQuestionError;
-  type VerifyCredentialsError       = Types.VerifyCredentialsError;
+  type AccessControlError           = Types.AccessControlError;
   type SetPickRateError             = Types.SetPickRateError;
   type SetSchedulerParametersError  = Types.SetSchedulerParametersError;
   type FindBallotError              = Types.FindBallotError;
@@ -125,6 +126,14 @@ module {
 
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
       _controller.setSchedulerParameters(caller, params);
+    };
+
+    public func getBasePriceParameters() : BasePriceParameters {
+      _controller.getBasePriceParameters();
+    };
+    
+    public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
+      _controller.setBasePriceParameters(caller, params);
     };
 
     public func searchQuestions(text: Text, limit: Nat) : [Nat] {

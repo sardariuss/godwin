@@ -1,47 +1,28 @@
-import Result     "mo:base/Result";
-import Nat64      "mo:base/Nat64";
-import Nat        "mo:base/Nat";
-import Error      "mo:base/Error";
+import TokenTypes        "../godwin_token/Types";
+import UtilsTypes        "../godwin_sub/utils/Types";
+import SubMigrationTypes "../godwin_sub/stable/Types";
+import StableTypes       "stable/Types";
 
-import TokenTypes "../godwin_token/Types";
-import UtilsTypes "../godwin_sub/utils/Types";
+import Result      "mo:base/Result";
+import Nat64       "mo:base/Nat64";
+import Nat         "mo:base/Nat";
+import Error       "mo:base/Error";
 
 module {
 
-  type Result<Ok, Err>       = Result.Result<Ok, Err>;
+  type Result<Ok, Err> = Result.Result<Ok, Err>;
 
-  type Duration              = UtilsTypes.Duration;
+  public type Duration = UtilsTypes.Duration;
 
-  public type ValidationParams = {
-    username: {
-      min_length: Nat;
-      max_length: Nat;
-    };
-    subgodwin: {
-      identifier: {
-        min_length: Nat;
-        max_length: Nat;
-      };
-      subname: {
-        min_length: Nat;
-        max_length: Nat;
-      };
-      scheduler_params: {
-        minimum_duration: Duration;
-        maximum_duration: Duration;
-      };
-      convictions_params: {
-        minimum_duration: Duration;
-        maximum_duration: Duration;
-      };
-      question_char_limit: {
-        maximum: Nat;
-      };
-      minimum_interest_score: {
-        minimum: Float;
-      };
-    };
-  };
+  public type SubMigrationArgs = SubMigrationTypes.Args;
+
+  public type MigrationArgs = StableTypes.Args;
+
+  public type CyclesParameters = StableTypes.Current.CyclesParameters;
+
+  public type BasePriceParameters = StableTypes.Current.BasePriceParameters;
+
+  public type ValidationParams = StableTypes.Current.ValidationParams;
 
   public type AccessControlRole = {
     #ADMIN;

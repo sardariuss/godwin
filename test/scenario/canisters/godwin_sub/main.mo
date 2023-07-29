@@ -15,7 +15,7 @@ import Debug         "mo:base/Debug";
 
 actor class GodwinSubScenario(
   sub_parameters: Types.SubParameters,
-  price_parameters: Types.PriceParameters
+  price_parameters: Types.BasePriceParameters
 ){
 
   // For convenience: from base module
