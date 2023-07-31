@@ -98,7 +98,7 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
       createPortal(
         <>
           { !showVote && ballot !== undefined ?
-            <div className={`flex flex-row justify-center items-center w-20 pr-5`}>
+            <div className={`flex flex-row justify-center items-center w-20`}>
               <CursorBallot cursorInfo={getOptStrongestCategory(fromNullable(ballot.answer), sub)} dateNs={ballot.date}/> 
               {
                 !canVote(voteData) ? <></> :

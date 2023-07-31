@@ -148,7 +148,7 @@ const MainQuestions = () => {
         <div className="flex flex-col items-center w-full">
           <div className="flex flex-col sticky top-0 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <SubBanner sub={sub}/>
-            <div className="flex flex-col border-x dark:border-gray-700 w-1/3">
+            <div className="flex flex-col border-x dark:border-gray-700 w-1/3 bg-white dark:bg-slate-900">
               <div className="border-b dark:border-gray-700 w-full">
                 <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                 {
@@ -160,12 +160,6 @@ const MainQuestions = () => {
                 }
                 </ul>
               </div>
-              {
-                currentMainTab === MainTab.HOME ?
-                <div className="border-b dark:border-gray-700">
-                  <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null} canSelectSub={false}></OpenQuestion>
-                </div> : <></>
-              }
               <div className="border-b dark:border-gray-700">
                 <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                 {
@@ -187,18 +181,24 @@ const MainQuestions = () => {
             </div>
           </div>
           <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
-          <div className="w-full flex">
-          {
-            React.createElement(ListComponents<QuestionInput, QuestionInput>, {
-              query_components: queryQuestionInput,
-              generate_input: (item: QuestionInput) => { return item },
-              build_component: QuestionComponent,
-              generate_key: (item: QuestionInput) => { return item.question_id.toString() }
-            })
-          }
+            {
+              currentMainTab === MainTab.HOME ?
+              <div className="border-b dark:border-gray-700">
+                <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null} canSelectSub={false}></OpenQuestion>
+              </div> : <></>
+            }
+            <div className="w-full flex">
+            {
+              React.createElement(ListComponents<QuestionInput, QuestionInput>, {
+                query_components: queryQuestionInput,
+                generate_input: (item: QuestionInput) => { return item },
+                build_component: QuestionComponent,
+                generate_key: (item: QuestionInput) => { return item.question_id.toString() }
+              })
+            }
+            </div>
           </div>
         </div>
-      </div>
     )
 	);
 };

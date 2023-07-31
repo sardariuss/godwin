@@ -1,7 +1,7 @@
-import { Sub }      from "../ActorContext";
-import Momentum     from "./Momentum";
+import { Sub }             from "../ActorContext";
+import Momentum            from "./Momentum";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 type Props = {
   sub: Sub;

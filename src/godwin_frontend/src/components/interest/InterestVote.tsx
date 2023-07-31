@@ -100,7 +100,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { !showVote && ballot !== undefined ?
-            <div className={`grid grid-cols-3 w-36 content-center items-center pr-10`}>
+            <div className={`grid grid-cols-3 w-36 content-center items-center pr-5`}>
               <div className={`w-full flex flex-col col-span-2`}>
                 <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
                 {
@@ -127,7 +127,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className={`grid grid-cols-3 w-36 content-center items-center pr-10`}>
+            <div className={`grid grid-cols-3 w-36 content-center items-center pr-5`}>
               <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
                 <div className={`w-10 flex -m-2 justify-center`}>

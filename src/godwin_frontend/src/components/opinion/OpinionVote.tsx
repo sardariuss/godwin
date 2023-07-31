@@ -122,8 +122,8 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
         <>
           { showVote && canVote(voteData) ?
             <div className={`grid grid-cols-10 items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-              <div className="col-span-2"> { /* spacer to center the content */ }</div>
-              <div className="col-span-6">
+              <div className="col-span-3"> { /* spacer to center the content */ }</div>
+              <div className="col-span-4">
                 <CursorSlider
                     cursor = { cursor }
                     polarizationInfo={ CONSTANTS.OPINION_INFO }
@@ -134,7 +134,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
                     isLate={isLateVote(voteData)}
                   />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1">
                 <UpdateProgress<PutBallotError> 
                     delay_duration_ms={COUNTDOWN_DURATION_MS}
                     update_function={putBallot}
@@ -152,6 +152,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
                   </div>
                 </UpdateProgress>
               </div>
+              <div className="col-span-2"> { /* spacer to center the content */ }</div>
             </div> : <></>
           }
         </>,

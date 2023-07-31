@@ -49,7 +49,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 		<>
 		{
 			hideQuestion ? <></> :
-			<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-10 items-center`} id={rightPlaceholderId}>
+			<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 px-5 items-center`} id={rightPlaceholderId}>
 				<div className={`flex flex-col py-1 px-1 justify-between space-y-1 w-full`} id={bottomPlaceholderId}>
 					<div className="flex flex-row justify-between grow">
 						<div className={`w-full justify-start text-sm font-normal break-words`}>
@@ -57,7 +57,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 						</div>
 						{
 							showReopenQuestion ?
-								<div className="flex flex-row grow self-start justify-end mr-5">
+								<div className="flex flex-row grow self-start justify-end">
 									<ReopenButton actor={sub.actor} questionId={question_id} onReopened={()=>{setHideQuestion(true)}}/>
 								</div> : <></>
 						}
