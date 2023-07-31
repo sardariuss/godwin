@@ -60,7 +60,6 @@ export const ActorContext = React.createContext<{
   getPrincipal: () => Principal.anonymous()
 });
 
-// @todo: remove the console.logs
 export function useAuthClient() {
   const navigate = useNavigate();
 
@@ -84,14 +83,12 @@ export function useAuthClient() {
       // 7 days in nanoseconds
       maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
       onSuccess: () => {
-        //console.log("Loggin successful");
         setIsAuthenticated(true);
       },
     });
   };
 
   const initAirdrop = () => {
-    //console.log("Initializing airdrop actor")
     if (isAuthenticated) {
       const actor = createAirdrop(airdropId as string, {
         agentOptions: {
@@ -102,11 +99,9 @@ export function useAuthClient() {
     } else {
       setAirdrop(godwin_airdrop);
     }
-    //console.log("Airdrop actor initialized")
   }
 
   const initMaster = () => {
-    //console.log("Initializing master actor")
     if (isAuthenticated) {
       const actor = createMaster(masterId as string, {
         agentOptions: {
@@ -117,19 +112,18 @@ export function useAuthClient() {
     } else {
       setMaster(godwin_master);
     }
-    //console.log("Master actor initialized")
   }
 
   const logout = () => {
-    //console.log("Logging out")
     authClient?.logout().then(() => {
+      // Somehow if only the isAuthenticated flag is set to false, the next login will fail
+      // Refreshing the auth client fixes this behavior
+      refreshAuthClient();
       navigate("/");
-      setIsAuthenticated(false);
     });
   }
 
   const addSub = async (principal: Principal, id: string) : Promise<void> => {
-    //console.log("Adding sub")
     let actor = createSub(principal, {
       agentOptions: {
         identity: authClient?.getIdentity(),
@@ -139,11 +133,9 @@ export function useAuthClient() {
     let categories = toMap(await actor.getCategories());
     let scheduler_parameters = await actor.getSchedulerParameters();
     setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters}));
-    //console.log("Sub added")
   }
 
   const fetchSubs = async() => {
-    //console.log("Fetching subs")
     let newSubs = new Map<string, Sub>();
     let listSubs = await master.listSubGodwins();
 
@@ -161,7 +153,6 @@ export function useAuthClient() {
 
     setSubs(newSubs);
     setSubsFetched(true);
-    //console.log("Subs fetched")
   }
 
   const refreshUserAccount = () => {
@@ -202,60 +193,46 @@ export function useAuthClient() {
     return authClient?.getIdentity().getPrincipal() ?? Principal.anonymous();
   };
 
-  useEffect(() => {
-    //console.log("Use effect []");
+  const refreshAuthClient = () => {
     AuthClient.create({
       idleOptions: {
         disableDefaultIdleCallback: true,
         disableIdle: true
       }
     }).then(async (client) => {
-      //console.log("Before isAuthenticated")
       const is_authenticated = await client.isAuthenticated();
       setAuthClient(client);
       setIsAuthenticated(is_authenticated);
-      //console.log("After isAuthenticated: " + is_authenticated);
     })
     .catch((error) => {
       console.error(error);
       setAuthClient(undefined);
       setIsAuthenticated(false);
     });
+  };
+
+  useEffect(() => {
+    refreshAuthClient();
   }, []);
 
   useEffect(() => {
-    //console.log("Use effect [subsFetched]");
     if (!subsFetched) {
       fetchSubs();
     }
   }, [subsFetched]);
 
-  // Need to fetch subs when master changes, so the subs are logged in/out too
   useEffect(() => {
-    //console.log("Use effect [master]");
-    fetchSubs();
-  }, [master]);
-
-  useEffect(() => {
-    //console.log("Use effect [isAuthenticated]");
     initMaster();
     initAirdrop();
+    refreshUserAccount();
+    refreshLoggedUserName();
+    fetchSubs();
   }, [isAuthenticated]);
 
+  // Refreshing balance when userAccount changes
   useEffect(() => {
-    //console.log("Use effect [master, isAuthenticated]");
-    refreshUserAccount();
-  }, [master, isAuthenticated]);
-
-  useEffect(() => {
-    //console.log("Use effect [token, userAccount]");
     refreshBalance();
-  }, [token, userAccount]);
-
-  useEffect(() => {
-    //console.log("Use effect [master, authClient]");
-    refreshLoggedUserName();
-  }, [master, authClient]);
+  }, [userAccount]);
 
   return {
     authClient,
