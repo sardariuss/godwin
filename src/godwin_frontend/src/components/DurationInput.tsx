@@ -68,7 +68,7 @@ const DurationInput = ({id, label, input, onInputChange, validate} : DurationInp
   }, [duration]);
 
   return (
-    <div className="relative pb-1 w-54">
+    <div className="relative pb-1 w-60">
       <div className="flex flex-row gap-x-2 items-center">
         <input dir="rtl"
           id={id}

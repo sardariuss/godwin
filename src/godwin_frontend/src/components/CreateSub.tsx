@@ -8,11 +8,14 @@ import Spinner                                                                fr
 import Balance                                                                from "./base/Balance";
 import SvgButton                                                              from "./base/SvgButton";
 import CONSTANTS                                                              from "../Constants";
-import { createSubResultToError }                                             from "../utils";
+import { createSubResultToError, createSubGodwinErrorToString }               from "../utils";
 import { ActorContext }                                                       from "../ActorContext"
 import { Category, CategoryInfo, SchedulerParameters, ConvictionsParameters } from "../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useContext }                                        from "react";
+import { Tooltip }                                                            from "@mui/material";
+import ErrorOutlineIcon                                                       from '@mui/icons-material/ErrorOutline';
+import { useNavigate }                                                        from "react-router-dom";
 
 const createDimension = () : [Category, CategoryInfo] => { 
   return [
@@ -26,7 +29,7 @@ const createDimension = () : [Category, CategoryInfo] => {
 
 const CreateSub = () => {
 
-  const { master, refreshBalance } = useContext(ActorContext);
+  const { master, refreshBalance, addSub } = useContext(ActorContext);
 
   const [name,                  setName                 ] = useState<string>                    (""                                                         );
   const [identifier,            setIdentifier           ] = useState<string>                    (""                                                         );
@@ -42,6 +45,9 @@ const CreateSub = () => {
   const [showConvictionsParams, setShowConvictionsParams] = useState<boolean>                   (false                                                      );
 
   const [submitting,            setSubmitting           ] = useState<boolean>                   (false                                                      );
+  const [error,                 setError                ] = useState<string | null>             (null                                                       );
+
+  const navigate = useNavigate();
 
   const updateCategory = (index: number, to_update: [Category, CategoryInfo]) => {
     setCategories( old => { 
@@ -53,21 +59,31 @@ const CreateSub = () => {
   }
 
   const createSubGodwin = async () => {
+    setError(null);
     setSubmitting(true);
+    
     master.createSubGodwin(identifier, { 
       name,
       categories,
       scheduler: schedulerParameters,
       convictions: convictionsParameters,
-      minimum_interest_score: 1.0,
-      character_limit: BigInt(200)
+      minimum_interest_score: minimumInterestScore,
+      character_limit: characterLimit
     }).then((result) => {
-      console.log(result);
-      refreshBalance();
+      if (result['ok'] !== undefined){
+        addSub(result['ok'], identifier).then(() => {
+          navigate("/g/" + identifier);
+        }).catch((err) => {
+          setError(err.toString());
+        });
+      } else if (result['err'] !== undefined){
+        setError(createSubGodwinErrorToString(result['err']));
+      }
     }).catch((err) => {
-      console.log(err);
+      setError(err.toString());
     }).finally(() => {
       setSubmitting(false);
+      refreshBalance();
     });
   }
 
@@ -192,23 +208,36 @@ const CreateSub = () => {
             validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
-      <button 
-        className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center my-2"
-        type="submit"
-        onClick={(e) => createSubGodwin()}
-        disabled={submitting}
-      >
-        {
-          submitting ?
-          <div className="w-5 h-5">
-            <Spinner/>
-          </div> :
-          <div className="flex flex-row items-center gap-x-1 text-white">
-            Create sub
-            <Balance amount={BigInt(1_000_000_000)}/>
+      <div className="flex flex-row items-center gap-x-2">
+        <button 
+          className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center my-2"
+          type="submit"
+          onClick={(e) => createSubGodwin()}
+          disabled={submitting}
+        >
+          {
+            submitting ?
+            <div className="w-5 h-5">
+              <Spinner/>
+            </div> :
+            <div className="flex flex-row items-center gap-x-1 text-white">
+              Create sub
+              <Balance amount={BigInt(1_000_000_000)}/>
+            </div>
+          }
+        </button>
+        <div className="flex flex-col w-6 min-w-6 items-center text-sm">
+          {
+            error !== null ?
+            <div className="w-full">
+              <Tooltip title={error} arrow>
+                <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+              </Tooltip>
+            </div> : 
+            <></>
+          }
           </div>
-        }
-      </button>
+      </div>
     </div>
   );
 }

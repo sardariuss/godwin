@@ -201,7 +201,7 @@ module {
       };
       // @todo: risk of reentry, user will loose tokens if the question has already been reopened
       switch(await* _model.getInterestVotes().openVote(caller, date, func(VoteId) : QuestionId { question.id; })){
-        case(#err(err)) { result.set(#err("Fail to open interest vote")); };
+        case(#err(err)) { result.set(#err("Fail to open interest vote")); }; // @todo: stringify the error
         case(#ok((_, vote_id))) {
           result.set(#ok(?[{ vote_kind = #INTEREST; vote_id; }])); 
         };

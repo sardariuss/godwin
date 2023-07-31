@@ -382,6 +382,8 @@ export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : stri
   if (error['IdentifierAlreadyTaken']     !== undefined) return 'Identifier is already taken';
   if (error['InvalidIdentifier']          !== undefined) return 'Invalid identifier';
   if (error['NoCategories']               !== undefined) return 'Cannot create a sub without categories';
+  if (error['NameTooShort']               !== undefined) return 'Minimum name length is ' + Number(error['NameTooShort']['min_length']).toString();
+  if (error['NameTooLong']                !== undefined) return 'Maximum name length is ' + Number(error['NameTooShort']['max_length']).toString();
   throw new Error('Invalid CreateSubGodwinError');
 }
 

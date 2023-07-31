@@ -45,7 +45,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
 
   const {refreshBalance} = useContext(ActorContext);
 
-  const countdownDurationMs = 5000;
+  const countdownDurationMs = 3000;
 
   const [countdownVote, setCountdownVote] = useState<boolean>                           (false                               );
   const [triggerVote,   setTriggerVote  ] = useState<boolean>                           (false                               );
@@ -161,7 +161,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
                         disabled={false}
                         hidden={false}
                       >
-                        <div className="w-6 h-6">
+                        <div className="w-6 h-6 m-1">
                           <PutBallotIcon/>
                         </div>
                       </SvgButton>

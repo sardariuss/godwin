@@ -35,7 +35,6 @@ actor class GodwinSubScenario(
 
     let facade = switch(_state){
       case(#v0_1_0(state)) { Factory.build(state); };
-      case(_) { Debug.trap("impossible"); }; // Required in anticipation of next versions
     };
     // Run the scenario
     await* Scenario.run(facade, start_date, now, tick_duration);

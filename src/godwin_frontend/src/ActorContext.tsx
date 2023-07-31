@@ -32,6 +32,7 @@ export const ActorContext = React.createContext<{
   setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
   subsFetched?: boolean | null;
   setSubsFetched?: React.Dispatch<React.SetStateAction<boolean | null>>;
+  addSub: (principal: Principal, id: string) => Promise<void>;
   login: () => void;
   logout: () => void;
   token: ActorSubclass<TokenService>;
@@ -45,6 +46,7 @@ export const ActorContext = React.createContext<{
   refreshLoggedUserName: () => void;
   getPrincipal: () => Principal;
 }>({
+  addSub: () => Promise.resolve(),
   login: () => {},
   logout: () => {},
   token: godwin_token,
@@ -124,6 +126,20 @@ export function useAuthClient() {
       navigate("/");
       setIsAuthenticated(false);
     });
+  }
+
+  const addSub = async (principal: Principal, id: string) : Promise<void> => {
+    //console.log("Adding sub")
+    let actor = createSub(principal, {
+      agentOptions: {
+        identity: authClient?.getIdentity(),
+      },
+    });
+    let name = await actor.getName();
+    let categories = toMap(await actor.getCategories());
+    let scheduler_parameters = await actor.getSchedulerParameters();
+    setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters}));
+    //console.log("Sub added")
   }
 
   const fetchSubs = async() => {
@@ -248,6 +264,7 @@ export function useAuthClient() {
     setIsAuthenticated,
     subsFetched,
     setSubsFetched,
+    addSub,
     login,
     logout,
     token,
