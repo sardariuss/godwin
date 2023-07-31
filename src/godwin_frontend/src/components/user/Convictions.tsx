@@ -24,7 +24,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
   const [voteNumber,      setVoteNumber     ] = useState<number>                      (0                                 );
   const [genuineRatio,    setGenuineRatio   ] = useState<number>                      (0                                 );
 
-  const refreshConvictions = async () => {
+  const refreshConvictions = () => {
 
     if (principal === undefined) {
       setPolarizationMap(new Map<Category, Polarization>());
@@ -34,49 +34,50 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
       return;
     }
 
-    let queryConvictions = await sub.actor.getVoterConvictions(principal);
+    sub.actor.getVoterConvictions(principal).then((queryConvictions) => {
 
-    if (queryConvictions.length === 0) {
-      return;
-    };
+      if (queryConvictions.length === 0) {
+        return;
+      };
 
-    let weighted_ballots = new Map<Category, BallotPoint[]>();
-    let map_polarizations = new Map<Category, Polarization>();
+      let weighted_ballots = new Map<Category, BallotPoint[]>();
+      let map_polarizations = new Map<Category, Polarization>();
 
-    var total_late = 0;
+      var total_late = 0;
 
-    for (let i = 0; i < queryConvictions.length; i++){
-      // Get the BallotConvictionInput for each vote
-      let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
+      for (let i = 0; i < queryConvictions.length; i++){
+        // Get the BallotConvictionInput for each vote
+        let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
 
-      // Use the vote decay for the late votes indicator, not the late ballot decay itself!
-      // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
-      total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
+        // Use the vote decay for the late votes indicator, not the late ballot decay itself!
+        // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
+        total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
 
-      [...Array.from(sub.categories)].forEach(([category, _]) => {
-        let weight = toMap(categorization).get(category) ?? 0;
-        // Add the weighted ballot to the ballots array
-        let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
-        // Compute the decay
-        let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
-        array.push({
-          label: "Vote " + vote_id.toString() + ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
-          cursor,
-          coef: weight * decay,
-          date
+        [...Array.from(sub.categories)].forEach(([category, _]) => {
+          let weight = toMap(categorization).get(category) ?? 0;
+          // Add the weighted ballot to the ballots array
+          let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
+          // Compute the decay
+          let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
+          array.push({
+            label: "Vote " + vote_id.toString() + ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
+            cursor,
+            coef: weight * decay,
+            date
+          });
+          weighted_ballots.set(category, array);
+          // Compute the polarization
+          let old_polarization = map_polarizations.get(category) ?? {left: 0, center: 0, right: 0};
+          let new_polarization = addPolarization(old_polarization, mul(toPolarization(cursor), weight));
+          map_polarizations.set(category, new_polarization);
         });
-        weighted_ballots.set(category, array);
-        // Compute the polarization
-        let old_polarization = map_polarizations.get(category) ?? {left: 0, center: 0, right: 0};
-        let new_polarization = addPolarization(old_polarization, mul(toPolarization(cursor), weight));
-        map_polarizations.set(category, new_polarization);
-      });
-    }
+      }
 
-    setPolarizationMap(map_polarizations);
-    setBallotsMap(weighted_ballots);
-    setVoteNumber(queryConvictions.length);
-    setGenuineRatio((queryConvictions.length - total_late) / queryConvictions.length);
+      setPolarizationMap(map_polarizations);
+      setBallotsMap(weighted_ballots);
+      setVoteNumber(queryConvictions.length);
+      setGenuineRatio((queryConvictions.length - total_late) / queryConvictions.length);
+    });
   }
 
   useEffect(() => {
@@ -126,7 +127,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
             </div>
           </div>
         }
-        <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.OPINION}/>
+        <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.OPINION} onOpinionChange={refreshConvictions} />
       </div>
     </div>
 	);

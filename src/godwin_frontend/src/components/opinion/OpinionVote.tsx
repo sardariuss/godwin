@@ -28,6 +28,7 @@ type Props = {
   sub: Sub;
   voteData: VoteData;
   allowVote: boolean;
+  onOpinionChange?: () => void;
   votePlaceholderId: string;
   ballotPlaceholderId: string;
 };
@@ -39,7 +40,7 @@ const optCursorInfo = (cursor: number | undefined) : CursorInfo | undefined => {
   return undefined;
 }
 
-const OpinionVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId}: Props) => {
+const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholderId, ballotPlaceholderId}: Props) => {
 
   const COUNTDOWN_DURATION_MS = 0;
 
@@ -60,6 +61,9 @@ const OpinionVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceho
 
   const putBallot = () : Promise<PutBallotError | null> => {
     return sub.actor.putOpinionBallot(voteData.id, cursor).then((result) => {
+      if (result['ok'] !== undefined){
+        onOpinionChange?.();
+      };
       return result['err'] ?? null;
     });
   }

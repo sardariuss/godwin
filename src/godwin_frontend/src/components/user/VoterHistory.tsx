@@ -17,9 +17,10 @@ type VoterHistoryProps = {
   sub: Sub;
   isLoggedUser: boolean;
   voteKind: VoteKind;
+  onOpinionChange: () => void;
 };
 
-export const VoterHistory = ({principal, sub, isLoggedUser, voteKind}: VoterHistoryProps) => {
+export const VoterHistory = ({principal, sub, isLoggedUser, voteKind, onOpinionChange}: VoterHistoryProps) => {
 
   const [queryQuestionInput, setQueryQuestionInput] = useState<QueryQuestionInputFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 
@@ -34,7 +35,8 @@ export const VoterHistory = ({principal, sub, isLoggedUser, voteKind}: VoterHist
           data: item.vote[1]
         }, 
         showReopenQuestion: false,
-        allowVote: isLoggedUser
+        allowVote: isLoggedUser,
+        onOpinionChange
       }});
   }
 

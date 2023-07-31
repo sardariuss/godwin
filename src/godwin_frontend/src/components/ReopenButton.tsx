@@ -4,7 +4,7 @@ import Spinner                         from "./Spinner";
 import { ActorContext }                from "../ActorContext";
 
 import { Tooltip }                     from "@mui/material";
-import ErrorOutlineIcon         from '@mui/icons-material/ErrorOutline';
+import ErrorOutlineIcon                from '@mui/icons-material/ErrorOutline';
 
 import { ActorSubclass }               from "@dfinity/agent"
 import React, { useState, useContext } from "react"
