@@ -100,25 +100,15 @@ textarea {
     background-image: var(--slider-image);
   }
 
-  /*
-  @todo: try to fix sub banner for chrome, not successful yet
-
-  input[type='range'].categories {
-    background: transparent;
-  }
+  /*Important: to be able to make the categories slider draggable on chrome, 
+  we need to set the thumb size to an arbitrary value, otherwise clicks are ignored*/
 
   input[type='range'].categories::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
     border: 0;
     background-color: transparent;
+    width: 15px;
+    height: 15px;
   }
-  
-  input[type='range'].categories::-webkit-slider-runnable-track {
-    -webkit-appearance: none;
-    background: transparent;
-  }
-  */
 
 }
 

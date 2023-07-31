@@ -1,6 +1,6 @@
 import { PolarizationInfo, toCursorInfo } from '../../utils';
 
-import { useState, useEffect }            from "react";
+import React, { useState, useEffect }     from "react";
 
 type Props = {
   id: string;
