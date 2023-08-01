@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
 type TextInputProps = {
   id: string;
@@ -11,7 +11,7 @@ type TextInputProps = {
 
 const TextInput = ({id, label, dir, onInputChange, input, validate}: TextInputProps) => {
 
-  const [text,    setText   ] = useState<string>(input);
+  const [text,  setText]  = useState<string>            (input    );
   const [error, setError] = useState<string | undefined>(undefined);
   
   // Update from within

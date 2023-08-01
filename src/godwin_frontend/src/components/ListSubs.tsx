@@ -6,12 +6,11 @@ import { useEffect, useContext } from "react";
 
 function ListSubs() {
   
-  const {subs, setSubsFetched} = useContext(ActorContext);
+  const {subs, refreshSubs} = useContext(ActorContext);
 
   useEffect(() => {
-    // @todo: is it to refresh the subs list?
-    if (setSubsFetched !== undefined){
-      setSubsFetched(false);
+    if (refreshSubs !== undefined){
+      refreshSubs();
     }
   }, []);
 

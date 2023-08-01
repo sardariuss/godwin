@@ -30,8 +30,7 @@ export const ActorContext = React.createContext<{
   setAuthClient?: React.Dispatch<AuthClient>;
   isAuthenticated?: boolean | null;
   setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
-  subsFetched?: boolean | null;
-  setSubsFetched?: React.Dispatch<React.SetStateAction<boolean | null>>;
+  refreshSubs?: () => Promise<void>;
   addSub: (principal: Principal, id: string) => Promise<void>;
   login: () => void;
   logout: () => void;
@@ -69,7 +68,6 @@ export function useAuthClient() {
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master );
   const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService>>(godwin_airdrop);
   const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
-  const [subsFetched,     setSubsFetched    ] = useState<boolean | null>              (true          );
   const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
   const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
   const [balance,         setBalance        ] = useState<bigint | null>               (null          );
@@ -124,6 +122,9 @@ export function useAuthClient() {
   }
 
   const addSub = async (principal: Principal, id: string) : Promise<void> => {
+    if (subs.has(id)) {
+      return;
+    }
     let actor = createSub(principal, {
       agentOptions: {
         identity: authClient?.getIdentity(),
@@ -133,6 +134,15 @@ export function useAuthClient() {
     let categories = toMap(await actor.getCategories());
     let scheduler_parameters = await actor.getSchedulerParameters();
     setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters}));
+  }
+
+  const refreshSubs = async () => {
+    let listSubs = await master.listSubGodwins();
+    await Promise.all(listSubs.map(async ([principal, id]) => {
+      if (!subs.has(id)) {
+        await addSub(principal, id);
+      }
+    }));
   }
 
   const fetchSubs = async() => {
@@ -152,7 +162,6 @@ export function useAuthClient() {
     }));
 
     setSubs(newSubs);
-    setSubsFetched(true);
   }
 
   const refreshUserAccount = () => {
@@ -216,12 +225,6 @@ export function useAuthClient() {
   }, []);
 
   useEffect(() => {
-    if (!subsFetched) {
-      fetchSubs();
-    }
-  }, [subsFetched]);
-
-  useEffect(() => {
     initMaster();
     initAirdrop();
     refreshUserAccount();
@@ -239,8 +242,7 @@ export function useAuthClient() {
     setAuthClient,
     isAuthenticated,
     setIsAuthenticated,
-    subsFetched,
-    setSubsFetched,
+    refreshSubs,
     addSub,
     login,
     logout,
