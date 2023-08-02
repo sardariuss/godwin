@@ -46,7 +46,7 @@ module {
         case(null) { Debug.trap(error_prefix # ": the transaction record cannot be found"); };
         case(?record) { record; };
       };
-      // Check the payout has not already been set
+      // Check if the payout has already been set
       if(record.payout != #PENDING) {
         Debug.trap(error_prefix # ": the payout has already been set");
       };

@@ -35,6 +35,7 @@ module {
   type Balance                = Types.Balance;
   type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
   type TransferResult         = Types.TransferResult;
+  type Principals             = Types.Principals;
   type AccessControlRole      = Types.AccessControlRole;
   type AccessControlError     = Types.AccessControlError;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
@@ -98,11 +99,25 @@ module {
     };
 
     // @todo: it is dangerous to have the master and caller as parameters, use a named Principal inside a record instead
-    public func createSubGodwin(master: Principal, caller: Principal, identifier: Text, sub_parameters: SubParameters) : async CreateSubGodwinResult  {
+    public func createSubGodwin(principals: Principals, identifier: Text, sub_parameters: SubParameters, time: Time) : async CreateSubGodwinResult  {
 
+      let { master; user; } = principals;
+
+      // Verify the parameters
       switch(_model.getSubParamsValidator().validateSubGodwinParams(identifier, sub_parameters)){
         case(#err(err)) { return #err(err); };
         case(#ok()) {};
+      };
+
+      // Proceed with the payment
+      switch(await GodwinToken.burn({
+        from_subaccount = ?Account.toSubaccount(user);
+        amount = _model.getSubCreationPriceE8s();
+        memo = null;
+        created_at_time = ?Nat64.fromNat(Int.abs(time));
+      })){
+        case(#Err(err)) { return #err(err); };
+        case(#Ok(_)) {};
       };
     
       ExperimentalCycles.add(_model.getCyclesParameters().create_sub_cycles);
@@ -112,7 +127,7 @@ module {
         compute_allocation = null; // @todo: add this parameters in the model
         memory_allocation = null;
         freezing_threshold = null;
-      }})(#init({ master; sub_parameters; price_parameters = _model.getBasePriceParameters(); }));
+      }})(#init({ master; creator = user; sub_parameters; price_parameters = _model.getBasePriceParameters(); }));
 
       let principal = Principal.fromActor(new_sub);
 
@@ -196,8 +211,8 @@ module {
       toBaseResult(await GodwinToken.mint(args));
     };
 
-    // @todo: it is dangerous to have the master and caller as parameters, use a named Principal inside a record instead
-    public func getUserAccount(master: Principal, user: Principal) : GodwinToken.Account {
+    public func getUserAccount(principals: Principals) : GodwinToken.Account {
+      let { master; user; } = principals;
       { owner = master; subaccount = ?Account.toSubaccount(user) };
     };
 

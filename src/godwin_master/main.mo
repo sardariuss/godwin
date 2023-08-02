@@ -80,7 +80,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   };
 
   public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters) : async CreateSubGodwinResult  {
-    await getController().createSubGodwin(Principal.fromActor(this), caller, identifier, sub_parameters);
+    await getController().createSubGodwin({ master = Principal.fromActor(this); user = caller; }, identifier, sub_parameters, Time.now());
   };
 
   public shared({caller}) func upgradeAllSubs(args: SubMigrationArgs) : async UpgradeAllSubsResult {
@@ -104,7 +104,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   };
 
   public query func getUserAccount(user: Principal) : async GodwinToken.Account {
-    getController().getUserAccount(Principal.fromActor(this), user);
+    getController().getUserAccount({ master = Principal.fromActor(this); user;});
   };
 
   public query func getUserName(user: Principal) : async ?Text {

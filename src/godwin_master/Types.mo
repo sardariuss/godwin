@@ -73,9 +73,14 @@ module {
     #NameAlreadyTaken;
   };
 
+  public type Principals = {
+    master: Principal;
+    user: Principal;
+  };
+
   public type MintBatchArgs = TokenTypes.MintBatchArgs;
 
-  public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError>;
+  public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError or TransferError>;
 
   public type TransferResult = Result<TokenTypes.TxIndex, TransferError>;
 

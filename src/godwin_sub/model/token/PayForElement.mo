@@ -76,7 +76,7 @@ module {
       );
       // Reward the users
       let rewards = await* _token_interface.mintBatch(
-        Buffer.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = args.reward_tokens; }; })
+        Buffer.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
       // Watchout, this loop only iterates on the refunds, not the rewards.
       // It is assumed that if for a user there is no refund, there is no reward.

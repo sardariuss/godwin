@@ -164,10 +164,6 @@ module {
       });
     };
 
-    public func getBasePriceParameters() : BasePriceParameters {
-      _model.getPayRules().getBasePriceParameters();
-    };
-
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.getPayRules().setBasePriceParameters(params);

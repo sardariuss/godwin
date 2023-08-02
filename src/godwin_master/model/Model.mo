@@ -16,6 +16,7 @@ module {
   public class Model(
     _admin                   : WRef<Principal>,
     _cycles_parameters       : WRef<CyclesParameters>,
+    _sub_creation_price_e8s  : WRef<Nat>,
     _base_price_parameters   : WRef<BasePriceParameters>,
     _sub_params_validator    : SubParamsValidator,
     _sub_godwins             : WMap<Principal, Text>,
@@ -36,6 +37,14 @@ module {
 
     public func setCyclesParameters(cycles_parameters: CyclesParameters) {
       _cycles_parameters.set(cycles_parameters);
+    };
+
+    public func getSubCreationPriceE8s() : Nat {
+      _sub_creation_price_e8s.get();
+    };
+
+    public func setSubCreationPriceE8s(sub_creation_price_e8s: Nat) {
+      _sub_creation_price_e8s.set(sub_creation_price_e8s);
     };
     
     public func getBasePriceParameters() : BasePriceParameters {

@@ -26,9 +26,10 @@ module {
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   public type State = {
-    name                        : Ref<Text>; // @todo: this shouldn't be a ref
-    master                      : Ref<Principal>; // @todo: this shouldn't be a ref
+    creator                     : Principal;
     creation_date               : Time;
+    name                        : Ref<Text>;
+    master                      : Ref<Principal>;
     categories                  : Map<Category, CategoryInfo>;
     questions                   : QuestionsRegister;
     momentum_args               : Ref<InterestMomentumArgs>;
@@ -48,6 +49,7 @@ module {
       register                     : Map<Nat, (Principal, Blob)>;
       index                        : Ref<Nat>;
       transactions                 : Map<Principal, Map<VoteId, TransactionsRecord>>;
+      creator_rewards              : Map<VoteId, MintResult>;
     };
     votes                       : {
       interest                     : {
@@ -79,6 +81,7 @@ module {
 
   public type InitArgs = {
     master: Principal;
+    creator: Principal;
     sub_parameters: SubParameters;
     price_parameters: BasePriceParameters;
   };
@@ -269,9 +272,10 @@ module {
   };
 
   public type BasePriceParameters = {
-    open_vote_price_e8s: Nat;
-    interest_vote_price_e8s: Nat;
-    categorization_vote_price_e8s: Nat;
+    base_selection_period         : Duration;
+    open_vote_price_e8s           : Nat;
+    interest_vote_price_e8s       : Nat;
+    categorization_vote_price_e8s : Nat;
   };
 
   public type Category = Text;

@@ -87,9 +87,10 @@ module {
   };
 
   public type BasePriceParameters = {
-    open_vote_price_e8s: Nat;
-    interest_vote_price_e8s: Nat;
-    categorization_vote_price_e8s: Nat;
+    base_selection_period         : Duration;
+    open_vote_price_e8s           : Nat;
+    interest_vote_price_e8s       : Nat;
+    categorization_vote_price_e8s : Nat;
   };
 
   public type BallotConvictionInput = {

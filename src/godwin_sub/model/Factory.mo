@@ -44,7 +44,7 @@ module {
 
     let queries = QuestionQueriesFactory.build(state.queries.register);
 
-    let pay_rules = PayRules.build(state.price_params);
+    let pay_rules = PayRules.build(state.price_params, state.scheduler_params, state.creator);
 
     let token_interface = TokenInterface.build(state.master.v);
     let pay_to_open_question = PayForNew.build(
@@ -66,7 +66,9 @@ module {
       pay_to_open_question,
       interest_join,
       queries,
-      pay_rules);
+      pay_rules,
+      state.creator,
+      state.opened_questions.creator_rewards);
     
     let opinion_join = QuestionVoteJoins.build(state.votes.opinion.joins);
     let opinion_voters_history = VotersHistory.VotersHistory(state.votes.opinion.voters_history, opinion_join);

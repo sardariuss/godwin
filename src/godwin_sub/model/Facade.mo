@@ -127,10 +127,6 @@ module {
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
       _controller.setSchedulerParameters(caller, params);
     };
-
-    public func getBasePriceParameters() : BasePriceParameters {
-      _controller.getBasePriceParameters();
-    };
     
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
       _controller.setBasePriceParameters(caller, params);

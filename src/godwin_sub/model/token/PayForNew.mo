@@ -90,8 +90,11 @@ module {
       };
       let reap_result = await* _token_interface.reapSubaccount(subaccount, Buffer.fromArray<ReapAccountRecipient>([{to; share = args.refund_share;}]));
       let refund = Option.chain(Trie.get(reap_result, key(to), Principal.equal), func(res: ?ReapAccountResult) : ?ReapAccountResult { res; });
-      let reward = await* _token_interface.mint(to, args.reward_tokens);
-      _user_transactions.setPayout(to, id, refund, ?reward);
+      let reward = switch(args.reward_tokens){
+        case(?amount) { ?(await* _token_interface.mint(to, amount)); };
+        case(null) { null; };
+      };
+      _user_transactions.setPayout(to, id, refund, reward);
       _lock_register.delete(id);
     };
 

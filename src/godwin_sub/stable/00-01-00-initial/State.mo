@@ -32,18 +32,20 @@ module {
   type InterestMomentumArgs       = Types.InterestMomentumArgs;
   type StatusHistory              = Types.StatusHistory;
   type TransactionsRecord         = Types.TransactionsRecord;
+  type MintResult                 = Types.MintResult;
   type InitArgs                   = Types.InitArgs;
   type UpgradeArgs                = Types.UpgradeArgs;
   type DowngradeArgs              = Types.DowngradeArgs;
 
   public func init(date: Time, args: InitArgs) : State {
-    let { master; sub_parameters; price_parameters; } = args;
+    let { master; creator; sub_parameters; price_parameters; } = args;
     let { name; categories; scheduler; character_limit; convictions; minimum_interest_score; } = sub_parameters;
 
     #v0_1_0({
+      creator;
+      creation_date               = date;
       name                        = Ref.init<Text>(name);
       master                      = Ref.init<Principal>(master);
-      creation_date               = date;
       categories                  = Categories.initRegister(categories);
       momentum_args               = Ref.init<InterestMomentumArgs>({ 
         last_pick_date_ns = date;
@@ -70,6 +72,7 @@ module {
         register                     = Map.new<Nat, (Principal, Blob)>(Map.nhash);
         index                        = Ref.init<Nat>(0);
         transactions                 = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
+        creator_rewards              = Map.new<VoteId, MintResult>(Map.nhash);
       };
       votes                       = {
         interest                     = {

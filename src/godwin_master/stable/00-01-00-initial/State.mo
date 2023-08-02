@@ -20,11 +20,12 @@ module {
 
   public func init(date: Time, args: InitArgs) : State {
     
-    let { admin; cycles_parameters; base_price_parameters; validation_parameters; } = args;
+    let { admin; cycles_parameters; sub_creation_price_e8s; base_price_parameters; validation_parameters; } = args;
 
     #v0_1_0({
       admin                   = Ref.init<Principal>(admin);
       cycles_parameters       = Ref.init<CyclesParameters>(cycles_parameters);
+      sub_creation_price_e8s  = Ref.init<Nat>(sub_creation_price_e8s);
       base_price_parameters   = Ref.init<BasePriceParameters>(base_price_parameters);
       validation_parameters   = Ref.init<ValidationParams>(validation_parameters);
       sub_godwins             = Map.new<Principal, Text>(Map.phash);

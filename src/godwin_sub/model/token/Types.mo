@@ -79,7 +79,7 @@ module {
 
   public type PayoutArgs = {
     refund_share: Float;
-    reward_tokens: Balance;
+    reward_tokens: ?Balance;
   };
 
   public type TransactionsRecord = {

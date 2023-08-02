@@ -7,6 +7,7 @@ module {
   public type State = {
     admin                   : Ref<Principal>;
     cycles_parameters       : Ref<CyclesParameters>;
+    sub_creation_price_e8s  : Ref<Nat>;
     base_price_parameters   : Ref<BasePriceParameters>;
     validation_parameters   : Ref<ValidationParams>;
     sub_godwins             : Map<Principal, Text>;
@@ -21,10 +22,11 @@ module {
   };
 
   public type InitArgs = {
-    admin                 : Principal;
-    cycles_parameters     : CyclesParameters;
-    base_price_parameters : BasePriceParameters;
-    validation_parameters : ValidationParams;
+    admin                  : Principal;
+    cycles_parameters      : CyclesParameters;
+    sub_creation_price_e8s : Nat;
+    base_price_parameters  : BasePriceParameters;
+    validation_parameters  : ValidationParams;
   };
   public type UpgradeArgs = {
   };
@@ -76,6 +78,7 @@ module {
   };
 
   public type BasePriceParameters = {
+    base_selection_period         : Duration;
     open_vote_price_e8s           : Nat;
     interest_vote_price_e8s       : Nat;
     categorization_vote_price_e8s : Nat;

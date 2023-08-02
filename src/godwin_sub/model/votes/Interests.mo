@@ -7,6 +7,7 @@ import PayRules            "../PayRules";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
+import RewardForElement    "../token/RewardForElement";
 import QuestionTypes       "../questions/Types";
 import KeyConverter        "../questions/KeyConverter";
 
@@ -50,6 +51,7 @@ module {
   type QuestionQueries        = QuestionTypes.QuestionQueries;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
+  type MintResult             = PayTypes.MintResult;
   type PayoutArgs             = PayTypes.PayoutArgs;
   type PayForNew              = PayForNew.PayForNew;
 
@@ -59,6 +61,7 @@ module {
   type Direction              = UtilsTypes.Direction;
 
   type PayRules               = PayRules.PayRules;
+  type RewardForElement       = RewardForElement.RewardForElement;
   
   public type Register        = Votes.Register<Interest, Appeal>;
 
@@ -76,7 +79,9 @@ module {
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries,
-    pay_rules: PayRules
+    pay_rules: PayRules,
+    creator: Principal,
+    creator_rewards_register: Map<Nat, MintResult>
   ) : Interests {
     Interests(
       Votes.Votes(
@@ -96,7 +101,12 @@ module {
       pay_for_new,
       joins,
       queries,
-      pay_rules
+      pay_rules,
+      RewardForElement.RewardForElement(
+        creator,
+        creator_rewards_register,
+        token_interface
+      )
     );
   };
 
@@ -105,7 +115,8 @@ module {
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries,
-    _pay_rules: PayRules
+    _pay_rules: PayRules,
+    _reward_for_element: RewardForElement
   ) {
     
     public func openVote(principal: Principal, date: Time, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
@@ -125,8 +136,15 @@ module {
       let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
       _queries.remove(KeyConverter.toHotnessKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.hotness));
-      // Pay out the buyer
-      await* _pay_for_new.payout(vote_id, _pay_rules.computeAuthorPayout(vote.aggregate, closure));
+      // Payout the author and the sub creator
+      let { author_payout; creator_reward; } = _pay_rules.computeOpenedQuestionPayout(vote.aggregate, closure);
+      await* _pay_for_new.payout(vote_id, author_payout);
+      switch(creator_reward){
+        case(null){};
+        case(?amount){
+          await* _reward_for_element.reward(vote_id, amount);
+        };
+      };
     };
 
     public func canVote(vote_id: VoteId, principal: Principal) : Result<(), PutBallotError> {

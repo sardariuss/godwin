@@ -9,29 +9,50 @@ import Scenario       "../../Scenario";
 
 import GodwinMaster  "canister:godwin_master";
 
+import Map           "mo:map/Map";
+
 import Time          "mo:base/Time";
 import Principal     "mo:base/Principal";
 import Debug         "mo:base/Debug";
+import Iter          "mo:base/Iter";
 
-actor class GodwinSubScenario(
-  sub_parameters: Types.SubParameters,
-  price_parameters: Types.BasePriceParameters
-){
+actor class GodwinSubScenario(){
 
   // For convenience: from base module
   type Time = Time.Time;
 
-  stable var _state: MigrationTypes.State = Migrations.install(Time.now(), #none); // State already exists, so this line won't be run
+  // The state shall already exist, so this line won't be run
+  stable var _state: MigrationTypes.State = Migrations.install(Time.now(), #none);
 
   public shared func runScenario(
     scenario_duration: Types.Duration,
     tick_duration: Types.Duration
   ) : async () {
     let now = Time.now();
+    
+    let args = switch(_state){
+      case(#v0_1_0(state)) { {
+          master = state.master.v;
+          creator = state.creator;
+          sub_parameters = {
+            name = state.name.v;
+            categories = Iter.toArray(Map.entries(state.categories));
+            scheduler = state.scheduler_params.v;
+            character_limit = state.questions.character_limit;
+            convictions = {
+              vote_half_life = state.convictions_params.opinion_vote.v.half_life;
+              late_ballot_half_life = state.convictions_params.late_opinion_ballot.v.half_life;
+            };
+            minimum_interest_score = state.momentum_args.v.minimum_score;
+          };
+          price_parameters = state.price_params.v;
+        };
+      };
+    };
 
     // Reset the state where the start date is deduced from the scenario duration
     let start_date = now - Duration.toTime(scenario_duration);
-    _state := Migrations.install(start_date, #init({master = Principal.fromActor(GodwinMaster); sub_parameters; price_parameters;}));
+    _state := Migrations.install(start_date, #init(args));
 
     let facade = switch(_state){
       case(#v0_1_0(state)) { Factory.build(state); };

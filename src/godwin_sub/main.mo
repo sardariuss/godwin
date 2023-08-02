@@ -115,10 +115,6 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().setSchedulerParameters(caller, params);
   };
 
-  public query func getBasePriceParameters() : async BasePriceParameters {
-    getFacade().getBasePriceParameters();
-  };
-
   public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {
     getFacade().setBasePriceParameters(caller, params);
   };

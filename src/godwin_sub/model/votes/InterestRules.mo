@@ -69,7 +69,7 @@ module {
   public func computeSelectionScore(args: InterestMomentumArgs, pick_period: Time, now: Time): Float {
     let { last_pick_date_ns; last_pick_score; num_votes_opened; minimum_score; } = args;
 
-    if (now < last_pick_date_ns) { Debug.trap("The current date cannot be anterior as the date of the last selection score"); };
+    if (now < last_pick_date_ns) { Debug.trap("The current date cannot be anterior than the date of the last selection score"); };
     
     // Avoid division by zero
     if (now == last_pick_date_ns) { return Math.maxFloat(); };
