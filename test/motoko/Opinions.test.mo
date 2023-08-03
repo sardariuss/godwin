@@ -43,8 +43,8 @@ await suite("Opinions module test suite", func(): async () {
 
   let now = Time.now();
   let principals = Principals.init();
-  let vote_decay        = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(365), now)));
-  let late_ballot_decay = Wref.WRef(Ref.init<DecayParameters>(Decay.initParameters(#DAYS(7), now)  ));
+  let vote_decay        = Wref.WRef(Ref.init<DecayParameters>(Decay.getDecayParameters(#DAYS(365), now)));
+  let late_ballot_decay = Wref.WRef(Ref.init<DecayParameters>(Decay.getDecayParameters(#DAYS(7), now)  ));
   let opinions = Opinions.build(Opinions.initRegister(), MockedVotersHistory(), vote_decay, late_ballot_decay);
 
   await test("New vote 0", func() : async () {

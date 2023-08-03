@@ -57,10 +57,6 @@ module {
       scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
       base_price_params           = Ref.init<BasePriceParameters>(price_parameters);
       selection_params            = Ref.init<SelectionParameters>(selection);
-      convictions_params          = {
-        opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(convictions.vote_half_life, date));
-        late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(convictions.late_ballot_half_life, date));
-      };
       momentum                    = Ref.init<Momentum>({
         num_votes_opened = 0;
         selection_score = selection.minimum_score;
@@ -91,6 +87,8 @@ module {
           register                      = Opinions.initRegister();
           voters_history                = Map.new<Principal, Map<QuestionId, Map<Nat, VoteId>>>(Map.phash);
           joins                         = Joins.initRegister();
+          vote_decay_params             = Ref.init<DecayParameters>(Decay.getDecayParameters(convictions.vote_half_life, date));
+          late_ballot_decay_params      = Ref.init<DecayParameters>(Decay.getDecayParameters(convictions.late_ballot_half_life, date));
         };
         categorization               = {
           register                      = Categorizations.initRegister();

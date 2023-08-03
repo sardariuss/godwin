@@ -34,10 +34,6 @@ module {
     scheduler_params            : Ref<SchedulerParameters>;
     base_price_params           : Ref<BasePriceParameters>;
     selection_params            : Ref<SelectionParameters>;
-    convictions_params          : {
-      opinion_vote                 : Ref<DecayParameters>;
-      late_opinion_ballot          : Ref<DecayParameters>;
-    };
     questions                   : QuestionsRegister;
     momentum                    : Ref<Momentum>;
     price_register              : Ref<PriceRegister>;
@@ -64,6 +60,8 @@ module {
         register                      : OpinionVoteRegister;
         voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
         joins                         : JoinsRegister;
+        vote_decay_params             : Ref<DecayParameters>;
+        late_ballot_decay_params      : Ref<DecayParameters>;
       };
       categorization               : {
         register                      : CategorizationVoteRegister;

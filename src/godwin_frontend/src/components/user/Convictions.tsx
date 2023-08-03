@@ -53,7 +53,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
         // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
         total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
 
-        [...Array.from(sub.categories)].forEach(([category, _]) => {
+        [...Array.from(sub.info.categories)].forEach(([category, _]) => {
           let weight = toMap(categorization).get(category) ?? 0;
           // Add the weighted ballot to the ballots array
           let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
@@ -102,7 +102,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                       <PolarizationBar 
                         name={category}
                         showName={true}
-                        polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
+                        polarizationInfo={toPolarizationInfo(sub.info.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
                         polarizationValue={polarization}
                         ballots={ballotsMap.get(category) ?? []}
                         chartType={chartType}>

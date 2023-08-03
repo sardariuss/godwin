@@ -52,7 +52,7 @@ const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
         </div> :
         <div className="flex flex-col items-center gap-y-1">
           Propose again
-          <Balance amount={sub.price_parameters.reopen_vote_price_e8s}/>
+          <Balance amount={sub.info.prices.reopen_vote_price_e8s}/>
         </div>
       }
       </button>

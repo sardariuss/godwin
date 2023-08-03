@@ -24,7 +24,7 @@ module {
     Float.exp(params.lambda * Float.fromInt(date) - params.shift);
   };
 
-  public func initParameters(half_life: Duration, time_init: Time) : DecayParameters {
+  public func getDecayParameters(half_life: Duration, time_init: Time) : DecayParameters {
     let lambda = Float.log(2.0) / Float.fromInt(Duration.toTime(half_life));
     // The bigger positive number a float 64 can hold is 1.797693134e+308, which is approx. equal to exp(709)
     // The smaller positive number a float64 can hold is 4.940656458e-324, which is approx. equal to exp(-744)

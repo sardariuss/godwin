@@ -75,13 +75,13 @@ const getPreviousVoteAggregates = (status_data: StatusData) : VoteAggregate[] =>
 
 const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHistory, showBorder, borderDashed}: Props) => {
 
-  const [status]                        = useState<StatusEnum>                               (statusToEnum(statusData.status_info.status)         );
-  const [date]                          = useState<string>                                   (nsToStrDate(statusData.status_info.date)            );
-  const [statusEndDate]                 = useState<Date | undefined>                         (computeEndDate(statusData, sub.scheduler_parameters));
-  const [selectedVote, setSelectedVote] = useState<VoteKind | undefined>                     (undefined                                           );
-  const [previousInterestVote]          = useState<[bigint, Appeal             ] | undefined>(findInterestAggregate(statusData)                   );
-  const [previousOpinionVote]           = useState<[bigint, OpinionAggregateDid] | undefined>(findOpinionAggregate(statusData)                    );
-  const [previousCategorizationVote]    = useState<[bigint, PolarizationArray  ] | undefined>(findCategorizationAggregate(statusData)             );
+  const [status]                        = useState<StatusEnum>                               (statusToEnum(statusData.status_info.status)              );
+  const [date]                          = useState<string>                                   (nsToStrDate(statusData.status_info.date)                 );
+  const [statusEndDate]                 = useState<Date | undefined>                         (computeEndDate(statusData, sub.info.scheduler_parameters));
+  const [selectedVote, setSelectedVote] = useState<VoteKind | undefined>                     (undefined                                                );
+  const [previousInterestVote]          = useState<[bigint, Appeal             ] | undefined>(findInterestAggregate(statusData)                        );
+  const [previousOpinionVote]           = useState<[bigint, OpinionAggregateDid] | undefined>(findOpinionAggregate(statusData)                         );
+  const [previousCategorizationVote]    = useState<[bigint, PolarizationArray  ] | undefined>(findCategorizationAggregate(statusData)                  );
 
   const toggleVote = (vote_kind: VoteKind, toggled: boolean) => {
     setSelectedVote(toggled ? vote_kind : undefined);  
@@ -163,7 +163,7 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
                 previousCategorizationVote !== undefined ?
                   <CategorizationAggregateDigest 
                     aggregate={toMap(previousCategorizationVote[1])}
-                    categories={sub.categories}
+                    categories={sub.info.categories}
                     setSelected={(selected: boolean) => { toggleVote(VoteKind.CATEGORIZATION, selected); }}
                     selected={ selectedVote === VoteKind.CATEGORIZATION}
                   /> : <> </>

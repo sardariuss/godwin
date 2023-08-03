@@ -70,6 +70,7 @@ const CONSTANTS = {
     SEPIA_PERCENT: 40,
     HUE_ROTATE_DEG: 39,
   },
+  MAX_NUM_CHARACTERS_REACHED: 'Max number of characters reached',
   MAX_NUM_CATEGORIES: 8,
   NEW_SUB_DEFAULT_PARAMETERS: {
     CATEGORY: {

@@ -35,7 +35,7 @@ const unwrapBallot = (vote_data: VoteData) : RevealedCategorizationBallot | unde
 
 const getOptStrongestCategory = (categorization: CursorArray | undefined, sub: Sub) : CursorInfo | undefined => {
   if (categorization !== undefined){
-    return getStrongestCategoryCursorInfo(toMap(categorization), sub.categories);
+    return getStrongestCategoryCursorInfo(toMap(categorization), sub.info.categories);
   }
   return undefined;
 }
@@ -57,11 +57,11 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
   const [countdownVote,  setCountdownVote ] = useState<boolean>                                 (false                               );
   const [triggerVote,    setTriggerVote   ] = useState<boolean>                                 (false                               );
   const [ballot,         setBallot        ] = useState<RevealedCategorizationBallot | undefined>(unwrapBallot(voteData)              );
-  const [categorization, setCategorization] = useState<CursorArray>                             (initCategorization(sub.categories)  );
+  const [categorization, setCategorization] = useState<CursorArray>                             (initCategorization(sub.info.categories)  );
   const [showVote,       setShowVote      ] = useState<boolean>                                 (unwrapBallot(voteData) === undefined);
 
   const resetCategorization = () => {
-    setCategorization(initCategorization(sub.categories));
+    setCategorization(initCategorization(sub.info.categories));
   };
 
   const setCategoryCursor = (category_index: number, cursor: number) => {
@@ -139,9 +139,9 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
                     disabled={ triggerVote }
                     setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
                     polarizationInfo = {{
-                      left: sub.categories.get(category).left,
+                      left: sub.info.categories.get(category).left,
                       center: {...CONSTANTS.CATEGORIZATION_INFO.center, name: category + ": " + CONSTANTS.CATEGORIZATION_INFO.center.name},
-                      right: sub.categories.get(category).right
+                      right: sub.info.categories.get(category).right
                     }}
                     onMouseUp={ () => { setCountdownVote(true)} }
                     onMouseDown={ () => { setCountdownVote(false)} }
@@ -165,7 +165,7 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
                   set_run_countdown={setCountdownVote}
                   trigger_update={triggerVote}
                   set_trigger_update={setTriggerVote}
-                  cost={sub.price_parameters.categorization_vote_price_e8s}>
+                  cost={sub.info.prices.categorization_vote_price_e8s}>
                 <div className="w-8 h-8">
                   <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote } hidden={false}>
                     <PutBallotIcon/>

@@ -5,9 +5,7 @@ import Categories          "Categories";
 
 import Utils               "../utils/Utils";
 
-import StableBuffer        "mo:stablebuffer/StableBuffer";
 import Map                 "mo:map/Map";
-import Set                 "mo:map/Set";
 
 import Result              "mo:base/Result";
 import Principal           "mo:base/Principal";
@@ -22,7 +20,6 @@ module {
   type Principal                    = Principal.Principal;
   type Time                         = Int;
   type Buffer<T>                    = Buffer.Buffer<T>;
-  type StableBuffer<T>              = StableBuffer.StableBuffer<T>;
 
   // For convenience: from other modules
   type Controller                   = Controller.Controller;
@@ -67,6 +64,7 @@ module {
   type Momentum                     = Types.Momentum;
   type SelectionParameters          = Types.SelectionParameters;
   type PriceRegister                = Types.PriceRegister;
+  type SubInfo                      = Types.SubInfo;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
@@ -95,52 +93,16 @@ module {
 
   public class Facade(_controller: Controller) = {
 
-    public func getName() : Text {
-      _controller.getName();
-    };
-
-    public func getOpinionVoteHalfLife() : Duration {
-      _controller.getOpinionVoteHalfLife();
-    };
-
-    public func getLateOpinionBallotHalfLife() : Duration {
-      _controller.getLateOpinionBallotHalfLife();
-    };
-
-    public func getCategories() : CategoryArray {
-      Iter.toArray(_controller.getCategories().entries());
-    };
-
-    public func addCategory(caller: Principal, category: Category, info: CategoryInfo) : Result<(), AddCategoryError> {
-      _controller.addCategory(caller, category, info);
-    };
-
-    public func removeCategory(caller: Principal, category: Category) : Result<(), RemoveCategoryError> {
-      _controller.removeCategory(caller, category);
-    };
-
-    public func getSchedulerParameters() : SchedulerParameters {
-      _controller.getSchedulerParameters();
+    public func getSubInfo() : SubInfo {
+      _controller.getSubInfo();
     };
 
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
       _controller.setSchedulerParameters(caller, params);
     };
 
-    public func getSelectionParameters() : SelectionParameters {
-      _controller.getSelectionParameters();
-    };
-
-    public func getSelectionParametersAndMomentum() : (SelectionParameters, Momentum) {
-      _controller.getSelectionParametersAndMomentum();
-    };
-
     public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
       _controller.setSelectionParameters(caller, params);
-    };
-    
-    public func getSubPrices() : PriceRegister {
-      _controller.getSubPrices();
     };
 
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {

@@ -22,7 +22,6 @@ module {
   type WRef<K>              = WRef.WRef<K>;
 
   type BasePriceParameters  = Types.BasePriceParameters;
-  type SchedulerParameters  = Types.SchedulerParameters;
   type SelectionParameters  = Types.SelectionParameters;
   type PriceRegister        = Types.PriceRegister;
   type SubMomentum          = SubMomentum.SubMomentum;

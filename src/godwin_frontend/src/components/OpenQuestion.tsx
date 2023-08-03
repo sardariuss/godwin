@@ -3,7 +3,7 @@ import Balance                                    from "./base/Balance";
 import Spinner                                    from "./Spinner";
 import { openQuestionErrorToString }              from "../utils";
 import CONSTANTS                                  from "../Constants";
-import { Sub } from "../ActorContext";
+import { Sub }                                    from "../ActorContext";
 
 import React, { useContext, useState, useEffect } from "react";
 
@@ -62,9 +62,9 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 	return (
     <form>
       <div className="flex flex-col w-full dark:border-gray-700">
-        <div className="px-4 py-2 border-b dark:border-gray-700">
+        <div className="px-4 py-2 border-b dark:border-gray-700 outline-red-300 dark:outline-red-300">
           <textarea 
-            className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400"
+            className={`w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400`}
             rows={4}
             onChange={(e) => { setError(undefined); setText(e.target.value)} }
             placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} 
@@ -72,7 +72,10 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
             required
           />
         </div>
-        <div className="flex flex-row px-2 py-2 space-x-2 items-center place-self-end">
+        <div className="flex flex-row p-2 space-x-2 items-center place-self-end">
+          { sub !== undefined && text.length > sub.info.character_limit ? 
+            <div className="text-red-500 text-xs">{CONSTANTS.MAX_NUM_CHARACTERS_REACHED}</div> : <></>
+          }
           {
             canSelectSub ? 
             <div>
@@ -82,7 +85,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
                 type="button"
               >
                 {
-                  sub !== undefined ? sub.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
+                  sub !== undefined ? sub.info.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
                 } 
                 <svg className="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -104,7 +107,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
           <button 
             className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center"
             type="submit"
-            disabled={sub===undefined || text.length <= 0 || submitting}
+            disabled={sub===undefined || text.length <= 0 || submitting || text.length > sub.info.character_limit}
             onClick={(e) => submitQuestion()}
           >
             {
@@ -114,7 +117,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
               </div> :
               <div className="flex flex-row items-center gap-x-1 text-white">
                 Propose
-                <Balance amount={sub !== undefined ? sub.price_parameters.open_vote_price_e8s : undefined}/>
+                <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e8s : undefined}/>
               </div>
             }
           </button>

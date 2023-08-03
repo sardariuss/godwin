@@ -42,6 +42,8 @@ module {
 
     let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
 
+    let categories = facade.getSubInfo().categories;
+
     var time = start_date;
 
     while (time + Duration.toTime(tick_duration) < end_date) {
@@ -78,7 +80,7 @@ module {
         for ({vote} in Array.vals(facade.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
           if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
-            switch(await* facade.putCategorizationBallot(principal, vote.1.id, time, Random.randomCategorization(fuzzer, facade.getCategories()))){
+            switch(await* facade.putCategorizationBallot(principal, vote.1.id, time, Random.randomCategorization(fuzzer, categories))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
             };

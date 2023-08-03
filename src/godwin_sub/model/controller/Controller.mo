@@ -73,6 +73,7 @@ module {
   type Momentum                    = Types.Momentum;
   type PriceRegister               = Types.PriceRegister;
   type SelectionParameters         = Types.SelectionParameters;
+  type SubInfo                     = Types.SubInfo;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -121,40 +122,16 @@ module {
 
   public class Controller(_schema: Schema, _model: Model) = {
 
-    public func getName() : Text {
-      _model.getName();
-    };
-
-    public func getOpinionVoteHalfLife() : Duration {
-      _model.getOpinionVotes().getVoteDecay().half_life;
-    };
-
-    public func getLateOpinionBallotHalfLife() : Duration {
-      _model.getOpinionVotes().getLateBallotDecay().half_life;
-    };
-
-    public func getCategories() : Categories.Categories {
-      _model.getCategories();
-    };
-
-    public func addCategory(caller: Principal, category: Category, info: CategoryInfo) : Result<(), AddCategoryError> {
-      Result.chain<(), (), AddCategoryError>(verifyAuthorizedAccess(caller, #MASTER), func() {
-        Result.mapOk<(), (), AddCategoryError>(Utils.toResult(not _model.getCategories().has(category), #CategoryAlreadyExists), func() {
-          _model.getCategories().set(category, info);
-        })
-      });
-    };
-
-    public func removeCategory(caller: Principal, category: Category) : Result<(), RemoveCategoryError> {
-      Result.chain<(), (), RemoveCategoryError>(verifyAuthorizedAccess(caller, #MASTER), func () {
-        Result.mapOk<(), (), RemoveCategoryError>(Utils.toResult(_model.getCategories().has(category), #CategoryDoesntExist), func() {
-          _model.getCategories().delete(category);
-        })
-      });
-    };
-
-    public func getSchedulerParameters() : SchedulerParameters {
-      _model.getSchedulerParameters();
+    public func getSubInfo() : SubInfo {
+      {
+        name = _model.getName();
+        character_limit = _model.getQuestions().getCharacterLimit();
+        categories = Iter.toArray(_model.getCategories().entries());
+        selection_parameters = _model.getSelectionParameters();
+        scheduler_parameters = _model.getSchedulerParameters();
+        prices = _model.getPayRules().getPrices();
+        momentum = _model.getSubMomentum().get();
+      };
     };
 
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
@@ -163,23 +140,11 @@ module {
       });
     };
 
-    public func getSelectionParameters() : SelectionParameters {
-      _model.getSelectionParameters();
-    };
-
-    public func getSelectionParametersAndMomentum() : (SelectionParameters, Momentum) {
-      (_model.getSelectionParameters(), _model.getSubMomentum().get());
-    };
-
     public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setSelectionParameters(params);
         _model.getPayRules().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
       });
-    };
-
-    public func getSubPrices() : PriceRegister {
-      _model.getPayRules().getPrices();
     };
 
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {

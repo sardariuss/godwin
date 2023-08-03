@@ -40,8 +40,8 @@ actor class GodwinSubScenario(){
             scheduler = state.scheduler_params.v;
             character_limit = state.questions.character_limit;
             convictions = {
-              vote_half_life = state.convictions_params.opinion_vote.v.half_life;
-              late_ballot_half_life = state.convictions_params.late_opinion_ballot.v.half_life;
+              vote_half_life = state.votes.opinion.vote_decay_params.v.half_life;
+              late_ballot_half_life = state.votes.opinion.late_ballot_decay_params.v.half_life;
             };
             selection = state.selection_params.v;
           };

@@ -73,6 +73,10 @@ module {
 
   public class Questions(_register: Register) {
 
+    public func getCharacterLimit() : Nat {
+      _register.character_limit;
+    };
+
     public func getQuestionIdsFromAuthor(principal: Principal) : Set<QuestionId> {
       switch(Map.get(_register.by_author, Map.phash, principal)){
         case(null) { Set.new<Nat>(Map.nhash); };

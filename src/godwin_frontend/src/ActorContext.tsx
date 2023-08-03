@@ -1,7 +1,8 @@
 import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
 import { _SERVICE as SubService, Category, CategoryInfo, 
-  SchedulerParameters, PriceRegister }                                           from "../declarations/godwin_sub/godwin_sub.did";
+  SchedulerParameters, PriceRegister, SubInfo as IdlSubInfo, 
+  SelectionParameters, Momentum  }                                               from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
 import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
@@ -19,12 +20,31 @@ import { useNavigate }                                                          
 
 import React                                                                     from 'react'
 
+type SubInfo = {
+  name: string;
+  character_limit: bigint;
+  categories: Map<string, CategoryInfo>;
+  selection_parameters: SelectionParameters;
+  scheduler_parameters: SchedulerParameters;
+  prices: PriceRegister;
+  momentum: Momentum;
+}
+
+const fromIdlSubInfo = (info: IdlSubInfo) : SubInfo => {
+  return {
+    name: info.name,
+    character_limit: info.character_limit,
+    categories: toMap(info.categories),
+    selection_parameters: info.selection_parameters,
+    scheduler_parameters: info.scheduler_parameters,
+    prices: info.prices,
+    momentum: info.momentum
+  };
+}
+
 export type Sub = {
   actor: ActorSubclass<SubService>;
-  name: string;
-  categories: Map<Category, CategoryInfo>;
-  scheduler_parameters: SchedulerParameters;
-  price_parameters: PriceRegister;
+  info: SubInfo;
 };
 
 export const ActorContext = React.createContext<{
@@ -132,11 +152,8 @@ export function useAuthClient() {
         identity: authClient?.getIdentity(),
       },
     });
-    let name = await actor.getName();
-    let categories = toMap(await actor.getCategories());
-    let scheduler_parameters = await actor.getSchedulerParameters();
-    let price_parameters = await actor.getSubPrices();
-    setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters, price_parameters}));
+    let info = await actor.getSubInfo();
+    setSubs((subs) => new Map(subs).set(id, {actor, info: fromIdlSubInfo(info)}));
   }
 
   const refreshSubs = async () => {
@@ -158,11 +175,8 @@ export function useAuthClient() {
           identity: authClient?.getIdentity(),
         },
       });
-      let name = await actor.getName();
-      let categories = toMap(await actor.getCategories());
-      let scheduler_parameters = await actor.getSchedulerParameters();
-      let price_parameters = await actor.getSubPrices();
-      newSubs.set(id, {actor, name, categories, scheduler_parameters, price_parameters});
+      let info = await actor.getSubInfo();
+      newSubs.set(id, {actor, info: fromIdlSubInfo(info)});
     }));
 
     setSubs(newSubs);

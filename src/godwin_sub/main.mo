@@ -59,6 +59,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type StatusInfo                   = Types.StatusInfo;
   type StatusData                   = Types.StatusData;
   type QuestionId                   = Types.QuestionId;
+  type SubInfo                      = Types.SubInfo;
   type VoteId                       = Types.VoteId;
   type QuestionOrderBy              = Types.QuestionOrderBy;
   type Direction                    = Types.Direction;
@@ -82,52 +83,16 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     case(#v0_1_0(state)) { ?Factory.build(state); };
   };
 
-  public query func getName() : async Text {
-    getFacade().getName();
-  };
-
-  public query func getOpinionVoteHalfLife() : async Duration {
-    getFacade().getOpinionVoteHalfLife();
-  };
-
-  public query func getLateOpinionBallotHalfLife() : async Duration {
-    getFacade().getLateOpinionBallotHalfLife();
-  };
-
-  public query func getCategories() : async CategoryArray {
-    getFacade().getCategories();
-  };
-
-  public shared({caller}) func addCategory(category: Category, info: CategoryInfo) : async Result<(), AddCategoryError> {
-    getFacade().addCategory(caller, category, info);
-  };
-
-  public shared({caller}) func removeCategory(category: Category) : async Result<(), RemoveCategoryError> {
-    getFacade().removeCategory(caller, category);
-  };
-
-  public query func getSchedulerParameters() : async SchedulerParameters {
-    getFacade().getSchedulerParameters();
+  public query func getSubInfo() : async SubInfo {
+    getFacade().getSubInfo();
   };
 
   public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
     getFacade().setSchedulerParameters(caller, params);
   };
 
-  public query func getSelectionParameters() : async SelectionParameters {
-    getFacade().getSelectionParameters();
-  };
-
-  public query func getSelectionParametersAndMomentum() : async (SelectionParameters, Momentum) {
-    getFacade().getSelectionParametersAndMomentum();
-  };
-
   public shared({caller}) func setSelectionParameters(params: SelectionParameters) : async Result<(), AccessControlError> {
     getFacade().setSelectionParameters(caller, params);
-  };
-
-  public query func getSubPrices() : async PriceRegister {
-    getFacade().getSubPrices();
   };
 
   public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {

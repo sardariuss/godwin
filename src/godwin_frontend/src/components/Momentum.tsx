@@ -17,17 +17,18 @@ const Momentum = ({sub} : MomentumProps) => {
   const [lastPickDate,       setLastPickDate      ] = useState<bigint   | undefined>(undefined);
   const [lastPickTotalVotes, setLastPickTotalVotes] = useState<bigint   | undefined>(undefined);
 
-  const refreshSelectionScore= () => {
-    sub.actor.getSelectionParametersAndMomentum().then(([params, momentum]) => {
+  const refresh = () => {
+    sub.actor.getSubInfo().then((info) => {
+      let { selection_parameters, momentum } = info;
       setNumVotesOpened    (momentum.num_votes_opened                    );
-      setSelectionPeriod   (params.selection_period                      );
+      setSelectionPeriod   (selection_parameters.selection_period        );
       setLastPickDate      (fromNullable(momentum.last_pick)?.date       );
       setLastPickTotalVotes(fromNullable(momentum.last_pick)?.total_votes);
     });
   };
 
   useEffect(() => {
-    refreshSelectionScore();
+    refresh();
   }, [sub]);
 
   return (

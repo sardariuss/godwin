@@ -58,7 +58,7 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
               <PolarizationBar 
                 name={category}
                 showName={true}
-                polarizationInfo={toPolarizationInfo(sub.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
+                polarizationInfo={toPolarizationInfo(sub.info.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
                 polarizationValue={aggregate}
                 ballots={getBallotsFromCategory(vote, index)}
                 chartType={chartType}>

@@ -61,7 +61,7 @@ module {
   public type RevealedInterestBallot       = VoteTypes.RevealedBallot<Interest>;
   public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<OpinionAnswer>;
   public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
-  public type DecayParameters              = VoteTypes.DecayParameters;
+  public type DecayParameters               = VoteTypes.DecayParameters;
 
   public type FindVoteError                = VoteTypes.FindVoteError;
   public type FindQuestionIterationError   = VoteTypes.FindQuestionIterationError;
@@ -72,6 +72,16 @@ module {
   public type FindBallotError              = VoteTypes.FindBallotError;
   public type AddBallotError               = VoteTypes.AddBallotError;
   public type PutBallotError               = VoteTypes.PutBallotError;
+
+  public type SubInfo = {
+    name: Text;
+    character_limit: Nat;
+    categories: CategoryArray;
+    selection_parameters: SelectionParameters;
+    scheduler_parameters: SchedulerParameters;
+    prices: PriceRegister;
+    momentum: Momentum;
+  };
 
   public type SchedulerParameters = {
     censor_timeout            : Duration;
