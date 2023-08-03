@@ -1,7 +1,10 @@
-import Spinner                 from "./Spinner";
-import { Sub }                 from "../ActorContext"
+import { Sub }                        from "../ActorContext"
+import { durationToString }           from "../utils";
+import { timeAgo }                    from "../utils/DateUtils";
+import { Duration }                   from "../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
+import { fromNullable }               from "@dfinity/utils";
 
 type MomentumProps = {
   sub: Sub;
@@ -9,11 +12,17 @@ type MomentumProps = {
 
 const Momentum = ({sub} : MomentumProps) => {
 
-  const [selectionScore, setSelectionScore] = useState<number | undefined>(undefined);
+  const [numVotesOpened,     setNumVotesOpened    ] = useState<bigint   | undefined>(undefined);
+  const [selectionPeriod,    setSelectionPeriod   ] = useState<Duration | undefined>(undefined);
+  const [lastPickDate,       setLastPickDate      ] = useState<bigint   | undefined>(undefined);
+  const [lastPickTotalVotes, setLastPickTotalVotes] = useState<bigint   | undefined>(undefined);
 
   const refreshSelectionScore= () => {
-    sub.actor.getSelectionScore().then((score) => {
-      setSelectionScore(score);
+    sub.actor.getSelectionParametersAndMomentum().then(([params, momentum]) => {
+      setNumVotesOpened    (momentum.num_votes_opened                    );
+      setSelectionPeriod   (params.selection_period                      );
+      setLastPickDate      (fromNullable(momentum.last_pick)?.date       );
+      setLastPickTotalVotes(fromNullable(momentum.last_pick)?.total_votes);
     });
   };
 
@@ -22,16 +31,11 @@ const Momentum = ({sub} : MomentumProps) => {
   }, [sub]);
 
   return (
-    <div>
-    { 
-      selectionScore !== undefined ? 
-      <div className="font-normal text-gray-700 dark:text-gray-400">
-        { "selection score: " + selectionScore.toFixed(1) }
-      </div> : 
-      <div className="w-5 h-5">
-        <Spinner/>
-      </div>
-    }
+    <div className="grid grid-cols-4 gap-5">
+      <div> { "lifetime votes: " + numVotesOpened?.toString() } </div>
+      <div> { "selection: every " + (selectionPeriod !== undefined ? durationToString(selectionPeriod) : "") } </div>
+      <div> { "last vote: " + (lastPickDate !== undefined ? timeAgo(new Date(Number(lastPickDate) / 1000000)) : "none") } </div>
+      <div> { "number voters: " + (lastPickTotalVotes !== undefined ? lastPickTotalVotes.toString() : "0") } </div>
     </div>
   )
 }

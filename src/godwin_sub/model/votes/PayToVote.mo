@@ -31,12 +31,12 @@ module {
 
   public class PayToVote<T, A>(
     _pay_for_element: PayForElement.PayForElement,
-    _payin_price: Balance,
+    _get_payin_price: () -> Balance,
     _compute_payout: PayoutFunction<T, A>
   ) {
 
     public func payin(vote_id: VoteId, principal: Principal) : async* Result<(), PutBallotError> {
-      switch(await* _pay_for_element.payin(vote_id, principal, _payin_price)){
+      switch(await* _pay_for_element.payin(vote_id, principal, _get_payin_price())){
         case(#err(err)) { #err(#PayinError(err)); };
         case(#ok(tx_index)) { #ok; };
       };

@@ -184,7 +184,7 @@ const MainQuestions = () => {
             {
               currentMainTab === MainTab.HOME ?
               <div className="border-b dark:border-gray-700">
-                <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin !== undefined ? subgodwin : null} canSelectSub={false}></OpenQuestion>
+                <OpenQuestion onSubmitQuestion={()=>{}} subId={subgodwin} canSelectSub={false}></OpenQuestion>
               </div> : <></>
             }
             <div className="w-full flex">

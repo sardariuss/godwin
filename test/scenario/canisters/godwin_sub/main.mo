@@ -43,9 +43,9 @@ actor class GodwinSubScenario(){
               vote_half_life = state.convictions_params.opinion_vote.v.half_life;
               late_ballot_half_life = state.convictions_params.late_opinion_ballot.v.half_life;
             };
-            minimum_interest_score = state.momentum_args.v.minimum_score;
+            selection = state.selection_params.v;
           };
-          price_parameters = state.price_params.v;
+          price_parameters = state.base_price_params.v;
         };
       };
     };

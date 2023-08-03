@@ -139,17 +139,10 @@ module {
 
       let current_status = _model.getStatusManager().getCurrentStatus(question_id);
       let vote_id = _model.getInterestJoins().getVoteId(question_id, current_status.iteration);
-      let question_score = _model.getInterestVotes().getVote(vote_id).aggregate.score;
-
-      // Verify the score is positive
-      if (question_score < 0.0) {
-        result.set(#err("The question's score is negative")); return;
-      };
-
-      let momentum_args = _model.getMomentumArgs();
+      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
 
       // Verify the score is greater or equal to the required score
-      if (question_score < InterestRules.computeSelectionScore(momentum_args, Duration.toTime(_model.getSchedulerParameters().question_pick_period), date)){
+      if (appeal.score < _model.getSubMomentum().get().selection_score){
         result.set(#err("The question's score is too low")); return;
       };
 
@@ -174,12 +167,7 @@ module {
       _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
 
       // Update the momentum args
-      _model.setMomentumArgs({
-        last_pick_date_ns = date;
-        last_pick_score = question_score;
-        num_votes_opened = momentum_args.num_votes_opened + 1;
-        minimum_score = momentum_args.minimum_score;
-      });
+      _model.getSubMomentum().setLastPick(date, appeal);
 
       // Perform the transition
       result.set(#ok(?[opinion_vote_link, categorization_vote_link]));

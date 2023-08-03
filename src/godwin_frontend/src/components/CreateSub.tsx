@@ -1,21 +1,22 @@
-import TextInput                                                              from "./TextInput";
-import DurationInput                                                          from "./DurationInput";
-import NumberInput                                                            from "./NumberInput";
-import CreateSubButton                                                        from "./CreateSubButton";
-import { ColorPickerPopover }                                                 from "./ColorPickerPopover";
-import { EmojiPickerPopover }                                                 from "./EmojiPickerPopover";
-import Spinner                                                                from "./Spinner";
-import Balance                                                                from "./base/Balance";
-import SvgButton                                                              from "./base/SvgButton";
-import CONSTANTS                                                              from "../Constants";
-import { createSubResultToError, createSubGodwinErrorToString }               from "../utils";
-import { ActorContext }                                                       from "../ActorContext"
-import { Category, CategoryInfo, SchedulerParameters, ConvictionsParameters } from "../../declarations/godwin_sub/godwin_sub.did";
+import TextInput                                                 from "./TextInput";
+import DurationInput                                             from "./DurationInput";
+import NumberInput                                               from "./NumberInput";
+import CreateSubButton                                           from "./CreateSubButton";
+import { ColorPickerPopover }                                    from "./ColorPickerPopover";
+import { EmojiPickerPopover }                                    from "./EmojiPickerPopover";
+import Spinner                                                   from "./Spinner";
+import Balance                                                   from "./base/Balance";
+import SvgButton                                                 from "./base/SvgButton";
+import CONSTANTS                                                 from "../Constants";
+import { createSubResultToError, createSubGodwinErrorToString }  from "../utils";
+import { ActorContext }                                          from "../ActorContext"
+import { Category, CategoryInfo, SchedulerParameters, 
+  ConvictionsParameters, SelectionParameters }                   from "../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useState, useContext }                                        from "react";
-import { Tooltip }                                                            from "@mui/material";
-import ErrorOutlineIcon                                                       from '@mui/icons-material/ErrorOutline';
-import { useNavigate }                                                        from "react-router-dom";
+import React, { useState, useEffect, useContext }                from "react";
+import { Tooltip }                                               from "@mui/material";
+import ErrorOutlineIcon                                          from "@mui/icons-material/ErrorOutline";
+import { useNavigate }                                           from "react-router-dom";
 
 const createDimension = () : [Category, CategoryInfo] => { 
   return [
@@ -34,20 +35,32 @@ const CreateSub = () => {
   const [name,                  setName                 ] = useState<string>                    (""                                                         );
   const [identifier,            setIdentifier           ] = useState<string>                    (""                                                         );
   const [categories,            setCategories           ] = useState<[Category, CategoryInfo][]>([createDimension()]                                        );
+  const [selectionParameters,   setSelectionParameters  ] = useState<SelectionParameters>       (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.SELECTION_PARAMETERS  );
   const [schedulerParameters,   setSchedulerParameters  ] = useState<SchedulerParameters>       (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.SCHEDULER_PARAMETERS  );
   const [convictionsParameters, setConvictionsParameters] = useState<ConvictionsParameters>     (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CONVICTIONS_PARAMETERS);
-  const [minimumInterestScore,  setMinimumInterestScore ] = useState<number>                    (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.MINIMUM_INTEREST_SCORE);
   const [characterLimit,        setCharacterLimit       ] = useState<bigint>                    (CONSTANTS.NEW_SUB_DEFAULT_PARAMETERS.CHARACTER_LIMIT       );
   
   const [showGeneral,           setShowGeneral          ] = useState<boolean>                   (false                                                      );
   const [showDimensions,        setShowDimensions       ] = useState<boolean>                   (false                                                      );
+  const [showSelectionParams,   setShowSelectionParams  ] = useState<boolean>                   (false                                                      );
   const [showSchedulerParams,   setShowSchedulerParams  ] = useState<boolean>                   (false                                                      );
   const [showConvictionsParams, setShowConvictionsParams] = useState<boolean>                   (false                                                      );
 
   const [submitting,            setSubmitting           ] = useState<boolean>                   (false                                                      );
-  const [error,                 setError                ] = useState<string | null>             (null                                                       );
+  const [error,                 setError                ] = useState<string | undefined>        (undefined                                                  );
+  const [subCreationPrice,      setSubCreationPrice     ] = useState<bigint | undefined>        (undefined                                                  );
 
   const navigate = useNavigate();
+
+  const refreshSubCreationPrice = async () => {
+    
+    master.getSubCreationPriceE8s().then((price) => {
+      setSubCreationPrice(price);
+    }).catch((err) => {
+      console.error(err);
+      setSubCreationPrice(undefined);
+    });
+  }
 
   const updateCategory = (index: number, to_update: [Category, CategoryInfo]) => {
     setCategories( old => { 
@@ -59,17 +72,18 @@ const CreateSub = () => {
   }
 
   const createSubGodwin = async () => {
-    setError(null);
+    setError(undefined);
     setSubmitting(true);
     
     master.createSubGodwin(identifier, { 
       name,
       categories,
+      selection: selectionParameters,
       scheduler: schedulerParameters,
       convictions: convictionsParameters,
-      minimum_interest_score: minimumInterestScore,
       character_limit: characterLimit
     }).then((result) => {
+      console.log(result);
       if (result['ok'] !== undefined){
         addSub(result['ok'], identifier).then(() => {
           navigate("/g/" + identifier);
@@ -90,6 +104,11 @@ const CreateSub = () => {
   const validateText = async(input: string) : Promise<string | undefined> => {
     return Promise.resolve(input.length === 0 ? "Text is empty" : undefined);
   }
+
+  useEffect(() => {
+    console.log("refreshing sub creation price");
+    refreshSubCreationPrice();
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center content-center">
@@ -115,13 +134,6 @@ const CreateSub = () => {
             input={Number(characterLimit)}
             onInputChange={(input: number) => { setCharacterLimit(BigInt(input)); } }
             validate={(input: number) => { return master.validateCharacterLimit(BigInt(input)).then(createSubResultToError) }}
-          />
-          <NumberInput
-            label="Minimum interest score"
-            id={"minimum_interest_score"}
-            input={minimumInterestScore}
-            onInputChange={setMinimumInterestScore}
-            validate={(input: number) => { return master.validateMinimumInterestScore(input).then(createSubResultToError) }}
           />
         </div>
       </CreateSubButton>
@@ -179,11 +191,22 @@ const CreateSub = () => {
             ))}
         </ol>
       </CreateSubButton>
+      <CreateSubButton show={showSelectionParams} setShow={setShowSelectionParams} label={"Selection parameters"}>
+        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+          <DurationInput id={"selection_period"} label={"Question selection period"} input={selectionParameters.selection_period } 
+            onInputChange={(input)=> { setSelectionParameters(params => { params.selection_period = input; return params; } )}}
+            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+          <NumberInput
+            label="Minimum interest score"
+            id={"minimum_interest_score"}
+            input={selectionParameters.minimum_score}
+            onInputChange={(input)=> { setSelectionParameters(params => { params.minimum_score = input; return params; } )}}
+            validate={(input: number) => { return master.validateMinimumInterestScore(input).then(createSubResultToError) }}
+          />
+        </div>
+      </CreateSubButton>
       <CreateSubButton show={showSchedulerParams} setShow={setShowSchedulerParams} label={"Scheduler parameters"}>
         <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
-          <DurationInput id={"question_pick_period"}      label={"Question pick period"}      input={schedulerParameters.question_pick_period     } 
-            onInputChange={(input)=> { setSchedulerParameters(params => { params.question_pick_period      = input; return params; } )}} 
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
           <DurationInput id={"censor_timeout"}            label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
@@ -222,13 +245,13 @@ const CreateSub = () => {
             </div> :
             <div className="flex flex-row items-center gap-x-1 text-white">
               Create sub
-              <Balance amount={BigInt(1_000_000_000)}/>
+              <Balance amount={subCreationPrice}/>
             </div>
           }
         </button>
         <div className="flex flex-col w-6 min-w-6 items-center text-sm">
           {
-            error !== null ?
+            error !== undefined ?
             <div className="w-full">
               <Tooltip title={error} arrow>
                 <ErrorOutlineIcon color="error"></ErrorOutlineIcon>

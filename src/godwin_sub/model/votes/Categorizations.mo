@@ -69,7 +69,7 @@ module {
           token_interface,
           #PUT_CATEGORIZATION_BALLOT,
         ),
-        pay_rules.getCategorizationVotePrice(),
+        func() : Nat { pay_rules.getPrices().categorization_vote_price_e8s; },
         pay_rules.computeCategorizationPayout
       )
     );

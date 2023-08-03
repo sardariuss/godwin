@@ -1,4 +1,4 @@
-import { VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { AccessControlError, VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
 import { Category, CreateSubGodwinError, Result_1 } from "../declarations/godwin_master/godwin_master.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
@@ -384,6 +384,15 @@ export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : stri
   if (error['NoCategories']               !== undefined) return 'Cannot create a sub without categories';
   if (error['NameTooShort']               !== undefined) return 'Minimum name length is ' + Number(error['NameTooShort']['min_length']).toString();
   if (error['NameTooLong']                !== undefined) return 'Maximum name length is ' + Number(error['NameTooShort']['max_length']).toString();
+  // From transfer error
+  if (error['GenericError']               !== undefined) return 'GenericError';
+  if (error['TemporarilyUnavailable']     !== undefined) return 'TemporarilyUnavailable'
+  if (error['BadBurn']                    !== undefined) return 'BadBurn';
+  if (error['Duplicate']                  !== undefined) return 'Duplicate';
+  if (error['BadFee']                     !== undefined) return 'BadFee';
+  if (error['CreatedInFuture']            !== undefined) return 'CreatedInFuture';
+  if (error['TooOld']                     !== undefined) return 'TooOld'
+  if (error['InsufficientFunds']          !== undefined) return 'InsufficientFunds';
   throw new Error('Invalid CreateSubGodwinError');
 }
 
@@ -395,4 +404,13 @@ export const createSubResultToError = (result: Result_1) : string | undefined =>
   } else {
     throw new Error("Invalid createSubGodwin result");
   }
+}
+
+export const accessControlErrorToString = (error: AccessControlError) : string => {
+  if (error['AccessDenied'] !== undefined){
+    let required_role = error['AccessDenied'].required_role;
+    if (required_role['ADMIN'] !== undefined){ return "Access denied: ADMIN required"; }
+    if (required_role['SUB'] !== undefined){ return "Access denied: SUB required"; }
+  }
+  throw new Error("Invalid access control error");
 }

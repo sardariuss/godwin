@@ -17,9 +17,11 @@ const SubBanner = ({sub} : Props) => {
       <div className="w-full bg-gradient-to-r from-purple-200 dark:from-purple-700 from-10% dark:via-indigo-800 via-indigo-100 via-30% dark:to-sky-600 to-sky-200 to-90% text-black dark:text-white font-medium pt-2 pb-1">
         { sub.name }
       </div>
-      <div className="relative w-full overflow-clip bg-gray-200 dark:bg-gray-700 py-1">
-        <div className="dark:text-white font-normal whitespace-nowrap"
+      { /* use a gradient because setting the background color normally does not apply to the sides (when scrolling the bar left and right) */ }
+      <div className="relative w-full overflow-clip bg-gradient-to-b from-gray-200 from-50% to-slate-100 to-50% dark:from-gray-700 dark:from-50% dark:to-gray-800 dark:to-50%">
+        <div className="dark:text-white flex flex-col font-normal whitespace-nowrap w-full items-center"
           style={{transform: `translate(` + `${(shift - diff) * 100}` + `vw, 0)`}}>
+          <div>
           { [...Array.from(sub.categories)].map((category, index) => 
             <span key={category[0]}>
               <span className="text-xs font-medium">{category[1].left.name.toLocaleLowerCase()  + " " }</span>
@@ -33,6 +35,10 @@ const SubBanner = ({sub} : Props) => {
               }
             </span>
           )}
+          </div>
+          <div className="text-xs font-light py-1 dark:text-white font-normal whitespace-nowrap">
+            <Momentum sub={sub}/>
+          </div>
         </div>
         <div className="absolute inset-0 w-full flex flex-col self-align-center">
           <input 
@@ -48,9 +54,6 @@ const SubBanner = ({sub} : Props) => {
             style={{"--cursor-hover" : `grab`, "--cursor-grabbing" : `grabbing`} as React.CSSProperties }
           />
         </div>
-      </div>
-      <div className="bg-slate-100 dark:bg-gray-800 text-xs font-light relative w-full overflow-clip bg-gray-100 dark:bg-gray-700 py-1 dark:text-white font-normal whitespace-nowrap">
-        <Momentum sub={sub}/>
       </div>
     </div>
   );

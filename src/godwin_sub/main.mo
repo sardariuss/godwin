@@ -64,6 +64,9 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type Direction                    = Types.Direction;
   type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
   type VoteKind                     = Types.VoteKind;
+  type Momentum                     = Types.Momentum;
+  type SelectionParameters          = Types.SelectionParameters;
+  type PriceRegister                = Types.PriceRegister;
   type FindQuestionIterationError   = Types.FindQuestionIterationError;
   type RevealedInterestBallot       = Types.RevealedInterestBallot;
   type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
@@ -91,10 +94,6 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().getLateOpinionBallotHalfLife();
   };
 
-  public query func getSelectionScore() : async Float {
-    getFacade().getSelectionScore(Time.now());
-  };
-
   public query func getCategories() : async CategoryArray {
     getFacade().getCategories();
   };
@@ -113,6 +112,22 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
     getFacade().setSchedulerParameters(caller, params);
+  };
+
+  public query func getSelectionParameters() : async SelectionParameters {
+    getFacade().getSelectionParameters();
+  };
+
+  public query func getSelectionParametersAndMomentum() : async (SelectionParameters, Momentum) {
+    getFacade().getSelectionParametersAndMomentum();
+  };
+
+  public shared({caller}) func setSelectionParameters(params: SelectionParameters) : async Result<(), AccessControlError> {
+    getFacade().setSelectionParameters(caller, params);
+  };
+
+  public query func getSubPrices() : async PriceRegister {
+    getFacade().getSubPrices();
   };
 
   public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {

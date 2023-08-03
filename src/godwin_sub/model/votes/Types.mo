@@ -33,11 +33,13 @@ module {
     #DOWN;
   };
 
-  public type InterestMomentumArgs = {
-    last_pick_date_ns : Time;
+  public type ComputeSelectionScoreArgs = {
+    last_pick_date_ns: Time;
     last_pick_score: Float;
     num_votes_opened: Nat;
     minimum_score: Float;
+    pick_period: Time;
+    current_time: Time;
   };
 
   public type DecayParameters = {

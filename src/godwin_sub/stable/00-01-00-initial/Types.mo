@@ -31,14 +31,16 @@ module {
     name                        : Ref<Text>;
     master                      : Ref<Principal>;
     categories                  : Map<Category, CategoryInfo>;
-    questions                   : QuestionsRegister;
-    momentum_args               : Ref<InterestMomentumArgs>;
-    price_params                : Ref<BasePriceParameters>;
     scheduler_params            : Ref<SchedulerParameters>;
+    base_price_params           : Ref<BasePriceParameters>;
+    selection_params            : Ref<SelectionParameters>;
     convictions_params          : {
       opinion_vote                 : Ref<DecayParameters>;
       late_opinion_ballot          : Ref<DecayParameters>;
     };
+    questions                   : QuestionsRegister;
+    momentum                    : Ref<Momentum>;
+    price_register              : Ref<PriceRegister>;
     status                      : {
       register                     : Map<Nat, StatusHistory>;
     };
@@ -236,11 +238,14 @@ module {
     #NS: Nat;
   };
 
-  public type InterestMomentumArgs = {
-    last_pick_date_ns : Time;
-    last_pick_score: Float;
-    num_votes_opened: Nat;
-    minimum_score: Float;
+  public type Momentum = {
+    num_votes_opened     : Nat;
+    selection_score      : Float;
+    last_pick: ?{
+      date        : Time;
+      vote_score  : Float;
+      total_votes : Nat;
+    };
   };
 
   public type ConvictionsParameters = {
@@ -254,7 +259,12 @@ module {
     scheduler: SchedulerParameters;
     character_limit: Nat;
     convictions: ConvictionsParameters;
-    minimum_interest_score: Float;
+    selection: SelectionParameters;
+  };
+
+  public type SelectionParameters = {
+    selection_period : Duration;
+    minimum_score    : Float;
   };
 
   public type DecayParameters = {
@@ -264,7 +274,6 @@ module {
   };
 
   public type SchedulerParameters = {
-    question_pick_period        : Duration;
     censor_timeout            : Duration;
     candidate_status_duration : Duration;
     open_status_duration      : Duration;
@@ -274,6 +283,14 @@ module {
   public type BasePriceParameters = {
     base_selection_period         : Duration;
     open_vote_price_e8s           : Nat;
+    reopen_vote_price_e8s         : Nat;
+    interest_vote_price_e8s       : Nat;
+    categorization_vote_price_e8s : Nat;
+  };
+
+  public type PriceRegister = {
+    open_vote_price_e8s           : Nat;
+    reopen_vote_price_e8s         : Nat;
     interest_vote_price_e8s       : Nat;
     categorization_vote_price_e8s : Nat;
   };

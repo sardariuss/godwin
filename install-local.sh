@@ -68,7 +68,9 @@ dfx canister install godwin_master --argument='( variant { init = record {
   };
   sub_creation_price_e8s = 8_000_000_000;
   base_price_parameters = record {
+    base_selection_period         = variant { DAYS = 1 : nat };
     open_vote_price_e8s           =  1_000_000_000;
+    reopen_vote_price_e8s         =    500_000_000;
     interest_vote_price_e8s       =    100_000_000;
     categorization_vote_price_e8s =    300_000_000;
   };

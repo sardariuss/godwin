@@ -74,7 +74,6 @@ module {
   public type PutBallotError               = VoteTypes.PutBallotError;
 
   public type SchedulerParameters = {
-    question_pick_period      : Duration;
     censor_timeout            : Duration;
     candidate_status_duration : Duration;
     open_status_duration      : Duration;
@@ -89,6 +88,7 @@ module {
   public type BasePriceParameters = {
     base_selection_period         : Duration;
     open_vote_price_e8s           : Nat;
+    reopen_vote_price_e8s         : Nat;
     interest_vote_price_e8s       : Nat;
     categorization_vote_price_e8s : Nat;
   };
@@ -103,13 +103,35 @@ module {
 
   public type SubParameters = {
     name: Text;
+    character_limit: Nat;
     categories: CategoryArray;
     scheduler: SchedulerParameters;
-    character_limit: Nat;
+    selection: SelectionParameters;
     convictions: ConvictionsParameters;
-    minimum_interest_score: Float;
   };
 
+  public type SelectionParameters = {
+    selection_period : Duration;
+    minimum_score    : Float;
+  };
+
+  public type Momentum = {
+    num_votes_opened     : Nat;
+    selection_score      : Float;
+    last_pick: ?{
+      date        : Time;
+      vote_score  : Float;
+      total_votes : Nat;
+    };
+  };
+
+  public type PriceRegister = {
+    open_vote_price_e8s           : Nat;
+    reopen_vote_price_e8s         : Nat;
+    interest_vote_price_e8s       : Nat;
+    categorization_vote_price_e8s : Nat;
+  };
+  
   public type Category = Text;
   
   public type CategoryArray = [(Category, CategoryInfo)];

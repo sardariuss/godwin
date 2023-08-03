@@ -58,7 +58,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 						{
 							showReopenQuestion ?
 								<div className="flex flex-row grow self-start justify-end">
-									<ReopenButton actor={sub.actor} questionId={question_id} onReopened={()=>{setHideQuestion(true)}}/>
+									<ReopenButton sub={sub} questionId={question_id} onReopened={()=>{setHideQuestion(true)}}/>
 								</div> : <></>
 						}
 					</div>

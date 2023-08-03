@@ -31,9 +31,9 @@ module {
     RESISTANCE        = 1.0;
   };
 
-  type Time                 = Int;
-  type InterestMomentumArgs = Types.InterestMomentumArgs;
-  type ScoreAndHotness      = Types.ScoreAndHotness;
+  type Time                      = Int;
+  type ComputeSelectionScoreArgs = Types.ComputeSelectionScoreArgs;
+  type ScoreAndHotness           = Types.ScoreAndHotness;
 
   public func computeHotTimestamp(date: Time, time_unit_ms: Time): Float {
     Float.fromInt(date - HOTNESS.TIME_REFERENCE) / Float.fromInt(time_unit_ms);
@@ -66,16 +66,16 @@ module {
   };
   
   // https://www.desmos.com/calculator/eczg0vqgc7
-  public func computeSelectionScore(args: InterestMomentumArgs, pick_period: Time, now: Time): Float {
-    let { last_pick_date_ns; last_pick_score; num_votes_opened; minimum_score; } = args;
+  public func computeSelectionScore(args: ComputeSelectionScoreArgs): Float {
+    let { last_pick_date_ns; last_pick_score; num_votes_opened; minimum_score; pick_period; current_time; } = args;
 
-    if (now < last_pick_date_ns) { Debug.trap("The current date cannot be anterior than the date of the last selection score"); };
+    if (current_time < last_pick_date_ns) { Debug.trap("The current date cannot be anterior than the date of the last selection score"); };
     
     // Avoid division by zero
-    if (now == last_pick_date_ns) { return Math.maxFloat(); };
+    if (current_time == last_pick_date_ns) { return Math.maxFloat(); };
 
     // Get the difference of time between now and the last pick, in pick_period units
-    let time_diff = Float.fromInt(now - last_pick_date_ns) / Float.fromInt(pick_period);
+    let time_diff = Float.fromInt(current_time - last_pick_date_ns) / Float.fromInt(pick_period);
 
     // Compute the momentum, which is a combination of the invert function and exponential decay
     let momentum = (    

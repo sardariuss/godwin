@@ -2,6 +2,8 @@ import { frome8s } from "../token/TokenUtils";
 import Coin        from "../icons/Coin";
 import CONSTANTS   from "../../Constants";
 
+import React       from "react";
+
 type Props = {
   amount: bigint | undefined;
 }

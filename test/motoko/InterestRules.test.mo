@@ -127,54 +127,50 @@ suite("InterestRules module test suite", func() {
 
   suite("Test computeSelectionScore with", func(){
 
-    let pick_period = 5000;
-    let momentum_args  = {
+    let args  = {
       last_pick_date_ns = 10000;
       last_pick_score = 12.5;
       num_votes_opened = 0;
       minimum_score = 1.0;
+      pick_period = 5000;
+      current_time = 10000; // Same as last_pick_date
     };
 
     test("If the current date is the same as the last pick date, the max float shall be returned", func(){
       compare(
-        InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns),
+        InterestRules.computeSelectionScore(args),
         Math.maxFloat(),
         Testify.floatEpsilon9.equal);
     });
 
     test("If the current date is exactly one pick period after the last pick date, the score shall be equal to the last pick score", func(){
       compare(
-        InterestRules.computeSelectionScore(momentum_args, pick_period, momentum_args.last_pick_date_ns + pick_period),
-        momentum_args.last_pick_score,
+        InterestRules.computeSelectionScore({args with current_time = args.last_pick_date_ns + args.pick_period}),
+        args.last_pick_score,
         Testify.floatEpsilon9.equal);
     });
 
     test("If the computed score is smaller than the minimum score, the minimum score shall be returned", func(){
       // Use the same settings as the previous test, but raise the minimum score
-      let modified_args = { momentum_args with minimum_score = 15.0; };
       compare(
-        InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + pick_period),
-        modified_args.minimum_score,
+        InterestRules.computeSelectionScore({args with current_time = args.last_pick_date_ns + args.pick_period; minimum_score = 15.0;}),
+        15.0,
         Testify.floatEpsilon9.equal);
     });
 
     test("Before one pick period, the greater the number of votes, the faster the score decays", func(){
-      let modified_args_1 = { momentum_args with num_votes_opened = 10; };
-      let modified_args_2 = { momentum_args with num_votes_opened = 20; };
-      let now = momentum_args.last_pick_date_ns + pick_period / 2;
+      let current_time = args.last_pick_date_ns + args.pick_period / 2;
       compare(
-        InterestRules.computeSelectionScore(modified_args_1, pick_period, now),
-        InterestRules.computeSelectionScore(modified_args_2, pick_period, now),
+        InterestRules.computeSelectionScore({ args with num_votes_opened = 10; current_time; }),
+        InterestRules.computeSelectionScore({ args with num_votes_opened = 20; current_time; }),
         Testify.float.greaterThan);
     });
 
     test("After one pick period, the greater the number of votes, the slower the score decays", func(){
-      let modified_args_1 = { momentum_args with num_votes_opened = 10; };
-      let modified_args_2 = { momentum_args with num_votes_opened = 20; };
-      let now = momentum_args.last_pick_date_ns + pick_period * 2;
+      let current_time = args.last_pick_date_ns + args.pick_period * 2;
       compare(
-        InterestRules.computeSelectionScore(modified_args_1, pick_period, now),
-        InterestRules.computeSelectionScore(modified_args_2, pick_period, now),
+        InterestRules.computeSelectionScore({ args with num_votes_opened = 10; current_time; }),
+        InterestRules.computeSelectionScore({ args with num_votes_opened = 20; current_time; }),
         Testify.float.lessThan);
     });
 
@@ -192,10 +188,14 @@ suite("InterestRules module test suite", func() {
 
     for(i in Iter.range(0, expected_values.size() - 1)){
       let {num_votes_opened; x; y;} = expected_values[i];
-      let modified_args = { momentum_args with num_votes_opened; minimum_score = 0.0; };
+      let modified_args = { args with 
+        num_votes_opened; 
+        minimum_score = 0.0; 
+        current_time = args.last_pick_date_ns + Float.toInt(Float.fromInt(args.pick_period) * x)
+      };
       test("Test some values (" # Nat.toText(i + 1) # ")", func(){
         compare(
-          InterestRules.computeSelectionScore(modified_args, pick_period, modified_args.last_pick_date_ns + Float.toInt(Float.fromInt(pick_period) * x)),
+          InterestRules.computeSelectionScore(modified_args),
           modified_args.last_pick_score * y,
           Testify.floatEpsilon9.equal);
       });

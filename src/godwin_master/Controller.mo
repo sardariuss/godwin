@@ -73,15 +73,37 @@ module {
       });
     };
 
+    public func getSubCreationPriceE8s() : Balance {
+      _model.getSubCreationPriceE8s();
+    };
+
+    public func setSubCreationPriceE8s(caller: Principal, price: Balance) : Result<(), AccessControlError> {
+      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #ADMIN), func() {
+        _model.setSubCreationPriceE8s(price); 
+      });
+    };
+
     public func getBasePriceParameters() : BasePriceParameters {
       _model.getBasePriceParameters();
     };
 
-    public func setBasePriceParameters(caller: Principal, base_price_parameters: BasePriceParameters) : Result<(), AccessControlError> {
+    public func setBasePriceParameters(caller: Principal, base_price_parameters: BasePriceParameters) : async Result<(), AccessControlError> {
       // @todo: update the price of all the subs
-      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #ADMIN), func() {
-        _model.setBasePriceParameters(base_price_parameters); 
-      });
+      switch(verifyAuthorizedAccess(caller, #ADMIN)){
+        case(#err(err)) { return #err(err); };
+        case(#ok) {};
+      };
+      
+      _model.setBasePriceParameters(base_price_parameters);
+      
+      // Update the base price for all the subs
+      // @todo: do not ignore the returned results, return an array of results instead
+      for (principal in _model.getSubGodwins().keys()){
+        let sub : GodwinSub = actor(Principal.toText(principal));
+        ignore await sub.setBasePriceParameters(base_price_parameters);
+      };
+
+      #ok;
     };
 
     public func getSubValidationParams() : ValidationParams {

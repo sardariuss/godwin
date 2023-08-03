@@ -1,17 +1,18 @@
-import { ActorContext }              from "../ActorContext"
-import Balance                       from "./base/Balance";
-import Spinner                       from "./Spinner";
-import { openQuestionErrorToString } from "../utils";
-import CONSTANTS                     from "../Constants";
+import { ActorContext }                           from "../ActorContext"
+import Balance                                    from "./base/Balance";
+import Spinner                                    from "./Spinner";
+import { openQuestionErrorToString }              from "../utils";
+import CONSTANTS                                  from "../Constants";
+import { Sub } from "../ActorContext";
 
-import { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 
-import { Tooltip }                   from "@mui/material";
-import ErrorOutlineIcon              from '@mui/icons-material/ErrorOutline';
+import { Tooltip }                                from "@mui/material";
+import ErrorOutlineIcon                           from "@mui/icons-material/ErrorOutline";
 
 type Props = {
   canSelectSub: boolean,
-  subId: string | null,
+  subId: string | undefined,
   onSubmitQuestion: (question_id: bigint) => (void)
 };
 
@@ -19,33 +20,43 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
   const {subs, refreshBalance} = useContext(ActorContext);
   
-  const [showSubsList,  setShowSubsList ] = useState<boolean>      (false                                             );
-  const [selectedSubId, setSelectedSubId] = useState<string | null>((subId !== null && subs.has(subId)) ? subId : null);
-  const [text,          setText         ] = useState<string>       (""                                                );
-  const [submitting,    setSubmitting   ] = useState<boolean>      (false                                             );
-  const [error,         setError        ] = useState<string | null>(null                                              );
+  const [sub,           setSub          ] = useState<Sub | undefined>   (undefined);
+  const [showSubsList,  setShowSubsList ] = useState<boolean>           (false    );
+  const [selectedSubId, setSelectedSubId] = useState<string | undefined>(subId    );
+  const [text,          setText         ] = useState<string>            (""       );
+  const [submitting,    setSubmitting   ] = useState<boolean>           (false    );
+  const [error,         setError        ] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (selectedSubId !== undefined){
+      setSub(subs.get(selectedSubId));
+    } else {
+      setSub(undefined);
+    }
+  }, [subs, selectedSubId]);
 
   const submitQuestion = async () => {
-    setError(null);
+    setError(undefined);
     setSubmitting(true);
-    if (selectedSubId !== null){
-      subs.get(selectedSubId)?.actor.openQuestion(text).then((res) => {
-        setSubmitting(false);
+    if (sub !== undefined){
+      sub.actor.openQuestion(text).then((res) => {
         if (res['ok'] !== undefined){
           setText("");
           refreshBalance();
           onSubmitQuestion(res['ok']);
         } else if (res['err'] !== undefined){
           setError(openQuestionErrorToString(res['err']));
-        } else {
-          throw new Error("Invalid open question result");
         }
+      }).catch((err) => {
+        setError(err.toString());
+      }).finally(() => {
+        setSubmitting(false);
       });
     }
   }
 
   useEffect(() => {
-    setError(null);
+    setError(undefined);
   }, []);
 
 	return (
@@ -55,7 +66,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
           <textarea 
             className="w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400"
             rows={4}
-            onChange={(e) => { setError(null); setText(e.target.value)} }
+            onChange={(e) => { setError(undefined); setText(e.target.value)} }
             placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} 
             disabled={submitting}
             required
@@ -71,7 +82,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
                 type="button"
               >
                 {
-                  selectedSubId !== null ? subs.get(selectedSubId)?.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
+                  sub !== undefined ? sub.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
                 } 
                 <svg className="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -93,7 +104,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
           <button 
             className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center"
             type="submit"
-            disabled={selectedSubId===null || text.length <= 0 || submitting}
+            disabled={sub===undefined || text.length <= 0 || submitting}
             onClick={(e) => submitQuestion()}
           >
             {
@@ -103,13 +114,13 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
               </div> :
               <div className="flex flex-row items-center gap-x-1 text-white">
                 Propose
-                <Balance amount={BigInt(1_000_000_000)}/>
+                <Balance amount={sub !== undefined ? sub.price_parameters.open_vote_price_e8s : undefined}/>
               </div>
             }
           </button>
           <div className="flex flex-col w-6 min-w-6 items-center text-sm">
           {
-            error !== null ?
+            error !== undefined ?
             <div className="w-full">
               <Tooltip title={error} arrow>
                 <ErrorOutlineIcon color="error"></ErrorOutlineIcon>

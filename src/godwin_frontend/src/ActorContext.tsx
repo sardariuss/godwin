@@ -1,6 +1,7 @@
 import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, Category, CategoryInfo, SchedulerParameters }   from "../declarations/godwin_sub/godwin_sub.did";
+import { _SERVICE as SubService, Category, CategoryInfo, 
+  SchedulerParameters, PriceRegister }                                           from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
 import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
@@ -23,6 +24,7 @@ export type Sub = {
   name: string;
   categories: Map<Category, CategoryInfo>;
   scheduler_parameters: SchedulerParameters;
+  price_parameters: PriceRegister;
 };
 
 export const ActorContext = React.createContext<{
@@ -133,7 +135,8 @@ export function useAuthClient() {
     let name = await actor.getName();
     let categories = toMap(await actor.getCategories());
     let scheduler_parameters = await actor.getSchedulerParameters();
-    setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters}));
+    let price_parameters = await actor.getSubPrices();
+    setSubs((subs) => new Map(subs).set(id, {actor, name, categories, scheduler_parameters, price_parameters}));
   }
 
   const refreshSubs = async () => {
@@ -158,7 +161,8 @@ export function useAuthClient() {
       let name = await actor.getName();
       let categories = toMap(await actor.getCategories());
       let scheduler_parameters = await actor.getSchedulerParameters();
-      newSubs.set(id, {actor, name, categories, scheduler_parameters});
+      let price_parameters = await actor.getSubPrices();
+      newSubs.set(id, {actor, name, categories, scheduler_parameters, price_parameters});
     }));
 
     setSubs(newSubs);

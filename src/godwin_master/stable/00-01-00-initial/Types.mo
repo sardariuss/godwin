@@ -34,12 +34,12 @@ module {
   };
 
   type Duration = {
-    #YEARS: Nat;
-    #DAYS: Nat;
-    #HOURS: Nat;
-    #MINUTES: Nat;
-    #SECONDS: Nat;
-    #NS: Nat;
+    #YEARS   : Nat;
+    #DAYS    : Nat;
+    #HOURS   : Nat;
+    #MINUTES : Nat;
+    #SECONDS : Nat;
+    #NS      : Nat;
   };
 
   type Ref<V> = {
@@ -80,13 +80,14 @@ module {
   public type BasePriceParameters = {
     base_selection_period         : Duration;
     open_vote_price_e8s           : Nat;
+    reopen_vote_price_e8s         : Nat;
     interest_vote_price_e8s       : Nat;
     categorization_vote_price_e8s : Nat;
   };
 
   public type CyclesParameters = {
-    create_sub_cycles: Nat;
-    upgrade_sub_cycles: Nat;
+    create_sub_cycles             : Nat;
+    upgrade_sub_cycles            : Nat;
   };
 
 };

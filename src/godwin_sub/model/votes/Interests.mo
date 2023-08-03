@@ -37,7 +37,6 @@ module {
   type Appeal                 = Types.Appeal;
   type VoteStatus             = Types.VoteStatus;
   type RevealedBallot         = Types.RevealedBallot<Interest>;
-  type InterestMomentumArgs   = Types.InterestMomentumArgs;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
   type InterestVoteClosure    = Types.InterestVoteClosure;
   type IVotersHistory         = Types.IVotersHistory;
@@ -94,7 +93,7 @@ module {
             token_interface,
             #PUT_INTEREST_BALLOT,
           ),
-          pay_rules.getInterestVotePrice(),
+          func() : Nat { pay_rules.getPrices().interest_vote_price_e8s; },
           getPayoutFunction(pay_rules)
         )
       ),
@@ -120,7 +119,8 @@ module {
   ) {
     
     public func openVote(principal: Principal, date: Time, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
-      switch(await* _pay_for_new.payin(principal, _pay_rules.getOpenVotePrice(), func() : VoteId { _votes.newVote(date); })){
+      let { interest_vote_price_e8s; } = _pay_rules.getPrices();
+      switch(await* _pay_for_new.payin(principal, interest_vote_price_e8s, func() : VoteId { _votes.newVote(date); })){
         case(#err(err)) { #err(err); };
         case(#ok(vote_id)) {
           let question_id = on_success(vote_id);
@@ -135,9 +135,10 @@ module {
       await* _votes.closeVote(vote_id, date);
       let vote = _votes.getVote(vote_id);
       // Remove the vote from the interest query
-      _queries.remove(KeyConverter.toHotnessKey(_joins.getQuestionIteration(vote_id).0, vote.aggregate.hotness));
+      let (question_id, iteration) = _joins.getQuestionIteration(vote_id);
+      _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
-      let { author_payout; creator_reward; } = _pay_rules.computeOpenedQuestionPayout(vote.aggregate, closure);
+      let { author_payout; creator_reward; } = _pay_rules.computeOpenedQuestionPayout(vote.aggregate, closure, iteration);
       await* _pay_for_new.payout(vote_id, author_payout);
       switch(creator_reward){
         case(null){};

@@ -1,5 +1,6 @@
 import Types               "Types";
 import StatusManager       "StatusManager";
+import SubMomentum         "SubMomentum";
 import Categories          "Categories";
 import PayRules            "PayRules";
 import Categorizations     "votes/Categorizations";
@@ -24,12 +25,14 @@ module {
 
   type Status               = Types.Status;
   type SchedulerParameters  = Types.SchedulerParameters;
-  type InterestMomentumArgs = VoteTypes.InterestMomentumArgs;
+  type SelectionParameters  = Types.SelectionParameters;
+  type BasePriceParameters  = Types.BasePriceParameters;
   type Categories           = Categories.Categories;
   type PayRules             = PayRules.PayRules;
   type Questions            = Questions.Questions;
   type QuestionQueries      = QuestionTypes.QuestionQueries;
   type StatusManager        = StatusManager.StatusManager;
+  type SubMomentum          = SubMomentum.SubMomentum;
   type InterestVotes        = Interests.Interests;
   type OpinionVotes         = Opinions.Opinions;
   type CategorizationVotes  = Categorizations.Categorizations;
@@ -39,12 +42,14 @@ module {
   public class Model(
     _name: WRef<Text>,
     _master: WRef<Principal>,
-    _momentum_args: WRef<InterestMomentumArgs>,
     _scheduler_params: WRef<SchedulerParameters>,
+    _selection_parameters: WRef<SelectionParameters>,
+    _base_price_parameters: WRef<BasePriceParameters>,
     _categories: Categories,
     _pay_rules: PayRules,
     _questions: Questions,
     _status_manager: StatusManager,
+    _sub_momentum: SubMomentum,
     _queries: QuestionQueries,
     _interest_votes: InterestVotes,
     _opinion_votes: OpinionVotes,
@@ -73,20 +78,28 @@ module {
       _master.set(master);
     };
 
-    public func getMomentumArgs() : InterestMomentumArgs {
-      _momentum_args.get();
-    };
-
-    public func setMomentumArgs(momentum_args: InterestMomentumArgs) {
-      _momentum_args.set(momentum_args);
-    };
-
     public func getSchedulerParameters() : SchedulerParameters {
       _scheduler_params.get();
     };
 
     public func setSchedulerParameters(params: SchedulerParameters) {
       _scheduler_params.set(params);
+    };
+
+    public func getSelectionParameters() : SelectionParameters {
+      _selection_parameters.get();
+    };
+
+    public func setSelectionParameters(params: SelectionParameters) {
+      _selection_parameters.set(params);
+    };
+
+    public func getBasePriceParameters() : BasePriceParameters {
+      _base_price_parameters.get();
+    };
+
+    public func setBasePriceParameters(params: BasePriceParameters) {
+      _base_price_parameters.set(params);
     };
 
     public func getCategories() : Categories {
@@ -103,6 +116,10 @@ module {
 
     public func getStatusManager() : StatusManager {
       _status_manager;
+    };
+
+    public func getSubMomentum() : SubMomentum {
+      _sub_momentum;
     };
 
     public func getQueries() : QuestionQueries {

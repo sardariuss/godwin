@@ -1,4 +1,5 @@
 import Types         "Types";
+import SubMomentum   "SubMomentum";
 import PayTypes      "token/Types";
 import VoteTypes     "votes/Types";
 import Polarization  "votes/representation/Polarization";
@@ -22,6 +23,9 @@ module {
 
   type BasePriceParameters  = Types.BasePriceParameters;
   type SchedulerParameters  = Types.SchedulerParameters;
+  type SelectionParameters  = Types.SelectionParameters;
+  type PriceRegister        = Types.PriceRegister;
+  type SubMomentum          = SubMomentum.SubMomentum;
   type Appeal               = VoteTypes.Appeal;
   type Interest             = VoteTypes.Interest;
   type CursorMap            = VoteTypes.CursorMap;
@@ -68,10 +72,6 @@ module {
     exponent = 2.5; // The greater, the more the payout rules are attenuated for small number of voters
   };
 
-  public func build(price_params: Ref<BasePriceParameters>, scheduler_parameters: Ref<SchedulerParameters>, creator: Principal) : PayRules {
-    PayRules(WRef.WRef(price_params), WRef.WRef(scheduler_parameters), creator);
-  };
-
   // Allow to specify only what's required to compute the interest distribution
   type ReducedAppeal = {ups: Nat; downs: Nat};
 
@@ -104,27 +104,30 @@ module {
     { shares; reward_ratio; };
   };
 
-  // @todo: avoid computing the prices on every call, rather compute them once every time the base price or question pick period changes
-  public class PayRules(_price_params: WRef<BasePriceParameters>, _scheduler_parameters: WRef<SchedulerParameters>, _creator: Principal) {
+  public func computeSubPrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) : PriceRegister {
+    let { base_selection_period; reopen_vote_price_e8s; open_vote_price_e8s; interest_vote_price_e8s; categorization_vote_price_e8s; } = base_price_params;
+    let { selection_period } = selection_params;
+    let coef = Float.fromInt(Duration.toTime(selection_period)) / Float.fromInt(Duration.toTime(base_selection_period));
+    return {
+      open_vote_price_e8s           = Int.abs(Float.toInt(Float.fromInt(open_vote_price_e8s          ) * coef));
+      reopen_vote_price_e8s         = Int.abs(Float.toInt(Float.fromInt(reopen_vote_price_e8s        ) * coef));
+      interest_vote_price_e8s       = Int.abs(Float.toInt(Float.fromInt(interest_vote_price_e8s      ) * coef));
+      categorization_vote_price_e8s = Int.abs(Float.toInt(Float.fromInt(categorization_vote_price_e8s) * coef));
+    };
+  };
 
-    public func setBasePriceParameters(params: BasePriceParameters) {
-      _price_params.set(params);
+  public func build(price_params: Ref<PriceRegister>) : PayRules {
+    PayRules(WRef.WRef(price_params));
+  };
+
+  public class PayRules(_price_params: WRef<PriceRegister>) {
+
+    public func updatePrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) {
+      _price_params.set(computeSubPrices(base_price_params, selection_params));
     };
 
-    public func getOpenVotePrice()          : Balance {
-      Int.abs(Float.toInt(Float.fromInt(_price_params.get().open_vote_price_e8s)           * getSelectionPeriodCoef()));
-    };
-
-    public func getInterestVotePrice()      : Balance {
-      Int.abs(Float.toInt(Float.fromInt(_price_params.get().interest_vote_price_e8s)       * getSelectionPeriodCoef()));
-    };
-
-    public func getCategorizationVotePrice(): Balance {
-      Int.abs(Float.toInt(Float.fromInt(_price_params.get().categorization_vote_price_e8s) * getSelectionPeriodCoef()));
-    };
-
-    func getSelectionPeriodCoef() : Float {
-      Float.fromInt(Duration.toTime(_scheduler_parameters.get().question_pick_period)) / Float.fromInt(Duration.toTime(_price_params.get().base_selection_period));
+    public func getPrices() : PriceRegister {
+      _price_params.get();
     };
 
     type OpenedQuestionPayout = {
@@ -133,7 +136,7 @@ module {
     };
 
     // see www.desmos.com/calculator/vkyld4yntw
-    public func computeOpenedQuestionPayout(appeal: Appeal, closure: InterestVoteClosure) : OpenedQuestionPayout {
+    public func computeOpenedQuestionPayout(appeal: Appeal, closure: InterestVoteClosure, iteration: Nat) : OpenedQuestionPayout {
 
       let num_voters = appeal.ups + appeal.downs;
 
@@ -142,13 +145,15 @@ module {
         return { author_payout = { refund_share = 1.0; reward_tokens = null; }; creator_reward = null; };
       };
 
+      let price_e8s = if (iteration == 0) { _price_params.get().open_vote_price_e8s; } else { _price_params.get().reopen_vote_price_e8s; };
+
       let author_payout = {
         // Refund the full amount if the vote has not been censored
         refund_share  = if (closure == #CENSORED){ 0.0; } else { 1.0 };
         // If the question has been selected, reward the price it took to open the question
         // multiplied by the square root of the score
         reward_tokens = if (closure != #SELECTED){ null; } else {
-          ?Int.abs(Float.toInt((Float.sqrt(appeal.score) - 1) * Float.fromInt(getOpenVotePrice())));
+          ?Int.abs(Float.toInt((Float.sqrt(appeal.score) - 1) * Float.fromInt(price_e8s)));
         };
       };
      
@@ -173,7 +178,7 @@ module {
      
       let author_payout = {
         refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
-        reward_tokens = ?Int.abs(Float.toInt(COEF * reward_ratio * Float.fromInt(getInterestVotePrice())));
+        reward_tokens = ?Int.abs(Float.toInt(COEF * reward_ratio * Float.fromInt(_price_params.get().interest_vote_price_e8s)));
       };
 
       attenuatePayout(author_payout, num_voters);
@@ -195,7 +200,7 @@ module {
 
       let author_payout = {
         refund_share = payout.refund;
-        reward_tokens = ?Int.abs(Float.toInt(payout.reward * Float.fromInt(getCategorizationVotePrice())));
+        reward_tokens = ?Int.abs(Float.toInt(payout.reward * Float.fromInt(_price_params.get().categorization_vote_price_e8s)));
       };
 
       attenuatePayout(author_payout, num_voters);

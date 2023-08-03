@@ -1,21 +1,20 @@
 import Balance                         from "./base/Balance"
 import { _SERVICE, Status }            from "../../declarations/godwin_sub/godwin_sub.did"
 import Spinner                         from "./Spinner";
-import { ActorContext }                from "../ActorContext";
+import { ActorContext, Sub }           from "../ActorContext";
 
 import { Tooltip }                     from "@mui/material";
 import ErrorOutlineIcon                from '@mui/icons-material/ErrorOutline';
 
-import { ActorSubclass }               from "@dfinity/agent"
 import React, { useState, useContext } from "react"
 
 type ReopenButtonInput = {
-  actor: ActorSubclass<_SERVICE>,
+  sub: Sub,
   questionId: bigint,
   onReopened: (bigint) => void
 }
 
-const ReopenButton = ({actor, questionId, onReopened}: ReopenButtonInput) => {
+const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
@@ -25,7 +24,7 @@ const ReopenButton = ({actor, questionId, onReopened}: ReopenButtonInput) => {
   const reopenQuestion = () => {
     setSubmitting(true);
     setError(null);
-    actor.reopenQuestion(questionId).then((res) => {
+    sub.actor.reopenQuestion(questionId).then((res) => {
       setSubmitting(false);
       if (res['ok'] !== undefined) {
         refreshBalance();
@@ -53,7 +52,7 @@ const ReopenButton = ({actor, questionId, onReopened}: ReopenButtonInput) => {
         </div> :
         <div className="flex flex-col items-center gap-y-1">
           Propose again
-          <Balance amount={BigInt(1_000_000_000)}/>
+          <Balance amount={sub.price_parameters.reopen_vote_price_e8s}/>
         </div>
       }
       </button>

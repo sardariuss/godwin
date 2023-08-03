@@ -70,6 +70,9 @@ module {
   type VoteData                    = Types.VoteData;
   type VoteKindBallot              = Types.VoteKindBallot;
   type BasePriceParameters         = Types.BasePriceParameters;
+  type Momentum                    = Types.Momentum;
+  type PriceRegister               = Types.PriceRegister;
+  type SelectionParameters         = Types.SelectionParameters;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
@@ -130,10 +133,6 @@ module {
       _model.getOpinionVotes().getLateBallotDecay().half_life;
     };
 
-    public func getSelectionScore(now: Time) : Float {
-      InterestRules.computeSelectionScore(_model.getMomentumArgs(), Duration.toTime(_model.getSchedulerParameters().question_pick_period), now);
-    };
-
     public func getCategories() : Categories.Categories {
       _model.getCategories();
     };
@@ -164,9 +163,29 @@ module {
       });
     };
 
+    public func getSelectionParameters() : SelectionParameters {
+      _model.getSelectionParameters();
+    };
+
+    public func getSelectionParametersAndMomentum() : (SelectionParameters, Momentum) {
+      (_model.getSelectionParameters(), _model.getSubMomentum().get());
+    };
+
+    public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
+      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
+        _model.setSelectionParameters(params);
+        _model.getPayRules().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
+      });
+    };
+
+    public func getSubPrices() : PriceRegister {
+      _model.getPayRules().getPrices();
+    };
+
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
-        _model.getPayRules().setBasePriceParameters(params);
+        _model.setBasePriceParameters(params);
+        _model.getPayRules().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
       });
     };
 
@@ -477,6 +496,9 @@ module {
     };
 
     public func run(time: Time) : async* () {
+      // Update the momentum
+      _model.getSubMomentum().update(time);
+      // Iterate over the questions and update their status via the state machine
       for (question in _model.getQuestions().iter()){
         await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, [VoteLink]>());
       };

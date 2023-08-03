@@ -9,6 +9,7 @@ import Interests              "../../model/votes/Interests";
 import Categorizations        "../../model/votes/Categorizations";
 import Opinions               "../../model/votes/Opinions";
 import Joins                  "../../model/votes/QuestionVoteJoins";
+import PayRules               "../../model/PayRules";
 
 import Ref                    "../../utils/Ref";
 
@@ -25,11 +26,13 @@ module {
 
   type SubParameters              = Types.SubParameters;
   type SchedulerParameters        = Types.SchedulerParameters;
+  type SelectionParameters        = Types.SelectionParameters;
   type BasePriceParameters        = Types.BasePriceParameters;
   type DecayParameters            = Types.DecayParameters;
+  type Momentum                   = Types.Momentum;
   type VoteId                     = Types.VoteId;
   type QuestionId                 = Types.QuestionId;
-  type InterestMomentumArgs       = Types.InterestMomentumArgs;
+  type PriceRegister              = Types.PriceRegister;
   type StatusHistory              = Types.StatusHistory;
   type TransactionsRecord         = Types.TransactionsRecord;
   type MintResult                 = Types.MintResult;
@@ -39,7 +42,11 @@ module {
 
   public func init(date: Time, args: InitArgs) : State {
     let { master; creator; sub_parameters; price_parameters; } = args;
-    let { name; categories; scheduler; character_limit; convictions; minimum_interest_score; } = sub_parameters;
+    let { name; categories; scheduler; character_limit; convictions; selection; } = sub_parameters;
+
+    if (selection.minimum_score <= 0.0) {
+      Debug.trap("Cannot intialize momentum args with a minimum score inferior or equal to 0");
+    };
 
     #v0_1_0({
       creator;
@@ -47,20 +54,19 @@ module {
       name                        = Ref.init<Text>(name);
       master                      = Ref.init<Principal>(master);
       categories                  = Categories.initRegister(categories);
-      momentum_args               = Ref.init<InterestMomentumArgs>({ 
-        last_pick_date_ns = date;
-        last_pick_score = 1.0; 
-        num_votes_opened = 0;
-        minimum_score = if (minimum_interest_score > 0.0) { minimum_interest_score; } else {
-          Debug.trap("Cannot intialize momentum args with a minimum score inferior or equal to 0");
-        };
-      });
       scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
-      price_params                = Ref.init<BasePriceParameters>(price_parameters);
-      convictions_params                = {
+      base_price_params           = Ref.init<BasePriceParameters>(price_parameters);
+      selection_params            = Ref.init<SelectionParameters>(selection);
+      convictions_params          = {
         opinion_vote                 = Ref.init<DecayParameters>(Decay.initParameters(convictions.vote_half_life, date));
         late_opinion_ballot          = Ref.init<DecayParameters>(Decay.initParameters(convictions.late_ballot_half_life, date));
       };
+      momentum                    = Ref.init<Momentum>({
+        num_votes_opened = 0;
+        selection_score = selection.minimum_score;
+        last_pick = null;
+      });
+      price_register              = Ref.init<PriceRegister>(PayRules.computeSubPrices(price_parameters, selection));
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);
       };

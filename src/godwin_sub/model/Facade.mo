@@ -64,6 +64,9 @@ module {
   type Question                     = Types.Question;
   type Status                       = Types.Status;
   type BasePriceParameters          = Types.BasePriceParameters;
+  type Momentum                     = Types.Momentum;
+  type SelectionParameters          = Types.SelectionParameters;
+  type PriceRegister                = Types.PriceRegister;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
@@ -104,10 +107,6 @@ module {
       _controller.getLateOpinionBallotHalfLife();
     };
 
-    public func getSelectionScore(now: Time) : Float {
-      _controller.getSelectionScore(now);
-    };
-
     public func getCategories() : CategoryArray {
       Iter.toArray(_controller.getCategories().entries());
     };
@@ -127,7 +126,23 @@ module {
     public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
       _controller.setSchedulerParameters(caller, params);
     };
+
+    public func getSelectionParameters() : SelectionParameters {
+      _controller.getSelectionParameters();
+    };
+
+    public func getSelectionParametersAndMomentum() : (SelectionParameters, Momentum) {
+      _controller.getSelectionParametersAndMomentum();
+    };
+
+    public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
+      _controller.setSelectionParameters(caller, params);
+    };
     
+    public func getSubPrices() : PriceRegister {
+      _controller.getSubPrices();
+    };
+
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
       _controller.setBasePriceParameters(caller, params);
     };

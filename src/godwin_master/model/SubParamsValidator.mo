@@ -50,12 +50,11 @@ module {
       type Res = Result<(), CreateSubGodwinError>;
       type Err = CreateSubGodwinError;
 
-      let { name; categories; scheduler; convictions; character_limit; minimum_interest_score; } = params;
+      let { name; categories; scheduler; convictions; character_limit; selection; } = params;
 
       Result.chain<(), (), Err>(validateSubIdentifier(identifier),                              func() : Res {
       Result.chain<(), (), Err>(validateSubName(name),                                          func() : Res {
       Result.chain<(), (), Err>(validateCategories(categories),                                 func() : Res {
-      Result.chain<(), (), Err>(validateSchedulerDuration(scheduler.question_pick_period),      func() : Res {
       Result.chain<(), (), Err>(validateSchedulerDuration(scheduler.censor_timeout),            func() : Res {
       Result.chain<(), (), Err>(validateSchedulerDuration(scheduler.candidate_status_duration), func() : Res {
       Result.chain<(), (), Err>(validateSchedulerDuration(scheduler.open_status_duration),      func() : Res {
@@ -63,7 +62,7 @@ module {
       Result.chain<(), (), Err>(validateConvictionDuration(convictions.vote_half_life),         func() : Res {
       Result.chain<(), (), Err>(validateConvictionDuration(convictions.late_ballot_half_life),  func() : Res {
       Result.chain<(), (), Err>(validateCharacterLimit(character_limit),                        func() : Res {
-                                validateMinimumInterestScore(minimum_interest_score); })})})})})})})})})})});
+                                validateMinimumInterestScore(selection.minimum_score); })})})})})})})})})});
     };
 
     public func validateSubIdentifier(new: Text) : Result<(), CreateSubGodwinError> {

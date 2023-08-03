@@ -49,7 +49,7 @@ const CONSTANTS = {
   USER_NAME: {
     DEFAULT: 'New user'
   },
-  TOKEN_DECIMALS: 1,
+  TOKEN_DECIMALS: 2,
   CURSOR_DECIMALS: 2,
   CURSOR_SIDE_THRESHOLD: 0.1,
   DECAY_DECIMALS: 2,
@@ -76,8 +76,11 @@ const CONSTANTS = {
       EMOJI: '❔',
       COLOR: '#000000',
     },
+    SELECTION_PARAMETERS: {
+      selection_period:          { 'HOURS'  : BigInt(12)},
+      minimum_score: 5.0,
+    },
     SCHEDULER_PARAMETERS: {
-      question_pick_period:      { 'HOURS'  : BigInt(12)},
       censor_timeout:            { 'HOURS'  : BigInt(4) },
       candidate_status_duration: { 'DAYS'   : BigInt(3) },
       open_status_duration:      { 'DAYS'   : BigInt(2) },
@@ -87,7 +90,6 @@ const CONSTANTS = {
       vote_half_life:        { 'YEARS'  : BigInt(1)  },
       late_ballot_half_life: { 'DAYS'   : BigInt(7)  },
     },
-    MINIMUM_INTEREST_SCORE : 5.0,
     CHARACTER_LIMIT: BigInt(500)
   }
 };
