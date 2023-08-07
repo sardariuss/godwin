@@ -123,57 +123,57 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className={`flex flex-row justify-center items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-            <div className={`justify-center w-6 h-6`}>
-              <SvgButton onClick={ () => { resetCategorization(); setCountdownVote(false);}} disabled={ triggerVote } hidden={false}>
-                <ResetIcon/>
-              </SvgButton>
-            </div>
-            <ol className="w-50 list-none">
-            {
-              categorization.map(([category, cursor], index) => (
-                <li key={category} className="flex flex-col items-center">
-                  <CursorSlider
-                    id={ category + voteData.id.toString() }
-                    cursor={ cursor }
-                    disabled={ triggerVote }
-                    setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
-                    polarizationInfo = {{
-                      left: sub.info.categories.get(category).left,
-                      center: {...CONSTANTS.CATEGORIZATION_INFO.center, name: category + ": " + CONSTANTS.CATEGORIZATION_INFO.center.name},
-                      right: sub.info.categories.get(category).right
-                    }}
-                    onMouseUp={ () => { setCountdownVote(true)} }
-                    onMouseDown={ () => { setCountdownVote(false)} }
-                    isLate={false}
-                  />
-                  {
-                    index !== categorization.length - 1 ?
-                    <div className="h-1 w-3/4 bg-slate-400/25"/> : <></>
-                  }
-                </li>
-              ))
-            }
-            </ol>
-            <div className="mb-2">
-              <UpdateProgress<PutBallotError> 
-                  delay_duration_ms={countdownDurationMs}
-                  update_function={putBallot}
-                  error_to_string={putBallotErrorToString}
-                  callback_function={refreshBallot}
-                  run_countdown={countdownVote}
-                  set_run_countdown={setCountdownVote}
-                  trigger_update={triggerVote}
-                  set_trigger_update={setTriggerVote}
-                  cost={sub.info.prices.categorization_vote_price_e8s}>
-                <div className="w-8 h-8">
-                  <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote } hidden={false}>
-                    <PutBallotIcon/>
+            <div className={`relative flex flex-row items-center justify-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+              <div className={`absolute flex flex-col items-center left-0 w-1/5`}>
+                <div className="w-5 h-5">
+                  <SvgButton onClick={ () => { resetCategorization(); setCountdownVote(false);}} disabled={ triggerVote } hidden={false}>
+                    <ResetIcon/>
                   </SvgButton>
                 </div>
-              </UpdateProgress>
-            </div>
-          </div> : <></>
+              </div>
+              <ol className="w-2/5 list-none">
+              {
+                categorization.map(([category, cursor], index) => (
+                  <li key={category} className="flex flex-col items-center">
+                    <CursorSlider
+                      id={ category + voteData.id.toString() }
+                      cursor={ cursor }
+                      disabled={ triggerVote }
+                      setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
+                      polarizationInfo = {{
+                        left: sub.info.categories.get(category).left,
+                        center: {...CONSTANTS.CATEGORIZATION_INFO.center, name: category + ": " + CONSTANTS.CATEGORIZATION_INFO.center.name},
+                        right: sub.info.categories.get(category).right
+                      }}
+                      onMouseUp={ () => { setCountdownVote(true)} }
+                      onMouseDown={ () => { setCountdownVote(false)} }
+                      isLate={false}
+                    />
+                    {
+                      index !== categorization.length - 1 ?
+                      <div className="h-1 w-full bg-slate-400/25"/> : <></>
+                    }
+                  </li>
+                ))
+              }
+              </ol>
+              <div className="absolute flex flex-col right-0 w-1/5">
+                <UpdateProgress<PutBallotError> 
+                    delay_duration_ms={countdownDurationMs}
+                    update_function={putBallot}
+                    error_to_string={putBallotErrorToString}
+                    callback_function={refreshBallot}
+                    run_countdown={countdownVote}
+                    set_run_countdown={setCountdownVote}
+                    trigger_update={triggerVote}
+                    set_trigger_update={setTriggerVote}
+                    cost={sub.info.prices.categorization_vote_price_e8s}>
+                  <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote }>
+                    <PutBallotIcon/>
+                  </SvgButton>
+                </UpdateProgress>
+              </div>
+            </div> : <></>
           }
         </>,
         getDocElementById(votePlaceholderId)

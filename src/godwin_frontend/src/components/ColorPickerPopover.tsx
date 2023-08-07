@@ -5,7 +5,7 @@ import { HexColorPicker }                       from "react-colorful";
 
 export const ColorPickerPopover = ({ color, onChange }) => {
   
-  const popover = useRef();
+  const popover = useRef<any>();
   const [isOpen, toggle] = useState(false);
 
   const close = useCallback(() => toggle(false), []);

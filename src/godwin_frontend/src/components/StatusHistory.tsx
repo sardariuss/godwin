@@ -14,7 +14,7 @@ type Props = {
 const StatusHistoryComponent = ({sub, questionId, currentStatusData}: Props) => {
 
   const [statusHistory,  setStatusHistory]  = useState<StatusData[]>([currentStatusData]);
-  const [historyVisible, setHistoryVisible] = useState<boolean     >(false          );
+  const [historyVisible, setHistoryVisible] = useState<boolean     >(false              );
 
   const queryStatusHistory = async () => {
     if (statusHistory.length === 1) {

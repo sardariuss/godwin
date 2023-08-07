@@ -138,61 +138,58 @@ const CreateSub = () => {
         </div>
       </CreateSubButton>
       <CreateSubButton show={showDimensions} setShow={setShowDimensions} label={"Dimensions"}>
-        <ol className="flex flex-col divide-y divide-gray-300 dark:divide-gray-300 w-1/2">
+        <ol className="flex flex-col divide-y divide-gray-300 dark:divide-gray-300 xl:w-1/2 lg:w-2/3 md:w-full sm:w-full">
           {
             categories.map(([category, info], index) => (
-            <li className="grid grid-cols-14 pb-2" key={index.toString()}>
-              <div className="pt-2 grid col-span-12 grid-cols-12 text-gray-900 dark:text-white items-center place-items-center gap-x-2">
-                <div className="col-span-3 justify-self-start place-self-start">
-                  <TextInput 
-                    label={ "Dimension " + (index + 1).toString()}
-                    id={"category" + index.toString()} input={category }
-                    onInputChange={(input) => { category = input; updateCategory(index, [category, info]); }}
-                    validate={validateText}
-                  />
+            <li className="pt-2 grid col-span-12 pb-2 grid-cols-12 text-gray-900 dark:text-white items-center place-items-center gap-x-2" key={index.toString()}>
+              <div className="col-span-3 justify-self-start place-self-start">
+                <TextInput 
+                  label={ "Dimension " + (index + 1).toString()}
+                  id={"category" + index.toString()} input={category }
+                  onInputChange={(input) => { category = input; updateCategory(index, [category, info]); }}
+                  validate={validateText}
+                />
+              </div>
+              <div className="col-span-4 flex flex-row gap-x-2 items-center">
+                <TextInput 
+                  label="Left axis"
+                  id={"lname" + index.toString()} input={info.left.name}
+                  onInputChange={(input) => { info.left.name = input; updateCategory(index, [category, info]); }} 
+                  dir={"rtl"}
+                  validate={validateText}
+                />
+                <ColorPickerPopover color={info.left.color} onChange={(input) => { info.left.color  = input; updateCategory(index, [category, info]); }} />
+                <EmojiPickerPopover emoji={info.left.symbol} onChange={(input) => { info.left.symbol = input; updateCategory(index, [category, info]); }}/>
+              </div>
+              <div className="col-span-4 flex flex-row gap-x-2 items-center">
+                <EmojiPickerPopover emoji={info.right.symbol} onChange={(input) => { info.right.symbol = input; updateCategory(index, [category, info]); }}/>
+                <ColorPickerPopover color={info.right.color } onChange={(input) => { info.right.color  = input; updateCategory(index, [category, info]); }}/>
+                <TextInput 
+                  label="Right axis"
+                  id={"rname" + index.toString()}
+                  input={info.right.name}
+                  onInputChange={(input) => { info.right.name = input; updateCategory(index, [category, info]); }}
+                  validate={validateText} 
+                />
+              </div>
+              <div className="col-span-1 justify-self-end grid grid-cols-2 gap-x-2 items-center">
+                <div className={`w-5 h-5`}>
+                  <SvgButton onClick={() => { setCategories(categories.filter((_, cat_index) => index !== cat_index)); }} disabled={categories.length === 1} hidden={false}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M261-120q-24 0-42-18t-18-42v-570h-41v-60h188v-30h264v30h188v60h-41v570q0 24-18 42t-42 18H261Zm106-146h60v-399h-60v399Zm166 0h60v-399h-60v399Z"/></svg>
+                  </SvgButton>
                 </div>
-                <div className="col-span-4 flex flex-row gap-x-2 items-center">
-                  <TextInput 
-                    label="Left axis"
-                    id={"lname" + index.toString()} input={info.left.name}
-                    onInputChange={(input) => { info.left.name = input; updateCategory(index, [category, info]); }} 
-                    dir={"rtl"}
-                    validate={validateText}
-                  />
-                  <ColorPickerPopover color={info.left.color} onChange={(input) => { info.left.color  = input; updateCategory(index, [category, info]); }} />
-                  <EmojiPickerPopover emoji={info.left.symbol} onChange={(input) => { info.left.symbol = input; updateCategory(index, [category, info]); }}/>
-                </div>
-                <div className="col-span-4 flex flex-row gap-x-2 items-center">
-                  <EmojiPickerPopover emoji={info.right.symbol} onChange={(input) => { info.right.symbol = input; updateCategory(index, [category, info]); }}/>
-                  <ColorPickerPopover color={info.right.color } onChange={(input) => { info.right.color  = input; updateCategory(index, [category, info]); }}/>
-                  <TextInput 
-                    label="Right axis"
-                    id={"rname" + index.toString()}
-                    input={info.right.name}
-                    onInputChange={(input) => { info.right.name = input; updateCategory(index, [category, info]); }}
-                    validate={validateText} 
-                  />
-                </div>
-                <div className="col-span-1 justify-self-end grid grid-cols-2 gap-x-2 items-center">
-                  <div className={`w-5 h-5`}>
-                    <SvgButton onClick={() => { setCategories(categories.filter((_, cat_index) => index !== cat_index)); }} disabled={categories.length === 1} hidden={false}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M261-120q-24 0-42-18t-18-42v-570h-41v-60h188v-30h264v30h188v60h-41v570q0 24-18 42t-42 18H261Zm106-146h60v-399h-60v399Zm166 0h60v-399h-60v399Z"/></svg>
-                    </SvgButton>
-                  </div>
-                  <div className={`w-5 h-5 ${index !== (categories.length - 1) ? "hidden" : ""}`}>
-                    <SvgButton onClick={() => setCategories([...categories, createDimension()])} disabled={categories.length >= CONSTANTS.MAX_NUM_CATEGORIES} hidden={false}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M453-280h60v-166h167v-60H513v-174h-60v174H280v60h173v166Zm27.266 200q-82.734 0-155.5-31.5t-127.266-86q-54.5-54.5-86-127.341Q80-397.681 80-480.5q0-82.819 31.5-155.659Q143-709 197.5-763t127.341-85.5Q397.681-880 480.5-880q82.819 0 155.659 31.5Q709-817 763-763t85.5 127Q880-563 880-480.266q0 82.734-31.5 155.5T763-197.684q-54 54.316-127 86Q563-80 480.266-80Z"/></svg>
-                    </SvgButton>
-                  </div>
+                <div className={`w-5 h-5 ${index !== (categories.length - 1) ? "hidden" : ""}`}>
+                  <SvgButton onClick={() => setCategories([...categories, createDimension()])} disabled={categories.length >= CONSTANTS.MAX_NUM_CATEGORIES} hidden={false}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M453-280h60v-166h167v-60H513v-174h-60v174H280v60h173v166Zm27.266 200q-82.734 0-155.5-31.5t-127.266-86q-54.5-54.5-86-127.341Q80-397.681 80-480.5q0-82.819 31.5-155.659Q143-709 197.5-763t127.341-85.5Q397.681-880 480.5-880q82.819 0 155.659 31.5Q709-817 763-763t85.5 127Q880-563 880-480.266q0 82.734-31.5 155.5T763-197.684q-54 54.316-127 86Q563-80 480.266-80Z"/></svg>
+                  </SvgButton>
                 </div>
               </div>
-              <div className="col-span-2"> { /* spacer to center the content */ }</div>
             </li>
             ))}
         </ol>
       </CreateSubButton>
       <CreateSubButton show={showSelectionParams} setShow={setShowSelectionParams} label={"Selection parameters"}>
-        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+        <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"selection_period"} label={"Question selection period"} input={selectionParameters.selection_period } 
             onInputChange={(input)=> { setSelectionParameters(params => { params.selection_period = input; return params; } )}}
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
@@ -206,7 +203,7 @@ const CreateSub = () => {
         </div>
       </CreateSubButton>
       <CreateSubButton show={showSchedulerParams} setShow={setShowSchedulerParams} label={"Scheduler parameters"}>
-        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+        <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"censor_timeout"}            label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}} 
             validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
@@ -222,7 +219,7 @@ const CreateSub = () => {
         </div>
       </CreateSubButton>
       <CreateSubButton show={showConvictionsParams} setShow={setShowConvictionsParams} label={"Convictions parameters"}>
-        <div className="flex flex-col w-1/3 gap-y-6 mb-3 items-center">
+        <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"vote_half_life"}            label={"Opinion vote half-life"}        input={convictionsParameters.vote_half_life       } 
             onInputChange={(input)=> { setConvictionsParameters(params => { params.vote_half_life        = input; return params; } )}} 
             validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>

@@ -1,11 +1,11 @@
-import PolarizationBar         from "../base/PolarizationBar";
-import ChartTypeToggle         from "../base/ChartTypeToggle";
-import { OpinionVote }         from "../../../declarations/godwin_sub/godwin_sub.did";
-import { ChartTypeEnum }       from "../../utils";
-import CONSTANTS               from "../../Constants";
-import { Sub }                 from "../../ActorContext";
+import PolarizationBar                from "../base/PolarizationBar";
+import ChartTypeToggle                from "../base/ChartTypeToggle";
+import { OpinionVote }                from "../../../declarations/godwin_sub/godwin_sub.did";
+import { ChartTypeEnum }              from "../../utils";
+import CONSTANTS                      from "../../Constants";
+import { Sub }                        from "../../ActorContext";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 type OpinionPolarizationBarProps = {
   sub: Sub;
@@ -53,7 +53,7 @@ const OpinionPolarizationBar = ({sub, vote_id}: OpinionPolarizationBarProps) => 
       }
       <div className="grid grid-cols-3 w-full items-center">
         <div className="text-xs font-light text-gray-600 dark:text-gray-400 place-self-center">
-          { (vote.aggregate.polarization.left + vote.aggregate.polarization.center + vote.aggregate.polarization.right).toString() + " voters" }
+          { (vote.aggregate.polarization.left + vote.aggregate.polarization.center + vote.aggregate.polarization.right).toString() + " votes" }
         </div>
         <ChartTypeToggle 
           chartType={chartType}

@@ -1,5 +1,5 @@
 import { Sub }                        from "../ActorContext"
-import { durationToString }           from "../utils";
+import { durationToShortString }      from "../utils";
 import { timeAgo }                    from "../utils/DateUtils";
 import { Duration }                   from "../../declarations/godwin_sub/godwin_sub.did";
 
@@ -32,12 +32,15 @@ const Momentum = ({sub} : MomentumProps) => {
   }, [sub]);
 
   return (
-    <div className="grid grid-cols-4 gap-5">
-      <div> { "lifetime votes: " + numVotesOpened?.toString() } </div>
-      <div> { "selection: every " + (selectionPeriod !== undefined ? durationToString(selectionPeriod) : "") } </div>
-      <div> { "last vote: " + (lastPickDate !== undefined ? timeAgo(new Date(Number(lastPickDate) / 1000000)) : "none") } </div>
-      <div> { "number voters: " + (lastPickTotalVotes !== undefined ? lastPickTotalVotes.toString() : "0") } </div>
-    </div>
+    <span className="flex flex-row gap-x-1">
+      <span> { numVotesOpened?.toString() + " lifetime votes"                                                           } </span>
+      <span>{" · "}</span>
+      <span> { "selection every " + (selectionPeriod !== undefined ? durationToShortString(selectionPeriod) : "")       } </span>
+      <span>{" · "}</span>
+      <span> { "last vote " + (lastPickDate !== undefined ? timeAgo(new Date(Number(lastPickDate) / 1000000)) : "none") } </span>
+      <span>{" · "}</span>
+      <span> { (lastPickTotalVotes !== undefined ? lastPickTotalVotes.toString() : "0") + " current users"              } </span>
+    </span>
   )
 }
 

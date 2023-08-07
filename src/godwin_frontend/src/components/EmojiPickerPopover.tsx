@@ -5,7 +5,7 @@ import { EmojiClickData }                       from "emoji-picker-react";
 import useClickOutside                          from "../utils/useClickOutside";
 
 export const EmojiPickerPopover = ({ emoji, onChange }) => {
-  const popover = useRef();
+  const popover = useRef<any>();
   const [isOpen, toggle] = useState(false);
 
   const close = useCallback(() => toggle(false), []);

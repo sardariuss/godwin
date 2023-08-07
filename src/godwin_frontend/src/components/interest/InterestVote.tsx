@@ -100,8 +100,8 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { !showVote && ballot !== undefined ?
-            <div className={`grid grid-cols-3 w-36 content-center items-center pr-5`}>
-              <div className={`w-full flex flex-col col-span-2`}>
+            <div className={`grid grid-cols-2 w-36 content-center items-center -mr-5`}>
+              <div className={`w-full flex flex-col`}>
                 <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
                 {
                   !canVote(voteData) ? <></> :
@@ -127,22 +127,22 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className={`grid grid-cols-3 w-36 content-center items-center pr-5`}>
-              <div className={`w-full flex flex-col col-span-2 items-center justify-center content-center transition duration-2000 
+            <div className={`grid grid-cols-2 w-32 content-center items-center py-2 -mr-5`}>
+              <div className={`w-full flex flex-col items-center justify-center content-center transition duration-2000
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-                <div className={`w-10 flex -m-2 justify-center`}>
+                <div className={`w-6`}>
                   <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
                     <ArrowUpIcon/>
                   </SvgButton>
                 </div>
                 <InterestBallot answer={interest} dateNs={undefined}/>
-                <div className={`w-10 flex -m-2 justify-center`}>
+                <div className={`w-6`}>
                   <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
                     <ArrowDownIcon/>
                   </SvgButton>
                 </div>
               </div>
-              <div className={`col-span-1 justify-center`}>
+              <div className={`justify-center -ml-5`}>
                 {
                   interest === InterestEnum.Neutral ? <></> :
                     <UpdateProgress<PutBallotError> 
@@ -156,14 +156,8 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
                       set_trigger_update={setTriggerVote}
                       cost={sub.info.prices.interest_vote_price_e8s}
                     >
-                      <SvgButton 
-                        onClick={() => setTriggerVote(true)}
-                        disabled={false}
-                        hidden={false}
-                      >
-                        <div className="w-6 h-6 m-1">
-                          <PutBallotIcon/>
-                        </div>
+                      <SvgButton onClick={() => setTriggerVote(true)}>
+                        <PutBallotIcon/>
                       </SvgButton>
                     </UpdateProgress>
                 }

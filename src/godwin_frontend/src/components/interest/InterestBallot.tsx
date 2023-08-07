@@ -18,7 +18,7 @@ const InterestBallot = ({answer, dateNs} : InterestBallotInput) => {
   }, [answer]);
 
   return (
-    <div className="flex flex-col items-center w-full grow justify-items-center">
+    <div className="flex flex-col items-center shrink justify-items-center">
       {
         interestInfo === undefined ? 
           <div className="w-6 h-6 icon-svg">

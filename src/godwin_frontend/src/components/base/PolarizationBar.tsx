@@ -6,7 +6,7 @@ import { toPercentage }                                                         
 
 import { Polarization }                                                              from "./../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect }                                                       from "react";
+import React, { useState, useEffect }                                                from "react";
 
 export type BallotPoint = {
   label: string;
@@ -54,7 +54,7 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
         borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
-        labels: [polarizationInfo.left.symbol],
+        labels: [polarizationInfo.left.name + " " + polarizationInfo.left.symbol],
         data: labels.map(() => normedPolarization.left),
         backgroundColor: polarizationInfo.left.color,
       },
@@ -62,7 +62,7 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
         borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
-        labels: [polarizationInfo.center.symbol],
+        labels: [polarizationInfo.center.name + " " + polarizationInfo.center.symbol],
         data: labels.map(() => normedPolarization.center),
         backgroundColor: polarizationInfo.center.color,
       },
@@ -70,7 +70,7 @@ const getBarChartData = (name: string, polarizationValue: Polarization, polariza
         borderColor,
         borderWidth: 1.2,
         borderSkipped: false,
-        labels: [polarizationInfo.right.symbol],
+        labels: [polarizationInfo.right.name + " " + polarizationInfo.right.symbol],
         data: labels.map(() => normedPolarization.right),
         backgroundColor: polarizationInfo.right.color,
       },
@@ -104,10 +104,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
 
   return (
     <div className="grid grid-cols-5 w-full">
-      <div className="flex flex-col items-center z-10 grow place-self-center">
-        <div className="text-3xl">{ polarizationInfo.left.symbol }</div>
-        <div className="text-xs font-extralight">{ polarizationInfo.left.name }</div>
-      </div>
+      <div className="items-center place-self-center text-3xl">{ polarizationInfo.left.symbol }</div>
       <div className="col-span-3 z-0 grow">
         <div className={"max-h-16 w-full"}>
         {
@@ -121,10 +118,7 @@ const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, b
         }
         </div>
       </div>
-      <div className="flex flex-col items-center z-10 grow place-self-center">
-        <div className="text-3xl">{ polarizationInfo.right.symbol }</div>
-        <div className="text-xs font-extralight">{ polarizationInfo.right.name }</div>
-      </div>
+      <div className="items-center place-self-center text-3xl">{ polarizationInfo.right.symbol }</div>
       {
         showName ? 
         <div className="col-start-1 col-end-6 text-center text-xs align-top font-light">

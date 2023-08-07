@@ -90,7 +90,7 @@ const UserComponent = () => {
     {
       principal === undefined ? 
         <div>Undefined user</div> : 
-        <div className="flex flex-col border dark:border-gray-700 my-5 w-1/3 text-gray-900 dark:text-white">
+        <div className="flex flex-col border dark:border-gray-700 text-gray-900 dark:text-white xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
           <div className="grid grid-cols-5">
             <div className="col-start-2 col-span-3 flex flex-row justify-center dark:fill-white">
               <div className="flex w-32 h-32">

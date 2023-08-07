@@ -40,7 +40,7 @@ function App() {
 
   return (
 		<>
-      <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900 dark:border-gray-700 justify-between">
+      <div className="flex flex-col min-h-screen w-full bg-white dark:bg-slate-900 dark:border-gray-700 justify-between">
         <ActorContext.Provider value={{
           authClient,
           setAuthClient,
@@ -61,7 +61,7 @@ function App() {
           refreshLoggedUserName,
           getPrincipal
         }}>
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full">
             <Header login={login} setShowAskQuestion={setShowAskQuestion}/>
             <Routes>
               <Route

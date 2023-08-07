@@ -69,7 +69,7 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
       }
       <div className="grid grid-cols-3 w-full items-center mt-2">
         <div className="text-xs font-light text-gray-400 place-self-center">
-          { (vote.aggregate[0][1].left + vote.aggregate[0][1].center + vote.aggregate[0][1].right).toString() + " voters" }
+          { (vote.aggregate[0][1].left + vote.aggregate[0][1].center + vote.aggregate[0][1].right).toString() + " votes" }
         </div>
         <ChartTypeToggle 
           chartType={chartType}

@@ -1,4 +1,5 @@
 import Balance                                from "./base/Balance";
+import SvgButton                              from "./base/SvgButton";
 
 import React, { useState, useEffect, useRef } from "react";
 
@@ -37,7 +38,7 @@ const theme = extendTheme({
 
 
 function useInterval(callback, delay) {
-  const savedCallback = useRef();
+  const savedCallback = useRef<any>();
 
   // Remember the latest callback.
   useEffect(() => {
@@ -83,10 +84,10 @@ const UpdateProgress = <Error,>({
 
   const interval_duration_ms = 50;
 
-  const [interval, setInterval] = useState<number | null>(null);
-  const [countdownProgress, setCountdownProgress] = useState<number | null>(null);
-  const [updateProgress, setUpdateProgress] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [interval,          setInterval         ] = useState<number | null>(null );
+  const [countdownProgress, setCountdownProgress] = useState<number | null>(null );
+  const [updateProgress,    setUpdateProgress   ] = useState<boolean>      (false);
+  const [error,             setError            ] = useState<string | null>(null );
 
   useEffect(() => {
     if (run_countdown && countdownProgress === null) {
@@ -138,41 +139,51 @@ const UpdateProgress = <Error,>({
 
 	return (
     <div className="relative flex flex-col items-center w-full">
-      <div className="flex flex-col w-full items-center pt-1" style={{visibility: updateProgress === false && countdownProgress === null ? "hidden" : "visible"}}>
-        <CssVarsProvider theme={theme}>
-        <CircularProgress
-          color="primary"
-          determinate={!updateProgress}
-          value={updateProgress ? 40 : countdownProgress ? (countdownProgress / delay_duration_ms) * 100 : 0}
-          variant="soft"
-          size="custom"
-          sx={{
-            '--CircularProgress-progressColor': `${ document.documentElement.classList.contains('dark') ? "rgb(209 213 219)" : "rgb(55 65 81)" }`,
-          }}
-        > 
-        </CircularProgress>
-        </CssVarsProvider>
-      </div>
-      <div className="absolute flex flex-col w-full z-10 items-center">
-        {
-          updateProgress ? 
-            <></> :
-          countdownProgress?
-            <div className="w-full text-center h-8 pt-1 text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white hover:cursor-pointer" 
-              onClick={(e) => stopCountdown()}> ◼ </div> :
-          error === null ?
-            children : error.length !== 0 ?
-            <Tooltip title={error} arrow>
-              <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
-            </Tooltip> :
-            <DoneIcon color="success"></DoneIcon>
-          }
+      { 
+        error === null ? 
+          <CssVarsProvider theme={theme}>
+            <CircularProgress
+              color="primary"
+              determinate={!updateProgress}
+              value={updateProgress ? 40 : countdownProgress ? (countdownProgress / delay_duration_ms) * 100 : 0}
+              variant="soft"
+              size="custom"
+              sx={{
+                '--CircularProgress-progressColor': `${ document.documentElement.classList.contains('dark') ? "rgb(209 213 219)" : "rgb(55 65 81)" }`,
+              }}
+            >
+              <div className="w-full flex flex-col items-center z-10">
+              {
+                
+                updateProgress ? <></> 
+                : countdownProgress !== null ? 
+                  <div className="w-3/4">
+                    <SvgButton onClick={() => { stopCountdown(); }} disabled={false} hidden={false}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-240v-480h480v480H240Z"/></svg>
+                    </SvgButton>
+                  </div> 
+                : <div className="w-7 h-7">{children}</div> 
+              }
+              </div>
+            </CircularProgress>
+          </CssVarsProvider>
+        : <div className="w-full flex flex-col items-center z-10">
           {
-            cost !== undefined && error === null && !updateProgress ?
-            <div className="text-xs pt-1">
-              <Balance amount={cost}/>
-            </div> : <></>
+            error.length !== 0 ?
+              <Tooltip title={error} arrow>
+                <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+              </Tooltip> 
+            : <DoneIcon color="success"/>
           }
+          </div>
+      }
+      <div className="absolute pt-6 flex flex-col w-full items-center">
+      {
+        cost !== undefined && error === null && !updateProgress ?
+        <div className="text-xs pt-1">
+          <Balance amount={cost}/>
+        </div> : <></>
+      }
       </div>
     </div>
 	);

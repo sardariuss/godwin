@@ -7,6 +7,7 @@ import {
   Legend,
 }                  from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
+import React       from 'react';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
@@ -32,12 +33,7 @@ const options = {
     tooltip:{
       enabled: true,
       callbacks: {
-        label: function(ctx) {
-            // console.log(ctx);
-            let label = ctx.dataset.labels[ctx.dataIndex];
-            //label += " (" + ctx.parsed.x + ", " + ctx.parsed.y + ")";
-            return label;
-        }
+        label: function(ctx) { return ctx.dataset.labels[ctx.dataIndex]; }
       }
     }
   },
@@ -45,10 +41,5 @@ const options = {
 };
 
 export const ScatterChart = ({ chart_data }: any) => {
-  return (
-      <Scatter
-        data={chart_data}
-        options={options}
-      />
-  );
+  return ( <Scatter data={chart_data} options={options} /> );
 };

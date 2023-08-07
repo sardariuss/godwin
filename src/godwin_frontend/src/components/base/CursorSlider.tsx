@@ -1,6 +1,6 @@
-import { PolarizationInfo, toCursorInfo } from '../../utils';
+import { PolarizationInfo, toCursorInfo }     from '../../utils';
 
-import React, { useState, useEffect }     from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type Props = {
   id: string;
@@ -15,12 +15,35 @@ type Props = {
 
 export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor, onMouseUp, onMouseDown, isLate}: Props) => {
 
-  const sliderWidth = 200;
-  const thumbSize = 50;
-  const marginWidth = thumbSize / 2;
-  const marginRatio = marginWidth / sliderWidth;
-
   const [cursorInfo, setCursorInfo] = useState(toCursorInfo(cursor, polarizationInfo));
+
+  const minimum_slider_width = 200;
+  const maximum_slider_width = 500;
+
+  const [thumbSize] = useState(50);
+  const [marginWidth] = useState(25);
+  const [marginRatio, setMarginRatio] = useState(marginWidth / 200);
+  const [sliderWidth, setSliderWidth] = useState(200);
+
+  const demoRef = useRef<any>();
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((event) => {
+      // Depending on the layout, you may need to swap inlineSize with blockSize
+      // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry/contentBoxSize
+      let width = Math.min(maximum_slider_width, Math.max(minimum_slider_width, event[0].contentBoxSize[0].inlineSize));
+      setSliderWidth(width);
+      setMarginRatio(marginWidth / width);
+    });
+
+    if (demoRef) {
+      resizeObserver.observe(demoRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    }
+  }, [demoRef]);
 
   const refreshValue = (value: number) => {
     setCursor(value);
@@ -32,7 +55,7 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
   }, [cursor]);
 
 	return (
-    <div id={"cursor_" + id} className="flex flex-col items-center">
+    <div id={"cursor_" + id} className="w-full flex flex-col items-center" ref={demoRef}>
       <div className="text-xs mb-2">
         { cursorInfo.name }
       </div>
@@ -44,7 +67,9 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
         value={cursorInfo.value}
         type="range"
         onChange={(e) => refreshValue(Number(e.target.value))}
+        onTouchEnd={(e) => onMouseUp()}
         onMouseUp={(e) => onMouseUp()}
+        onTouchStart={(e) => onMouseDown()}
         onMouseDown={(e) => onMouseDown()}
         className={`input appearance-none ${isLate ? "late-vote" : ""}`} 
         style={{

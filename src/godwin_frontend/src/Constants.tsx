@@ -43,7 +43,7 @@ const CONSTANTS = {
     center: {
       symbol: '🎯',
       color: '#EEEEEE',
-      name: 'N/A'
+      name: 'CENTER'
     }
   },
   USER_NAME: {

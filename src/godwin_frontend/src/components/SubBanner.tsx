@@ -48,8 +48,8 @@ const SubBanner = ({sub} : Props) => {
             step="0.01"
             type="range"
             onChange={(e) => { if (diff === 0) { setDiff(Number(e.target.value) - shift) }; setShift(Number(e.target.value)); }}
+            onTouchEnd={(e) => { setShift(shift - diff); setDiff(0);}}
             onMouseUp={(e) => { setShift(shift - diff); setDiff(0);}}
-            onMouseDown={(e) => {}}
             className={"input categories appearance-none h-16 w-full grow"}
             style={{"--cursor-hover" : `grab`, "--cursor-grabbing" : `grabbing`} as React.CSSProperties }
           />

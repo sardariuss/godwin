@@ -122,7 +122,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                 setChartType={setChartType}
               />
               <div className=" place-self-center">
-              { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
+              { voteNumber > 0 ? (genuineRatio * 100).toFixed(5) + "% genuine" : ""}
               </div>
             </div>
           </div>

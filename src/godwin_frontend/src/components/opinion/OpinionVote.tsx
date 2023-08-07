@@ -121,9 +121,8 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
       createPortal(
         <>
           { showVote && canVote(voteData) ?
-            <div className={`grid grid-cols-10 items-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-              <div className="col-span-3"> { /* spacer to center the content */ }</div>
-              <div className="col-span-4">
+            <div className={`relative flex flex-row items-center justify-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+              <div className="w-2/5">
                 <CursorSlider
                     cursor = { cursor }
                     polarizationInfo={ CONSTANTS.OPINION_INFO }
@@ -134,7 +133,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
                     isLate={isLateVote(voteData)}
                   />
               </div>
-              <div className="col-span-1">
+              <div className="absolute right-0 w-1/5">
                 <UpdateProgress<PutBallotError> 
                     delay_duration_ms={COUNTDOWN_DURATION_MS}
                     update_function={putBallot}
@@ -145,14 +144,14 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
                     trigger_update={triggerVote}
                     set_trigger_update={setTriggerVote}
                   >
-                  <div className="w-6 h-6">
+                  <div className="w-7 h-7">
                     <SvgButton onClick={() => setTriggerVote(true)} disabled={triggerVote} hidden={false}>
                       <PutBallotIcon/>
                     </SvgButton>
                   </div>
                 </UpdateProgress>
               </div>
-              <div className="col-span-2"> { /* spacer to center the content */ }</div>
+              <div className="col-span-2 bg-green-300 "> { /* spacer to center the content */ }</div>
             </div> : <></>
           }
         </>,

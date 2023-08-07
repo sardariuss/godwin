@@ -8,6 +8,12 @@ module.exports = {
 			spacing: {
         '160': '40rem',
       },
+			width: {
+        '4/5-screen': '80vw;',
+      },
+			padding:{
+				'1/3' : '33.3333333%',
+			},
 			height: {
         '128': '32rem',
       },

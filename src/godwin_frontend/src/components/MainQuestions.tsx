@@ -148,20 +148,20 @@ const MainQuestions = () => {
         <div className="flex flex-col items-center w-full">
           <div className="flex flex-col sticky top-0 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <SubBanner sub={sub}/>
-            <div className="flex flex-col border-x dark:border-gray-700 w-1/3 bg-white dark:bg-slate-900">
+            <div className="flex flex-col border-x dark:border-gray-700 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
               <div className="border-b dark:border-gray-700 w-full">
                 <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
                 {
                   mainTabs.map((tab, index) => (
-                    <li key={index} className="grow">
+                    <li key={index} className="w-1/2">
                       <MainTabButton label={mainTabToText(tab)} isCurrent={tab == currentMainTab} setIsCurrent={() => setCurrentMainTab(tab)}/>
                     </li>
                   ))
                 }
                 </ul>
               </div>
-              <div className="border-b dark:border-gray-700">
-                <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
+              <div className="border-b dark:border-gray-700 w-full">
+                <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center w-full">
                 {
                   currentMainTab === MainTab.HOME ? (
                     vote_kind_filters.map((filter, index) => (
@@ -180,7 +180,7 @@ const MainQuestions = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col border mb-5 dark:border-gray-700 w-1/3">
+          <div className="flex flex-col border mb-5 dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
             {
               currentMainTab === MainTab.HOME ?
               <div className="border-b dark:border-gray-700">

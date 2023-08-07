@@ -371,6 +371,16 @@ export const durationToString = (duration: Duration) : string => {
   throw new Error('Invalid duration');
 }
 
+export const durationToShortString = (duration: Duration) : string => {
+  if (duration['YEARS']   !== undefined) { return Number(duration['YEARS']).toString()   + 'y';   };
+  if (duration['DAYS']    !== undefined) { return Number(duration['DAYS']).toString()    + 'd';    };
+  if (duration['HOURS']   !== undefined) { return Number(duration['HOURS']).toString()   + 'h';   };
+  if (duration['MINUTES'] !== undefined) { return Number(duration['MINUTES']).toString() + 'm'; };
+  if (duration['SECONDS'] !== undefined) { return Number(duration['SECONDS']).toString() + 's'; };
+  if (duration['NS']      !== undefined) { return Number(duration['NS']).toString()      + 'ns';      };
+  throw new Error('Invalid duration');
+}
+
 export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : string => {
   if (error['DurationTooShort']           !== undefined) return 'Minimum duration is ' + durationToString(error['DurationTooShort']['minimum_duration']);
   if (error['DurationTooLong']            !== undefined) return 'Maximum duration is ' + durationToString(error['DurationTooLong']['maximum_duration']);

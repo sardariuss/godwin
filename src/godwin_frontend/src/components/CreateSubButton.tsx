@@ -8,7 +8,7 @@ type CreateSubButtonProps = {
 const CreateSubButton = ( {label, show, setShow, children} : CreateSubButtonProps) => {
 
   return (
-    <div className="w-full border border-b-0 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">
+    <div className="w-full hover:bg-gray-100 dark:hover:bg-gray-800">
       <button
         className="flex flex-row items-center w-full p-2 font-medium text-left text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 space-x-1" onClick={(e) => setShow(!show) }>
         <div className="icon-svg w-5 h-5">
