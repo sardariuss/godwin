@@ -3,8 +3,9 @@ import { reapAccountErrorToString, mintErrorToString } from "./TokenUtils";
 import Balance                                         from "../base/Balance";
 import { TransactionsRecord }                          from "../../../declarations/godwin_sub/godwin_sub.did";
 
+import React                                           from "react";
 import { Tooltip }                                     from "@mui/material";
-import ErrorOutlineIcon                                from '@mui/icons-material/ErrorOutline';
+import ErrorOutlineIcon                                from "@mui/icons-material/ErrorOutline";
 import { fromNullable }                                from "@dfinity/utils";
 
 export type TransactionsRecordInput = {

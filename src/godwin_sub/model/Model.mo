@@ -1,4 +1,3 @@
-import Types               "Types";
 import StatusManager       "StatusManager";
 import SubMomentum         "SubMomentum";
 import Categories          "Categories";
@@ -13,6 +12,7 @@ import VoteTypes           "votes/Types";
 import SubaccountGenerator "token/SubaccountGenerator";
 import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
+import Types               "../stable/Types";
 
 import WRef                "../utils/wrappers/WRef";
 
@@ -23,10 +23,11 @@ module {
 
   type WRef<T>              = WRef.WRef<T>;
 
-  type Status               = Types.Status;
-  type SchedulerParameters  = Types.SchedulerParameters;
-  type SelectionParameters  = Types.SelectionParameters;
-  type BasePriceParameters  = Types.BasePriceParameters;
+  type Status               = Types.Current.Status;
+  type SchedulerParameters  = Types.Current.SchedulerParameters;
+  type SelectionParameters  = Types.Current.SelectionParameters;
+  type BasePriceParameters  = Types.Current.BasePriceParameters;
+  
   type Categories           = Categories.Categories;
   type PayRules             = PayRules.PayRules;
   type Questions            = Questions.Questions;

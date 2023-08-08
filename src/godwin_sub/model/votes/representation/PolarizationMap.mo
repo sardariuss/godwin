@@ -12,12 +12,12 @@ import Iter         "mo:base/Iter";
 module {
 
   // For convenience: from types module
-  type Cursor = Types.Cursor;
-  type Polarization = Types.Polarization;
-  type Category = Types.Category;
-  type CursorMap = Types.CursorMap;
+  type Cursor          = Types.Cursor;
+  type Polarization    = Types.Polarization;
+  type Category        = Types.Category;
+  type CursorMap       = Types.CursorMap;
   type PolarizationMap = Types.PolarizationMap;
-  type Categories = Categories.Categories;
+  type Categories      = Categories.Categories;
 
   // For convenience: from other modules
 

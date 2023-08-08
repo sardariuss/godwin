@@ -5,7 +5,7 @@ import Float "mo:base/Float";
 module {
 
   // For convenience: from types module
-  type Cursor = Types.Cursor;
+  type Cursor       = Types.Cursor;
   type Polarization = Types.Polarization;
 
   let FLOAT_EPSILON = 1e-6;

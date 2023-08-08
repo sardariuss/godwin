@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { ScanResults }         from "../../utils";
-import { Direction, }          from "../../../declarations/godwin_sub/godwin_sub.did";
-import React                   from "react";
+import React, { useEffect, useState } from "react";
+import { ScanResults }                from "../../utils";
+import { Direction, }                 from "../../../declarations/godwin_sub/godwin_sub.did";
 
 export type ListComponentsInput<T, Input> = {
   query_components: (direction: Direction, limit: bigint, next: T | undefined) => Promise<ScanResults<T>>,

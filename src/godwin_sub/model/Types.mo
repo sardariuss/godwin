@@ -1,12 +1,9 @@
 import PayTypes      "token/Types";
 import QuestionTypes "questions/Types";
 import VoteTypes     "votes/Types";
+import StableTypes   "../stable/Types";
 
 import UtilsTypes    "../utils/Types";
-import MasterTypes   "../../godwin_master/Types";
-
-import Set           "mo:map/Set";
-import Buffer        "mo:stablebuffer/StableBuffer";
 
 import Principal     "mo:base/Principal";
 
@@ -15,15 +12,11 @@ module {
   // For convenience: from base module
   type Principal                           = Principal.Principal;
   type Time                                = Int;
-
-  type Set<K>                              = Set.Set<K>;
-  type Buffer<K>                           = Buffer.StableBuffer<K>;
   
   public type Duration                     = UtilsTypes.Duration;
   public type Direction                    = UtilsTypes.Direction;
   public type ScanLimitResult<K>           = UtilsTypes.ScanLimitResult<K>;
 
-  // @todo: are all these types required in the canister interface?
   public type QuestionId                   = QuestionTypes.QuestionId;  
   public type Question                     = QuestionTypes.Question;
   public type Status                       = QuestionTypes.Status;
@@ -32,46 +25,60 @@ module {
 
   public type TransactionsRecord           = PayTypes.TransactionsRecord;
 
-  public type StatusInfo = {
-    status: Status;
+  public type VoteId                         = VoteTypes.VoteId;
+  public type Interest                       = VoteTypes.Interest;
+  public type Appeal                         = VoteTypes.Appeal;
+  public type Cursor                         = VoteTypes.Cursor;
+  public type OpinionAnswer                  = VoteTypes.OpinionAnswer;
+  public type Polarization                   = VoteTypes.Polarization;
+  public type VoteKind                       = VoteTypes.VoteKind;
+  public type VoteLink                       = VoteTypes.VoteLink;
+  public type VoteStatus                     = VoteTypes.VoteStatus;
+  public type CursorArray                    = [(VoteTypes.Category, VoteTypes.Cursor)];
+  public type PolarizationArray              = [(VoteTypes.Category, VoteTypes.Polarization)];
+  public type InterestBallot                 = VoteTypes.InterestBallot;
+  public type OpinionBallot                  = VoteTypes.OpinionBallot;
+  public type OpinionAggregate               = VoteTypes.OpinionAggregate;
+  public type CategorizationBallot           = VoteTypes.Ballot<CursorArray>;
+  public type InterestVote                   = Vote<Interest, Appeal>;
+  public type OpinionVote                    = Vote<OpinionAnswer, OpinionAggregate>;
+  public type CategorizationVote             = Vote<CursorArray, PolarizationArray>;
+  public type RevealableInterestBallot       = VoteTypes.RevealableBallot<Interest>;
+  public type RevealableOpinionBallot        = VoteTypes.RevealableBallot<OpinionAnswer>;
+  public type RevealableCategorizationBallot = VoteTypes.RevealableBallot<CursorArray>;
+  public type DecayParameters                = VoteTypes.DecayParameters;
+
+  public type FindVoteError                  = VoteTypes.FindVoteError;
+  public type FindQuestionIterationError     = VoteTypes.FindQuestionIterationError;
+  public type OpenVoteError                  = VoteTypes.OpenVoteError;
+  public type GetVoteError                   = VoteTypes.GetVoteError;
+  public type RevealVoteError                = VoteTypes.RevealVoteError;
+  public type CloseVoteError                 = VoteTypes.CloseVoteError;
+  public type FindBallotError                = VoteTypes.FindBallotError;
+  public type AddBallotError                 = VoteTypes.AddBallotError;
+  public type PutBallotError                 = VoteTypes.PutBallotError;
+
+  public type StatusInfo                     = StableTypes.Current.StatusInfo;
+  public type SchedulerParameters            = StableTypes.Current.SchedulerParameters;
+  public type ConvictionsParameters          = StableTypes.Current.ConvictionsParameters;
+  public type BasePriceParameters            = StableTypes.Current.BasePriceParameters;
+  public type SubParameters                  = StableTypes.Current.SubParameters;
+  public type SelectionParameters            = StableTypes.Current.SelectionParameters;
+  public type Momentum                       = StableTypes.Current.Momentum;
+  public type PriceRegister                  = StableTypes.Current.PriceRegister;
+  public type Category                       = StableTypes.Current.Category;
+  public type CategoryArray                  = StableTypes.Current.CategoryArray;
+  public type CategoryInfo                   = StableTypes.Current.CategoryInfo;
+  public type CategorySide                   = StableTypes.Current.CategorySide;
+  public type StatusHistory                  = StableTypes.Current.StatusHistory;
+
+  public type BallotConvictionInput = {
+    cursor: Cursor;
     date: Time;
-    iteration: Nat;
-    votes: [VoteLink];
+    categorization: CursorArray;
+    vote_decay: Float;
+    late_ballot_decay: ?Float;
   };
-
-  // @todo: are all these types required in the canister interface?
-  public type VoteId                       = VoteTypes.VoteId;
-  public type Interest                     = VoteTypes.Interest;
-  public type Appeal                       = VoteTypes.Appeal;
-  public type Cursor                       = VoteTypes.Cursor;
-  public type OpinionAnswer                = VoteTypes.OpinionAnswer;
-  public type Polarization                 = VoteTypes.Polarization;
-  public type VoteKind                     = VoteTypes.VoteKind;
-  public type VoteLink                     = VoteTypes.VoteLink;
-  public type VoteStatus                   = VoteTypes.VoteStatus;
-  public type CursorArray                  = [(VoteTypes.Category, VoteTypes.Cursor)];
-  public type PolarizationArray            = [(VoteTypes.Category, VoteTypes.Polarization)];
-  public type InterestBallot               = VoteTypes.InterestBallot;
-  public type OpinionBallot                = VoteTypes.OpinionBallot;
-  public type OpinionAggregate             = VoteTypes.OpinionAggregate;
-  public type CategorizationBallot         = VoteTypes.Ballot<CursorArray>;
-  public type InterestVote                 = Vote<Interest, Appeal>;
-  public type OpinionVote                  = Vote<OpinionAnswer, OpinionAggregate>;
-  public type CategorizationVote           = Vote<CursorArray, PolarizationArray>;
-  public type RevealedInterestBallot       = VoteTypes.RevealedBallot<Interest>;
-  public type RevealedOpinionBallot        = VoteTypes.RevealedBallot<OpinionAnswer>;
-  public type RevealedCategorizationBallot = VoteTypes.RevealedBallot<CursorArray>;
-  public type DecayParameters               = VoteTypes.DecayParameters;
-
-  public type FindVoteError                = VoteTypes.FindVoteError;
-  public type FindQuestionIterationError   = VoteTypes.FindQuestionIterationError;
-  public type OpenVoteError                = VoteTypes.OpenVoteError;
-  public type GetVoteError                 = VoteTypes.GetVoteError;
-  public type RevealVoteError              = VoteTypes.RevealVoteError;
-  public type CloseVoteError               = VoteTypes.CloseVoteError;
-  public type FindBallotError              = VoteTypes.FindBallotError;
-  public type AddBallotError               = VoteTypes.AddBallotError;
-  public type PutBallotError               = VoteTypes.PutBallotError;
 
   public type SubInfo = {
     name: Text;
@@ -83,86 +90,11 @@ module {
     momentum: Momentum;
   };
 
-  public type SchedulerParameters = {
-    censor_timeout            : Duration;
-    candidate_status_duration : Duration;
-    open_status_duration      : Duration;
-    rejected_status_duration  : Duration;
-  };
-
-  public type ConvictionsParameters = {
-    vote_half_life: Duration;
-    late_ballot_half_life: Duration;
-  };
-
-  public type BasePriceParameters = {
-    base_selection_period         : Duration;
-    open_vote_price_e8s           : Nat;
-    reopen_vote_price_e8s         : Nat;
-    interest_vote_price_e8s       : Nat;
-    categorization_vote_price_e8s : Nat;
-  };
-
-  public type BallotConvictionInput = {
-    cursor: Cursor;
-    date: Time;
-    categorization: CursorArray;
-    vote_decay: Float;
-    late_ballot_decay: ?Float;
-  };
-
-  public type SubParameters = {
-    name: Text;
-    character_limit: Nat;
-    categories: CategoryArray;
-    scheduler: SchedulerParameters;
-    selection: SelectionParameters;
-    convictions: ConvictionsParameters;
-  };
-
-  public type SelectionParameters = {
-    selection_period : Duration;
-    minimum_score    : Float;
-  };
-
-  public type Momentum = {
-    num_votes_opened     : Nat;
-    selection_score      : Float;
-    last_pick: ?{
-      date        : Time;
-      vote_score  : Float;
-      total_votes : Nat;
-    };
-  };
-
-  public type PriceRegister = {
-    open_vote_price_e8s           : Nat;
-    reopen_vote_price_e8s         : Nat;
-    interest_vote_price_e8s       : Nat;
-    categorization_vote_price_e8s : Nat;
-  };
-  
-  public type Category = Text;
-  
-  public type CategoryArray = [(Category, CategoryInfo)];
-
-  public type CategoryInfo = {
-    left: CategorySide;
-    right: CategorySide;
-  };
-
-  public type CategorySide = {
-    name: Text;
-    symbol: Text;
-    color: Text;
-  };
-
   public type Vote<T, A> = {
     id: VoteId;
     ballots: [(Principal, VoteTypes.Ballot<T>)];
     aggregate: A;
   };
-  public type StatusHistory = Buffer<StatusInfo>;
 
   public type VoteKindAggregate = {
     #INTEREST: Appeal;
@@ -171,9 +103,9 @@ module {
   };
 
   public type VoteKindBallot = {
-    #INTEREST: RevealedInterestBallot;
-    #OPINION: RevealedOpinionBallot;
-    #CATEGORIZATION: RevealedCategorizationBallot;
+    #INTEREST: RevealableInterestBallot;
+    #OPINION: RevealableOpinionBallot;
+    #CATEGORIZATION: RevealableCategorizationBallot;
   };
 
   public type VoteAggregate = {
@@ -220,14 +152,6 @@ module {
     #AccessDenied: ({required_role: AccessControlRole;})
   };
 
-  public type AddCategoryError = AccessControlError or {
-    #CategoryAlreadyExists;
-  };
-
-  public type RemoveCategoryError = AccessControlError or {
-    #CategoryDoesntExist;
-  };
-
   public type GetQuestionError = {
     #QuestionNotFound;
   };
@@ -236,8 +160,6 @@ module {
     #InvalidStatus;
     #OpenInterestVoteFailed: OpenVoteError;
   };
-
-  public type SetPickRateError = AccessControlError;
 
   public type SetSchedulerParametersError = AccessControlError;
 

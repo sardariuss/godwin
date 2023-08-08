@@ -1,8 +1,8 @@
-import Types         "Types";
 import SubMomentum   "SubMomentum";
 import PayTypes      "token/Types";
 import VoteTypes     "votes/Types";
 import Polarization  "votes/representation/Polarization";
+import Types         "../stable/Types";
 
 import Ref           "../utils/Ref";
 import WRef          "../utils/wrappers/WRef";
@@ -21,10 +21,9 @@ module {
   type Ref<K>               = Ref.Ref<K>;
   type WRef<K>              = WRef.WRef<K>;
 
-  type BasePriceParameters  = Types.BasePriceParameters;
-  type SelectionParameters  = Types.SelectionParameters;
-  type PriceRegister        = Types.PriceRegister;
-  type SubMomentum          = SubMomentum.SubMomentum;
+  type BasePriceParameters  = Types.Current.BasePriceParameters;
+  type SelectionParameters  = Types.Current.SelectionParameters;
+  type PriceRegister        = Types.Current.PriceRegister;
   type Appeal               = VoteTypes.Appeal;
   type Interest             = VoteTypes.Interest;
   type CursorMap            = VoteTypes.CursorMap;
@@ -36,6 +35,8 @@ module {
   type InterestDistribution = VoteTypes.InterestDistribution;
   type Balance              = PayTypes.Balance;
   type PayoutArgs           = PayTypes.PayoutArgs;
+
+  type SubMomentum          = SubMomentum.SubMomentum;
   
   type Payout              = { refund: Float; reward: Float; };
 

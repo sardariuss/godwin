@@ -30,9 +30,6 @@ module {
   type Interest                     = Types.Interest;
   type Appeal                       = Types.Appeal;
   type CursorArray                  = Types.CursorArray;
-  type PolarizationArray            = Types.PolarizationArray;
-  type CategoryInfo                 = Types.CategoryInfo;
-  type CategoryArray                = Types.CategoryArray;
   type InterestVote                 = Types.InterestVote;
   type OpinionVote                  = Types.OpinionVote;
   type StatusData                   = Types.StatusData;
@@ -43,32 +40,29 @@ module {
   type OpinionAggregate             = Types.OpinionAggregate;
   type CategorizationBallot         = Types.CategorizationBallot;
   type ShareableVote<T, A>          = Types.Vote<T, A>;
-  type RevealedInterestBallot       = Types.RevealedInterestBallot;
-  type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
-  type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
+  type RevealableInterestBallot       = Types.RevealableInterestBallot;
+  type RevealableOpinionBallot        = Types.RevealableOpinionBallot;
+  type RevealableCategorizationBallot = Types.RevealableCategorizationBallot;
   type Direction                    = Types.Direction;
   type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
   type FindQuestionIterationError   = Types.FindQuestionIterationError;
   type VoteKind                     = Types.VoteKind;
   type TransactionsRecord           = Types.TransactionsRecord;
   type SchedulerParameters          = Types.SchedulerParameters;
-  type Duration                     = Types.Duration;
   type BallotConvictionInput        = Types.BallotConvictionInput;
   type QueryQuestionItem            = Types.QueryQuestionItem;
   type QueryVoteItem                = Types.QueryVoteItem;
   type StatusHistory                = Types.StatusHistory;
-  type StatusInfo                   = Types.StatusInfo;
   type Question                     = Types.Question;
   type Status                       = Types.Status;
   type BasePriceParameters          = Types.BasePriceParameters;
-  type Momentum                     = Types.Momentum;
   type SelectionParameters          = Types.SelectionParameters;
-  type PriceRegister                = Types.PriceRegister;
   type SubInfo                      = Types.SubInfo;
+  type VoteKindBallot               = Types.VoteKindBallot;
   type Category                     = VoteTypes.Category;
   type Ballot<T>                    = VoteTypes.Ballot<T>;
   type Vote<T, A>                   = VoteTypes.Vote<T, A>;
-  type RevealedBallot<T>            = VoteTypes.RevealedBallot<T>;
+  type RevealableBallot<T>          = VoteTypes.RevealableBallot<T>;
   type Cursor                       = VoteTypes.Cursor;
   type Polarization                 = VoteTypes.Polarization;
   type CursorMap                    = VoteTypes.CursorMap;
@@ -76,19 +70,16 @@ module {
   type VoteId                       = VoteTypes.VoteId;
 
   // Errors
-  type AddCategoryError             = Types.AddCategoryError;
-  type RemoveCategoryError          = Types.RemoveCategoryError;
   type GetQuestionError             = Types.GetQuestionError;
   type ReopenQuestionError          = Types.ReopenQuestionError;
   type AccessControlError           = Types.AccessControlError;
-  type SetPickRateError             = Types.SetPickRateError;
   type SetSchedulerParametersError  = Types.SetSchedulerParametersError;
   type FindBallotError              = Types.FindBallotError;
   type PutBallotError               = Types.PutBallotError;
   type GetVoteError                 = Types.GetVoteError;
   type OpenVoteError                = Types.OpenVoteError;
   type RevealVoteError              = Types.RevealVoteError;
-  type OpenQuestionError            = Types.OpenQuestionError; // @todo
+  type OpenQuestionError            = Types.OpenQuestionError;
   type FindVoteError                = Types.FindVoteError;
 
   public class Facade(_controller: Controller) = {
@@ -129,7 +120,7 @@ module {
       await* _controller.reopenQuestion(caller, question_id, date);
     };
 
-    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<RevealedInterestBallot, FindBallotError> {
+    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<RevealableInterestBallot, FindBallotError> {
       _controller.getInterestBallot(caller, vote_id);
     };
 
@@ -137,7 +128,7 @@ module {
       await* _controller.putInterestBallot(principal, vote_id, date, interest);
     };
 
-    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealedOpinionBallot, FindBallotError> {
+    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealableOpinionBallot, FindBallotError> {
       _controller.getOpinionBallot(caller, vote_id);
     };
 
@@ -145,13 +136,16 @@ module {
       await* _controller.putOpinionBallot(principal, vote_id, date, cursor);
     };
       
-    public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealedCategorizationBallot, FindBallotError> {
-      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func({vote_id; date; answer; can_change; }: RevealedBallot<CursorMap>) : RevealedCategorizationBallot {
+    public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealableCategorizationBallot, FindBallotError> {
+      Result.mapOk(_controller.getCategorizationBallot(caller, vote_id), func({vote_id; date; answer; can_change; }: RevealableBallot<CursorMap>) : RevealableCategorizationBallot {
         { 
           vote_id;
           date;
           can_change;
-          answer = Option.map(answer, func(ans: CursorMap) : CursorArray { Utils.trieToArray(ans); });
+          answer = switch(answer){
+            case(#HIDDEN)        { #HIDDEN;                           };
+            case(#REVEALED(ans)) { #REVEALED(Utils.trieToArray(ans)); };
+          };
         };
       });
     };
@@ -196,6 +190,10 @@ module {
 
     public func queryVoterBallots(vote_kind: VoteKind, caller: Principal, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryVoteItem> {
       _controller.queryVoterBallots(vote_kind, caller, voter, direction, limit, previous_id);
+    };
+
+    public func queryVoterQuestionBallots(question_id: QuestionId, vote_kind: VoteKind, caller: Principal, voter: Principal) : [(Nat, ?VoteKindBallot)] {
+      Map.toArray(_controller.queryVoterQuestionBallots(question_id, vote_kind, caller, voter));
     };
 
     public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, BallotConvictionInput)] {

@@ -1,26 +1,26 @@
-import Cursor "Cursor";
-import Types "Types";
+import Types      "Types";
+import Cursor     "Cursor";
 import Categories "../../Categories";
 
-import Utils "../../../utils/Utils";
+import Utils      "../../../utils/Utils";
 
-import Text "mo:base/Text";
-import Buffer "mo:base/Buffer";
-import Trie "mo:base/Trie";
-import Option "mo:base/Option";
+import Text       "mo:base/Text";
+import Buffer     "mo:base/Buffer";
+import Trie       "mo:base/Trie";
+import Option     "mo:base/Option";
 
 module {
 
   // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
+  type Trie<K, V>      = Trie.Trie<K, V>;
 
   // For convenience: from types module
-  type Cursor = Types.Cursor;
-  type Category = Types.Category; 
-  type CursorMap = Types.CursorMap;
-  type Categories = Categories.Categories;
+  type Cursor          = Types.Cursor;
+  type Category        = Types.Category; 
+  type CursorMap       = Types.CursorMap;
+  type Categories      = Categories.Categories;
   type PolarizationMap = Types.PolarizationMap;
-  type Polarization = Types.Polarization;
+  type Polarization    = Types.Polarization;
 
   public func identity(categories: Categories) : CursorMap {
     var trie = Trie.empty<Category, Cursor>();

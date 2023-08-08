@@ -34,6 +34,7 @@ export const VoterHistory = ({principal, sub, isLoggedUser, voteKind, onOpinionC
           kind: voteKindFromCandidVariant(item.vote[0]),
           data: item.vote[1]
         }, 
+        principal,
         showReopenQuestion: false,
         allowVote: isLoggedUser,
         onOpinionChange

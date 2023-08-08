@@ -1,6 +1,6 @@
-import Types    "Types";
 import Status   "questions/Status";
 import VoteKind "votes/VoteKind";
+import Types    "../stable/Types";
 
 import Joins    "votes/QuestionVoteJoins";
 
@@ -26,13 +26,13 @@ module {
   type Buffer<T>        = Buffer.StableBuffer<T>;
 
   // For convenience: from types module
-  type Question         = Types.Question;
-  type Status           = Types.Status;
-  type QuestionId       = Types.QuestionId;
-  type StatusInfo       = Types.StatusInfo;
-  type StatusHistory    = Types.StatusHistory;
-  type VoteKind         = Types.VoteKind;
-  type VoteLink         = Types.VoteLink;
+  type Question         = Types.Current.Question;
+  type Status           = Types.Current.Status;
+  type QuestionId       = Types.Current.QuestionId;
+  type StatusInfo       = Types.Current.StatusInfo;
+  type StatusHistory    = Types.Current.StatusHistory;
+  type VoteKind         = Types.Current.VoteKind;
+  type VoteLink         = Types.Current.VoteLink;
   type Joins            = Joins.QuestionVoteJoins;
 
   public type Register = Map<QuestionId, StatusHistory>;

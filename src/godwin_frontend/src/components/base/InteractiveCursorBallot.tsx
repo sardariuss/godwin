@@ -5,21 +5,34 @@ import { TransactionsRecord }      from "../../../declarations/godwin_sub/godwin
 
 import TransactionsRecordComponent from "../token/TransactionsRecord";
 
-import React                       from "react";
+import { Sub }                     from "../../ActorContext";
+
+import React, { useState }         from "react";
+import { Principal }               from "@dfinity/principal";
 
 export type CursorBallotProps = {
+  sub: Sub,
+  principal: Principal,
+  question_id: bigint,
   cursorInfo: CursorInfo | undefined;
-  dateNs?: bigint;
+  dateNs: bigint;
   isLate?: boolean;
   tx_record?: TransactionsRecord;
-  showValue?: boolean;
 };
 
-const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record, showValue} : CursorBallotProps) => {
+const CursorBallot = ({sub, question_id, principal, cursorInfo, dateNs, isLate, tx_record} : CursorBallotProps) => {
+
+  const [showHistory, setShowHistory] = useState<boolean>(false);
+
+  const fetchHistory = () => {
+    sub.actor.queryVoterQuestionBallots(question_id, { 'OPINION' : null }, principal).then((result) => {
+      console.log(result);
+    });
+  }
 
   return (
-    <div className="flex flex-row items-center">
-      <div className="flex flex-col items-center justify-items-center">
+    <div className="flex flex-row items-center w-full grow">
+      <div className="flex flex-col items-center w-full justify-items-center">
         {
           cursorInfo === undefined ? 
           <div className="w-6 h-6 icon-svg">
@@ -27,12 +40,9 @@ const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record, showValue} : Curso
           </div> : 
             <div className={`flex flex-col items-center ${isLate ? "late-vote" : ""}`}>
               <div className="flex flex-row items-center">
-                {
-                  showValue !== undefined && showValue ?
-                  <span className="text-xs font-light">
-                    {cursorInfo.value.toFixed(2)}
-                  </span> : <></>
-                }
+                <span className="text-xs font-light">
+                  {}
+                </span>
                 <span className="ml-1 text-md">
                   {cursorInfo.symbol}
                 </span>
@@ -46,14 +56,11 @@ const CursorBallot = ({cursorInfo, dateNs, isLate, tx_record, showValue} : Curso
               </div>
             </div>
         }
-        {
-          dateNs !== undefined ? 
-          <div className="flex flex-row items-center">
-            <div className="text-xs mt-1 font-extralight dark:text-gray-400 whitespace-nowrap">
-              { timeAgo(new Date(Number(dateNs) / 1000000)) }
-            </div>
-          </div> : <></>
-        }
+        <div className="flex flex-row items-center">
+          <div className="text-xs mt-1 font-extralight dark:text-gray-400 whitespace-nowrap">
+            { timeAgo(new Date(Number(dateNs) / 1000000)) }
+          </div>
+        </div>
         {
           tx_record === undefined ? <></> :
           <TransactionsRecordComponent tx_record={tx_record}/>

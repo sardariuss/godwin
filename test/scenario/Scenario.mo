@@ -29,7 +29,7 @@ module {
 
   let SEED = 0;
 
-  let NUM_USERS = 20;
+  let NUM_USERS = 15;
 
   public func getPrincipals() : [Principal] {
     let fuzzer = Fuzz.fromSeed(SEED);
@@ -90,7 +90,7 @@ module {
 
       for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
         let question_id = queried_question.question.id;
-        if (Random.random(fuzzer) < 0.1){
+        if (Random.random(fuzzer) < 0.2){
           let principal = Random.randomUser(fuzzer, principals);
           Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
           ignore await* facade.reopenQuestion(principal, question_id, time);

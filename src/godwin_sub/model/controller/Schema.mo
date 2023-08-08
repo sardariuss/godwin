@@ -1,12 +1,12 @@
 import Event         "Event";
 import StatusManager "../StatusManager";
-import Types         "../Types";
 import Model         "../Model";
 import Status        "../questions/Status";
 import KeyConverter  "../questions/KeyConverter";
 import Interests     "../votes/Interests";
 import InterestRules "../votes/InterestRules";
 import Opinions      "../votes/Opinions";
+import Types         "../../stable/Types";
 
 import Duration      "../../utils/Duration";
 import StateMachine  "../../utils/StateMachine";
@@ -19,12 +19,12 @@ import Float         "mo:base/Float";
 module {
 
   type Time                    = Int;
-  type Duration                = Types.Duration;
-  type Question                = Types.Question;
-  type Status                  = Types.Status;
-  type QuestionId              = Types.QuestionId;
-  type VoteId                  = Types.VoteId;
-  type VoteLink                = Types.VoteLink;
+  type Duration                = Types.Current.Duration;
+  type Question                = Types.Current.Question;
+  type Status                  = Types.Current.Status;
+  type QuestionId              = Types.Current.QuestionId;
+  type VoteId                  = Types.Current.VoteId;
+  type VoteLink                = Types.Current.VoteLink;
   type Model                   = Model.Model;
   type Event                   = Event.Event;
   

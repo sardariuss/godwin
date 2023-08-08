@@ -1,19 +1,20 @@
-import InterestBallot                       from "./InterestBallot";
-import { interestToEnum }                   from "./InterestTypes";
-import SvgButton                            from "../base/SvgButton";
-import TransactionIcon                      from "../icons/TransactionIcon";
-import TransactionsRecordComponent          from "../token/TransactionsRecord";
-import { Sub }                              from "../../ActorContext";
-import CONSTANTS                            from "../../Constants";
-import { Question, RevealedInterestBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
+import InterestBallot                         from "./InterestBallot";
+import { interestToEnum }                     from "./InterestTypes";
+import SvgButton                              from "../base/SvgButton";
+import TransactionIcon                        from "../icons/TransactionIcon";
+import TransactionsRecordComponent            from "../token/TransactionsRecord";
+import { Sub }                                from "../../ActorContext";
+import CONSTANTS                              from "../../Constants";
+import { Question, RevealableInterestBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
+import { revealAnswer }                       from "../../utils";
 
-import React, { useState, useEffect }       from "react";
-import { fromNullable }                     from "@dfinity/utils";
+import React, { useState, useEffect }         from "react";
+import { fromNullable }                       from "@dfinity/utils";
 
 
 export type InterestDetailedBallotInput = {
   sub: Sub;
-  ballot: RevealedInterestBallot;
+  ballot: RevealableInterestBallot;
 };
 
 const InterestDetailedBallot = ({sub, ballot} : InterestDetailedBallotInput) => {
@@ -57,7 +58,7 @@ const InterestDetailedBallot = ({sub, ballot} : InterestDetailedBallotInput) => 
         </div>
         <div className="w-full col-span-1 justify-self-center">
           <InterestBallot 
-            answer={fromNullable(ballot.answer) !== undefined ? interestToEnum(fromNullable(ballot.answer)) : null} 
+            answer={revealAnswer(ballot.answer) !== undefined ? interestToEnum(revealAnswer(ballot.answer)) : undefined} 
             dateNs={ballot.date}/>
         </div>
         <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">

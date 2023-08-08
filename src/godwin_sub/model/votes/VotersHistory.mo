@@ -29,7 +29,7 @@ module {
   ) : IVotersHistory {
 
     public func addVote(voter: Principal, vote_id: VoteId) {
-      let voter_history = getQuestionVoteHistory(voter);
+      let voter_history = getVoterHistoryMap(voter);
       let (question_id, iteration) = _question_vote_joins.getQuestionIteration(vote_id);
       let question_votes = Option.get(Map.get(voter_history, Map.nhash, question_id), Map.new<Nat, VoteId>(Map.nhash));
       // Add the vote to the question
@@ -41,7 +41,7 @@ module {
     };
 
     public func getVoterHistory(voter: Principal) : [VoteId] {
-      let voter_history = getQuestionVoteHistory(voter);
+      let voter_history = getVoterHistoryMap(voter);
       let votes = Buffer.Buffer<VoteId>(Map.size(voter_history));
       Map.forEach(voter_history, func(question_id: QuestionId, question_votes: Map<Nat, VoteId>) {
         votes.append(Buffer.fromIter(Map.vals(question_votes)));
@@ -49,11 +49,15 @@ module {
       Buffer.toArray(votes);
     };
 
-    public func scanVoterHistory(voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionVotes> {
-      Utils.mapScanLimit(getQuestionVoteHistory(voter), Map.nhash, direction, limit, previous_id);
+    public func getVoterQuestionBallots(voter: Principal, question_id: QuestionId) : Map<Nat, VoteId> {
+      Option.get(Map.get(getVoterHistoryMap(voter), Map.nhash, question_id), Map.new<Nat, VoteId>(Map.nhash));
     };
 
-    func getQuestionVoteHistory(voter: Principal) : Map<QuestionId, Map<Nat, VoteId>> {
+    public func scanVoterHistory(voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QuestionVotes> {
+      Utils.mapScanLimit(getVoterHistoryMap(voter), Map.nhash, direction, limit, previous_id);
+    };
+
+    func getVoterHistoryMap(voter: Principal) : Map<QuestionId, Map<Nat, VoteId>> {
       Option.get(Map.get(_register, Map.phash, voter), Map.new<QuestionId, Map<Nat, VoteId>>(Map.nhash));
     };
 

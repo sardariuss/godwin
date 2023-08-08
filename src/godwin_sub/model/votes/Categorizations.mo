@@ -42,7 +42,7 @@ module {
   type RevealVoteError        = Types.RevealVoteError;
   type FindBallotError        = Types.FindBallotError;
   type PutBallotError         = Types.PutBallotError;
-  type RevealedBallot<T>      = Types.RevealedBallot<T>;
+  type RevealableBallot<T>      = Types.RevealableBallot<T>;
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;

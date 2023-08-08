@@ -5,7 +5,7 @@ import CONSTANTS                             from "../../Constants";
 import { Sub }                               from "../../ActorContext";
 import { CategorizationVote }                from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect }               from "react";
+import React, { useState, useEffect }        from "react";
 
 type CategorizationPolarizationBarsProps = {
   sub: Sub;

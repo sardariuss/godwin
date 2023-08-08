@@ -8,16 +8,16 @@ import ArrowUpIcon                                      from "../icons/ArrowUpIc
 import ReturnIcon                                       from "../icons/ReturnIcon";
 import { ActorContext, Sub }                            from "../../ActorContext"
 import { putBallotErrorToString, VoteStatusEnum,
-  voteStatusToEnum }                                    from "../../utils";
+  voteStatusToEnum, revealAnswer }                      from "../../utils";
 import { getDocElementById }                            from "../../utils/DocumentUtils";
-import { PutBallotError, VoteData, Interest, 
-  RevealedInterestBallot }                              from "../../../declarations/godwin_sub/godwin_sub.did";
+import { PutBallotError, VoteData, 
+  RevealableInterestBallot }                            from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useEffect, useContext }       from "react";
 import { createPortal }                                 from 'react-dom';
 import { fromNullable }                                 from "@dfinity/utils";
 
-const unwrapBallot = (vote_data: VoteData) : RevealedInterestBallot | undefined => {
+const unwrapBallot = (vote_data: VoteData) : RevealableInterestBallot | undefined => {
   let vote_kind_ballot = fromNullable(vote_data.user_ballot);
   if (vote_kind_ballot !== undefined && vote_kind_ballot['INTEREST'] !== undefined){
     return vote_kind_ballot['INTEREST'];
@@ -25,8 +25,8 @@ const unwrapBallot = (vote_data: VoteData) : RevealedInterestBallot | undefined 
   return undefined;
 }
 
-const getBallotInterest = (ballot: RevealedInterestBallot) : InterestEnum | undefined => {
-  let answer : Interest | undefined = fromNullable(ballot.answer);
+const getBallotInterest = (ballot: RevealableInterestBallot) : InterestEnum | undefined => {
+  let answer = revealAnswer(ballot.answer);
   if (answer !== undefined){
     return interestToEnum(answer);
   }
@@ -47,11 +47,11 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
 
   const countdownDurationMs = 3000;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>                           (false                               );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>                           (false                               );
-  const [ballot,        setBallot       ] = useState<RevealedInterestBallot | undefined>(unwrapBallot(voteData)              );
-  const [interest,      setInterest     ] = useState<InterestEnum>                      (InterestEnum.Neutral                );
-  const [showVote,      setShowVote     ] = useState<boolean>                           (unwrapBallot(voteData) === undefined);
+  const [countdownVote, setCountdownVote] = useState<boolean>                             (false                               );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                             (false                               );
+  const [ballot,        setBallot       ] = useState<RevealableInterestBallot | undefined>(unwrapBallot(voteData)              );
+  const [interest,      setInterest     ] = useState<InterestEnum>                        (InterestEnum.Neutral                );
+  const [showVote,      setShowVote     ] = useState<boolean>                             (unwrapBallot(voteData) === undefined);
   
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
@@ -149,7 +149,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
                       delay_duration_ms={countdownDurationMs}
                       update_function={putBallot}
                       error_to_string={putBallotErrorToString}
-                      callback_function={refreshBallot}
+                      callback_success={refreshBallot}
                       run_countdown={countdownVote}
                       set_run_countdown={setCountdownVote}
                       trigger_update={triggerVote}

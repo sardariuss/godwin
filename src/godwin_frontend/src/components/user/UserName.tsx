@@ -1,17 +1,17 @@
-import SvgButton                           from "../base/SvgButton"
-import EditIcon                            from "../icons/EditIcon";
-import SaveIcon                            from "../icons/SaveIcon";
-import CONSTANTS                           from "../../Constants";
-import { ActorContext }                    from "../../ActorContext"
-import { SetUserNameError }                from "../../../declarations/godwin_master/godwin_master.did";
+import SvgButton                                  from "../base/SvgButton"
+import EditIcon                                   from "../icons/EditIcon";
+import SaveIcon                                   from "../icons/SaveIcon";
+import CONSTANTS                                  from "../../Constants";
+import { ActorContext }                           from "../../ActorContext"
+import { SetUserNameError }                       from "../../../declarations/godwin_master/godwin_master.did";
 
-import { Tooltip }                         from "@mui/material";
-import ErrorOutlineIcon                    from '@mui/icons-material/ErrorOutline';
+import { Tooltip }                                from "@mui/material";
+import ErrorOutlineIcon                           from "@mui/icons-material/ErrorOutline";
 
-import { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
 
-import { Principal }                       from "@dfinity/principal";
-import { fromNullable }                    from "@dfinity/utils";
+import { Principal }                              from "@dfinity/principal";
+import { fromNullable }                           from "@dfinity/utils";
 
 
 enum EditingState {

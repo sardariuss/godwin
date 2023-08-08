@@ -4,7 +4,7 @@ import AggregateDigest                                    from "../base/Aggregat
 import CONSTANTS                                          from "../../Constants";
 import { polarizationToCursor, toCursorInfo, CursorInfo } from "../../utils";
 
-import { useState, useEffect }                            from "react";
+import React, { useState, useEffect }                     from "react";
 
 type Props = {
   aggregate: OpinionAggregateDid | undefined,

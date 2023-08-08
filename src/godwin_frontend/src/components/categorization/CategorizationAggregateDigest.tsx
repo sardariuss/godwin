@@ -3,7 +3,7 @@ import CONSTANTS                                                              fr
 import { polarizationToCursor, CursorInfo, toCursorInfo, toPolarizationInfo } from "../../utils";
 import { Category, CategoryInfo, Polarization }                               from "./../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect }                                                from "react";
+import React, { useState, useEffect }                                         from "react";
 
 type Props = {
   aggregate: Map<Category, Polarization> | undefined,

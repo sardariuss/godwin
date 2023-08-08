@@ -1,9 +1,9 @@
-import { BarChart }            from "../charts/BarChart";
-import CONSTANTS               from "../../Constants";
-import { Sub }                 from "../../ActorContext";
-import { InterestVote }        from "../../../declarations/godwin_sub/godwin_sub.did";
+import { BarChart }                   from "../charts/BarChart";
+import CONSTANTS                      from "../../Constants";
+import { Sub }                        from "../../ActorContext";
+import { InterestVote }               from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export const voteLabels = (ctx: any) : string => {
   return ctx.dataset.labels[ctx.dataIndex] + " " + ctx.parsed.x;

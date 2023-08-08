@@ -12,67 +12,66 @@ import Debug           "mo:base/Debug";
 shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   // For convenience: from base module
-  type Result<Ok, Err>              = Result.Result<Ok, Err>;
-  type Principal                    = Principal.Principal;
-  type Time                         = Time.Time;
+  type Result<Ok, Err>                = Result.Result<Ok, Err>;
+  type Principal                      = Principal.Principal;
+  type Time                           = Time.Time;
 
   // For convenience: from Facade module
-  type Facade                       = Facade.Facade;
+  type Facade                         = Facade.Facade;
   // For convenience: from types module
-  type Question                     = Types.Question;
-  type Category                     = Types.Category;
-  type Duration                     = Types.Duration;
-  type Status                       = Types.Status;
-  type TransactionsRecord           = Types.TransactionsRecord;
-  type PolarizationArray            = Types.PolarizationArray;
-  type AddCategoryError             = Types.AddCategoryError;
-  type RemoveCategoryError          = Types.RemoveCategoryError;
-  type GetQuestionError             = Types.GetQuestionError;
-  type OpenQuestionError            = Types.OpenQuestionError;
-  type ReopenQuestionError          = Types.ReopenQuestionError;
-  type AccessControlError           = Types.AccessControlError;
-  type BasePriceParameters          = Types.BasePriceParameters;
-  type PrincipalError               = Types.PrincipalError;
-  type SetPickRateError             = Types.SetPickRateError;
-  type SchedulerParameters          = Types.SchedulerParameters;
-  type SetSchedulerParametersError  = Types.SetSchedulerParametersError;
-  type GetUserConvictionsError      = Types.GetUserConvictionsError;
-  type FindBallotError              = Types.FindBallotError;
-  type PutBallotError               = Types.PutBallotError;
-  type InterestBallot               = Types.InterestBallot;
-  type OpinionBallot                = Types.OpinionBallot;
-  type CategorizationBallot         = Types.CategorizationBallot;
-  type InterestVote                 = Types.InterestVote;
-  type OpinionVote                  = Types.OpinionVote;
-  type CategorizationVote           = Types.CategorizationVote;
-  type Interest                     = Types.Interest;
-  type Cursor                       = Types.Cursor;
-  type Polarization                 = Types.Polarization;
-  type CursorArray                  = Types.CursorArray;
-  type QueryQuestionItem            = Types.QueryQuestionItem;
-  type QueryVoteItem                = Types.QueryVoteItem;
-  type GetUserVotesError            = Types.GetUserVotesError;
-  type CategoryInfo                 = Types.CategoryInfo;
-  type CategoryArray                = Types.CategoryArray;
-  type RevealVoteError              = Types.RevealVoteError;
-  type FindVoteError                = Types.FindVoteError;
-  type StatusInfo                   = Types.StatusInfo;
-  type StatusData                   = Types.StatusData;
-  type QuestionId                   = Types.QuestionId;
-  type SubInfo                      = Types.SubInfo;
-  type VoteId                       = Types.VoteId;
-  type QuestionOrderBy              = Types.QuestionOrderBy;
-  type Direction                    = Types.Direction;
-  type ScanLimitResult<K>           = Types.ScanLimitResult<K>;
-  type VoteKind                     = Types.VoteKind;
-  type Momentum                     = Types.Momentum;
-  type SelectionParameters          = Types.SelectionParameters;
-  type PriceRegister                = Types.PriceRegister;
-  type FindQuestionIterationError   = Types.FindQuestionIterationError;
-  type RevealedInterestBallot       = Types.RevealedInterestBallot;
-  type RevealedOpinionBallot        = Types.RevealedOpinionBallot;
-  type RevealedCategorizationBallot = Types.RevealedCategorizationBallot;
-  type BallotConvictionInput        = Types.BallotConvictionInput;
+  type Question                       = Types.Question;
+  type Category                       = Types.Category;
+  type Duration                       = Types.Duration;
+  type Status                         = Types.Status;
+  type TransactionsRecord             = Types.TransactionsRecord;
+  type PolarizationArray              = Types.PolarizationArray;
+  type BasePriceParameters            = Types.BasePriceParameters;
+  type SchedulerParameters            = Types.SchedulerParameters;
+  type InterestBallot                 = Types.InterestBallot;
+  type OpinionBallot                  = Types.OpinionBallot;
+  type CategorizationBallot           = Types.CategorizationBallot;
+  type InterestVote                   = Types.InterestVote;
+  type OpinionVote                    = Types.OpinionVote;
+  type CategorizationVote             = Types.CategorizationVote;
+  type Interest                       = Types.Interest;
+  type Cursor                         = Types.Cursor;
+  type Polarization                   = Types.Polarization;
+  type CursorArray                    = Types.CursorArray;
+  type QueryQuestionItem              = Types.QueryQuestionItem;
+  type QueryVoteItem                  = Types.QueryVoteItem;
+  type CategoryInfo                   = Types.CategoryInfo;
+  type CategoryArray                  = Types.CategoryArray;
+  type StatusInfo                     = Types.StatusInfo;
+  type StatusData                     = Types.StatusData;
+  type QuestionId                     = Types.QuestionId;
+  type SubInfo                        = Types.SubInfo;
+  type VoteId                         = Types.VoteId;
+  type QuestionOrderBy                = Types.QuestionOrderBy;
+  type Direction                      = Types.Direction;
+  type ScanLimitResult<K>             = Types.ScanLimitResult<K>;
+  type VoteKind                       = Types.VoteKind;
+  type Momentum                       = Types.Momentum;
+  type SelectionParameters            = Types.SelectionParameters;
+  type PriceRegister                  = Types.PriceRegister;
+  type RevealableInterestBallot       = Types.RevealableInterestBallot;
+  type RevealableOpinionBallot        = Types.RevealableOpinionBallot;
+  type RevealableCategorizationBallot = Types.RevealableCategorizationBallot;
+  type BallotConvictionInput          = Types.BallotConvictionInput;
+  type VoteKindBallot                 = Types.VoteKindBallot;
+  // Error types
+  type GetQuestionError               = Types.GetQuestionError;
+  type OpenQuestionError              = Types.OpenQuestionError;
+  type ReopenQuestionError            = Types.ReopenQuestionError;
+  type AccessControlError             = Types.AccessControlError;
+  type PrincipalError                 = Types.PrincipalError;
+  type SetSchedulerParametersError    = Types.SetSchedulerParametersError;
+  type GetUserConvictionsError        = Types.GetUserConvictionsError;
+  type FindBallotError                = Types.FindBallotError;
+  type PutBallotError                 = Types.PutBallotError;
+  type GetUserVotesError              = Types.GetUserVotesError;
+  type RevealVoteError                = Types.RevealVoteError;
+  type FindVoteError                  = Types.FindVoteError;
+  type FindQuestionIterationError     = Types.FindQuestionIterationError;
 
   stable var _state: MigrationTypes.State = Migrations.install(Time.now(), args);
 
@@ -115,7 +114,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     await* getFacade().reopenQuestion(caller, question_id, Time.now());
   };
 
-  public query({caller}) func getInterestBallot(vote_id: VoteId) : async Result<RevealedInterestBallot, FindBallotError> {
+  public query({caller}) func getInterestBallot(vote_id: VoteId) : async Result<RevealableInterestBallot, FindBallotError> {
     getFacade().getInterestBallot(caller, vote_id);
   };
 
@@ -123,7 +122,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     await* getFacade().putInterestBallot(caller, vote_id, Time.now(), interest);
   };
 
-  public query({caller}) func getOpinionBallot(vote_id: VoteId) : async Result<RevealedOpinionBallot, FindBallotError> {
+  public query({caller}) func getOpinionBallot(vote_id: VoteId) : async Result<RevealableOpinionBallot, FindBallotError> {
     getFacade().getOpinionBallot(caller, vote_id);
   };
 
@@ -131,7 +130,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     await* getFacade().putOpinionBallot(caller, vote_id, Time.now(), cursor);
   };
 
-  public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<RevealedCategorizationBallot, FindBallotError> {
+  public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<RevealableCategorizationBallot, FindBallotError> {
     getFacade().getCategorizationBallot(caller, vote_id);
   };
 
@@ -155,6 +154,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getFacade().revealCategorizationVote(vote_id);
   };
 
+  // @todo: remove
   public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
     getFacade().getQuestionIteration(vote_kind, vote_id);
   };
@@ -177,6 +177,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   public query({caller}) func queryVoterBallots(vote_kind: VoteKind, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
     getFacade().queryVoterBallots(vote_kind, caller, voter, direction, limit, previous_id);
+  };
+
+  public query({caller}) func queryVoterQuestionBallots(question_id: QuestionId, vote_kind: VoteKind, voter: Principal) : async [(Nat, ?VoteKindBallot)] {
+    getFacade().queryVoterQuestionBallots(question_id, vote_kind, caller, voter);
   };
 
   public shared func run() : async() {

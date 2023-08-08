@@ -4,15 +4,15 @@ import Decay         "Decay";
 import Polarization  "representation/Polarization";
 import Cursor        "representation/Cursor";
 
-import WRef       "../../utils/wrappers/WRef";
-import UtilsTypes "../../utils/Types";
+import WRef          "../../utils/wrappers/WRef";
+import UtilsTypes    "../../utils/Types";
 
-import Map        "mo:map/Map";
+import Map           "mo:map/Map";
 
-import Principal  "mo:base/Principal";
-import Result     "mo:base/Result";
-import Option     "mo:base/Option";
-import Debug      "mo:base/Debug";
+import Principal     "mo:base/Principal";
+import Result        "mo:base/Result";
+import Option        "mo:base/Option";
+import Debug         "mo:base/Debug";
 
 module {
 
@@ -36,7 +36,7 @@ module {
   type VoteStatus         = Types.VoteStatus;
   type PutBallotError     = Types.PutBallotError;
   type DecayParameters    = Types.DecayParameters;
-  type RevealedBallot     = Types.RevealedBallot<Answer>;
+  type RevealableBallot     = Types.RevealableBallot<Answer>;
   type GetVoteError       = Types.GetVoteError;
   type FindBallotError    = Types.FindBallotError;
   type RevealVoteError    = Types.RevealVoteError;
@@ -126,7 +126,7 @@ module {
       _votes.revealVote(id);
     };
 
-    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot, FindBallotError> {
+    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealableBallot, FindBallotError> {
       _votes.revealBallot(caller, voter, vote_id);
     };
 

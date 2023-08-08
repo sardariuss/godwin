@@ -1,11 +1,11 @@
-import Types               "Types";
+import Types     "Types";
 
-import Map                 "mo:map/Map";
+import Map       "mo:map/Map";
 
-import Principal           "mo:base/Principal";
-import Option              "mo:base/Option";
-import Debug               "mo:base/Debug";
-import Nat                 "mo:base/Nat";
+import Principal "mo:base/Principal";
+import Option    "mo:base/Option";
+import Debug     "mo:base/Debug";
+import Nat       "mo:base/Nat";
 
 module {
 

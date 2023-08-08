@@ -31,7 +31,7 @@ module {
 
   type VoteId                    = Types.VoteId;
   type Ballot<T>                 = Types.Ballot<T>;
-  type RevealedBallot<T>         = Types.RevealedBallot<T>;
+  type RevealableBallot<T>         = Types.RevealableBallot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
   type VoteStatus                = Types.VoteStatus;
   type GetVoteError              = Types.GetVoteError;
@@ -240,7 +240,7 @@ module {
       });
     };
 
-    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot<T>, FindBallotError> {
+    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealableBallot<T>, FindBallotError> {
       let vote = switch(findVote(vote_id)){
         case(#err(err)) { return #err(err); };
         case(#ok(v)) { v; };
@@ -249,7 +249,7 @@ module {
         case(null) { return #err(#BallotNotFound); };
         case(?b) { b; };
       };
-      let answer = if(_policy.canRevealBallot(vote, caller, voter)) { ?ballot.answer; } else { null; };
+      let answer = if(_policy.canRevealBallot(vote, caller, voter)) { #REVEALED(ballot.answer); } else { #HIDDEN; };
       let can_change = Result.isOk(canVote(vote_id, caller));
       #ok({ vote_id; date = ballot.date; can_change; answer; });
     };

@@ -1,15 +1,15 @@
 import Cursor "Cursor";
-import Types "Types";
+import Types  "Types";
 
-import Float "mo:base/Float";
-import Text "mo:base/Text";
+import Float  "mo:base/Float";
+import Text   "mo:base/Text";
 import Option "mo:base/Option";
 
 module {
 
   // For convenience: from types module
   type Polarization = Types.Polarization;
-  type Cursor = Types.Cursor;
+  type Cursor       = Types.Cursor;
 
   public func isValid(polarization: Polarization) : Bool {
     return Float.abs(polarization.left)   >= 0.0

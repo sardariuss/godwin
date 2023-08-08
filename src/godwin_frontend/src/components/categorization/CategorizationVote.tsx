@@ -6,15 +6,15 @@ import PutBallotIcon                                                     from ".
 import UpdateProgress                                                    from "../UpdateProgress";
 import ReturnIcon                                                        from "../icons/ReturnIcon";
 import { putBallotErrorToString, getStrongestCategoryCursorInfo, 
-  toMap, CursorInfo, voteStatusToEnum, VoteStatusEnum }                  from "../../utils";
+  toMap, CursorInfo, voteStatusToEnum, VoteStatusEnum, revealAnswer }    from "../../utils";
 import { getDocElementById }                                             from "../../utils/DocumentUtils";
 import CONSTANTS                                                         from "../../Constants";
 import { Sub, ActorContext }                                             from "../../ActorContext";
 import { CursorArray, Category, CategoryInfo, PutBallotError, 
-  VoteData, RevealedCategorizationBallot }                               from "../../../declarations/godwin_sub/godwin_sub.did";
+  VoteData, RevealableCategorizationBallot }                             from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useContext, useState }                                   from "react";
-import { createPortal }                                                  from 'react-dom';
+import { createPortal }                                                  from "react-dom";
 import { fromNullable }                                                  from "@dfinity/utils";
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
@@ -25,7 +25,7 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   return categorization;
 }
 
-const unwrapBallot = (vote_data: VoteData) : RevealedCategorizationBallot | undefined => {
+const unwrapBallot = (vote_data: VoteData) : RevealableCategorizationBallot | undefined => {
   let vote_kind_ballot = fromNullable(vote_data.user_ballot);
   if (vote_kind_ballot !== undefined && vote_kind_ballot['CATEGORIZATION'] !== undefined){
     return vote_kind_ballot['CATEGORIZATION'];
@@ -54,11 +54,11 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote,  setCountdownVote ] = useState<boolean>                                 (false                               );
-  const [triggerVote,    setTriggerVote   ] = useState<boolean>                                 (false                               );
-  const [ballot,         setBallot        ] = useState<RevealedCategorizationBallot | undefined>(unwrapBallot(voteData)              );
-  const [categorization, setCategorization] = useState<CursorArray>                             (initCategorization(sub.info.categories)  );
-  const [showVote,       setShowVote      ] = useState<boolean>                                 (unwrapBallot(voteData) === undefined);
+  const [countdownVote,  setCountdownVote ] = useState<boolean>                                   (false                                  );
+  const [triggerVote,    setTriggerVote   ] = useState<boolean>                                   (false                                  );
+  const [ballot,         setBallot        ] = useState<RevealableCategorizationBallot | undefined>(unwrapBallot(voteData)                 );
+  const [categorization, setCategorization] = useState<CursorArray>                               (initCategorization(sub.info.categories));
+  const [showVote,       setShowVote      ] = useState<boolean>                                   (unwrapBallot(voteData) === undefined   );
 
   const resetCategorization = () => {
     setCategorization(initCategorization(sub.info.categories));
@@ -99,7 +99,7 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
         <>
           { !showVote && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-20`}>
-              <CursorBallot cursorInfo={getOptStrongestCategory(fromNullable(ballot.answer), sub)} dateNs={ballot.date}/> 
+              <CursorBallot cursorInfo={getOptStrongestCategory(revealAnswer(ballot.answer), sub)} dateNs={ballot.date}/> 
               {
                 !canVote(voteData) ? <></> :
                 voteData.id !== ballot.vote_id ?
@@ -162,7 +162,7 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
                     delay_duration_ms={countdownDurationMs}
                     update_function={putBallot}
                     error_to_string={putBallotErrorToString}
-                    callback_function={refreshBallot}
+                    callback_success={refreshBallot}
                     run_countdown={countdownVote}
                     set_run_countdown={setCountdownVote}
                     trigger_update={triggerVote}

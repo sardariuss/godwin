@@ -1,61 +1,36 @@
-import RepresentationTypes "representation/Types";
 import PayTypes            "../token/Types";
+import Types               "../../stable/Types";
 import UtilsTypes          "../../utils/Types";
 
-import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
 
-import Map                 "mo:map/Map";
 import Set                 "mo:map/Set";
 
 module {
 
   // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
   type Result<Ok, Err> = Result.Result<Ok, Err>;
   type Principal = Principal.Principal;
+  
   // For convenience: from other modules
-  type Map<K, V> = Map.Map<K, V>;
   type Set<K> = Set.Set<K>;
   type Time = Int;
 
   type Duration               = UtilsTypes.Duration;
 
-  public type Category        = RepresentationTypes.Category;
-  public type Cursor          = RepresentationTypes.Cursor;
-  public type Polarization    = RepresentationTypes.Polarization;
-  public type CursorMap       = RepresentationTypes.CursorMap;
-  public type PolarizationMap = RepresentationTypes.PolarizationMap;
-  
-  public type Interest = {
-    #UP;
-    #DOWN;
-  };
-
-  public type ComputeSelectionScoreArgs = {
-    last_pick_date_ns: Time;
-    last_pick_score: Float;
-    num_votes_opened: Nat;
-    minimum_score: Float;
-    pick_period: Time;
-    current_time: Time;
-  };
-
-  public type DecayParameters = {
-    half_life: Duration;
-    lambda: Float;
-    shift: Float; // Used to shift X so that the exponential does not underflow/overflow
-  };
-
-  public type Appeal = {
-    ups: Nat;
-    downs: Nat;
-    score: Float;
-    negative_score_date: ?Time;
-    hot_timestamp: Float;
-    hotness: Float;
-  };
+  public type Category        = Types.Current.Category;
+  public type Cursor          = Types.Current.Cursor;
+  public type Polarization    = Types.Current.Polarization;
+  public type CursorMap       = Types.Current.CursorMap;
+  public type PolarizationMap = Types.Current.PolarizationMap;
+  public type Interest        = Types.Current.Interest;
+  public type DecayParameters = Types.Current.DecayParameters;
+  public type Appeal          = Types.Current.Appeal;
+  public type VoteId          = Types.Current.VoteId;
+  public type VoteStatus      = Types.Current.VoteStatus;
+  public type Vote<T, A>      = Types.Current.Vote<T, A>;
+  public type Ballot<T>       = Types.Current.Ballot<T>;
 
   public type ScoreAndHotness = {
     score: Float;
@@ -76,28 +51,28 @@ module {
     reward_ratio: Float;
   };
 
-  public type VoteId = Nat;
-  public let voteHash = Map.nhash;
-
   public type VoteHistory = [VoteId];
   public type VoterHistory = Set<VoteId>;
 
-  public type VoteStatus = {
-    #OPEN;
-    #LOCKED;
-    #CLOSED;
+  public type OpinionAnswer = {
+    cursor: Cursor;
+    late_decay: ?Float;
+  };
+  
+  public type OpinionAggregate = {
+    polarization: Polarization;
+    decay: ?Float;
   };
 
-  public type Vote<T, A> = {
-    id: VoteId;
-    var status: VoteStatus;
-    ballots: Map<Principal, Ballot<T>>;
-    var aggregate: A;
+  public type VoteKind = {
+    #INTEREST;
+    #OPINION;
+    #CATEGORIZATION;
   };
 
-  public type Ballot<T> = {
-    date: Time;
-    answer: T;
+  public type VoteLink = {
+    vote_kind: VoteKind;
+    vote_id: Nat;
   };
 
   public type IVotersHistory = {
@@ -115,15 +90,7 @@ module {
   };
 
   public type InterestBallot = Ballot<Interest>;
-  public type OpinionAnswer = {
-    cursor: Cursor;
-    late_decay: ?Float;
-  };
   public type OpinionBallot = Ballot<OpinionAnswer>;
-  public type OpinionAggregate = {
-    polarization: Polarization;
-    decay: ?Float;
-  };
   public type CategorizationBallot = Ballot<CursorMap>;
 
   public type InterestVote = Vote<Interest, Appeal>;
@@ -136,11 +103,16 @@ module {
     categorizations: Set<VoteId>;
   };
 
-  public type RevealedBallot<T> = {
+  public type RevealableBallot<T> = {
     vote_id: VoteId;
     date: Time;
     can_change: Bool;
-    answer: ?T;
+    answer: RevealableAnswer<T>;
+  };
+
+  public type RevealableAnswer<T> = {
+    #REVEALED: T;
+    #HIDDEN;
   };
 
   public type BallotChangeAuthorization = {
@@ -148,15 +120,13 @@ module {
     #BALLOT_CHANGE_FORBIDDEN;
   };
 
-  public type VoteKind = {
-    #INTEREST;
-    #OPINION;
-    #CATEGORIZATION;
-  };
-
-  public type VoteLink = {
-    vote_kind: VoteKind;
-    vote_id: Nat;
+  public type ComputeSelectionScoreArgs = {
+    last_pick_date_ns: Time;
+    last_pick_score: Float;
+    num_votes_opened: Nat;
+    minimum_score: Float;
+    pick_period: Time;
+    current_time: Time;
   };
   
   public type PrincipalError = {

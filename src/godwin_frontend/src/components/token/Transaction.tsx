@@ -6,7 +6,7 @@ import { nsToStrDate }                                     from "../../utils/Dat
 import { ActorContext }                                    from "../../ActorContext"
 
 import { fromNullable }                                    from "@dfinity/utils"
-import { useState, useEffect, useContext }                 from "react"
+import React, { useState, useEffect, useContext }          from "react"
 
 type TransactionComponentInput = {
   tx_index: bigint;

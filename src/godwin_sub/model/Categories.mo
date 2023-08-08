@@ -1,4 +1,4 @@
-import Types "Types";
+import Types "../stable/Types";
 
 import WMap  "../utils/wrappers/WMap";
 
@@ -11,12 +11,12 @@ import Array "mo:base/Array";
 module {
 
   type Key<K>            = Trie.Key<K>;
-  type Category          = Types.Category;
   type Map<K, V>         = Map.Map<K, V>;
   type WMap<K, V>        = WMap.WMap<K, V>;
 
-  type CategoryArray     = Types.CategoryArray;
-  type CategoryInfo      = Types.CategoryInfo;
+  type Category          = Types.Current.Category;
+  type CategoryArray     = Types.Current.CategoryArray;
+  type CategoryInfo      = Types.Current.CategoryInfo;
 
   public type Register   = Map<Category, CategoryInfo>;
   public type Categories = WMap<Category, CategoryInfo>;

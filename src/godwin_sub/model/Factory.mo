@@ -1,4 +1,3 @@
-import QuestionTypes          "questions/Types";
 import PayRules               "PayRules";
 import Model                  "Model";
 import Categories             "Categories";
@@ -8,7 +7,6 @@ import SubMomentum            "SubMomentum";
 import Questions              "questions/Questions";
 import QuestionQueriesFactory "questions/QueriesFactory";
 import Controller             "controller/Controller";
-import VoteTypes              "votes/Types";
 import Votes                  "votes/Votes";
 import VotersHistory          "votes/VotersHistory";
 import QuestionVoteJoins      "votes/QuestionVoteJoins";
@@ -26,15 +24,16 @@ import WRef                   "../utils/wrappers/WRef";
 
 module {
 
-  type Question        = QuestionTypes.Question;
-  type Status          = QuestionTypes.Status;
-  type Cursor          = VoteTypes.Cursor;
-  type Polarization    = VoteTypes.Polarization;
-  type CursorMap       = VoteTypes.CursorMap;
-  type PolarizationMap = VoteTypes.PolarizationMap;
-  type Facade          = Facade.Facade;
+  type Question        = StableTypes.Current.Question;
+  type Status          = StableTypes.Current.Status;
+  type Cursor          = StableTypes.Current.Cursor;
+  type Polarization    = StableTypes.Current.Polarization;
+  type CursorMap       = StableTypes.Current.CursorMap;
+  type PolarizationMap = StableTypes.Current.PolarizationMap;
   type State           = StableTypes.Current.State;
 
+  type Facade          = Facade.Facade;
+  
   public func build(state: State) : Facade {
 
     let master = state.master;

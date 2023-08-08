@@ -63,7 +63,7 @@ type Props<Error> = {
   trigger_update    : boolean;
   children?         : React.ReactNode;
   update_function   : ()        => Promise<Error | null>;
-  callback_function : ()        => Promise<void>;
+  callback_success  : ()        => Promise<void>;
   error_to_string   : (Error)   => string;
   set_run_countdown : (boolean) => void;
   set_trigger_update: (boolean) => void;
@@ -73,7 +73,7 @@ type Props<Error> = {
 const UpdateProgress = <Error,>({
   delay_duration_ms, 
   update_function, 
-  callback_function, 
+  callback_success, 
   error_to_string, 
   run_countdown, 
   set_run_countdown, 
@@ -122,7 +122,8 @@ const UpdateProgress = <Error,>({
     setUpdateProgress(true);
     set_trigger_update(true);
     update_function().then((err) => {
-      callback_function().then(() => {
+      let callback = err === null ? callback_success : () => { return Promise.resolve(); };
+      callback().then(() => {
         setUpdateProgress(false);
         setError(err === null ? null : error_to_string(err));
         set_trigger_update(false);

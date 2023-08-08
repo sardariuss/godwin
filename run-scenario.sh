@@ -36,7 +36,7 @@ export SUB=${SUB_RESULT:27:27}
 
 export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/scenario_sub/scenario_sub.wasm\" --mode=upgrade --yes"
 eval "$SUB_UPGRADE_1"
-export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { MINUTES = 830 : nat } , variant { MINUTES = 10 : nat } )'"
+export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { MINUTES = 1700 : nat } , variant { MINUTES = 20 : nat } )'"
 eval "$RUN_SUB_SCENARIO"
 export SUB_UPGRADE_2="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/godwin_sub/godwin_sub.wasm\" --mode=upgrade --yes --argument='(variant {none})'"
 eval "$SUB_UPGRADE_2"

@@ -36,7 +36,7 @@ module {
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
   type VoteStatus             = Types.VoteStatus;
-  type RevealedBallot         = Types.RevealedBallot<Interest>;
+  type RevealableBallot         = Types.RevealableBallot<Interest>;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
   type InterestVoteClosure    = Types.InterestVoteClosure;
   type IVotersHistory         = Types.IVotersHistory;
@@ -169,7 +169,7 @@ module {
       _votes.getVote(vote_id);
     };
 
-    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealedBallot, FindBallotError> {
+    public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealableBallot, FindBallotError> {
       _votes.revealBallot(caller, voter, vote_id);
     };
 

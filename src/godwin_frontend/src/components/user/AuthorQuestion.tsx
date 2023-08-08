@@ -4,7 +4,7 @@ import TransactionsRecordComponent          from "../token/TransactionsRecord";
 import CONSTANTS                            from "../../Constants";
 import { Question, TransactionsRecord }     from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState }                         from "react";
+import React, { useState }                  from "react";
 
 
 export type AuthorQuestionInput = {

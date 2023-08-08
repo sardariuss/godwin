@@ -1,13 +1,8 @@
-import Trie "mo:base/Trie";
-import Nat "mo:base/Nat";
+import Types "../../../stable/Types";
 
 module {
-
-  // For convenience: from base module
-  type Trie<K, V> = Trie.Trie<K, V>;
   
-  // @todo: duplicate definition in root Types
-  public type Category = Text;
+  public type Category = Types.Current.Category;
 
   // Cursor used for voting, shall be between -1 and 1, where usually:
   //  -1 means voting totally for A
@@ -19,7 +14,7 @@ module {
   // -1                            0                             1
   // [-----------------------------|--------------()-------------]
   //
-  public type Cursor = Float;
+  public type Cursor = Types.Current.Cursor;
 
   // Polarization, used mainly to store the result of a vote.
   // Polarizations are never normalized in the backend in order to not
@@ -30,16 +25,12 @@ module {
   // [$$$$$$$$$$$$$|@@@@@@@@|&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&]
   //     left        center                 right 
   // 
-  public type Polarization = {
-    left: Float;
-    center: Float;
-    right: Float;
-  };
+  public type Polarization = Types.Current.Polarization;
 
   // Mapping of <key=Category, value=Cursor>, used to vote to determine a question political affinity
-  public type CursorMap = Trie<Category, Cursor>;
+  public type CursorMap = Types.Current.CursorMap;
   
   // Mapping of <key=Category, value=Polarization>, used to represent a question political affinity
-  public type PolarizationMap = Trie<Category, Polarization>;
+  public type PolarizationMap = Types.Current.PolarizationMap;
   
-}
+};

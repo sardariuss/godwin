@@ -1,19 +1,20 @@
-import CursorBallot                               from "../base/CursorBallot";
-import SvgButton                                  from "../base/SvgButton";
-import TransactionIcon                            from "../icons/TransactionIcon";
-import TransactionsRecordComponent                from "../token/TransactionsRecord";
-import { toMap, getStrongestCategoryCursorInfo }  from "../../utils";
-import { Sub }                                    from "../../ActorContext";
-import CONSTANTS                                  from "../../Constants";
-import { Question, RevealedCategorizationBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
+import CursorBallot                                 from "../base/CursorBallot";
+import SvgButton                                    from "../base/SvgButton";
+import TransactionIcon                              from "../icons/TransactionIcon";
+import TransactionsRecordComponent                  from "../token/TransactionsRecord";
+import { toMap, getStrongestCategoryCursorInfo,
+  revealAnswer }                                    from "../../utils";
+import { Sub }                                      from "../../ActorContext";
+import CONSTANTS                                    from "../../Constants";
+import { Question, RevealableCategorizationBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import { useState, useEffect }                    from "react";
-import { fromNullable }                           from "@dfinity/utils";
+import React, { useState, useEffect }               from "react";
+import { fromNullable }                             from "@dfinity/utils";
 
 
 export type CategorizationDetailedBallotInput = {
   sub: Sub;
-  ballot: RevealedCategorizationBallot;
+  ballot: RevealableCategorizationBallot;
 };
 
 const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBallotInput) => {
@@ -58,7 +59,7 @@ const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBall
         <div className="col-span-2 grid grid-cols-2 w-full space-x-10 items-center">
           <div className="w-full col-span-1 justify-self-center">
             <CursorBallot 
-              cursorInfo={fromNullable(ballot.answer) !== undefined ? getStrongestCategoryCursorInfo(toMap(fromNullable(ballot.answer)), sub.info.categories) : null}
+              cursorInfo={revealAnswer(ballot.answer) !== undefined ? getStrongestCategoryCursorInfo(toMap(revealAnswer(ballot.answer)), sub.info.categories) : undefined}
               dateNs={ballot.date}/>
           </div>
           <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">

@@ -9,6 +9,7 @@ import { Sub }                            from "../ActorContext";
 import { Question, StatusData, VoteData } from "../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useEffect, useState }     from "react";
+import { Principal }                      from "@dfinity/principal";
 
 export type QuestionInput = {
 	sub: Sub,
@@ -20,11 +21,12 @@ export type QuestionInput = {
 		data: VoteData,
 	},
 	showReopenQuestion?: boolean,
+	principal: Principal,
 	allowVote: boolean,
 	onOpinionChange?: () => void
 };
 
-const QuestionComponent = ({sub, question_id, question, statusData, vote, showReopenQuestion, allowVote, onOpinionChange}: QuestionInput) => {
+const QuestionComponent = ({sub, question_id, question, statusData, vote, showReopenQuestion, principal, allowVote, onOpinionChange}: QuestionInput) => {
 	
 	const [rightPlaceholderId ] = useState<string>(question_id + "_right_placeholder" );
 	const [bottomPlaceholderId] = useState<string>(question_id + "_bottom_placeholder");
@@ -35,6 +37,8 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 
 	// @todo: this is also a bit hacky, the question shall be hidden only if the new state is not the same
 	const [hideQuestion, setHideQuestion] = useState<boolean>(false);
+
+	const [showBallotHistory, setShowBallotHistory] = useState<boolean>(false);
 
 	const refreshVote = () => {
 		setVoteKind(vote !== undefined ? vote.kind : undefined);
@@ -52,7 +56,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 			<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 px-5 items-center`} id={rightPlaceholderId}>
 				<div className={`flex flex-col py-1 px-1 justify-between space-y-1 w-full`} id={bottomPlaceholderId}>
 					<div className="flex flex-row justify-between grow">
-						<div className={`w-full justify-start text-sm font-normal break-words`}>
+						<div className={`w-full justify-start text-sm font-normal break-words hover:cursor-pointer`} onClick={(e) => {setShowBallotHistory(!showBallotHistory);}}>
 							{ question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
 						</div>
 						{
@@ -72,7 +76,16 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 						voteKind === VoteKind.INTEREST && voteData !== undefined ?
 							<InterestVote       sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={rightPlaceholderId}  ballotPlaceholderId={rightPlaceholderId}/> : 
 						voteKind === VoteKind.OPINION && voteData !== undefined ?
-							<OpinionVote        sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={bottomPlaceholderId} ballotPlaceholderId={rightPlaceholderId} onOpinionChange={onOpinionChange}/> :
+							<OpinionVote        
+								sub={sub}
+								voteData={voteData}
+								allowVote={allowVote}
+								votePlaceholderId={bottomPlaceholderId}
+								ballotPlaceholderId={rightPlaceholderId}
+								onOpinionChange={onOpinionChange}
+								question_id={question_id}
+								principal={principal}
+								showHistory={showBallotHistory}/> :
 						voteKind === VoteKind.CATEGORIZATION && voteData !== undefined ?
 							<CategorizationVote sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={bottomPlaceholderId} ballotPlaceholderId={rightPlaceholderId}/> : <></>
 				}

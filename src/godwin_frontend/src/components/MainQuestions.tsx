@@ -83,7 +83,7 @@ type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: Qu
 const MainQuestions = () => {
 
   const { subgodwin } = useParams();
-  const {subs} = useContext(ActorContext);
+  const {subs, getPrincipal} = useContext(ActorContext);
   const [sub, setSub] = useState<Sub | undefined>(undefined);
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(MainTab.HOME);
   const [currentHomeFilter, setCurrentHomeFilter] = useState<VoteKind>(VoteKind.INTEREST);
@@ -98,6 +98,7 @@ const MainQuestions = () => {
         question_id: item.question.id,
         question: item.question,
         statusData: item.status_data,
+        principal: getPrincipal(),
         showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT,
         allowVote: false
       }}
@@ -113,7 +114,8 @@ const MainQuestions = () => {
         vote: { 
           kind: voteKindFromCandidVariant(item.vote[0]),
           data: item.vote[1]
-        }, 
+        },
+        principal: getPrincipal(),
         showReopenQuestion: false,
         allowVote: true
       }});

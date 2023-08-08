@@ -1,9 +1,9 @@
-import StatusComponent         from "./Status";
-import { Sub }                 from "../ActorContext";
-import { StatusData }          from "./../../declarations/godwin_sub/godwin_sub.did";
+import StatusComponent                from "./Status";
+import { Sub }                        from "../ActorContext";
+import { StatusData }                 from "./../../declarations/godwin_sub/godwin_sub.did";
 
-import { useEffect, useState } from "react";
-import { fromNullable }        from "@dfinity/utils";
+import React, { useEffect, useState } from "react";
+import { fromNullable }               from "@dfinity/utils";
 
 type Props = {
   sub: Sub

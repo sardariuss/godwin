@@ -1,6 +1,6 @@
 import InterestRules "votes/InterestRules";
 
-import Types        "Types";
+import Types        "../stable/Types";
 
 import Ref          "../utils/Ref";
 import WRef         "../utils/wrappers/WRef";
@@ -13,9 +13,9 @@ module {
   type Ref<T>              = Ref.Ref<T>;
   type WRef<T>             = WRef.WRef<T>;
 
-  type SelectionParameters = Types.SelectionParameters;
-  type Appeal              = Types.Appeal;
-  type Momentum            = Types.Momentum;
+  type SelectionParameters = Types.Current.SelectionParameters;
+  type Appeal              = Types.Current.Appeal;
+  type Momentum            = Types.Current.Momentum;
 
   public func build(momentum: Ref<Momentum>, selection_params: Ref<SelectionParameters>) : SubMomentum {
     SubMomentum(WRef.WRef<Momentum>(momentum), WRef.WRef<SelectionParameters>(selection_params));

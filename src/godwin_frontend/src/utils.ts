@@ -424,3 +424,15 @@ export const accessControlErrorToString = (error: AccessControlError) : string =
   }
   throw new Error("Invalid access control error");
 }
+
+type RevealableAnswer<T> = { 'REVEALED' : T } | { 'HIDDEN' : null };
+
+export const revealAnswer = <T>(answer: RevealableAnswer<T>) : T | undefined => {
+  if (answer['REVEALED'] !== undefined){
+    return answer['REVEALED'];
+  } else if (answer['HIDDEN'] !== undefined){
+    return undefined;
+  } else {
+    throw new Error("Invalid revealable answer");
+  }
+}

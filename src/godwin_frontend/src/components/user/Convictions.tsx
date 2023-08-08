@@ -43,22 +43,22 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
       let weighted_ballots = new Map<Category, BallotPoint[]>();
       let map_polarizations = new Map<Category, Polarization>();
 
-      var total_late = 0;
+      var total_true_weights = 0;
+      var total_late_weights = 0;
 
       for (let i = 0; i < queryConvictions.length; i++){
         // Get the BallotConvictionInput for each vote
         let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
 
-        // Use the vote decay for the late votes indicator, not the late ballot decay itself!
-        // This way even if the late votes disappear fast from the profile, the profile will be marked for longer
-        total_late += (fromNullable(late_ballot_decay) !== undefined ? vote_decay : 0);
+        let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
+        total_true_weights += decay;
+        total_late_weights += fromNullable(late_ballot_decay) !== undefined ? decay : 0;
 
         [...Array.from(sub.info.categories)].forEach(([category, _]) => {
           let weight = toMap(categorization).get(category) ?? 0;
           // Add the weighted ballot to the ballots array
           let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
           // Compute the decay
-          let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
           array.push({
             label: "Vote " + vote_id.toString() + ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
             cursor,
@@ -76,7 +76,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
       setPolarizationMap(map_polarizations);
       setBallotsMap(weighted_ballots);
       setVoteNumber(queryConvictions.length);
-      setGenuineRatio((queryConvictions.length - total_late) / queryConvictions.length);
+      setGenuineRatio((total_true_weights - total_late_weights) / total_true_weights);
     });
   }
 
@@ -122,7 +122,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                 setChartType={setChartType}
               />
               <div className=" place-self-center">
-              { voteNumber > 0 ? (genuineRatio * 100).toFixed(5) + "% genuine" : ""}
+              { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
               </div>
             </div>
           </div>
