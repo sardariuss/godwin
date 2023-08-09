@@ -1,11 +1,12 @@
-import PolarizationBar, { BallotPoint }      from "../base/PolarizationBar";
-import ChartTypeToggle                       from "../base/ChartTypeToggle";
-import { ChartTypeEnum, toPolarizationInfo } from "../../utils";
-import CONSTANTS                             from "../../Constants";
-import { Sub }                               from "../../ActorContext";
-import { CategorizationVote }                from "../../../declarations/godwin_sub/godwin_sub.did";
+import PolarizationBar, { BallotPoint }               from "../base/PolarizationBar";
+import ChartTypeToggle                                from "../base/ChartTypeToggle";
+import { ChartTypeEnum, VoteKind, toPolarizationInfo,
+  voteKindToCandidVariant, unwrapCategorizationVote } from "../../utils";
+import CONSTANTS                                      from "../../Constants";
+import { Sub }                                        from "../../ActorContext";
+import { CategorizationVote }                         from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useState, useEffect }        from "react";
+import React, { useState, useEffect }                 from "react";
 
 type CategorizationPolarizationBarsProps = {
   sub: Sub;
@@ -18,9 +19,9 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
   const [chartType, setChartType] = useState<ChartTypeEnum               >(ChartTypeEnum.Bar    );
 
   const queryVote = async () => {
-    const vote = await sub.actor.revealCategorizationVote(vote_id);
+    const vote = await sub.actor.revealVote(voteKindToCandidVariant(VoteKind.CATEGORIZATION), vote_id);
     if (vote['ok'] !== undefined) {
-      setVote(vote['ok']);
+      setVote(unwrapCategorizationVote(vote['ok']));
     } else {
       console.error("Failed to query vote: ", vote['err']);
       setVote(undefined);
@@ -53,7 +54,7 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
       {
         vote.ballots.length === 0 ? <></> :
         <ol className="w-full">
-          {[...Array.from(vote.aggregate)].map(([category, aggregate], index) => (
+          {[...Array.                                 from(vote.aggregate)].map(([category, aggregate], index) => (
             <li key={category}>
               <PolarizationBar 
                 name={category}
@@ -61,8 +62,8 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
                 polarizationInfo={toPolarizationInfo(sub.info.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
                 polarizationValue={aggregate}
                 ballots={getBallotsFromCategory(vote, index)}
-                chartType={chartType}>
-              </PolarizationBar>
+                chartType={chartType}
+              />
             </li>
           ))}
         </ol>

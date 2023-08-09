@@ -1,9 +1,9 @@
 import OpinionVote                        from "./opinion/OpinionVote";
 import CategorizationVote                 from "./categorization/CategorizationVote";
-import CONSTANTS                          from "../Constants";
 import StatusHistoryComponent             from "./StatusHistory";
 import ReopenButton                       from "./ReopenButton";
 import InterestVote                       from "./interest/InterestVote";
+import CONSTANTS                          from "../Constants";
 import { VoteKind }                       from "../utils";
 import { Sub }                            from "../ActorContext";
 import { Question, StatusData, VoteData } from "../../declarations/godwin_sub/godwin_sub.did";
@@ -74,7 +74,13 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 				{
 					voteKind === undefined ? <></> :
 						voteKind === VoteKind.INTEREST && voteData !== undefined ?
-							<InterestVote       sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={rightPlaceholderId}  ballotPlaceholderId={rightPlaceholderId}/> : 
+							<InterestVote       
+								sub={sub} 
+								voteData={voteData} 
+								allowVote={allowVote} 
+								votePlaceholderId={rightPlaceholderId}  
+								ballotPlaceholderId={rightPlaceholderId}
+								principal={principal}/> : 
 						voteKind === VoteKind.OPINION && voteData !== undefined ?
 							<OpinionVote        
 								sub={sub}
@@ -87,7 +93,13 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 								principal={principal}
 								showHistory={showBallotHistory}/> :
 						voteKind === VoteKind.CATEGORIZATION && voteData !== undefined ?
-							<CategorizationVote sub={sub} voteData={voteData} allowVote={allowVote} votePlaceholderId={bottomPlaceholderId} ballotPlaceholderId={rightPlaceholderId}/> : <></>
+							<CategorizationVote 
+								sub={sub} 
+								voteData={voteData} 
+								allowVote={allowVote} 
+								votePlaceholderId={bottomPlaceholderId} 
+								ballotPlaceholderId={rightPlaceholderId}
+								principal={principal}/> : <></>
 				}
 			</div>
 		}

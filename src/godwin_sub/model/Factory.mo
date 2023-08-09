@@ -1,7 +1,6 @@
 import PayRules               "PayRules";
 import Model                  "Model";
 import Categories             "Categories";
-import Facade                 "Facade";
 import StatusManager          "StatusManager";
 import SubMomentum            "SubMomentum";
 import Questions              "questions/Questions";
@@ -32,9 +31,9 @@ module {
   type PolarizationMap = StableTypes.Current.PolarizationMap;
   type State           = StableTypes.Current.State;
 
-  type Facade          = Facade.Facade;
+  type Controller      = Controller.Controller;
   
-  public func build(state: State) : Facade {
+  public func build(state: State) : Controller {
 
     let master = state.master;
     
@@ -125,9 +124,7 @@ module {
 
     let controller = Controller.build(model);
 
-    let facade = Facade.Facade(controller);
-
-    facade;
+    controller;
   };
 
 };

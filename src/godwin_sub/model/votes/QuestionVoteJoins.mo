@@ -22,7 +22,6 @@ module {
   // For convenience: from types module
   type VoteId                     = Types.VoteId;
   type FindVoteError              = Types.FindVoteError;
-  type FindQuestionIterationError = Types.FindQuestionIterationError;
 
   // For convenience
   type QuestionId              = Nat;
@@ -52,17 +51,10 @@ module {
     _indexed_by_vote: WMap<VoteId, (QuestionId, Nat)>
   ) {
 
-    public func findQuestionIteration(vote_id: VoteId) : Result<(QuestionId, Nat), FindQuestionIterationError> {
-      switch(_indexed_by_vote.getOpt(vote_id)){
-        case(null)                      { #err(#VoteNotFound);           };
-        case(?(question_id, iteration)) { #ok((question_id, iteration)); };
-      };
-    };
-
     public func getQuestionIteration(vote_id: VoteId) : (QuestionId, Nat) {
-      switch(findQuestionIteration(vote_id)){
-        case(#ok((question_id, iteration))) { (question_id, iteration);     };
-        case(#err(#VoteNotFound))           { Debug.trap("Vote not found"); };
+      switch(_indexed_by_vote.getOpt(vote_id)){
+        case(null)                      { Debug.trap("Vote not found"); };
+        case(?(question_id, iteration)) { (question_id, iteration);     };
       };
     };
 

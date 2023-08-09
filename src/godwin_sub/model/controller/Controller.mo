@@ -1,5 +1,6 @@
 import Event               "Event";
 import Schema              "Schema";
+import VoteFacade          "../VoteFacade";
 import Types               "../Types";
 import Model               "../Model";
 import StatusManager       "../StatusManager";
@@ -42,7 +43,6 @@ module {
 
   // For convenience: from types module
   type TransactionsRecord          = Types.TransactionsRecord;
-  type CursorArray                 = Types.CursorArray;
   type Direction                   = Types.Direction;
   type ScanLimitResult<K>          = Types.ScanLimitResult<K>;
   type VoteKind                    = Types.VoteKind;
@@ -56,25 +56,17 @@ module {
   type BasePriceParameters         = Types.BasePriceParameters;
   type SelectionParameters         = Types.SelectionParameters;
   type SubInfo                     = Types.SubInfo;
-  type VoteKindBallot              = Types.VoteKindBallot;
+  type KindRevealableBallot        = Types.KindRevealableBallot;
+  type KindAnswer                  = Types.KindAnswer;
+  type KindVote                    = Types.KindVote;
   type QuestionId                  = QuestionTypes.QuestionId;
   type Question                    = QuestionTypes.Question;
   type Status                      = QuestionTypes.Status;
   type Key                         = QuestionTypes.Key;
   type OrderBy                     = QuestionTypes.OrderBy;
-  type Vote<T, A>                  = VoteTypes.Vote<T, A>;
-  type RevealableBallot<T>         = VoteTypes.RevealableBallot<T>;
-  type Cursor                      = VoteTypes.Cursor;
-  type Interest                    = VoteTypes.Interest;
-  type Appeal                      = VoteTypes.Appeal;
-  type CursorMap                   = VoteTypes.CursorMap;
   type VoteLink                    = VoteTypes.VoteLink;
-  type OpinionAnswer               = VoteTypes.OpinionAnswer;
-  type PolarizationMap             = VoteTypes.PolarizationMap;
   type OpinionBallot               = VoteTypes.OpinionBallot;
   type VoteId                      = VoteTypes.VoteId;
-  type FindQuestionIterationError  = VoteTypes.FindQuestionIterationError;
-  type OpinionAggregate            = VoteTypes.OpinionAggregate;
   // Errors
   type GetQuestionError            = Types.GetQuestionError;
   type ReopenQuestionError         = Types.ReopenQuestionError;
@@ -91,6 +83,8 @@ module {
   };
 
   public class Controller(_schema: Schema, _model: Model) = {
+
+    let _vote_facade = VoteFacade.VoteFacade(_model.getInterestVotes(), _model.getOpinionVotes(), _model.getCategorizationVotes());
 
     public func getSubInfo() : SubInfo {
       {
@@ -165,28 +159,16 @@ module {
       };
     };
 
-    public func getInterestBallot(caller: Principal, vote_id: VoteId) : Result<RevealableBallot<Interest>, FindBallotError> {
-      _model.getInterestVotes().revealBallot(caller, caller, vote_id);
+    public func revealBallot(vote_kind: VoteKind, caller: Principal, voter: Principal, vote_id: VoteId) : Result<KindRevealableBallot, FindBallotError> {
+      _vote_facade.revealBallot(vote_kind, caller, voter, vote_id);
     };
 
-    public func putInterestBallot(principal: Principal, vote_id: VoteId, date: Time, interest: Interest) : async* Result<(), PutBallotError> {
-      await* _model.getInterestVotes().putBallot(principal, vote_id, date, interest);
+    public func putBallot(vote_kind: VoteKind, principal: Principal, id: VoteId, date: Time, answer: KindAnswer) : async* Result<(), PutBallotError> {
+      await* _vote_facade.putBallot(vote_kind, principal, id, date, answer);
     };
 
-    public func getOpinionBallot(caller: Principal, vote_id: VoteId) : Result<RevealableBallot<OpinionAnswer>, FindBallotError> {
-      _model.getOpinionVotes().revealBallot(caller, caller, vote_id);
-    };
-
-    public func putOpinionBallot(principal: Principal, vote_id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
-      await* _model.getOpinionVotes().putBallot(principal, vote_id, cursor, date);
-    };
-      
-    public func getCategorizationBallot(caller: Principal, vote_id: VoteId) : Result<RevealableBallot<CursorMap>, FindBallotError> {
-      _model.getCategorizationVotes().revealBallot(caller, caller, vote_id);
-    };
-      
-    public func putCategorizationBallot(principal: Principal, vote_id: VoteId, date: Time, cursors: CursorMap) : async* Result<(), PutBallotError> {
-      await* _model.getCategorizationVotes().putBallot(principal, vote_id, { answer = cursors; date; });
+    public func revealVote(vote_kind: VoteKind, id: VoteId) : Result<KindVote, RevealVoteError> {
+      _vote_facade.revealVote(vote_kind, id);
     };
 
     public func getStatusHistory(question_id: Nat) : Result<[StatusData], ReopenQuestionError> {
@@ -206,45 +188,13 @@ module {
       };
     };
 
-    public func revealInterestVote(vote_id: VoteId) : Result<Vote<Interest, Appeal>, RevealVoteError> {
-      _model.getInterestVotes().revealVote(vote_id);
-    };
-
-    public func revealOpinionVote(vote_id: VoteId) : Result<Vote<OpinionAnswer, OpinionAggregate>, RevealVoteError> {
-      _model.getOpinionVotes().revealVote(vote_id);
-    };
-
-    public func revealCategorizationVote(vote_id: VoteId) : Result<Vote<CursorMap, PolarizationMap>, RevealVoteError> {
-      _model.getCategorizationVotes().revealVote(vote_id);
-    };
-
-    public func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
-      let result = switch(vote_kind){
-        case(#INTEREST){
-          _model.getInterestJoins().findQuestionIteration(vote_id);
-        };
-        case(#OPINION){
-          _model.getOpinionJoins().findQuestionIteration(vote_id);
-        };
-        case(#CATEGORIZATION){
-          _model.getCategorizationJoins().findQuestionIteration(vote_id);
-        };
-      };
-      Result.mapOk<(QuestionId, Nat), (QuestionId, Nat, ?Question), FindQuestionIterationError>(result, func((question_id, iteration): (QuestionId, Nat)) : (QuestionId, Nat, ?Question){
-        (question_id, iteration, _model.getQuestions().findQuestion(question_id));
-      });
-    };
-
     func revealStatusAggregates(status_info: StatusInfo) : [VoteAggregate] {
       let aggregates_buffer = Buffer.Buffer<VoteAggregate>(0);
       for({vote_id; vote_kind;} in Array.vals(status_info.votes)){
-        let aggregate = switch(vote_kind){
-          // @todo: use reveal vote instead of getVote
-          case(#INTEREST)       { #INTEREST(_model.getInterestVotes().getVote(vote_id).aggregate);                                };
-          case(#OPINION)        { #OPINION(_model.getOpinionVotes().getVote(vote_id).aggregate);                                  };
-          case(#CATEGORIZATION) { #CATEGORIZATION(Utils.trieToArray(_model.getCategorizationVotes().getVote(vote_id).aggregate)); };
+        switch(_vote_facade.revealAggregate(vote_kind, vote_id)){
+          case(#err(err)) {};
+          case(#ok(aggregate)) { aggregates_buffer.add({ vote_id; aggregate; }); };
         };
-        aggregates_buffer.add({ vote_id; aggregate; });
       };
       Buffer.toArray(aggregates_buffer); 
     };
@@ -348,24 +298,24 @@ module {
               let (iteration, id) = _model.getInterestJoins().getLastVote(question_id);
               let status = _model.getInterestVotes().getVote(id).status;
               // Take the last ballot
-              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-                revealBallot(vote_kind, caller, voter, vote_id);
+              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+                Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
               });
               (#INTEREST, { id; iteration; status; user_ballot; });
             };
             case(#OPINION){
               let (iteration, id) = _model.getOpinionJoins().getLastVote(question_id);
               let status = _model.getOpinionVotes().getVote(id).status;
-              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-                revealBallot(vote_kind, caller, voter, vote_id);
+              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+                Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
               });
               (#OPINION, { id; iteration; status; user_ballot; });
             };
             case(#CATEGORIZATION){
               let (iteration, id) = _model.getCategorizationJoins().getLastVote(question_id);
               let status = _model.getCategorizationVotes().getVote(id).status;
-              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-                revealBallot(vote_kind, caller, voter, vote_id);
+              let user_ballot = Option.chain(Map.peek(vote_map), func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+                Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
               });
               (#CATEGORIZATION, { id; iteration; status; user_ballot; });
             };
@@ -379,58 +329,30 @@ module {
       vote_kind: VoteKind,
       caller: Principal,
       voter: Principal
-    ) : Map<Nat, ?VoteKindBallot> {
+    ) : [(Nat, ?KindRevealableBallot)] {
       let question_ballots = switch(vote_kind){
         case(#INTEREST){
           let question_ballots = _model.getInterestVotersHistory().getVoterQuestionBallots(voter, question_id);
-          Map.map<Nat, VoteId, ?VoteKindBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-            revealBallot(vote_kind, caller, voter, vote_id);
-          });
+          Map.toArray(Map.map<Nat, VoteId, ?KindRevealableBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+            Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
+          }));
         };
         case(#OPINION){
           let question_ballots = _model.getOpinionVotersHistory().getVoterQuestionBallots(voter, question_id);
-          Map.map<Nat, VoteId, ?VoteKindBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-            revealBallot(vote_kind, caller, voter, vote_id);
-          });
+          Map.toArray(Map.map<Nat, VoteId, ?KindRevealableBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+            Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
+          }));
         };
         case(#CATEGORIZATION){
           let question_ballots = _model.getCategorizationVotersHistory().getVoterQuestionBallots(voter, question_id);
-          Map.map<Nat, VoteId, ?VoteKindBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?VoteKindBallot{
-            revealBallot(vote_kind, caller, voter, vote_id);
-          });
+          Map.toArray(Map.map<Nat, VoteId, ?KindRevealableBallot>(question_ballots, Map.nhash, func((iteration, vote_id) : (Nat, VoteId)) : ?KindRevealableBallot{
+            Result.toOption(revealBallot(vote_kind, caller, voter, vote_id));
+          }));
         };
       };
     };
 
-    func revealBallot(vote_kind: VoteKind, caller: Principal, voter: Principal, vote_id: VoteId) : ?VoteKindBallot {
-      switch(vote_kind){
-        case(#INTEREST){ 
-          switch(_model.getInterestVotes().revealBallot(caller, voter, vote_id)){
-            case(#err(_)) { null; };
-            case(#ok(b)) { ?#INTEREST(b); };
-          }; 
-        };
-        case(#OPINION){
-          switch(_model.getOpinionVotes().revealBallot(caller, voter, vote_id)){
-            case(#err(_)) { null; };
-            case(#ok(b)) { ?#OPINION(b); };
-          };
-        };
-        case(#CATEGORIZATION) {
-          switch(_model.getCategorizationVotes().revealBallot(caller, voter, vote_id)){
-            case(#err(_)) { null; };
-            case(#ok(b)) { 
-              ?#CATEGORIZATION({ b with answer = switch(b.answer){
-                case(#HIDDEN)        { #HIDDEN;                           };
-                case(#REVEALED(ans)) { #REVEALED(Utils.trieToArray(ans)); };
-              };}); 
-            };
-          };
-        };
-      };
-    };
-
-    public func getVoterConvictions(now: Time, principal: Principal) : Map<VoteId, BallotConvictionInput> {
+    public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, BallotConvictionInput)] {
 
       // Get the current decays
       let current_vote_decay = Decay.computeDecay(_model.getOpinionVotes().getVoteDecay(), now);
@@ -464,7 +386,9 @@ module {
         ?{ cursor; date; categorization; vote_decay; late_ballot_decay; };
       };
 
-      Map.mapFilter(_model.getOpinionVotes().getVoterBallots(principal), Map.nhash, to_ballot_conviction_input);
+      Map.toArray(Map.mapFilter<VoteId, OpinionBallot, BallotConvictionInput>(
+        _model.getOpinionVotes().getVoterBallots(principal), Map.nhash, to_ballot_conviction_input
+      ));
     };
 
     public func run(time: Time) : async* () {

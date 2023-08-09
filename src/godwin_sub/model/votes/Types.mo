@@ -81,21 +81,21 @@ module {
   };
 
   public type IVotePolicy<T, A> = {
-    isValidBallot: (Ballot<T>) -> Result<(), PutBallotError>; // @todo: have another type of error
-    canVote: (Vote<T, A>, Principal) -> Result<(), PutBallotError>;
-    emptyAggregate: (Time) -> A;
-    addToAggregate: (A, Ballot<T>,  ?Ballot<T>) -> A;
-    onStatusChanged: (VoteStatus, A, Time) -> A;
+    isValidBallot:   (Ballot<T>)                        -> Result<(), PutBallotError>; // @todo: have another type of error
+    canVote:         (Vote<T, A>, Principal)            -> Result<(), PutBallotError>;
+    emptyAggregate:  (Time)                             -> A;
+    addToAggregate:  (A, Ballot<T>,  ?Ballot<T>)        -> A;
+    onStatusChanged: (VoteStatus, A, Time)              -> A;
     canRevealBallot: (Vote<T, A>, Principal, Principal) -> Bool;
   };
 
-  public type InterestBallot = Ballot<Interest>;
-  public type OpinionBallot = Ballot<OpinionAnswer>;
+  public type InterestBallot       = Ballot<Interest>;
+  public type OpinionBallot        = Ballot<OpinionAnswer>;
   public type CategorizationBallot = Ballot<CursorMap>;
 
-  public type InterestVote = Vote<Interest, Appeal>;
-  public type OpinionVote = Vote<OpinionAnswer, OpinionAggregate>;
-  public type CategorizationVote = Vote<CursorMap, PolarizationMap>;
+  public type InterestVote         = Vote<Interest, Appeal>;
+  public type OpinionVote          = Vote<OpinionAnswer, OpinionAggregate>;
+  public type CategorizationVote   = Vote<CursorMap, PolarizationMap>;
 
   public type Voter = {
     interests: Set<VoteId>;
@@ -138,10 +138,6 @@ module {
     #IterationOutOfBounds;
   };
 
-  public type FindQuestionIterationError = {
-    #VoteNotFound;
-  };
-
   public type OpenVoteError = PayTypes.TransferFromMasterError;
 
   public type GetVoteError = {
@@ -178,6 +174,7 @@ module {
   };
 
   public type PutBallotError = AddBallotError or {
+    #BallotKindMismatch;
     #VoteLocked;
     #VoteNotFound;
     #ChangeBallotNotAllowed;

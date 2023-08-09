@@ -6,16 +6,17 @@ import PutBallotIcon                                                     from ".
 import UpdateProgress                                                    from "../UpdateProgress";
 import ReturnIcon                                                        from "../icons/ReturnIcon";
 import { putBallotErrorToString, getStrongestCategoryCursorInfo, 
-  toMap, CursorInfo, voteStatusToEnum, VoteStatusEnum, revealAnswer }    from "../../utils";
+  toMap, CursorInfo, voteStatusToEnum, VoteStatusEnum, 
+  RevealableBallot, getCategorizationBallot, VoteKind, voteKindToCandidVariant,
+  toCategorizationKindAnswer, unwrapRevealedCategorizationBallot }       from "../../utils";
 import { getDocElementById }                                             from "../../utils/DocumentUtils";
 import CONSTANTS                                                         from "../../Constants";
 import { Sub, ActorContext }                                             from "../../ActorContext";
-import { CursorArray, Category, CategoryInfo, PutBallotError, 
-  VoteData, RevealableCategorizationBallot }                             from "../../../declarations/godwin_sub/godwin_sub.did";
+import { CursorArray, Category, CategoryInfo, PutBallotError, VoteData } from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useContext, useState }                                   from "react";
+import React, { useContext, useState, useEffect }                        from "react";
 import { createPortal }                                                  from "react-dom";
-import { fromNullable }                                                  from "@dfinity/utils";
+import { Principal }                                                     from "@dfinity/principal";
 
 const initCategorization = (categories: Map<Category, CategoryInfo>) => {
   let categorization: CursorArray = [];
@@ -23,14 +24,6 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
     categorization.push([category, 0.0]);
   }
   return categorization;
-}
-
-const unwrapBallot = (vote_data: VoteData) : RevealableCategorizationBallot | undefined => {
-  let vote_kind_ballot = fromNullable(vote_data.user_ballot);
-  if (vote_kind_ballot !== undefined && vote_kind_ballot['CATEGORIZATION'] !== undefined){
-    return vote_kind_ballot['CATEGORIZATION'];
-  }
-  return undefined;
 }
 
 const getOptStrongestCategory = (categorization: CursorArray | undefined, sub: Sub) : CursorInfo | undefined => {
@@ -46,19 +39,20 @@ type Props = {
   allowVote: boolean;
   votePlaceholderId: string;
   ballotPlaceholderId: string;
+  principal: Principal;
 };
 
-const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId}: Props) => {
+const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId, principal}: Props) => {
 
   const {refreshBalance}   = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
 
-  const [countdownVote,  setCountdownVote ] = useState<boolean>                                   (false                                  );
-  const [triggerVote,    setTriggerVote   ] = useState<boolean>                                   (false                                  );
-  const [ballot,         setBallot        ] = useState<RevealableCategorizationBallot | undefined>(unwrapBallot(voteData)                 );
-  const [categorization, setCategorization] = useState<CursorArray>                               (initCategorization(sub.info.categories));
-  const [showVote,       setShowVote      ] = useState<boolean>                                   (unwrapBallot(voteData) === undefined   );
+  const [countdownVote,  setCountdownVote ] = useState<boolean>                                  (false                                  );
+  const [triggerVote,    setTriggerVote   ] = useState<boolean>                                  (false                                  );
+  const [ballot,         setBallot        ] = useState<RevealableBallot<CursorArray> | undefined>(getCategorizationBallot(voteData)      );
+  const [categorization, setCategorization] = useState<CursorArray>                              (initCategorization(sub.info.categories));
+  const [showVote,       setShowVote      ] = useState<boolean>                                  (false                                  );
 
   const resetCategorization = () => {
     setCategorization(initCategorization(sub.info.categories));
@@ -73,16 +67,15 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
   };
 
   const refreshBallot = () : Promise<void> => {
-    return sub.actor.getCategorizationBallot(voteData.id).then((result) => {
+    return sub.actor.revealBallot(voteKindToCandidVariant(VoteKind.CATEGORIZATION), principal, voteData.id).then((result) => {
       if (result['ok'] !== undefined){
-        setBallot(result['ok']);
-        setShowVote(false);
+        setBallot(unwrapRevealedCategorizationBallot(result['ok']));
       }
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    return sub.actor.putCategorizationBallot(voteData.id, categorization).then((result) => {
+    return sub.actor.putBallot(voteKindToCandidVariant(VoteKind.CATEGORIZATION), voteData.id, toCategorizationKindAnswer(categorization)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
@@ -92,6 +85,11 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
     return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
+  // Show the vote if the ballot is undefined, else show the ballot
+  useEffect(() => {
+    setShowVote(ballot === undefined);
+  }, [ballot]);
+
   return (
     <>
     {
@@ -99,7 +97,7 @@ const CategorizationVote = ({sub, voteData, allowVote, votePlaceholderId, ballot
         <>
           { !showVote && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-20`}>
-              <CursorBallot cursorInfo={getOptStrongestCategory(revealAnswer(ballot.answer), sub)} dateNs={ballot.date}/> 
+              <CursorBallot cursorInfo={getOptStrongestCategory(ballot.answer, sub)} dateNs={ballot.date}/> 
               {
                 !canVote(voteData) ? <></> :
                 voteData.id !== ballot.vote_id ?

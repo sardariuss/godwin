@@ -82,7 +82,10 @@
       "dependencies": [
         "godwin_token",
         "godwin_master"
-      ]
+      ],
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/scenario_sub"
+      }
     },
     "scenario_airdrop": {
       "main": "test/scenario/canisters/godwin_airdrop/main.mo",
@@ -90,7 +93,10 @@
       "dependencies": [
         "godwin_token",
         "godwin_master"
-      ]
+      ],
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/scenario_airdrop"
+      }
     }
   },
   "defaults": {

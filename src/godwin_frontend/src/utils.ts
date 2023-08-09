@@ -1,7 +1,11 @@
-import { AccessControlError, VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration } from "./../declarations/godwin_sub/godwin_sub.did";
+import { AccessControlError, VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, 
+  Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration,
+  KindRevealableBallot, OpinionAnswer, CursorArray, VoteData, KindAnswer, KindVote,
+  InterestVote, OpinionVote, CategorizationVote } from "./../declarations/godwin_sub/godwin_sub.did";
 import { Category, CreateSubGodwinError, Result_1 } from "../declarations/godwin_master/godwin_master.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
+import { InterestEnum, interestToEnum, enumToInterest } from "./components/interest/InterestTypes";
 
 import Color from 'colorjs.io';
 
@@ -436,3 +440,89 @@ export const revealAnswer = <T>(answer: RevealableAnswer<T>) : T | undefined => 
     throw new Error("Invalid revealable answer");
   }
 }
+
+export type RevealableBallot<T> = {
+  can_change : boolean,
+  date       : bigint,
+  answer     : T | undefined,
+  vote_id    : bigint,
+};
+
+export const unwrapRevealedBallot = <T1, T2>(vote_kind_str: string, revealable_ballot: KindRevealableBallot, conversion: (T1) => (T2)) : RevealableBallot<T2> => {
+  if (revealable_ballot[vote_kind_str] !== undefined){
+    let b = revealable_ballot[vote_kind_str];
+    let answer = revealAnswer(b.answer);
+    return { can_change: b.can_change, date: b.date, answer: answer === undefined ? undefined : conversion(answer), vote_id: b.vote_id };
+  }
+  throw new Error("Invalid revealable ballot");
+}
+
+export const unwrapRevealedInterestBallot = (revealable_ballot: KindRevealableBallot) : RevealableBallot<InterestEnum> => {
+  return unwrapRevealedBallot('INTEREST', revealable_ballot, interestToEnum);
+}
+
+export const unwrapRevealedOpinionBallot = (revealable_ballot: KindRevealableBallot) : RevealableBallot<OpinionAnswer> => {
+  return unwrapRevealedBallot('OPINION', revealable_ballot, (x) => x);
+}
+
+export const unwrapRevealedCategorizationBallot = (revealable_ballot: KindRevealableBallot) : RevealableBallot<CursorArray> => {
+  return unwrapRevealedBallot('CATEGORIZATION', revealable_ballot, (x) => x);
+}
+
+export const getInterestBallot = (vote_data: VoteData) : RevealableBallot<InterestEnum> | undefined => {
+  let revealable_ballot = fromNullable(vote_data.user_ballot);
+  if (revealable_ballot !== undefined){
+    return unwrapRevealedInterestBallot(revealable_ballot);
+  }
+  return undefined;
+}
+
+export const getOpinionBallot = (vote_data: VoteData) : RevealableBallot<OpinionAnswer> | undefined => {
+  let revealable_ballot = fromNullable(vote_data.user_ballot);
+  if (revealable_ballot !== undefined){
+    return unwrapRevealedOpinionBallot(revealable_ballot);
+  }
+  return undefined;
+}
+
+export const getCategorizationBallot = (vote_data: VoteData) : RevealableBallot<CursorArray> | undefined => {
+  let revealable_ballot = fromNullable(vote_data.user_ballot);
+  if (revealable_ballot !== undefined){
+    return unwrapRevealedCategorizationBallot(revealable_ballot);
+  }
+  return undefined;
+}
+
+export const toInterestKindAnswer = (answer: InterestEnum) : KindAnswer => {
+  return { 'INTEREST' : enumToInterest(answer) };
+}
+
+export const toOpinionKindAnswer = (cursor: number) : KindAnswer => {
+  return { 'OPINION' : cursor };
+}
+
+export const toCategorizationKindAnswer = (cursor_array: CursorArray) : KindAnswer => {
+  return { 'CATEGORIZATION' : cursor_array };
+}
+
+export const unwrapInterestVote = (vote: KindVote) : InterestVote => {
+  if (vote['INTEREST'] !== undefined){
+    return vote['INTEREST'];
+  }
+  throw new Error("Invalid interest vote");
+}
+
+export const unwrapOpinionVote = (vote: KindVote) : OpinionVote => {
+  if (vote['OPINION'] !== undefined){
+    return vote['OPINION'];
+  }
+  throw new Error("Invalid opinion vote");
+}
+
+export const unwrapCategorizationVote = (vote: KindVote) : CategorizationVote => {
+  if (vote['CATEGORIZATION'] !== undefined){
+    return vote['CATEGORIZATION'];
+  }
+  throw new Error("Invalid categorization vote");
+}
+

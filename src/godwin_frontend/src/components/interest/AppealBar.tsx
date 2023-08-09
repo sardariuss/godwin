@@ -1,9 +1,11 @@
-import { BarChart }                   from "../charts/BarChart";
-import CONSTANTS                      from "../../Constants";
-import { Sub }                        from "../../ActorContext";
-import { InterestVote }               from "../../../declarations/godwin_sub/godwin_sub.did";
+import { BarChart }                          from "../charts/BarChart";
+import CONSTANTS                             from "../../Constants";
+import { Sub }                               from "../../ActorContext";
+import { InterestVote }                      from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect }        from "react";
+import { VoteKind, voteKindToCandidVariant,
+  unwrapInterestVote }                       from "../../utils";
 
 export const voteLabels = (ctx: any) : string => {
   return ctx.dataset.labels[ctx.dataIndex] + " " + ctx.parsed.x;
@@ -48,9 +50,9 @@ const AppealBar = ({sub, vote_id}: AppealBarProps) => {
   const [barData, setBarData] = useState<any                   >(undefined);
 
   const queryVote = async () => {
-    const vote = await sub.actor.revealInterestVote(vote_id);
+    const vote = await sub.actor.revealVote(voteKindToCandidVariant(VoteKind.INTEREST), vote_id);
     if (vote['ok'] !== undefined) {
-      setVote(vote['ok']);
+      setVote(unwrapInterestVote(vote['ok']));
     } else {
       console.error("Failed to query vote: ", vote['err']);
       setVote(undefined);

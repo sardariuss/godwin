@@ -1,37 +1,21 @@
-import { InterestEnum, interestToEnum, enumToInterest } from "./InterestTypes";
-import UpdateProgress                                   from "../UpdateProgress";
-import InterestBallot                                   from "../interest/InterestBallot";
-import SvgButton                                        from "../base/SvgButton";
-import PutBallotIcon                                    from "../icons/PutBallotIcon";
-import ArrowDownIcon                                    from "../icons/ArrowDownIcon";
-import ArrowUpIcon                                      from "../icons/ArrowUpIcon";
-import ReturnIcon                                       from "../icons/ReturnIcon";
-import { ActorContext, Sub }                            from "../../ActorContext"
-import { putBallotErrorToString, VoteStatusEnum,
-  voteStatusToEnum, revealAnswer }                      from "../../utils";
-import { getDocElementById }                            from "../../utils/DocumentUtils";
-import { PutBallotError, VoteData, 
-  RevealableInterestBallot }                            from "../../../declarations/godwin_sub/godwin_sub.did";
+import { InterestEnum }                                               from "./InterestTypes";
+import UpdateProgress                                                 from "../UpdateProgress";
+import InterestBallot                                                 from "../interest/InterestBallot";
+import SvgButton                                                      from "../base/SvgButton";
+import PutBallotIcon                                                  from "../icons/PutBallotIcon";
+import ArrowDownIcon                                                  from "../icons/ArrowDownIcon";
+import ArrowUpIcon                                                    from "../icons/ArrowUpIcon";
+import ReturnIcon                                                     from "../icons/ReturnIcon";
+import { ActorContext, Sub }                                          from "../../ActorContext"
+import { putBallotErrorToString, VoteStatusEnum, voteStatusToEnum, 
+  RevealableBallot, unwrapRevealedInterestBallot, getInterestBallot,
+  VoteKind, voteKindToCandidVariant, toInterestKindAnswer }           from "../../utils";
+import { getDocElementById }                                          from "../../utils/DocumentUtils";
+import { PutBallotError, VoteData }                                   from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useState, useEffect, useContext }       from "react";
-import { createPortal }                                 from 'react-dom';
-import { fromNullable }                                 from "@dfinity/utils";
-
-const unwrapBallot = (vote_data: VoteData) : RevealableInterestBallot | undefined => {
-  let vote_kind_ballot = fromNullable(vote_data.user_ballot);
-  if (vote_kind_ballot !== undefined && vote_kind_ballot['INTEREST'] !== undefined){
-    return vote_kind_ballot['INTEREST'];
-  }
-  return undefined;
-}
-
-const getBallotInterest = (ballot: RevealableInterestBallot) : InterestEnum | undefined => {
-  let answer = revealAnswer(ballot.answer);
-  if (answer !== undefined){
-    return interestToEnum(answer);
-  }
-  return undefined;
-}
+import React, { useState, useEffect, useContext }                     from "react";
+import { createPortal }                                               from "react-dom";
+import { Principal }                                                  from "@dfinity/principal";
 
 type Props = {
   sub: Sub,
@@ -39,19 +23,20 @@ type Props = {
   allowVote: boolean;
   votePlaceholderId: string;
   ballotPlaceholderId: string;
+  principal: Principal;
 };
 
-const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceholderId}: Props) => {
+const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, ballotPlaceholderId}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
   const countdownDurationMs = 3000;
 
-  const [countdownVote, setCountdownVote] = useState<boolean>                             (false                               );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>                             (false                               );
-  const [ballot,        setBallot       ] = useState<RevealableInterestBallot | undefined>(unwrapBallot(voteData)              );
-  const [interest,      setInterest     ] = useState<InterestEnum>                        (InterestEnum.Neutral                );
-  const [showVote,      setShowVote     ] = useState<boolean>                             (unwrapBallot(voteData) === undefined);
+  const [countdownVote, setCountdownVote] = useState<boolean>                                   (false                      );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                                   (false                      );
+  const [ballot,        setBallot       ] = useState<RevealableBallot<InterestEnum> | undefined>(getInterestBallot(voteData));
+  const [interest,      setInterest     ] = useState<InterestEnum>                              (InterestEnum.Neutral       );
+  const [showVote,      setShowVote     ] = useState<boolean>                                   (false                      );
   
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
@@ -70,17 +55,16 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
   }
 
   const refreshBallot = () : Promise<void> => {
-    return sub.actor.getInterestBallot(voteData.id).then((result) => {
+    return sub.actor.revealBallot(voteKindToCandidVariant(VoteKind.INTEREST), principal, voteData.id).then((result) => {
       if (result['ok'] !== undefined){
-        setBallot(result['ok']);
-        setShowVote(false);
+        setBallot(unwrapRevealedInterestBallot(result['ok']));
       };
     });
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
     if (interest === InterestEnum.Neutral) throw new Error("Cannot put ballot: interest is neutral");
-    return sub.actor.putInterestBallot(voteData.id, enumToInterest(interest)).then((result) => {
+    return sub.actor.putBallot(voteKindToCandidVariant(VoteKind.INTEREST), voteData.id, toInterestKindAnswer(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
@@ -90,9 +74,15 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
     return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
+  // Start the countdown if the interest is Up or Down, stop it if it is Neutral
   useEffect(() => {
     setCountdownVote(interest !== InterestEnum.Neutral);
   }, [interest]);
+
+  // Show the vote if the ballot is undefined, else show the ballot
+  useEffect(() => {
+    setShowVote(ballot === undefined);
+  }, [ballot]);
 
   return (
     <>
@@ -102,7 +92,7 @@ const InterestVote = ({sub, voteData, allowVote, votePlaceholderId, ballotPlaceh
           { !showVote && ballot !== undefined ?
             <div className={`grid grid-cols-2 w-36 content-center items-center -mr-5`}>
               <div className={`w-full flex flex-col`}>
-                <InterestBallot answer={getBallotInterest(ballot)} dateNs={ballot.date}/> 
+                <InterestBallot answer={ballot.answer} dateNs={ballot.date}/> 
                 {
                   !canVote(voteData) ? <></> :
                   voteData.id !== ballot.vote_id ?

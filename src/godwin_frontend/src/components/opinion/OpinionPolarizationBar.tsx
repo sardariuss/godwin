@@ -1,11 +1,12 @@
-import PolarizationBar                from "../base/PolarizationBar";
-import ChartTypeToggle                from "../base/ChartTypeToggle";
-import { OpinionVote }                from "../../../declarations/godwin_sub/godwin_sub.did";
-import { ChartTypeEnum }              from "../../utils";
-import CONSTANTS                      from "../../Constants";
-import { Sub }                        from "../../ActorContext";
+import PolarizationBar                         from "../base/PolarizationBar";
+import ChartTypeToggle                         from "../base/ChartTypeToggle";
+import { OpinionVote }                         from "../../../declarations/godwin_sub/godwin_sub.did";
+import { ChartTypeEnum, VoteKind, 
+  voteKindToCandidVariant, unwrapOpinionVote } from "../../utils";
+import CONSTANTS                               from "../../Constants";
+import { Sub }                                 from "../../ActorContext";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect }          from "react";
 
 type OpinionPolarizationBarProps = {
   sub: Sub;
@@ -18,9 +19,9 @@ const OpinionPolarizationBar = ({sub, vote_id}: OpinionPolarizationBarProps) => 
   const [chartType, setChartType] = useState<ChartTypeEnum        >(ChartTypeEnum.Bar);
 
   const queryVote = async () => {
-    const vote = await sub.actor.revealOpinionVote(vote_id);
+    const vote = await sub.actor.revealVote(voteKindToCandidVariant(VoteKind.OPINION), vote_id);
     if (vote['ok'] !== undefined) {
-      setVote(vote['ok']);
+      setVote(unwrapOpinionVote(vote['ok']));
     } else {
       console.error("Failed to query vote: ", vote['err']);
       setVote(undefined);
@@ -47,8 +48,7 @@ const OpinionPolarizationBar = ({sub, vote_id}: OpinionPolarizationBarProps) => 
             date: ballot.date,
             coef: 1.0
           }})}
-          chartType={chartType}>
-        </PolarizationBar>
+          chartType={chartType}/>
       </div>
       }
       <div className="grid grid-cols-3 w-full items-center">

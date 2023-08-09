@@ -1,26 +1,26 @@
-import Types     "../../src/godwin_sub/model/Types";
-import Facade    "../../src/godwin_sub/model/Facade";
-import Factory   "../../src/godwin_sub/model/Factory";
-import Duration  "../../src/godwin_sub/utils/Duration";
+import Types      "../../src/godwin_sub/model/Types";
+import Controller "../../src/godwin_sub/model/controller/Controller";
+import Factory    "../../src/godwin_sub/model/Factory";
+import Duration   "../../src/godwin_sub/utils/Duration";
 
-import Utils     "../../src/godwin_sub/utils/Utils";
+import Utils      "../../src/godwin_sub/utils/Utils";
 
-import Random    "../motoko/common/Random";
+import Random     "../motoko/common/Random";
 
-import Principal "mo:base/Principal";
-import Debug     "mo:base/Debug";
-import Nat       "mo:base/Nat";
-import Result    "mo:base/Result";
-import Error     "mo:base/Error";
-import Array     "mo:base/Array";
+import Principal  "mo:base/Principal";
+import Debug      "mo:base/Debug";
+import Nat        "mo:base/Nat";
+import Result     "mo:base/Result";
+import Error      "mo:base/Error";
+import Array      "mo:base/Array";
 
-import Fuzz      "mo:fuzz";
+import Fuzz       "mo:fuzz";
 
 module {
 
   type Principal         = Principal.Principal;
   type Time              = Int;
-  type Facade            = Facade.Facade;
+  type Controller        = Controller.Controller;
   type Duration          = Types.Duration;
   type QueryQuestionItem = Types.QueryQuestionItem;
   type VoteKind          = Types.VoteKind;
@@ -36,13 +36,13 @@ module {
     Random.generatePrincipals(fuzzer, NUM_USERS);
   };
 
-  public func run(facade: Facade, start_date: Time, end_date: Time, tick_duration: Duration) : async*() {
+  public func run(controller: Controller, start_date: Time, end_date: Time, tick_duration: Duration) : async*() {
 
     let fuzzer = Fuzz.fromSeed(SEED);
 
     let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
 
-    let categories = facade.getSubInfo().categories;
+    let categories = controller.getSubInfo().categories;
 
     var time = start_date;
 
@@ -52,35 +52,35 @@ module {
 
       if (Random.random(fuzzer) < 0.3) {
         let principal = Random.randomUser(fuzzer, principals);
-        switch(await* facade.openQuestion(principal, Random.randomQuestion(fuzzer), time)){
+        switch(await* controller.openQuestion(principal, Random.randomQuestion(fuzzer), time)){
           case(#ok(question_id)){ Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question_id));};
           case(#err(err)) { Debug.print("Fail to open question: " # openQuestionErrorToString(err)); };
         };
       };
 
       for (principal in Array.vals(principals)) {
-        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getInterestBallot(principal, vote.1.id))){
+        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#INTEREST, principal, principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(vote.1.id));
-            switch(await* facade.putInterestBallot(principal, vote.1.id, time, Random.randomInterest(fuzzer))){
+            switch(await* controller.putBallot(#INTEREST, principal, vote.1.id, time, #INTEREST(Random.randomInterest(fuzzer)))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put interest ballot: " # putBallotErrorToString(err)); };
             };
           };
         };
-        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(facade.getOpinionBallot(principal, vote.1.id))){
+        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#OPINION, principal, principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(vote.1.id));
-            switch(await* facade.putOpinionBallot(principal, vote.1.id, time, Random.randomOpinion(fuzzer))){
+            switch(await* controller.putBallot(#OPINION, principal, vote.1.id, time, #OPINION(Random.randomOpinion(fuzzer)))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
             };
           };
         };
-        for ({vote} in Array.vals(facade.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.1 and Result.isErr(facade.getCategorizationBallot(principal, vote.1.id))){
+        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
+          if (Random.random(fuzzer) < 0.1 and Result.isErr(controller.revealBallot(#CATEGORIZATION, principal, principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
-            switch(await* facade.putCategorizationBallot(principal, vote.1.id, time, Random.randomCategorization(fuzzer, categories))){
+            switch(await* controller.putBallot(#CATEGORIZATION, principal, vote.1.id, time, #CATEGORIZATION(Random.randomCategorization(fuzzer, categories)))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
             };
@@ -88,16 +88,16 @@ module {
         };
       };
 
-      for (queried_question in Array.vals(facade.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
+      for (queried_question in Array.vals(controller.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
         let question_id = queried_question.question.id;
         if (Random.random(fuzzer) < 0.2){
           let principal = Random.randomUser(fuzzer, principals);
           Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
-          ignore await* facade.reopenQuestion(principal, question_id, time);
+          ignore await* controller.reopenQuestion(principal, question_id, time);
         };
       };
 
-      await* facade.run(time);
+      await* controller.run(time);
 
     };
   };
@@ -112,6 +112,7 @@ module {
       case(#PrincipalIsAnonymous)           { "PrincipalIsAnonymous";   };
       case(#VoteClosed)                     { "VoteClosed";             };
       case(#InvalidBallot)                  { "InvalidBallot";          };
+      case(#BallotKindMismatch)             { "BallotKindMismatch";     };
     };
   };
 

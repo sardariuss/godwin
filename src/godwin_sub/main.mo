@@ -1,6 +1,6 @@
 import Types           "model/Types";
 import Factory         "model/Factory";
-import Facade          "model/Facade";
+import Controller      "model/controller/Controller";
 import MigrationTypes  "stable/Types";
 import Migrations      "stable/Migrations";
 
@@ -16,32 +16,18 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type Principal                      = Principal.Principal;
   type Time                           = Time.Time;
 
-  // For convenience: from Facade module
-  type Facade                         = Facade.Facade;
+  // For convenience: from controller module
+  type Controller                     = Controller.Controller;
   // For convenience: from types module
   type Question                       = Types.Question;
   type Category                       = Types.Category;
   type Duration                       = Types.Duration;
   type Status                         = Types.Status;
   type TransactionsRecord             = Types.TransactionsRecord;
-  type PolarizationArray              = Types.PolarizationArray;
   type BasePriceParameters            = Types.BasePriceParameters;
   type SchedulerParameters            = Types.SchedulerParameters;
-  type InterestBallot                 = Types.InterestBallot;
-  type OpinionBallot                  = Types.OpinionBallot;
-  type CategorizationBallot           = Types.CategorizationBallot;
-  type InterestVote                   = Types.InterestVote;
-  type OpinionVote                    = Types.OpinionVote;
-  type CategorizationVote             = Types.CategorizationVote;
-  type Interest                       = Types.Interest;
-  type Cursor                         = Types.Cursor;
-  type Polarization                   = Types.Polarization;
-  type CursorArray                    = Types.CursorArray;
   type QueryQuestionItem              = Types.QueryQuestionItem;
   type QueryVoteItem                  = Types.QueryVoteItem;
-  type CategoryInfo                   = Types.CategoryInfo;
-  type CategoryArray                  = Types.CategoryArray;
-  type StatusInfo                     = Types.StatusInfo;
   type StatusData                     = Types.StatusData;
   type QuestionId                     = Types.QuestionId;
   type SubInfo                        = Types.SubInfo;
@@ -52,145 +38,109 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type VoteKind                       = Types.VoteKind;
   type Momentum                       = Types.Momentum;
   type SelectionParameters            = Types.SelectionParameters;
-  type PriceRegister                  = Types.PriceRegister;
-  type RevealableInterestBallot       = Types.RevealableInterestBallot;
-  type RevealableOpinionBallot        = Types.RevealableOpinionBallot;
-  type RevealableCategorizationBallot = Types.RevealableCategorizationBallot;
   type BallotConvictionInput          = Types.BallotConvictionInput;
-  type VoteKindBallot                 = Types.VoteKindBallot;
+  type KindRevealableBallot           = Types.KindRevealableBallot;
+  type KindAnswer                     = Types.KindAnswer;
+  type KindVote                       = Types.KindVote;
   // Error types
   type GetQuestionError               = Types.GetQuestionError;
   type OpenQuestionError              = Types.OpenQuestionError;
   type ReopenQuestionError            = Types.ReopenQuestionError;
   type AccessControlError             = Types.AccessControlError;
-  type PrincipalError                 = Types.PrincipalError;
   type SetSchedulerParametersError    = Types.SetSchedulerParametersError;
-  type GetUserConvictionsError        = Types.GetUserConvictionsError;
   type FindBallotError                = Types.FindBallotError;
   type PutBallotError                 = Types.PutBallotError;
-  type GetUserVotesError              = Types.GetUserVotesError;
   type RevealVoteError                = Types.RevealVoteError;
-  type FindVoteError                  = Types.FindVoteError;
-  type FindQuestionIterationError     = Types.FindQuestionIterationError;
 
   stable var _state: MigrationTypes.State = Migrations.install(Time.now(), args);
 
   _state := Migrations.migrate(_state, Time.now(), args);
 
   // In subsequent versions, the facade will be set to null if the version of the state is not the last one
-  let _facade = switch(_state){
+  let _controller = switch(_state){
     case(#v0_1_0(state)) { ?Factory.build(state); };
   };
 
   public query func getSubInfo() : async SubInfo {
-    getFacade().getSubInfo();
+    getController().getSubInfo();
   };
 
   public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
-    getFacade().setSchedulerParameters(caller, params);
+    getController().setSchedulerParameters(caller, params);
   };
 
   public shared({caller}) func setSelectionParameters(params: SelectionParameters) : async Result<(), AccessControlError> {
-    getFacade().setSelectionParameters(caller, params);
+    getController().setSelectionParameters(caller, params);
   };
 
   public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {
-    getFacade().setBasePriceParameters(caller, params);
+    getController().setBasePriceParameters(caller, params);
   };
 
   public query func searchQuestions(text: Text, limit: Nat) : async [QuestionId] {
-    getFacade().searchQuestions(text, limit);
+    getController().searchQuestions(text, limit);
   };
 
   public query func getQuestion(question_id: QuestionId) : async Result<Question, GetQuestionError> {
-    getFacade().getQuestion(question_id);
+    getController().getQuestion(question_id);
   };
 
   public shared({caller}) func openQuestion(text: Text) : async Result<QuestionId, OpenQuestionError> {
-    await* getFacade().openQuestion(caller, text, Time.now());
+    await* getController().openQuestion(caller, text, Time.now());
   };
 
   public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, Text)]> {
-    await* getFacade().reopenQuestion(caller, question_id, Time.now());
+    await* getController().reopenQuestion(caller, question_id, Time.now());
   };
 
-  public query({caller}) func getInterestBallot(vote_id: VoteId) : async Result<RevealableInterestBallot, FindBallotError> {
-    getFacade().getInterestBallot(caller, vote_id);
+  public query({caller}) func revealBallot(vote_kind: VoteKind, voter: Principal, vote_id: VoteId) : async Result<KindRevealableBallot, FindBallotError> {
+    getController().revealBallot(vote_kind, caller, voter, vote_id);
   };
 
-  public shared({caller}) func putInterestBallot(vote_id: VoteId, interest: Interest) : async Result<(), PutBallotError> {
-    await* getFacade().putInterestBallot(caller, vote_id, Time.now(), interest);
+  public shared({caller}) func putBallot(vote_kind: VoteKind, id: VoteId, answer: KindAnswer) : async Result<(), PutBallotError> {
+    await* getController().putBallot(vote_kind, caller, id, Time.now(), answer);
   };
 
-  public query({caller}) func getOpinionBallot(vote_id: VoteId) : async Result<RevealableOpinionBallot, FindBallotError> {
-    getFacade().getOpinionBallot(caller, vote_id);
-  };
-
-  public shared({caller}) func putOpinionBallot(vote_id: VoteId, cursor: Cursor) : async Result<(), PutBallotError> {
-    await* getFacade().putOpinionBallot(caller, vote_id, Time.now(), cursor);
-  };
-
-  public query({caller}) func getCategorizationBallot(vote_id: VoteId) : async Result<RevealableCategorizationBallot, FindBallotError> {
-    getFacade().getCategorizationBallot(caller, vote_id);
-  };
-
-  public shared({caller}) func putCategorizationBallot(vote_id: VoteId, answer: CursorArray) : async Result<(), PutBallotError> {
-    await* getFacade().putCategorizationBallot(caller, vote_id, Time.now(), answer);
+  public query func revealVote(vote_kind: VoteKind, id: VoteId) : async Result<KindVote, RevealVoteError> {
+    getController().revealVote(vote_kind, id);
   };
 
   public query func getStatusHistory(question_id: QuestionId) : async Result<[StatusData], ReopenQuestionError> {
-    getFacade().getStatusHistory(question_id);
-  };
-
-  public query func revealInterestVote(vote_id: VoteId) : async Result<InterestVote, RevealVoteError>{
-    getFacade().revealInterestVote(vote_id);
-  };
-
-  public query func revealOpinionVote(vote_id: VoteId) : async Result<OpinionVote, RevealVoteError>{
-    getFacade().revealOpinionVote(vote_id);
-  };
-
-  public query func revealCategorizationVote(vote_id: VoteId) : async Result<CategorizationVote, RevealVoteError>{
-    getFacade().revealCategorizationVote(vote_id);
-  };
-
-  // @todo: remove
-  public query func getQuestionIteration(vote_kind: VoteKind, vote_id: VoteId) : async Result<(QuestionId, Nat, ?Question), FindQuestionIterationError> {
-    getFacade().getQuestionIteration(vote_kind, vote_id);
+    getController().getStatusHistory(question_id);
   };
 
   public query func queryQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
-    getFacade().queryQuestionsFromAuthor(principal, direction, limit, previous_id);
+    getController().queryQuestionsFromAuthor(principal, direction, limit, previous_id);
   };
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, BallotConvictionInput)] {
-    getFacade().getVoterConvictions(Time.now(), principal);
+    getController().getVoterConvictions(Time.now(), principal);
   };
 
   public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryQuestionItem> {
-    getFacade().queryQuestions(order_by, direction, limit, previous_id);
+    getController().queryQuestions(order_by, direction, limit, previous_id);
   };
 
   public query({caller}) func queryFreshVotes(vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
-    getFacade().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
+    getController().queryFreshVotes(caller, vote_kind, direction, limit, previous_id);
   };
 
   public query({caller}) func queryVoterBallots(vote_kind: VoteKind, voter: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryVoteItem> {
-    getFacade().queryVoterBallots(vote_kind, caller, voter, direction, limit, previous_id);
+    getController().queryVoterBallots(vote_kind, caller, voter, direction, limit, previous_id);
   };
 
-  public query({caller}) func queryVoterQuestionBallots(question_id: QuestionId, vote_kind: VoteKind, voter: Principal) : async [(Nat, ?VoteKindBallot)] {
-    getFacade().queryVoterQuestionBallots(question_id, vote_kind, caller, voter);
+  public query({caller}) func queryVoterQuestionBallots(question_id: QuestionId, vote_kind: VoteKind, voter: Principal) : async [(Nat, ?KindRevealableBallot)] {
+    getController().queryVoterQuestionBallots(question_id, vote_kind, caller, voter);
   };
 
   public shared func run() : async() {
-    await* getFacade().run(Time.now());
+    await* getController().run(Time.now());
   };
 
-  func getFacade() : Facade {
-    switch(_facade){
-      case (?f) { f; };
-      case (null) { Debug.trap("Facade is null"); };
+  func getController() : Controller {
+    switch(_controller){
+      case (?c) { c; };
+      case (null) { Debug.trap("Controller is null"); };
     };
   };
 

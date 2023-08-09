@@ -31,7 +31,7 @@ module {
 
   type VoteId                    = Types.VoteId;
   type Ballot<T>                 = Types.Ballot<T>;
-  type RevealableBallot<T>         = Types.RevealableBallot<T>;
+  type RevealableBallot<T>       = Types.RevealableBallot<T>;
   type Vote<T, A>                = Types.Vote<T, A>;
   type VoteStatus                = Types.VoteStatus;
   type GetVoteError              = Types.GetVoteError;
@@ -133,14 +133,14 @@ module {
       };
     };
 
-    public func putBallot(principal: Principal, id: VoteId, ballot: Ballot<T>) : async* Result<(), PutBallotError> {
+    public func putBallot(principal: Principal, id: VoteId, date: Time, answer: T) : async* Result<(), PutBallotError> {
       // Prevent reentry
       if (Set.has(_ballot_locks, pnhash, (principal, id))) {
         return #err(#VoteLocked);
       };
       
       ignore Set.put(_ballot_locks, pnhash, (principal, id));
-      let result = await* _putBallot(principal, id, ballot);
+      let result = await* _putBallot(principal, id, { date; answer; });
       Set.delete(_ballot_locks, pnhash, (principal, id));
       result;
     };

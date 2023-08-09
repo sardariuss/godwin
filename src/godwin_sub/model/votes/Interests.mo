@@ -33,10 +33,11 @@ module {
   type FindBallotError        = Types.FindBallotError;
   type RevealVoteError        = Types.RevealVoteError;
   type OpenVoteError          = Types.OpenVoteError;
+  type GetVoteError           = Types.GetVoteError;
   type Interest               = Types.Interest;
   type Appeal                 = Types.Appeal;
   type VoteStatus             = Types.VoteStatus;
-  type RevealableBallot         = Types.RevealableBallot<Interest>;
+  type RevealableBallot       = Types.RevealableBallot<Interest>;
   type IVotePolicy            = Types.IVotePolicy<Interest, Appeal>;
   type InterestVoteClosure    = Types.InterestVoteClosure;
   type IVotersHistory         = Types.IVotersHistory;
@@ -156,7 +157,7 @@ module {
       
       let old_hotness = _votes.getVote(vote_id).aggregate.hotness;
 
-      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, {date; answer = interest;}), func(){
+      Result.mapOk<(), (), PutBallotError>(await* _votes.putBallot(principal, vote_id, date, interest), func(){
         let question_id = _joins.getQuestionIteration(vote_id).0;
         _queries.replace(
           ?KeyConverter.toHotnessKey(question_id, old_hotness),
@@ -165,8 +166,16 @@ module {
       });
     };
 
+    public func findVote(id: VoteId) : Result<Vote, GetVoteError> {
+      _votes.findVote(id);
+    };
+
     public func getVote(vote_id: VoteId) : Vote {
       _votes.getVote(vote_id);
+    };
+
+    public func findBallot(principal: Principal, id: VoteId) : Result<Ballot, FindBallotError> {
+      _votes.findBallot(principal, id);
     };
 
     public func revealBallot(caller: Principal, voter: Principal, vote_id: VoteId) : Result<RevealableBallot, FindBallotError> {

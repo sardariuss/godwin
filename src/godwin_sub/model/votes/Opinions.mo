@@ -3,6 +3,7 @@ import Votes         "Votes";
 import Decay         "Decay";
 import Polarization  "representation/Polarization";
 import Cursor        "representation/Cursor";
+import PayTypes      "../token/Types";
 
 import WRef          "../../utils/wrappers/WRef";
 import UtilsTypes    "../../utils/Types";
@@ -43,6 +44,8 @@ module {
 
   type ScanLimitResult<K> = UtilsTypes.ScanLimitResult<K>;
   type Direction          = UtilsTypes.Direction;
+
+  type TransactionsRecord = PayTypes.TransactionsRecord;
 
   public type Register    = Votes.Register<Answer, Aggregate>;
 
@@ -94,12 +97,12 @@ module {
       await* _votes.closeVote(id, date);
     };
 
-    public func putBallot(principal: Principal, id: VoteId, cursor: Cursor, date: Time) : async* Result<(), PutBallotError> {
+    public func putBallot(principal: Principal, id: VoteId, date: Time, cursor: Cursor) : async* Result<(), PutBallotError> {
       let late_decay = switch(getVote(id).status){
         case(#LOCKED) { ?Decay.computeDecay(_late_ballot_decay.get(), date); };
         case(_) { null; };
       };
-      await* _votes.putBallot(principal, id, { answer = { cursor; late_decay; }; date; });
+      await* _votes.putBallot(principal, id, date, { cursor; late_decay; });
     };
 
     public func canVote(vote_id: VoteId, principal: Principal) : Result<(), PutBallotError> {
@@ -132,6 +135,10 @@ module {
 
     public func hasBallot(principal: Principal, vote_id: VoteId) : Bool {
       _votes.hasBallot(principal, vote_id);
+    };
+
+    public func findBallotTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _votes.findBallotTransactions(principal, id);
     };
 
   };
