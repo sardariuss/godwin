@@ -67,7 +67,7 @@ await suite("Opinions module test suite", func(): async () {
   });
   await test("Add ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 123456789; answer = { cursor = 0.0; late_decay = null; } };
-    assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.answer.cursor, ballot.date));
+    assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.date, ballot.answer.cursor));
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
@@ -75,7 +75,7 @@ await suite("Opinions module test suite", func(): async () {
   });
   await test("Update ballot to vote 0", func() : async () {
     let ballot : OpinionBallot = { date = 12121212; answer = { cursor = 1.0; late_decay = null; } };
-    assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.answer.cursor, ballot.date));
+    assert Result.isOk(await* opinions.putBallot(principals[0], 0, ballot.date, ballot.answer.cursor));
     compare(
       Result.toOption(opinions.findBallot(principals[0], 0)),
       ?ballot,
@@ -83,16 +83,16 @@ await suite("Opinions module test suite", func(): async () {
   });
   await test("Vote aggregate vote 1", func() : async () {
     let vote_id = 1;
-    assert Result.isOk(await* opinions.putBallot(principals[0], vote_id,  1.0, 7714 ));
-    assert Result.isOk(await* opinions.putBallot(principals[1], vote_id,  0.5, 23271));
-    assert Result.isOk(await* opinions.putBallot(principals[2], vote_id,  0.5, 65600));
-    assert Result.isOk(await* opinions.putBallot(principals[3], vote_id,  0.5, 68919));
-    assert Result.isOk(await* opinions.putBallot(principals[4], vote_id,  0.5, 47827));
-    assert Result.isOk(await* opinions.putBallot(principals[5], vote_id,  0.5, 60277));
-    assert Result.isOk(await* opinions.putBallot(principals[6], vote_id,  0.0, 64031));
-    assert Result.isOk(await* opinions.putBallot(principals[7], vote_id,  0.0, 83560));
-    assert Result.isOk(await* opinions.putBallot(principals[8], vote_id, -1.0, 98166));
-    assert Result.isOk(await* opinions.putBallot(principals[9], vote_id, -1.0, 10111));
+    assert Result.isOk(await* opinions.putBallot(principals[0], vote_id, 7714,   1.0));
+    assert Result.isOk(await* opinions.putBallot(principals[1], vote_id, 23271,  0.5));
+    assert Result.isOk(await* opinions.putBallot(principals[2], vote_id, 65600,  0.5));
+    assert Result.isOk(await* opinions.putBallot(principals[3], vote_id, 68919,  0.5));
+    assert Result.isOk(await* opinions.putBallot(principals[4], vote_id, 47827,  0.5));
+    assert Result.isOk(await* opinions.putBallot(principals[5], vote_id, 60277,  0.5));
+    assert Result.isOk(await* opinions.putBallot(principals[6], vote_id, 64031,  0.0));
+    assert Result.isOk(await* opinions.putBallot(principals[7], vote_id, 83560,  0.0));
+    assert Result.isOk(await* opinions.putBallot(principals[8], vote_id, 98166, -1.0));
+    assert Result.isOk(await* opinions.putBallot(principals[9], vote_id, 10111, -1.0));
     compare(
       opinions.getVote(vote_id).aggregate.polarization,
       { left = 2.0; center = 4.5; right = 3.5; },
