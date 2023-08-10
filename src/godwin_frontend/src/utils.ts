@@ -251,6 +251,19 @@ export const toCursorInfo = (cursor: number, polarizationInfo: PolarizationInfo,
   }
 }
 
+export const toOptCursorInfo = (cursor: number | undefined, polarizationInfo: PolarizationInfo) : CursorInfo | undefined => {
+  if (cursor !== undefined){
+    return toCursorInfo(cursor, polarizationInfo);
+  }
+  return undefined;
+}
+
+export enum VoteView {
+  VOTE,
+  LAST_BALLOT,
+  BALLOT_HISTORY
+};
+
 export const toPolarizationInfo = (category_info: CategoryInfo, center: CategorySide) : PolarizationInfo => {
   return {
     left: category_info.left,

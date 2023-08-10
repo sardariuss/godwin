@@ -56,7 +56,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 			<div className={`flex flex-row text-black dark:text-white border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 px-5 items-center`} id={rightPlaceholderId}>
 				<div className={`flex flex-col py-1 px-1 justify-between space-y-1 w-full`} id={bottomPlaceholderId}>
 					<div className="flex flex-row justify-between grow">
-						<div className={`w-full justify-start text-sm font-normal break-words hover:cursor-pointer`} onClick={(e) => {setShowBallotHistory(!showBallotHistory);}}>
+						<div className={`w-full justify-start text-sm break-words hover:cursor-pointer ${question !== undefined ? "" : "italic"}`} onClick={(e) => {setShowBallotHistory(!showBallotHistory);}}>
 							{ question !== undefined ? question.text : CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
 						</div>
 						{
@@ -78,16 +78,18 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 								sub={sub} 
 								voteData={voteData} 
 								allowVote={allowVote} 
-								votePlaceholderId={rightPlaceholderId}  
-								ballotPlaceholderId={rightPlaceholderId}
-								principal={principal}/> : 
+								rightPlaceholderId={rightPlaceholderId}  
+								bottomPlaceholderId={bottomPlaceholderId}
+								question_id={question_id}
+								principal={principal}
+								showHistory={showBallotHistory}/> :
 						voteKind === VoteKind.OPINION && voteData !== undefined ?
 							<OpinionVote        
 								sub={sub}
 								voteData={voteData}
 								allowVote={allowVote}
-								votePlaceholderId={bottomPlaceholderId}
-								ballotPlaceholderId={rightPlaceholderId}
+								bottomPlaceholderId={bottomPlaceholderId}
+								rightPlaceholderId={rightPlaceholderId}
 								onOpinionChange={onOpinionChange}
 								question_id={question_id}
 								principal={principal}
@@ -97,9 +99,11 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 								sub={sub} 
 								voteData={voteData} 
 								allowVote={allowVote} 
-								votePlaceholderId={bottomPlaceholderId} 
-								ballotPlaceholderId={rightPlaceholderId}
-								principal={principal}/> : <></>
+								bottomPlaceholderId={bottomPlaceholderId} 
+								rightPlaceholderId={rightPlaceholderId}
+								question_id={question_id}
+								principal={principal}
+								showHistory={showBallotHistory}/> : <></>
 				}
 			</div>
 		}

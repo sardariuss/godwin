@@ -4,64 +4,45 @@ import UpdateProgress                                          from "../UpdatePr
 import SvgButton                                               from "../base/SvgButton";
 import ReturnIcon                                              from "../icons/ReturnIcon";
 import PutBallotIcon                                           from "../icons/PutBallotIcon";
-import { putBallotErrorToString, toCursorInfo,
-  VoteStatusEnum, voteStatusToEnum, CursorInfo, revealAnswer,
-  RevealableBallot, getOpinionBallot, VoteKind, voteKindToCandidVariant,
-  toOpinionKindAnswer, unwrapRevealedOpinionBallot }           from "../../utils";
+import { putBallotErrorToString, VoteStatusEnum, voteStatusToEnum, RevealableBallot,
+  getOpinionBallot, VoteKind, voteKindToCandidVariant, toOpinionKindAnswer,
+  unwrapRevealedOpinionBallot, toOptCursorInfo, VoteView }     from "../../utils";
 import { nsToStrDate }                                         from "../../utils/DateUtils";
 import { getDocElementById }                                   from "../../utils/DocumentUtils";
 import CONSTANTS                                               from "../../Constants";
 import { Sub }                                                 from "../../ActorContext";
-import { PutBallotError, VoteData, Cursor, 
-  RevealableOpinionBallot, OpinionAnswer }                     from "../../../declarations/godwin_sub/godwin_sub.did";
-
+import { PutBallotError, VoteData, Cursor, OpinionAnswer }     from "../../../declarations/godwin_sub/godwin_sub.did";
 import React, { useState, useEffect }                          from "react";
 import { createPortal }                                        from "react-dom";
 import { fromNullable }                                        from "@dfinity/utils";
 import { Principal }                                           from "@dfinity/principal";
-
-const optCursorInfo = (cursor: number | undefined) : CursorInfo | undefined => {
-  if (cursor !== undefined){
-    return toCursorInfo(cursor, CONSTANTS.OPINION_INFO);
-  }
-  return undefined;
-}
-
-enum VoteView {
-  VOTE,
-  LAST_BALLOT,
-  BALLOT_HISTORY
-};
-
-const deduceVoteView = (ballot: RevealableBallot<OpinionAnswer> | undefined, showHistory: boolean) : VoteView => {
-  return ballot === undefined ? VoteView.VOTE : showHistory ? VoteView.BALLOT_HISTORY : VoteView.LAST_BALLOT;
-};
 
 type Props = {
   sub: Sub;
   voteData: VoteData;
   allowVote: boolean;
   onOpinionChange?: () => void;
-  votePlaceholderId: string;
-  ballotPlaceholderId: string;
+  bottomPlaceholderId: string;
+  rightPlaceholderId: string;
   question_id: bigint;
   principal: Principal;
   showHistory: boolean;
 };
 
-const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholderId, ballotPlaceholderId, question_id, principal, showHistory}: Props) => {
+const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, bottomPlaceholderId, rightPlaceholderId, question_id, principal, showHistory}: Props) => {
 
   const COUNTDOWN_DURATION_MS = 0;
+  const voteKind = voteKindToCandidVariant(VoteKind.OPINION);
 
-  const [countdownVote, setCountdownVote] = useState<boolean>                            (false                                              );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>                            (false                                              );
-  const [ballot,        setBallot       ] = useState<RevealableBallot<OpinionAnswer> | undefined>(getOpinionBallot(voteData)                 );
-  const [cursor,        setCursor       ] = useState<Cursor>                             (0.0                                                );
-  const [voteView,      setVoteView     ] = useState<VoteView>                           (deduceVoteView(getOpinionBallot(voteData), showHistory));
-  const [ballotHistory, setBallotHistory] = useState<[bigint, RevealableOpinionBallot | undefined][]>([]                                     );
+  const [countdownVote, setCountdownVote] = useState<boolean>                                                (false                     );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                                                (false                     );
+  const [ballot,        setBallot       ] = useState<RevealableBallot<OpinionAnswer> | undefined>            (getOpinionBallot(voteData));
+  const [cursor,        setCursor       ] = useState<Cursor>                                                 (0.0                       );
+  const [voteView,      setVoteView     ] = useState<VoteView>                                               (VoteView.LAST_BALLOT      );
+  const [ballotHistory, setBallotHistory] = useState<[bigint, RevealableBallot<OpinionAnswer> | undefined][]>([]                        );
 
   const refreshBallot = () : Promise<void> => {
-    return sub.actor.revealBallot(voteKindToCandidVariant(VoteKind.OPINION), principal, voteData.id).then((result) => {
+    return sub.actor.revealBallot(voteKind, principal, voteData.id).then((result) => {
       if (result['ok'] !== undefined){
         setBallot(unwrapRevealedOpinionBallot(result['ok']));
       };
@@ -69,7 +50,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
   }
 
   const putBallot = () : Promise<PutBallotError | null> => {
-    return sub.actor.putBallot(voteKindToCandidVariant(VoteKind.OPINION), voteData.id, toOpinionKindAnswer(cursor)).then((result) => {
+    return sub.actor.putBallot(voteKind, voteData.id, toOpinionKindAnswer(cursor)).then((result) => {
       if (result['ok'] !== undefined){
         onOpinionChange?.();
       };
@@ -77,10 +58,9 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
     });
   }
 
-  const isLateBallot = (ballot: RevealableOpinionBallot) : boolean => {
-    let answer = revealAnswer(ballot.answer);
-    if (answer !== undefined){
-      return fromNullable(answer.late_decay) !== undefined;
+  const isLateBallot = (ballot: RevealableBallot<OpinionAnswer>) : boolean => {
+    if (ballot.answer !== undefined){
+      return fromNullable(ballot.answer.late_decay) !== undefined;
     }
     return false;
   }
@@ -89,23 +69,22 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
     return voteStatusToEnum(voteData.status) === VoteStatusEnum.LOCKED;
   }
 
-  // allowVote: true for home, false for browse, depend on logging state for user profile
-  // @todo: could be renamed readOnly
   const canVote = (voteData: VoteData) : boolean => {
     return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
   const fetchBallotHistory = () => {
-    sub.actor.queryVoterQuestionBallots(question_id, voteKindToCandidVariant(VoteKind.OPINION), principal).then((iteration_ballots) => {
-      let history = iteration_ballots.map((ballot) : [bigint, RevealableOpinionBallot | undefined] => { 
-        return [ballot[0], (fromNullable(ballot[1]) !== undefined ? fromNullable(ballot[1])['OPINION'] : undefined)]; 
+    sub.actor.queryVoterQuestionBallots(question_id, voteKind, principal).then((iteration_ballots) => {
+      let history = iteration_ballots.map((ballot) : [bigint, RevealableBallot<OpinionAnswer> | undefined] => {
+        let b = fromNullable(ballot[1]);
+        return [ballot[0], (b !== undefined ? unwrapRevealedOpinionBallot(b) : undefined)];
       });
       setBallotHistory(history);
     });
   }
 
   useEffect(() => {
-    setVoteView(deduceVoteView(ballot, showHistory));
+    setVoteView(ballot === undefined ? VoteView.VOTE : showHistory ? VoteView.BALLOT_HISTORY : VoteView.LAST_BALLOT);
   }, [ballot, showHistory]);
 
   useEffect(() => {
@@ -123,9 +102,9 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
             voteView === VoteView.LAST_BALLOT && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-32 pr-10`}>
               <CursorBallot
-                cursorInfo={ optCursorInfo(ballot.answer?.cursor) } 
+                cursorInfo={ toOptCursorInfo(ballot.answer?.cursor, CONSTANTS.OPINION_INFO) } 
                 dateNs={ballot.date}
-                isLate={ballot.answer?.late_decay !== undefined}
+                isLate={ballot.answer !== undefined ? fromNullable(ballot.answer.late_decay) !== undefined : false}
               />
               {
                 !canVote(voteData) ? <></> :
@@ -144,7 +123,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
             </div> : <></>
           }
         </>,
-        getDocElementById(ballotPlaceholderId)
+        getDocElementById(rightPlaceholderId)
       )
     }
     {
@@ -154,7 +133,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
             <div className={`relative flex flex-row items-center justify-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
               <div className="w-2/5">
                 <CursorSlider
-                    id={ votePlaceholderId + "_slider" }
+                    id={ bottomPlaceholderId + "_slider" }
                     cursor = { cursor }
                     polarizationInfo={ CONSTANTS.OPINION_INFO }
                     disabled={ triggerVote }
@@ -186,7 +165,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
             </div> : <></>
           }
         </>,
-        getDocElementById(votePlaceholderId)
+        getDocElementById(bottomPlaceholderId)
       )
     }
     {
@@ -206,7 +185,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
                       { nsToStrDate(ballot[1].date) }
                     </div>
                     <CursorBallot
-                      cursorInfo={optCursorInfo(revealAnswer(ballot[1].answer)?.cursor)}
+                      cursorInfo={toOptCursorInfo((ballot[1].answer)?.cursor, CONSTANTS.OPINION_INFO)}
                       showValue={true}
                       isLate={isLateBallot(ballot[1])}
                     />
@@ -216,7 +195,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, votePlaceholder
             </ol> : <></>
           }
         </>,
-        getDocElementById(votePlaceholderId)
+        getDocElementById(bottomPlaceholderId)
       )
     }
   </>

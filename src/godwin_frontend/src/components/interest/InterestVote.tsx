@@ -9,34 +9,40 @@ import ReturnIcon                                                     from "../i
 import { ActorContext, Sub }                                          from "../../ActorContext"
 import { putBallotErrorToString, VoteStatusEnum, voteStatusToEnum, 
   RevealableBallot, unwrapRevealedInterestBallot, getInterestBallot,
-  VoteKind, voteKindToCandidVariant, toInterestKindAnswer }           from "../../utils";
+  VoteKind, voteKindToCandidVariant, toInterestKindAnswer, VoteView } from "../../utils";
+import { nsToStrDate }                                                from "../../utils/DateUtils";
 import { getDocElementById }                                          from "../../utils/DocumentUtils";
 import { PutBallotError, VoteData }                                   from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useEffect, useContext }                     from "react";
 import { createPortal }                                               from "react-dom";
 import { Principal }                                                  from "@dfinity/principal";
+import { fromNullable }                                               from "@dfinity/utils";
 
 type Props = {
   sub: Sub,
   voteData: VoteData;
   allowVote: boolean;
-  votePlaceholderId: string;
-  ballotPlaceholderId: string;
+  bottomPlaceholderId: string;
+  rightPlaceholderId: string;
+  question_id: bigint;
   principal: Principal;
+  showHistory: boolean;
 };
 
-const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, ballotPlaceholderId}: Props) => {
+const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId, rightPlaceholderId, question_id, showHistory}: Props) => {
 
   const {refreshBalance} = useContext(ActorContext);
 
   const countdownDurationMs = 3000;
+  const voteKind = voteKindToCandidVariant(VoteKind.INTEREST);
 
-  const [countdownVote, setCountdownVote] = useState<boolean>                                   (false                      );
-  const [triggerVote,   setTriggerVote  ] = useState<boolean>                                   (false                      );
-  const [ballot,        setBallot       ] = useState<RevealableBallot<InterestEnum> | undefined>(getInterestBallot(voteData));
-  const [interest,      setInterest     ] = useState<InterestEnum>                              (InterestEnum.Neutral       );
-  const [showVote,      setShowVote     ] = useState<boolean>                                   (false                      );
+  const [countdownVote, setCountdownVote] = useState<boolean>                                               (false                      );
+  const [triggerVote,   setTriggerVote  ] = useState<boolean>                                               (false                      );
+  const [ballot,        setBallot       ] = useState<RevealableBallot<InterestEnum> | undefined>            (getInterestBallot(voteData));
+  const [interest,      setInterest     ] = useState<InterestEnum>                                          (InterestEnum.Neutral       );
+  const [voteView,      setVoteView     ] = useState<VoteView>                                              (VoteView.LAST_BALLOT       );
+  const [ballotHistory, setBallotHistory] = useState<[bigint, RevealableBallot<InterestEnum> | undefined][]>([]                         );
   
   const incrementCursorValue = () => {
     if (interest === InterestEnum.Neutral){
@@ -55,7 +61,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
   }
 
   const refreshBallot = () : Promise<void> => {
-    return sub.actor.revealBallot(voteKindToCandidVariant(VoteKind.INTEREST), principal, voteData.id).then((result) => {
+    return sub.actor.revealBallot(voteKind, principal, voteData.id).then((result) => {
       if (result['ok'] !== undefined){
         setBallot(unwrapRevealedInterestBallot(result['ok']));
       };
@@ -64,7 +70,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
 
   const putBallot = () : Promise<PutBallotError | null> => {
     if (interest === InterestEnum.Neutral) throw new Error("Cannot put ballot: interest is neutral");
-    return sub.actor.putBallot(voteKindToCandidVariant(VoteKind.INTEREST), voteData.id, toInterestKindAnswer(interest)).then((result) => {
+    return sub.actor.putBallot(voteKind, voteData.id, toInterestKindAnswer(interest)).then((result) => {
       refreshBalance();
       return result['err'] ?? null;
     });
@@ -74,22 +80,37 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
     return allowVote && voteStatusToEnum(voteData.status) !== VoteStatusEnum.CLOSED;
   }
 
+  const fetchBallotHistory = () => {
+    sub.actor.queryVoterQuestionBallots(question_id, voteKind, principal).then((iteration_ballots) => {
+      let history = iteration_ballots.map((ballot) : [bigint, RevealableBallot<InterestEnum> | undefined] => {
+        let b = fromNullable(ballot[1]);
+        return [ballot[0], (b !== undefined ? unwrapRevealedInterestBallot(b) : undefined)];
+      });
+      setBallotHistory(history);
+    });
+  }
+
   // Start the countdown if the interest is Up or Down, stop it if it is Neutral
   useEffect(() => {
     setCountdownVote(interest !== InterestEnum.Neutral);
   }, [interest]);
 
-  // Show the vote if the ballot is undefined, else show the ballot
   useEffect(() => {
-    setShowVote(ballot === undefined);
-  }, [ballot]);
+    setVoteView(ballot === undefined ? VoteView.VOTE : showHistory ? VoteView.BALLOT_HISTORY : VoteView.LAST_BALLOT);
+  }, [ballot, showHistory]);
+
+  useEffect(() => {
+    if (showHistory) {
+      fetchBallotHistory();
+    }
+  }, [showHistory]);
 
   return (
     <>
     {
       createPortal(
         <>
-          { !showVote && ballot !== undefined ?
+          { voteView === VoteView.LAST_BALLOT && ballot !== undefined ?
             <div className={`grid grid-cols-2 w-36 content-center items-center -mr-5`}>
               <div className={`w-full flex flex-col`}>
                 <InterestBallot answer={ballot.answer} dateNs={ballot.date}/> 
@@ -97,11 +118,11 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
                   !canVote(voteData) ? <></> :
                   voteData.id !== ballot.vote_id ?
                     <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold`}
-                      onClick={() => { setShowVote(true); }}
+                      onClick={() => { setBallot(undefined); }}
                     > NEW </div> :
                   ballot.can_change ?
                     <div className="ml-2 w-4 h-4"> {/* @todo: setting a relative size does not seem to work here*/}
-                      <SvgButton onClick={() => { setShowVote(true); }} disabled={false} hidden={false}>
+                      <SvgButton onClick={() => { setBallot(undefined); }} disabled={false} hidden={false}>
                         <ReturnIcon/>
                       </SvgButton>
                     </div> : <></>
@@ -110,13 +131,13 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
             </div> : <></>
           }
         </>,
-        getDocElementById(ballotPlaceholderId)
+        getDocElementById(rightPlaceholderId)
       )
     }
     {
       createPortal(
         <>
-          { showVote && canVote(voteData) ?
+          { voteView === VoteView.VOTE && canVote(voteData) ?
             <div className={`grid grid-cols-2 w-32 content-center items-center py-2 -mr-5`}>
               <div className={`w-full flex flex-col items-center justify-center content-center transition duration-2000
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
@@ -155,7 +176,33 @@ const InterestVote = ({sub, voteData, allowVote, principal, votePlaceholderId, b
             </div> : <></>
           }
         </>,
-        getDocElementById(votePlaceholderId)
+        getDocElementById(rightPlaceholderId)
+      )
+    }
+    {
+      createPortal(
+        <>
+          { 
+            voteView === VoteView.BALLOT_HISTORY ?
+            <ol className={`flex flex-col justify-center items-center space-y-2`}>
+              {
+                ballotHistory.reverse().map((ballot, index) => (
+                  ballot[1] === undefined ? <></> :
+                  <li className={`flex flex-row justify-between items-center w-full`} key={index.toString()}>
+                    <div className="text-sm font-light">
+                      { "Iteration " + ballot[0].toString() }
+                    </div>
+                    <div className="text-sm font-light">
+                      { nsToStrDate(ballot[1].date) }
+                    </div>
+                    <InterestBallot answer={ballot[1].answer} dateNs={undefined}/>
+                  </li>
+                ))
+              }
+            </ol> : <></>
+          }
+        </>,
+        getDocElementById(bottomPlaceholderId)
       )
     }
   </>
