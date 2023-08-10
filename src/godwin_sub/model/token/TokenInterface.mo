@@ -59,25 +59,6 @@ module {
         #err(#CanisterCallError(Error.code(e)));
       };
     };
-
-    public func transferToMaster(from_subaccount: Blob, to: Principal, amount: Balance) : async* ?TransferToMasterResult {
-      if (amount == 0) {
-        return null;
-      };
-      try {
-        // Call the token reap_account method
-        ?toBaseResult(await GodwinToken.icrc1_transfer({
-          from_subaccount = ?from_subaccount;
-          to = getMasterAccount(?to);
-          amount;
-          fee = ?10_000; // @todo: fee
-          created_at_time = null;
-          memo = null; // @todo: memo
-        }));
-      } catch(e) {
-        ?#err(#CanisterCallError(Error.code(e)));
-      };
-    };
     
     // @todo: double ReapAccountRecipient types is confusing
     public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) : async* Trie<Principal, ?ReapAccountResult> {

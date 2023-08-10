@@ -139,7 +139,7 @@ module {
       let (question_id, iteration) = _joins.getQuestionIteration(vote_id);
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
-      let { author_payout; creator_reward; } = _pay_rules.computeOpenedQuestionPayout(vote.aggregate, closure, iteration);
+      let { author_payout; creator_reward; } = _pay_rules.getQuestionPayouts(vote.aggregate, closure, iteration);
       await* _pay_for_new.payout(vote_id, author_payout);
       switch(creator_reward){
         case(null){};
@@ -206,8 +206,9 @@ module {
 
   func getPayoutFunction(pay_rules: PayRules) : PayoutFunction {
     func(interest: Interest, appeal: Appeal, num_voters: Nat) : PayoutArgs {
+      // @todo: the distribution shall not be computed every time the payout is calculated for a voter
       let distribution = PayRules.computeInterestDistribution(appeal);
-      pay_rules.computeInterestVotePayout(distribution, num_voters, interest);
+      pay_rules.getInterestVotePayout(distribution, num_voters, interest);
     };
   };
 

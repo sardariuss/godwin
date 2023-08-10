@@ -35,10 +35,11 @@ module {
   type InterestDistribution = VoteTypes.InterestDistribution;
   type Balance              = PayTypes.Balance;
   type PayoutArgs           = PayTypes.PayoutArgs;
+  type QuestionPayouts      = PayTypes.QuestionPayouts;
 
   type SubMomentum          = SubMomentum.SubMomentum;
   
-  type Payout              = { refund: Float; reward: Float; };
+  type Payout               = { refund: Float; reward: Float; };
 
   func key(c: Category) : Trie.Key<Category> { { hash = Text.hash(c); key = c; } };
 
@@ -46,16 +47,16 @@ module {
   func sumPayouts(x: Payout, y: Payout) : Payout { { refund = x.refund + y.refund; reward = x.reward + y.reward; }; };
 
   let OPENED_QUESTION_PAYOUT_PARAMS = {
-    CREATOR_REWARD_EXTRA_RATIO = 0.05;
+    CREATOR_REWARD_EXTRA_RATIO = 0.05; // @todo: should be a base parameter settable from the master
   };
 
-  let INTEREST_PAYOUT_PARAMS = {
+  public let INTEREST_PAYOUT_PARAMS = {
     REWARD_PARAMS ={
       LOGIT_NORMAL_PDF_PARAMS = {
         sigma = 0.8;
         mu    = 0.0;
       };
-      COEF = 0.423752;
+      coef = 0.423752;
     };
   };
 
@@ -75,7 +76,22 @@ module {
   // Allow to specify only what's required to compute the interest distribution
   type ReducedAppeal = {ups: Nat; downs: Nat};
 
-  // see www.desmos.com/calculator/lhubb03yud
+  // This type is used by the function computeQuestionAuthorPayouts
+  type ClosureInfo = {
+    #CENSORED;
+    #TIMED_OUT;
+    #SELECTED: { score : Float; };
+  };
+
+  func toClosureInfo(closure: InterestVoteClosure, appeal: Appeal) : ClosureInfo {
+    switch (closure) {
+      case(#CENSORED)   { #CENSORED;                          };
+      case(#TIMED_OUT)  { #TIMED_OUT;                         };
+      case(#SELECTED)   { #SELECTED{ score = appeal.score; }; };
+    };
+  };
+
+  // see www.desmos.com/calculator/lejulppdny
   public func computeInterestDistribution(appeal: ReducedAppeal) : InterestDistribution {
 
     let { ups; downs; } = appeal;
@@ -116,96 +132,101 @@ module {
     };
   };
 
-  public func build(price_params: Ref<PriceRegister>) : PayRules {
-    PayRules(WRef.WRef(price_params));
+  public func build(price_register: Ref<PriceRegister>) : PayRules {
+    PayRules(WRef.WRef(price_register));
   };
 
-  public class PayRules(_price_params: WRef<PriceRegister>) {
+  public class PayRules(_price_register: WRef<PriceRegister>) {
 
     public func updatePrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) {
-      _price_params.set(computeSubPrices(base_price_params, selection_params));
+      _price_register.set(computeSubPrices(base_price_params, selection_params));
     };
 
     public func getPrices() : PriceRegister {
-      _price_params.get();
+      _price_register.get();
     };
 
-    type OpenedQuestionPayout = {
-      author_payout: PayoutArgs;
-      creator_reward: ?Balance;
-    };
-
-    // see www.desmos.com/calculator/vkyld4yntw
-    public func computeOpenedQuestionPayout(appeal: Appeal, closure: InterestVoteClosure, iteration: Nat) : OpenedQuestionPayout {
-
-      let num_voters = appeal.ups + appeal.downs;
-
-      // If there is no voter, refund the full amount, no reward
-      if (num_voters == 0){
-        return { author_payout = { refund_share = 1.0; reward_tokens = null; }; creator_reward = null; };
-      };
-
-      let price_e8s = if (iteration == 0) { _price_params.get().open_vote_price_e8s; } else { _price_params.get().reopen_vote_price_e8s; };
-
-      let author_payout = {
-        // Refund the full amount if the vote has not been censored
-        refund_share  = if (closure == #CENSORED){ 0.0; } else { 1.0 };
-        // If the question has been selected, reward the price it took to open the question
-        // multiplied by the square root of the score
-        reward_tokens = if (closure != #SELECTED){ null; } else {
-          ?Int.abs(Float.toInt((Float.sqrt(appeal.score) - 1) * Float.fromInt(price_e8s)));
-        };
-      };
-     
-      let attenuated_payout = attenuatePayout(author_payout, num_voters);
-
-      // If the question has been selected, the creator gets an extra percentage of the reward
-      let creator_reward = Option.map(attenuated_payout.reward_tokens, func(amount: Balance) : Balance {
-        Int.abs(Float.toInt(Float.fromInt(amount) * OPENED_QUESTION_PAYOUT_PARAMS.CREATOR_REWARD_EXTRA_RATIO));
-      });
-
+    public func getQuestionPayouts(appeal: Appeal, closure: InterestVoteClosure, iteration: Nat) : QuestionPayouts {
+      let author_payout = attenuatePayout(computeQuestionAuthorPayout(getPrices(), toClosureInfo(closure, appeal), iteration), appeal.ups + appeal.downs);
+      let creator_reward = computeQuestionCreatorReward(OPENED_QUESTION_PAYOUT_PARAMS.CREATOR_REWARD_EXTRA_RATIO, author_payout);
       { author_payout; creator_reward; };
     };
 
-    public func computeInterestVotePayout(distribution: InterestDistribution, num_voters: Nat, ballot: Interest) : PayoutArgs {
-      
-      if (num_voters == 0){
-        Debug.trap("It is impossible to payout voters if there is no voter");
-      };
-
-      let { shares; reward_ratio; } = distribution;
-      let { COEF; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
-     
-      let author_payout = {
-        refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
-        reward_tokens = ?Int.abs(Float.toInt(COEF * reward_ratio * Float.fromInt(_price_params.get().interest_vote_price_e8s)));
-      };
-
-      attenuatePayout(author_payout, num_voters);
+    public func getInterestVotePayout(distribution: InterestDistribution, num_voters: Nat, ballot: Interest) : PayoutArgs {
+      attenuatePayout(computeInterestVotePayout(getPrices(), distribution, ballot), num_voters);
     };
 
-    public func computeCategorizationPayout(ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
-
-      let accumulate_payout = func(category: Category, result: Polarization, payout: Payout) : Payout {
-        sumPayouts(payout, switch(Trie.get(ballot, key(category), Text.equal)){
-          case(null) { nullPayout(); };
-          case(?answer) { computeCategoryShare(answer, Polarization.toCursor(result)); };
-        });
-      };
-
-      let payout = Trie.fold<Category, Polarization, Payout>(result, accumulate_payout, nullPayout());
-
-      if (payout.refund < 0.0){ Debug.trap("Negative refund"); };
-      if (payout.reward < 0.0){ Debug.trap("Negative reward"); };
-
-      let author_payout = {
-        refund_share = payout.refund;
-        reward_tokens = ?Int.abs(Float.toInt(payout.reward * Float.fromInt(_price_params.get().categorization_vote_price_e8s)));
-      };
-
-      attenuatePayout(author_payout, num_voters);
+    public func getCategorizationPayout(ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
+      attenuatePayout(computeCategorizationPayout(getPrices(), ballot, result, num_voters), num_voters);
     };
 
+  };
+
+  // see www.desmos.com/calculator/vkyld4yntw
+  public func computeQuestionAuthorPayout(price_register: PriceRegister, closure_info: ClosureInfo, iteration: Nat) : PayoutArgs {
+    switch(closure_info){
+      case(#CENSORED){
+        // If the question has been censored, no refund and no reward
+        { refund_share = 0.0; reward_tokens = null; };
+      };
+      case(#TIMED_OUT){
+        // If the question has timed out, refund the price it took to open the question, but no reward
+        { refund_share = 1.0; reward_tokens = null; };
+      };
+      case(#SELECTED({score})){
+        // @todo: the minimum score shall be a hardcoded parameter, not a magic number
+        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score is must be superior than 1"); };
+        // If the question has been selected, reward the price it took to open the question
+        // multiplied by the square root of the score
+        let price_e8s = if (iteration == 0) { price_register.open_vote_price_e8s; } else { price_register.reopen_vote_price_e8s; };
+        { refund_share = 1.0; reward_tokens = ?Int.abs(Float.toInt((Float.sqrt(score) - 1.0) * Float.fromInt(price_e8s))); };
+      };
+    };
+  };
+
+  public func computeQuestionCreatorReward(creator_ratio: Float, author_payout: PayoutArgs) : ?Balance {
+    // If the author got any reward, the creator gets a percentage of it
+    Option.map(author_payout.reward_tokens, func(amount: Balance) : Balance {
+      Int.abs(Float.toInt(Float.fromInt(amount) * creator_ratio));
+    });
+  };
+
+  public func computeInterestVotePayout(price_register: PriceRegister, distribution: InterestDistribution, ballot: Interest) : PayoutArgs {
+
+    let { shares; reward_ratio; } = distribution;
+    let { coef; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
+    let price_e8s = price_register.interest_vote_price_e8s;
+
+    {
+      refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
+      reward_tokens = if (reward_ratio > 0.0) { ?Int.abs(Float.toInt(coef * reward_ratio * Float.fromInt(price_e8s))) } else { null; };
+    };
+  };
+
+  public func computeCategorizationPayout(price_register: PriceRegister, ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
+
+    if (num_voters == 0){
+      Debug.trap("It is impossible to payout voters if there is no voter");
+    };
+
+    let accumulate_payout = func(category: Category, result: Polarization, payout: Payout) : Payout {
+      sumPayouts(payout, switch(Trie.get(ballot, key(category), Text.equal)){
+        case(null) { nullPayout(); };
+        case(?answer) { computeCategoryShare(answer, Polarization.toCursor(result)); };
+      });
+    };
+
+    let payout = Trie.fold<Category, Polarization, Payout>(result, accumulate_payout, nullPayout());
+
+    if (payout.refund < 0.0){ Debug.trap("Negative refund"); };
+    if (payout.reward < 0.0){ Debug.trap("Negative reward"); };
+
+    let price_e8s = price_register.categorization_vote_price_e8s;
+
+    {
+      refund_share = payout.refund;
+      reward_tokens = ?Int.abs(Float.toInt(payout.reward * Float.fromInt(price_e8s)));
+    };
   };
 
   // see www.desmos.com/calculator/voiqqttaog

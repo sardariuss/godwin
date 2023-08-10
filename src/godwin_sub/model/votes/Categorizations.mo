@@ -70,7 +70,7 @@ module {
           #PUT_CATEGORIZATION_BALLOT,
         ),
         func() : Nat { pay_rules.getPrices().categorization_vote_price_e8s; },
-        pay_rules.computeCategorizationPayout
+        pay_rules.getCategorizationPayout
       )
     );
   };

@@ -93,9 +93,13 @@ module {
     };
   };
 
+  public type QuestionPayouts = {
+    author_payout: PayoutArgs;
+    creator_reward: ?Balance;
+  };
+
   public type ITokenInterface = {
     transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
-    transferToMaster: (from_subaccount: Blob, to: Principal, amount: Balance) -> async* ?TransferToMasterResult;
     reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) -> async* Trie<Principal, ?ReapAccountResult>;
     mintBatch: (recipients: Buffer<MintRecipient>) -> async* Trie<Principal, ?MintResult>;
     mint:(to: Principal, amount: Balance) -> async* MintResult;

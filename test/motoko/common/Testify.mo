@@ -1,9 +1,11 @@
+import Types         "../../../src/godwin_sub/stable/Types";
 import QuestionTypes "../../../src/godwin_sub/model/questions/Types";
 import Questions     "../../../src/godwin_sub/model/questions/Questions";
 import VoteTypes     "../../../src/godwin_sub/model/votes/Types";
 import Votes         "../../../src/godwin_sub/model/votes/Votes";
 import Cursor        "../../../src/godwin_sub/model/votes/representation/Cursor";
 import Polarization  "../../../src/godwin_sub/model/votes/representation/Polarization";
+import PayTypes      "../../../src/godwin_sub/model/token/Types";
 
 import Utils         "../../../src/godwin_sub/utils/Utils";
 import UtilsTypes    "../../../src/godwin_sub/utils/Types";
@@ -31,7 +33,10 @@ module {
   type OpinionAnswer        = VoteTypes.OpinionAnswer;
   type InterestDistribution = VoteTypes.InterestDistribution;
   type RealNumber           = UtilsTypes.RealNumber;
-
+  type PayoutArgs           = PayTypes.PayoutArgs;
+  type QuestionPayouts = PayTypes.QuestionPayouts;
+  type PriceRegister        = Types.Current.PriceRegister;
+  
   let FLOAT_EPSILON : Float = 1e-12;
 
   // Utility Functions, needs to be declared before used
@@ -126,6 +131,16 @@ module {
     Votes.ballotsEqual(b1, b2, func(answer1: OpinionAnswer, answer2: OpinionAnswer) : Bool {
       answer1.cursor == answer2.cursor and optEqual(answer1.late_decay, answer2.late_decay, equalFloat);
     });
+  };
+
+  func payoutArgsToText(p: PayoutArgs) : Text {
+    "refund_share = "  # Float.toText(p.refund_share) # ", " #
+    "reward_tokens = " # optToText(p.reward_tokens, Nat.toText);
+  };
+
+  func payoutArgsEqual(p1: PayoutArgs, p2: PayoutArgs) : Bool {
+    Float.equalWithin(p1.refund_share, p2.refund_share, FLOAT_EPSILON) and
+    optEqual(p1.reward_tokens, p2.reward_tokens, Nat.equal);
   };
 
   /// Submodule of primitive testify functions (excl. 'Any', 'None' and 'Null').
@@ -374,7 +389,7 @@ module {
     public let opinionVote = {
       equal : Testify<VoteTypes.OpinionVote> = {
         toText = func (v : VoteTypes.OpinionVote) : Text { 
-          let status = switch(v.status) { case(#OPEN) { "OPEN"; }; case(#CLOSED) { "CLOSED"; }; };
+          let status = switch(v.status) { case(#OPEN) { "OPEN"; }; case(#LOCKED) { "LOCKED" }; case(#CLOSED) { "CLOSED"; }; };
           let ballots = Buffer.Buffer<Text>(Map.size(v.ballots));
           for ((principal, ballot) in Map.entries(v.ballots)) {
             ballots.add("[" # Principal.toText(principal) # ", " # opinionBallotToText(ballot) # "] ");
@@ -411,6 +426,40 @@ module {
           Float.equalWithin(d1.shares.up,    d2.shares.up,    FLOAT_EPSILON) and
           Float.equalWithin(d1.shares.down,  d2.shares.down,  FLOAT_EPSILON) and
           Float.equalWithin(d1.reward_ratio, d2.reward_ratio,  1e-5); // Reward uses ERF which is not so precise
+        };
+      };
+    };
+
+    public let priceRegister = {
+      equal : Testify<PriceRegister> = {
+        toText = func(register: PriceRegister) : Text {
+          "open_vote_price_e8s = "           # Nat.toText(register.open_vote_price_e8s)     # ", " #
+          "reopen_vote_price_e8s = "         # Nat.toText(register.reopen_vote_price_e8s)   # ", " #
+          "interest_vote_price_e8s = "       # Nat.toText(register.interest_vote_price_e8s) # ", " #
+          "categorization_vote_price_e8s = " # Nat.toText(register.categorization_vote_price_e8s);
+        };
+        compare = func(r1: PriceRegister, r2: PriceRegister) : Bool {
+          r1.open_vote_price_e8s           == r2.open_vote_price_e8s and
+          r1.reopen_vote_price_e8s         == r2.reopen_vote_price_e8s and
+          r1.interest_vote_price_e8s       == r2.interest_vote_price_e8s and
+          r1.categorization_vote_price_e8s == r2.categorization_vote_price_e8s;
+        };
+      };
+    };
+    
+    public let payoutArgs = {
+      equal : Testify<PayoutArgs> = { toText = payoutArgsToText; compare = payoutArgsEqual; };
+    };
+
+    public let openedQuestionPayout = {
+      equal : Testify<QuestionPayouts> = {
+        toText = func(p: QuestionPayouts) : Text {
+          "author_payout = " # payoutArgsToText(p.author_payout) # ", " #
+          "creator_reward = " # optToText(p.creator_reward, Nat.toText);
+        };
+        compare = func(p1: QuestionPayouts, p2: QuestionPayouts) : Bool {
+          payoutArgsEqual(p1.author_payout, p2.author_payout) and
+          optEqual(p1.creator_reward, p2.creator_reward, Nat.equal);
         };
       };
     };
