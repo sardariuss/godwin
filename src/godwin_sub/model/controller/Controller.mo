@@ -352,6 +352,10 @@ module {
       };
     };
 
+    public func findBallotTransactions(vote_kind: VoteKind, principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _vote_facade.findBallotTransactions(vote_kind, principal, id);
+    };
+
     public func getVoterConvictions(now: Time, principal: Principal) : [(VoteId, BallotConvictionInput)] {
 
       // Get the current decays

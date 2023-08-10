@@ -1,3 +1,4 @@
+import CategorizationDetailedBallot                                      from "./CategorizationDetailedBallot";
 import CursorBallot                                                      from "../base/CursorBallot";
 import { CursorSlider }                                                  from "../base/CursorSlider";
 import SvgButton                                                         from "../base/SvgButton";
@@ -5,11 +6,10 @@ import ResetIcon                                                         from ".
 import PutBallotIcon                                                     from "../icons/PutBallotIcon";
 import UpdateProgress                                                    from "../UpdateProgress";
 import ReturnIcon                                                        from "../icons/ReturnIcon";
-import { putBallotErrorToString, getStrongestCategoryCursorInfo, 
-  toMap, CursorInfo, voteStatusToEnum, VoteStatusEnum, VoteView,
-  RevealableBallot, getCategorizationBallot, VoteKind, voteKindToCandidVariant,
-  toCategorizationKindAnswer, unwrapRevealedCategorizationBallot }       from "../../utils";
-import { nsToStrDate }                                                   from "../../utils/DateUtils";
+import { putBallotErrorToString, getOptStrongestCategory, voteStatusToEnum,
+  VoteStatusEnum, VoteView, RevealableBallot, getCategorizationBallot, VoteKind,
+  voteKindToCandidVariant, toCategorizationKindAnswer,
+  unwrapRevealedCategorizationBallot }                                   from "../../utils";
 import { getDocElementById }                                             from "../../utils/DocumentUtils";
 import CONSTANTS                                                         from "../../Constants";
 import { Sub, ActorContext }                                             from "../../ActorContext";
@@ -26,13 +26,6 @@ const initCategorization = (categories: Map<Category, CategoryInfo>) => {
     categorization.push([category, 0.0]);
   }
   return categorization;
-}
-
-const getOptStrongestCategory = (categorization: CursorArray | undefined, sub: Sub) : CursorInfo | undefined => {
-  if (categorization !== undefined){
-    return getStrongestCategoryCursorInfo(toMap(categorization), sub.info.categories);
-  }
-  return undefined;
 }
 
 type Props = {
@@ -118,7 +111,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
         <>
           { voteView === VoteView.LAST_BALLOT && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-20`}>
-              <CursorBallot cursorInfo={getOptStrongestCategory(ballot.answer, sub)} dateNs={ballot.date}/> 
+              <CursorBallot cursorInfo={getOptStrongestCategory(ballot.answer, sub.info.categories)} dateNs={ballot.date}/> 
               {
                 !canVote(voteData) ? <></> :
                 voteData.id !== ballot.vote_id ?
@@ -160,9 +153,9 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
                       disabled={ triggerVote }
                       setCursor={ (cursor: number) => { setCategoryCursor(index, cursor); } }
                       polarizationInfo = {{
-                        left: sub.info.categories.get(category).left,
+                        left: sub.info.categories.get(category)?.left,
                         center: {...CONSTANTS.CATEGORIZATION_INFO.center, name: category + ": " + CONSTANTS.CATEGORIZATION_INFO.center.name},
-                        right: sub.info.categories.get(category).right
+                        right: sub.info.categories.get(category)?.right
                       }}
                       onMouseUp={ () => { setCountdownVote(true)} }
                       onMouseDown={ () => { setCountdownVote(false)} }
@@ -205,18 +198,15 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
             voteView === VoteView.BALLOT_HISTORY ?
             <ol className={`flex flex-col justify-center items-center space-y-2`}>
               {
-                ballotHistory.reverse().map((ballot, index) => (
-                  ballot[1] === undefined ? <></> :
-                  <li className={`flex flex-row justify-between items-center w-full`} key={index.toString()}>
-                    <div className="text-sm font-light">
-                      { "Iteration " + ballot[0].toString() }
-                    </div>
-                    <div className="text-sm font-light">
-                      { nsToStrDate(ballot[1].date) }
-                    </div>
-                    <CursorBallot
-                      cursorInfo={getOptStrongestCategory(ballot[1].answer, sub)}
-                      showValue={true}
+                ballotHistory.reverse().map(([iteration, ballot], index) => (
+                  ballot === undefined ? <></> :
+                  <li className="w-full" key={index.toString()}>
+                    <CategorizationDetailedBallot
+                      sub={sub}
+                      vote_id={voteData.id}
+                      iteration={iteration}
+                      ballot={ballot}
+                      principal={principal}
                     />
                   </li>
                 ))

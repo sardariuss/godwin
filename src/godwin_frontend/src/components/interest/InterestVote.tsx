@@ -1,4 +1,5 @@
 import { InterestEnum }                                               from "./InterestTypes";
+import InterestDetailedBallot                                         from "./InterestDetailedBallot";
 import UpdateProgress                                                 from "../UpdateProgress";
 import InterestBallot                                                 from "../interest/InterestBallot";
 import SvgButton                                                      from "../base/SvgButton";
@@ -10,7 +11,6 @@ import { ActorContext, Sub }                                          from "../.
 import { putBallotErrorToString, VoteStatusEnum, voteStatusToEnum, 
   RevealableBallot, unwrapRevealedInterestBallot, getInterestBallot,
   VoteKind, voteKindToCandidVariant, toInterestKindAnswer, VoteView } from "../../utils";
-import { nsToStrDate }                                                from "../../utils/DateUtils";
 import { getDocElementById }                                          from "../../utils/DocumentUtils";
 import { PutBallotError, VoteData }                                   from "../../../declarations/godwin_sub/godwin_sub.did";
 
@@ -186,16 +186,16 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
             voteView === VoteView.BALLOT_HISTORY ?
             <ol className={`flex flex-col justify-center items-center space-y-2`}>
               {
-                ballotHistory.reverse().map((ballot, index) => (
-                  ballot[1] === undefined ? <></> :
-                  <li className={`flex flex-row justify-between items-center w-full`} key={index.toString()}>
-                    <div className="text-sm font-light">
-                      { "Iteration " + ballot[0].toString() }
-                    </div>
-                    <div className="text-sm font-light">
-                      { nsToStrDate(ballot[1].date) }
-                    </div>
-                    <InterestBallot answer={ballot[1].answer} dateNs={undefined}/>
+                ballotHistory.reverse().map(([iteration, ballot], index) => (
+                  ballot === undefined ? <></> :
+                  <li className="w-full" key={index.toString()}>
+                    <InterestDetailedBallot
+                      sub={sub}
+                      vote_id={voteData.id}
+                      iteration={iteration}
+                      ballot={ballot}
+                      principal={principal}
+                    />
                   </li>
                 ))
               }

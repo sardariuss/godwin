@@ -347,6 +347,13 @@ export const getStrongestCategoryCursorInfo = (ballot: Map<Category, number>, ca
   return toCursorInfo(greatest_cursor, toPolarizationInfo(categories.get(winning_category), CONSTANTS.CATEGORIZATION_INFO.center));
 };
 
+export const getOptStrongestCategory = (categorization: CursorArray | undefined, categories: Map<Category, CategoryInfo>) : CursorInfo | undefined => {
+  if (categorization !== undefined){
+    return getStrongestCategoryCursorInfo(toMap(categorization), categories);
+  }
+  return undefined;
+}
+
 export const getStatusDuration = (status: Status, parameters: SchedulerParameters__1) : Duration | undefined =>  {
   if (status['CANDIDATE'] !== undefined) return parameters.candidate_status_duration;
   if (status['OPEN'] !== undefined     ) return parameters.open_status_duration;

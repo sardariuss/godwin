@@ -2,77 +2,68 @@ import CursorBallot                                 from "../base/CursorBallot";
 import SvgButton                                    from "../base/SvgButton";
 import TransactionIcon                              from "../icons/TransactionIcon";
 import TransactionsRecordComponent                  from "../token/TransactionsRecord";
-import { toMap, getStrongestCategoryCursorInfo,
-  revealAnswer }                                    from "../../utils";
+import { getOptStrongestCategory, RevealableBallot,
+  VoteKind, voteKindToCandidVariant }               from "../../utils";
 import { Sub }                                      from "../../ActorContext";
-import CONSTANTS                                    from "../../Constants";
-import { Question, RevealableCategorizationBallot } from "../../../declarations/godwin_sub/godwin_sub.did";
+import { nsToStrDate }                              from "../../utils/DateUtils";
+import { CursorArray, TransactionsRecord }        from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import React, { useState, useEffect }               from "react";
 import { fromNullable }                             from "@dfinity/utils";
+import { Principal }                                from "@dfinity/principal";
 
 
 export type CategorizationDetailedBallotInput = {
   sub: Sub;
-  ballot: RevealableCategorizationBallot;
+  vote_id: bigint;
+  iteration: bigint;
+  ballot: RevealableBallot<CursorArray>;
+  principal: Principal;
 };
 
-const CategorizationDetailedBallot = ({sub, ballot} : CategorizationDetailedBallotInput) => {
+const CategorizationDetailedBallot = ({sub, vote_id, iteration, ballot, principal} : CategorizationDetailedBallotInput) => {
 
-  const [question, setQuestion] = useState<Question | null | undefined>(undefined);
-  const [showTransactions, setShowTransactions] = useState<boolean>(false);
+  const voteKind = voteKindToCandidVariant(VoteKind.CATEGORIZATION);
+  
+  const [showTransactions,   setShowTransactions  ] = useState<boolean>                       (false    );
+  const [transactionsRecord, setTransactionsRecord] = useState<TransactionsRecord | undefined>(undefined);
 
-  const refreshQuestionIteration = async () => {
-    setQuestion(old => { return undefined; });
-    let question_iteration = await sub.actor.getQuestionIteration({ 'CATEGORIZATION' : null }, ballot.vote_id)
-    if (question_iteration['ok'] !== undefined){
-      let q : Question | undefined = fromNullable(question_iteration['ok'][2]);
-      setQuestion(old => { return (q === undefined ? null : q); });
-    }
+  const fetchTransaction = () => {
+    sub.actor.findBallotTransactions(voteKind, principal, vote_id).then((record) => {
+      console.log(fromNullable(record));
+      setTransactionsRecord(fromNullable(record));
+    });
   }
+
   useEffect(() => {
-    refreshQuestionIteration();
-  }, [ballot]);
+    if (showTransactions && transactionsRecord === undefined){
+      fetchTransaction();
+    };
+  }, [showTransactions]);
 
   return (
-    <div className="flex flex-col items-center w-full grow justify-items-center border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 pl-5">
-      <div className="grid grid-cols-10 text-black dark:text-white w-full space-x-5 items-center pr-12">
-        <div className="col-span-8 flex flex-col py-1 justify-between w-full space-y-2 justify-start text-sm font-normal break-words">
-        {
-					question === undefined ? 
-					<div role="status" className="w-full animate-pulse">
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 my-2"></div>
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 my-2"></div>
-						<div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] my-2"></div>
-						<span className="sr-only">Loading...</span>
-					</div> :
-          question === null ?
-          <div className="italic">
-            { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
-          </div> :
-					<div className={`w-full justify-start text-sm font-normal`}>
-          	{question.text}
-        	</div>
-				}
+    <div className={`flex flex-col justify-between items-center w-full`}>
+      <div className={`flex flex-row justify-between items-center w-full`}>
+        <div className="text-sm font-light">
+          { "Iteration " + iteration.toString() }
         </div>
-        {/* Cursor ballots require some padding in x because of the range input*/}
-        <div className="col-span-2 grid grid-cols-2 w-full space-x-10 items-center">
-          <div className="w-full col-span-1 justify-self-center">
-            <CursorBallot 
-              cursorInfo={revealAnswer(ballot.answer) !== undefined ? getStrongestCategoryCursorInfo(toMap(revealAnswer(ballot.answer)), sub.info.categories) : undefined}
-              dateNs={ballot.date}/>
-          </div>
-          <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">
-            <SvgButton disabled={false} onClick={(e) => {setShowTransactions(old => { return !old; })}} hidden={false}>
-              <TransactionIcon/>
-            </SvgButton>
-          </div>
+        <div className="text-sm font-light">
+          { nsToStrDate(ballot.date) }
+        </div>
+        <CursorBallot
+          cursorInfo={getOptStrongestCategory(ballot.answer, sub.info.categories)}
+          showValue={true}
+        />
+        <div className="svg-button w-6 h-6 self-center justify-self-center">
+          <SvgButton onClick={(e) => {setShowTransactions(old => { return !old; })}}>
+            <TransactionIcon/>
+          </SvgButton>
         </div>
       </div>
       <div className="w-full">
       {
         showTransactions ?
-          <TransactionsRecordComponent tx_record={fromNullable(ballot.transactions_record)}/> 
+          <TransactionsRecordComponent tx_record={transactionsRecord}/> 
         : <></>
       }
       </div>

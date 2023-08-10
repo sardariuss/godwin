@@ -133,6 +133,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().queryVoterQuestionBallots(question_id, vote_kind, caller, voter);
   };
 
+  public query func findBallotTransactions(vote_kind: VoteKind, principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    getController().findBallotTransactions(vote_kind, principal, id);
+  };
+
   public shared func run() : async() {
     await* getController().run(Time.now());
   };
