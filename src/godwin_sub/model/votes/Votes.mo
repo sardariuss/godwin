@@ -266,11 +266,11 @@ module {
       let error = "Cannot set status for vote '" # Nat.toText(vote_id) # "' : ";
 
       switch((vote.status, new)){
-        case(_, #OPEN) { Debug.trap(error # "cannot reopen a vote"); };
+        case(_      , #OPEN  ) { Debug.trap(error # "cannot reopen a vote"); };
         case(#LOCKED, #LOCKED) { Debug.trap(error # "it is already locked"); };
         case(#CLOSED, #LOCKED) { Debug.trap(error # "cannot lock a closed vote"); };
         case(#CLOSED, #CLOSED) { Debug.trap(error # "it is already closed"); };
-        case(_, _) { };
+        case(_      , _      ) { };
       };
 
       vote.status := new;

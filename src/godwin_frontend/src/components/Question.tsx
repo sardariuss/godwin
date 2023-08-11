@@ -68,7 +68,7 @@ const QuestionComponent = ({sub, question_id, question, statusData, vote, showRe
 					</div>
 					{
 						statusData !== undefined ?
-							<StatusHistoryComponent sub={sub} questionId={question_id} currentStatusData={statusData}/> : <></>
+							<StatusHistoryComponent sub={sub} questionId={question_id} statusData={statusData}/> : <></>
 					}
 				</div>
 				{

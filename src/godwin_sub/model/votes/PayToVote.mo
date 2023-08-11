@@ -45,12 +45,13 @@ module {
     public func payout(vote: Vote<T, A>) : async* () {
       // Compute the recipients with their share
       let recipients = Buffer.Buffer<PayoutRecipient>(0);
-      let number_ballots = Map.size(vote.ballots);
       for ((principal, ballot) in Map.entries(vote.ballots)) {
         recipients.add({ to = principal; args = _compute_payout(ballot.answer, vote.aggregate, Map.size(vote.ballots)); });
       };
-      // Payout the recipients
-      await* _pay_for_element.payout(vote.id, recipients);
+      if (recipients.size() > 0) {
+        // Payout the recipients
+        await* _pay_for_element.payout(vote.id, recipients);
+      };
     };
 
     public func findTransactionsRecord(principal: Principal, id: VoteId) : ?TransactionsRecord {

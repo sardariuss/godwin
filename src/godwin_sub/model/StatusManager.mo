@@ -38,11 +38,11 @@ module {
   public type Register = Map<QuestionId, StatusHistory>;
 
   let OPENED_VOTES_PER_STATUS : [(Status, [VoteKind])] = [
-    (#CANDIDATE,            [ #INTEREST ]                ),
-    (#OPEN,                 [ #OPINION, #CATEGORIZATION ]),
-    (#CLOSED,               []                           ),
-    (#REJECTED(#TIMED_OUT), []                           ),
-    (#REJECTED(#CENSORED),  []                           ),
+    (#CANDIDATE,            [#INTEREST ]               ),
+    (#OPEN,                 [#OPINION, #CATEGORIZATION]),
+    (#CLOSED,               []                         ),
+    (#REJECTED(#TIMED_OUT), []                         ),
+    (#REJECTED(#CENSORED),  []                         ),
   ];
 
   public func getRequiredVotes(status: Status) : [VoteKind] {
@@ -71,7 +71,7 @@ module {
     _categorization_joins: Joins
   ) {
 
-    public func setStatus(question_id: QuestionId, status: Status, date: Time, votes: [VoteLink]) : Nat {
+    public func setCurrentStatus(question_id: QuestionId, status: Status, date: Time, votes: [VoteLink]) : StatusInfo {
       // Get or create a status history for the question
       let status_history = switch(_register.getOpt(question_id)){
         case(null) { Buffer.init<StatusInfo>(); };
@@ -80,7 +80,7 @@ module {
       // Deduce the iteration from the last status info
       let iteration = switch(findLastStatusInfo(status_history, status)){
         case(null) { 0 };
-        case(?info) { info.iteration + 1; };
+        case(?(_, info)) { info.iteration + 1; };
       };
       let required_votes = getRequiredVotes(status);
       // Verify that there is the expected number of votes
@@ -99,29 +99,31 @@ module {
           case(#CATEGORIZATION) { _categorization_joins.addJoin(question_id, iteration, kind_links[0].vote_id); };
         };
       };
+      let status_info = {status; date; iteration; votes;};
       // Add the new status info to the history
-      Buffer.add(status_history, {status; date; iteration; votes;});
+      Buffer.add(status_history, status_info);
       _register.set(question_id, status_history);
-      // Return the iteration
-      iteration;
+      // Return the status info
+      status_info;
     };
 
-    public func getCurrentStatus(question_id: QuestionId) : StatusInfo {
+    public func getCurrentStatus(question_id: QuestionId) : (Nat, StatusInfo) {
       let status_history = getStatusHistory(question_id);
       let num_statuses : Int = Buffer.size(status_history);
       if (num_statuses == 0) {
         Debug.trap("The status history us empty");
       };
-      Buffer.get(status_history, Int.abs(num_statuses - 1));
+      let last_index = Int.abs(num_statuses - 1);
+      (last_index, Buffer.get(status_history, last_index));
     };
 
-    public func getPreviousStatus(question_id: QuestionId) : ?StatusInfo {
+    public func getStatus(question_id: QuestionId, index: Nat) : StatusInfo {
       let status_history = getStatusHistory(question_id);
       let num_statuses : Int = Buffer.size(status_history);
-      if (num_statuses > 1) {
-        ?Buffer.get(status_history, Int.abs(num_statuses - 2));
+      if (index > num_statuses - 1) {
+        Debug.trap("The index is greater than the number of statuses");
       } else {
-        null;
+        Buffer.get(status_history, index);
       };
     };
 
@@ -129,6 +131,13 @@ module {
       switch(_register.getOpt(question_id)){
         case(null) { Debug.trap("The question '" # Nat.toText(question_id) # "' has no status history"); };
         case(?history){ history; };
+      };
+    };
+
+    public func getLastStatusInfo(question_id: QuestionId, status: Status) : (Nat, StatusInfo) {
+      switch(findLastStatusInfo(getStatusHistory(question_id), status)){
+        case(null) { Debug.trap("Cannot find the last status info for the status '" # Status.toText(status) # "'"); };
+        case(?match) { match; };
       };
     };
 
@@ -151,12 +160,15 @@ module {
 
   };
 
-  public func findLastStatusInfo(status_history: StatusHistory, status: Status) : ?StatusInfo {
-    var match : ?StatusInfo = null;
+  // Return the index and status
+  public func findLastStatusInfo(status_history: StatusHistory, status: Status) : ?(Nat, StatusInfo) {
+    var match : ?(Nat, StatusInfo) = null;
+    var index = 0;
     for (status_info in Buffer.vals(status_history)){
       if (status_info.status == status){
-        match := ?status_info;
+        match := ?(index, status_info);
       };
+      index := index + 1;
     };
     match;
   };

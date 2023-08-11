@@ -252,11 +252,12 @@ module {
   };
 
   // see www.desmos.com/calculator/iv87gjyqlx
-  func attenuatePayout(author_payout: PayoutArgs, num_voters: Nat) : PayoutArgs {
-    // It is impossible to attenuate if there is no voter
-    if (num_voters == 0){ Debug.trap("Cannot attenuate payout: there is 0 voters"); };
+  func attenuatePayout(payout: PayoutArgs, num_voters: Nat) : PayoutArgs {
+    
+    // Return the original payout if there is no voter
+    if (num_voters == 0){ return payout; };
 
-    let { refund_share; reward_tokens; } = author_payout;
+    let { refund_share; reward_tokens; } = payout;
     let { coef; exponent; } = ATTENUATE_MODIFIER_PARAMS;
 
     let log_num_voters = Float.log(Float.fromInt(num_voters));

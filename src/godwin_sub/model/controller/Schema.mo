@@ -50,7 +50,7 @@ module {
     // @todo: dangereous, the result can still be altered after the function returns
     func passedDuration(duration: Duration, question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> async* ()) : async* () {
       // Get the date of the current status
-      let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+      let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
       // If enough time has passed (candidate_status_duration), perform the transition
       if (date < status_info.date + Duration.toTime(duration)){
         result.set(#err("Too soon to go to next status")); return;
@@ -61,7 +61,7 @@ module {
     func candidateStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
       await* passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
-        let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+        let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
         // Close the interest vote
         await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, #TIMED_OUT);
         // Perform the transition
@@ -72,7 +72,7 @@ module {
     func openStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
       await* passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, date, result, func(result: TransitionResult): async* () {
-        let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+        let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
         // Lock up the opinion vote
         _model.getOpinionVotes().lockVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
         // Close the categorization vote
@@ -100,7 +100,7 @@ module {
 
     func censored(question_id: Nat, event: Event, result: TransitionResult) : async* () {
       let date = unwrapTime(event);
-      let status_info = _model.getStatusManager().getCurrentStatus(question_id);
+      let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
 
       let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
       let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
@@ -137,7 +137,7 @@ module {
         };
       };
 
-      let current_status = _model.getStatusManager().getCurrentStatus(question_id);
+      let (_, current_status) = _model.getStatusManager().getCurrentStatus(question_id);
       let vote_id = _model.getInterestJoins().getVoteId(question_id, current_status.iteration);
       let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
 
@@ -152,7 +152,7 @@ module {
       // If there was a previous opinion vote, close it
       switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){
         case(null) { /* Nothing to do */ };
-        case(?status_info){
+        case(?(_, status_info)){
           await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
           // Remove the key for the opinion queries
           _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));

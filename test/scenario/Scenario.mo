@@ -58,35 +58,35 @@ module {
         };
       };
 
-      for (principal in Array.vals(principals)) {
-        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#INTEREST, principal, principal, vote.1.id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(vote.1.id));
-            switch(await* controller.putBallot(#INTEREST, principal, vote.1.id, time, #INTEREST(Random.randomInterest(fuzzer)))){
-              case(#ok(_)){};
-              case(#err(err)) { Debug.print("Fail to put interest ballot: " # putBallotErrorToString(err)); };
-            };
-          };
-        };
-        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#OPINION, principal, principal, vote.1.id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(vote.1.id));
-            switch(await* controller.putBallot(#OPINION, principal, vote.1.id, time, #OPINION(Random.randomOpinion(fuzzer)))){
-              case(#ok(_)){};
-              case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
-            };
-          };
-        };
-        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
-          if (Random.random(fuzzer) < 0.1 and Result.isErr(controller.revealBallot(#CATEGORIZATION, principal, principal, vote.1.id))){
-            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
-            switch(await* controller.putBallot(#CATEGORIZATION, principal, vote.1.id, time, #CATEGORIZATION(Random.randomCategorization(fuzzer, categories)))){
-              case(#ok(_)){};
-              case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
-            };
-          };
-        };
-      };
+//      for (principal in Array.vals(principals)) {
+//        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #INTEREST, #FWD, 10, null).keys)){
+//          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#INTEREST, principal, principal, vote.1.id))){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his interest on " # Nat.toText(vote.1.id));
+//            switch(await* controller.putBallot(#INTEREST, principal, vote.1.id, time, #INTEREST(Random.randomInterest(fuzzer)))){
+//              case(#ok(_)){};
+//              case(#err(err)) { Debug.print("Fail to put interest ballot: " # putBallotErrorToString(err)); };
+//            };
+//          };
+//        };
+//        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #OPINION, #FWD, 10, null).keys)){
+//          if (Random.random(fuzzer) < 0.2 and Result.isErr(controller.revealBallot(#OPINION, principal, principal, vote.1.id))){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his opinion on " # Nat.toText(vote.1.id));
+//            switch(await* controller.putBallot(#OPINION, principal, vote.1.id, time, #OPINION(Random.randomOpinion(fuzzer)))){
+//              case(#ok(_)){};
+//              case(#err(err)) { Debug.print("Fail to put opinion ballot: " # putBallotErrorToString(err)); };
+//            };
+//          };
+//        };
+//        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
+//          if (Random.random(fuzzer) < 0.1 and Result.isErr(controller.revealBallot(#CATEGORIZATION, principal, principal, vote.1.id))){
+//            Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
+//            switch(await* controller.putBallot(#CATEGORIZATION, principal, vote.1.id, time, #CATEGORIZATION(Random.randomCategorization(fuzzer, categories)))){
+//              case(#ok(_)){};
+//              case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
+//            };
+//          };
+//        };
+//      };
 
       for (queried_question in Array.vals(controller.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
         let question_id = queried_question.question.id;

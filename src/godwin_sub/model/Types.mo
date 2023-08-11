@@ -133,6 +133,7 @@ module {
   public type StatusData = {
     status_info: StatusInfo;
     previous_status: ?StatusVoteAggregates;
+    is_current: Bool;
   };
 
   public type VoteData = {

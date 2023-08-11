@@ -13,18 +13,8 @@ import { StatusData, SchedulerParameters, VoteAggregate,
   OpinionAggregate as OpinionAggregateDid, PolarizationArray, Appeal }               from "../../declarations/godwin_sub/godwin_sub.did";
 
 import Countdown                                                                     from "react-countdown";
-import React, { useState }                                                           from "react";
+import React, { useState, useEffect }                                                from "react";
 import { fromNullable }                                                              from "@dfinity/utils";
-
-type Props = {
-  sub: Sub;
-  statusData: StatusData;
-  isToggledHistory: boolean;
-  toggleHistory: (toggle: boolean) => void;
-  isHistory: boolean;
-  showBorder: boolean;
-  borderDashed: boolean;
-};
 
 const computeEndDate = (status_data: StatusData, scheduler_parameters: SchedulerParameters) : Date | undefined => {
   let status_duration = getStatusDuration(status_data.status_info.status, scheduler_parameters);
@@ -73,31 +63,51 @@ const getPreviousVoteAggregates = (status_data: StatusData) : VoteAggregate[] =>
   }
 }
 
-const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHistory, showBorder, borderDashed}: Props) => {
+type Props = {
+  sub: Sub;
+  statusData: StatusData;
+  isToggledHistory: boolean;
+  toggleHistory: (toggle: boolean) => void;
+  showBorder: boolean;
+  borderDashed: boolean;
+  canToggle: boolean;
+};
 
-  const [status]                        = useState<StatusEnum>                               (statusToEnum(statusData.status_info.status)              );
-  const [date]                          = useState<string>                                   (nsToStrDate(statusData.status_info.date)                 );
-  const [statusEndDate]                 = useState<Date | undefined>                         (computeEndDate(statusData, sub.info.scheduler_parameters));
-  const [selectedVote, setSelectedVote] = useState<VoteKind | undefined>                     (undefined                                                );
-  const [previousInterestVote]          = useState<[bigint, Appeal             ] | undefined>(findInterestAggregate(statusData)                        );
-  const [previousOpinionVote]           = useState<[bigint, OpinionAggregateDid] | undefined>(findOpinionAggregate(statusData)                         );
-  const [previousCategorizationVote]    = useState<[bigint, PolarizationArray  ] | undefined>(findCategorizationAggregate(statusData)                  );
+const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, showBorder, borderDashed, canToggle}: Props) => {
+
+  const [status,                     setStatus                    ] = useState<StatusEnum                    | undefined>(undefined);
+  const [date,                       setDate                      ] = useState<string                        | undefined>(undefined);
+  const [statusEndDate,              setStatusEndDate             ] = useState<Date                          | undefined>(undefined);
+  const [selectedVote,               setSelectedVote              ] = useState<VoteKind                      | undefined>(undefined);
+  const [previousInterestVote,       setPreviousInterestVote      ] = useState<[bigint, Appeal             ] | undefined>(undefined);
+  const [previousOpinionVote,        setPreviousOpinionVote       ] = useState<[bigint, OpinionAggregateDid] | undefined>(undefined);
+  const [previousCategorizationVote, setPreviousCategorizationVote] = useState<[bigint, PolarizationArray  ] | undefined>(undefined);
 
   const toggleVote = (vote_kind: VoteKind, toggled: boolean) => {
     setSelectedVote(toggled ? vote_kind : undefined);  
-    // Show the history if a vote is selected and the history is not already shown
-    if (toggled && !isToggledHistory) { 
-      toggleHistory(true); 
-    } 
   }
+
+  const refreshStatusData = () => {
+    setStatus(statusToEnum(statusData.status_info.status));
+    setDate(nsToStrDate(statusData.status_info.date));
+    setStatusEndDate(computeEndDate(statusData, sub.info.scheduler_parameters));
+    setPreviousInterestVote(findInterestAggregate(statusData));
+    setPreviousOpinionVote(findOpinionAggregate(statusData));
+    setPreviousCategorizationVote(findCategorizationAggregate(statusData));
+  }
+
+  // Refresh the status data when the status data changes
+  useEffect(() => {
+    refreshStatusData();
+  }, [statusData]);
 
 	return (
     <div>
       <div className={`text-gray-700 dark:text-gray-300`}>
         <div className="flex flex-row">
-          <div className={`flex flex-row justify-center px-1 group/status ${!isHistory && showBorder ? "hover:cursor-pointer" : ""}`}
+          <div className={`flex flex-row justify-center px-1 group/status ${canToggle && showBorder? "hover:cursor-pointer" : ""}`}
             onClick={(e) => { 
-              if (!isHistory && showBorder) { 
+              if (canToggle && showBorder) {
                 toggleHistory(!isToggledHistory); 
                 // Hide the selected vote if the history is hidden
                 if (isToggledHistory) {
@@ -106,13 +116,16 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
               }
             }}>
             <span className={"flex items-center justify-center w-8 h-8 rounded-full ring-2 z-10 " 
-            + ( isHistory ? "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400" :
-            "                       bg-blue-200                         fill-blue-500                         ring-blue-500 \
-                                dark:bg-blue-800                    dark:fill-blue-500                    dark:ring-blue-500" )
-            + ( !isHistory && showBorder ? 
-                "group-hover/status:bg-blue-300      group-hover/status:fill-blue-600      group-hover/status:ring-blue-600\
-            group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" 
-            : "")}>
+            + ( statusData.is_current ? "bg-blue-200 fill-blue-500 ring-blue-500 dark:bg-blue-800 dark:fill-blue-500 dark:ring-blue-500" :
+                                        "bg-gray-100 fill-gray-800 ring-gray-300 dark:bg-gray-700 dark:fill-gray-400 dark:ring-gray-400")
+            + ( canToggle && showBorder ? 
+                ( statusData.is_current ?
+                  "group-hover/status:bg-blue-300      group-hover/status:fill-blue-600      group-hover/status:ring-blue-600\
+                   group-hover/status:dark:bg-blue-700 group-hover/status:dark:fill-blue-400 group-hover/status:dark:ring-blue-400" :
+                  "group-hover/status:bg-gray-200      group-hover/status:fill-gray-900      group-hover/status:ring-gray-400\
+                   group-hover/status:dark:bg-gray-600 group-hover/status:dark:fill-gray-300 group-hover/status:dark:ring-gray-300"
+                ) : ""
+              )}>
               {
                 status === StatusEnum.CANDIDATE ? <CandidateIcon/> :
                 status === StatusEnum.OPEN      ? <OpenIcon/>      :
@@ -122,18 +135,17 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
               }
             </span>
             <div className={`border-gray-500 -ml-[17px] w-5 grow
-              ${ showBorder? "border-l-2" : "" }
-              ${ borderDashed ? "border-dashed" : "border-solid" }
+              ${ isToggledHistory && showBorder? "border-l-2" : "" }
               ${ !showBorder || borderDashed  ? "pb-5" : "pb-8" }
-              ${ !isHistory && showBorder ? "group-hover/status:border-gray-700 group-hover/status:dark:border-gray-300" : ""}
+              ${ canToggle && showBorder ? "group-hover/status:border-gray-700 group-hover/status:dark:border-gray-300" : ""}
             `}>
               {"." /* Hack to be able to display the border */}
             </div>
           </div>
           <div className="flex flex-col w-full">
             <div className="flex flex-row items-center gap-x-1 w-full justify-start">
-              <div className={`font-light text-sm ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-                { statusEnumToString(status) } 
+              <div className={`font-light text-sm ${ statusData.is_current && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
+                { status !== undefined ? statusEnumToString(status) : "" } 
               </div>
               {
                 previousInterestVote !== undefined ?
@@ -171,28 +183,29 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, isHi
             </div>
             <div className="flex flex-row justify-start space-x-1">
               <div className={`text-xs font-extralight 
-                ${ !isHistory && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
+                ${ statusData.is_current && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
                   { date }
               </div>
-              { statusEndDate !== undefined && !isHistory ?
-                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "(ends " + formatTimeDiff(props.total / 1000) + ")"}</div>}>
-                  <div>{ /* @todo */}</div>
-                </Countdown> : <></>
+              { 
+                statusEndDate !== undefined && statusData.is_current ?
+                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "(ends " + formatTimeDiff(props.total / 1000) + ")"}</div>}/> : <></>
               }
             </div>
             <div className={ selectedVote !== undefined ? "mt-5" : "" }>
               {
-                selectedVote === VoteKind.INTEREST && previousInterestVote !== undefined ?
+                selectedVote === VoteKind.INTEREST ? 
+                ( previousInterestVote !== undefined ?
                   <AppealBar sub={sub} vote_id={previousInterestVote[0]}/> : <></>
-              }
-              {     
-                selectedVote === VoteKind.OPINION && previousOpinionVote !== undefined ?
+                ) : 
+                selectedVote === VoteKind.OPINION ? 
+                ( previousOpinionVote !== undefined ?
                   <OpinionPolarizationBar sub={sub} vote_id={previousOpinionVote[0]}/> : <></>
-              }
-              {
-                selectedVote === VoteKind.CATEGORIZATION && previousCategorizationVote !== undefined ?
+                ) :
+                selectedVote === VoteKind.CATEGORIZATION ? 
+                ( previousCategorizationVote !== undefined ?
                 <CategorizationPolarizationBars sub={sub} vote_id={previousCategorizationVote[0]}/> : <></>
-              }
+                ) : <></>
+              }  
             </div>
           </div>
         </div>

@@ -24,6 +24,7 @@ import Iter                "mo:base/Iter";
 import Buffer              "mo:base/Buffer";
 import Array               "mo:base/Array";
 import Debug               "mo:base/Debug";
+import Int                 "mo:base/Int";
 
 module {
 
@@ -137,7 +138,7 @@ module {
         // Create the question
         let question = _model.getQuestions().createQuestion(caller, date, text);
         // Set the status
-        ignore _model.getStatusManager().setStatus(question.id, #CANDIDATE, date, [{ vote_kind = #INTEREST; vote_id; }]);
+        ignore _model.getStatusManager().setCurrentStatus(question.id, #CANDIDATE, date, [{ vote_kind = #INTEREST; vote_id; }]);
         // Add to the status queries
         _model.getQueries().add(KeyConverter.toStatusKey(question.id, #CANDIDATE, date));
         // Return the question
@@ -180,8 +181,9 @@ module {
             history, 
             func(status_info: StatusInfo, index: Nat) : StatusData {
               {
-                status_info; 
+                status_info;
                 previous_status = if (index > 0) { ?{ vote_aggregates = revealStatusAggregates(history[index - 1]) }; } else { null; };
+                is_current = (index == Int.abs(history.size() - 1));
               };
             }));
         };
@@ -206,16 +208,22 @@ module {
           switch(_model.getQuestions().findQuestion(question_id)){
             case(null) { Debug.trap("Question not found"); };
             case(?question) {
-              let status_data = {
-                // Get the current status info
-                status_info = _model.getStatusManager().getCurrentStatus(question_id);
-                // Get the previous votes aggregates
-                previous_status = switch(_model.getStatusManager().getPreviousStatus(question_id)) {
-                  case(null) { null; };
-                  case(?status_info){ ?{ vote_aggregates = revealStatusAggregates(status_info); }; };
-                };
+              let current = _model.getStatusManager().getCurrentStatus(question_id);
+              // If retrieved ARCHIVE votes, show the last CLOSED status, else the current one
+              let (index, status_info) = if(order_by == #ARCHIVE) {
+                _model.getStatusManager().getLastStatusInfo(question_id, #CLOSED);
+              } else {
+                current;
               };
-              { question; status_data; };
+              // If there is a previous status, get its aggregates
+              let previous_status = if (index > 0) {
+                ?{ vote_aggregates = revealStatusAggregates(_model.getStatusManager().getStatus(question_id, index - 1)); };
+              } else {
+                null;
+              };
+              // Indicate if it is the current status
+              let is_current = (index == current.0);
+              { question; status_data = { status_info; previous_status; is_current; }; };
             };
           };
         });
@@ -413,7 +421,7 @@ module {
 
     private func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
 
-      let current = _model.getStatusManager().getCurrentStatus(question_id);
+      let (_, current) = _model.getStatusManager().getCurrentStatus(question_id);
 
       // Submit the event
       await* StateMachine.submitEvent(_schema, current.status, question_id, event, result);
@@ -434,7 +442,7 @@ module {
             };
             case(?status){
               // Set the new status
-              let iteration = _model.getStatusManager().setStatus(question_id, status, date, Option.get(info, []));
+              let iteration = _model.getStatusManager().setCurrentStatus(question_id, status, date, Option.get(info, [])).iteration;
               switch(status){
                 case(#CLOSED) {
                   // Add the question to the archive queries

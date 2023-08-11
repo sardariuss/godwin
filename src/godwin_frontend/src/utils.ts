@@ -1,5 +1,5 @@
 import { AccessControlError, VoteStatus, PutBallotError, VoteKind as VoteKindIdl, PayinError, OpenQuestionError, 
-  Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters__1, Duration,
+  Status, Polarization, CategorySide, CategoryInfo, QuestionOrderBy, Direction, SchedulerParameters, Duration,
   KindRevealableBallot, OpinionAnswer, CursorArray, VoteData, KindAnswer, KindVote,
   InterestVote, OpinionVote, CategorizationVote } from "./../declarations/godwin_sub/godwin_sub.did";
 import { Category, CreateSubGodwinError, Result_1 } from "../declarations/godwin_master/godwin_master.did";
@@ -354,11 +354,11 @@ export const getOptStrongestCategory = (categorization: CursorArray | undefined,
   return undefined;
 }
 
-export const getStatusDuration = (status: Status, parameters: SchedulerParameters__1) : Duration | undefined =>  {
+export const getStatusDuration = (status: Status, parameters: SchedulerParameters) : Duration | undefined =>  {
   if (status['CANDIDATE'] !== undefined) return parameters.candidate_status_duration;
-  if (status['OPEN'] !== undefined     ) return parameters.open_status_duration;
-  if (status['CLOSED'] !== undefined   ) return undefined;
-  if (status['REJECTED'] !== undefined ) return parameters.rejected_status_duration;
+  if (status['OPEN']      !== undefined) return parameters.open_status_duration;
+  if (status['CLOSED']    !== undefined) return undefined;
+  if (status['REJECTED']  !== undefined) return parameters.rejected_status_duration;
   throw new Error('Invalid status');
 }
 
