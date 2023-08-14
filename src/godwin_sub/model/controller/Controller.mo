@@ -151,13 +151,9 @@ module {
       };
     };
 
-    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, Text)]> {
-      let result = StateMachine.initEventResult<Status, [VoteLink]>();
-      await* submitEvent(question_id, #REOPEN_QUESTION, date, caller, result);
-      switch(result.get()){
-        case(#err(err)) { return #err(err); };
-        case(#ok(_))    { return #ok;       };
-      };
+    public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), Text> {
+      if(await* submitEvent(question_id, #REOPEN_QUESTION, date, caller)){ #ok;                             }
+      else                                                               { #err("Fail to reopen question"); };
     };
 
     public func revealBallot(vote_kind: VoteKind, caller: Principal, voter: Principal, vote_id: VoteId) : Result<KindRevealableBallot, FindBallotError> {
@@ -419,7 +415,7 @@ module {
       _model.getSubMomentum().update(date);
       // Iterate over the questions and update their status via the state machine
       for (question in _model.getQuestions().iter()){
-        await* submitEvent(question.id, #TIME_UPDATE, date, caller, StateMachine.initEventResult<Status, [VoteLink]>());
+        ignore await* submitEvent(question.id, #TIME_UPDATE, date, caller);
       };
     };
 
@@ -430,55 +426,10 @@ module {
       #err(#AccessDenied({required_role;}));
     };
 
-    private func submitEvent(question_id: Nat, event: Event, date: Time, caller: Principal, result: Schema.EventResult) : async* () {
-
-      let (_, current) = _model.getStatusManager().getCurrentStatus(question_id);
-
+    private func submitEvent(question_id: Nat, event: Event, date: Time, caller: Principal) : async* Bool {
+      let (_, {status}) = _model.getStatusManager().getCurrentStatus(question_id);
       // Submit the event
-      await* StateMachine.submitEvent(_schema, current.status, question_id, event, date, caller, result);
-
-      switch(result.get()){
-        case(#err(_)) {}; // No transition
-        case(#ok({state; info;})) {
-          let previous_closed_status = _model.getStatusManager().findLastStatusInfo(question_id, #CLOSED);
-          // Remove the associated key for the #STATUS order_by
-          _model.getQueries().remove(KeyConverter.toStatusKey(question_id, current.status, current.date));
-          // Remove the old associated key for the #TRASH order_by if applicable
-          if (current.status == #REJECTED(#TIMED_OUT) or current.status == #REJECTED(#CENSORED)){
-            // The key will only exist if there was no previous closed status
-            if (Option.isNull(previous_closed_status)){
-              _model.getQueries().remove(KeyConverter.toTrashKey(question_id, current.date));
-            };
-          };
-          switch(state){
-            case(null) {
-              // Remove status history and question
-              _model.getStatusManager().removeStatusHistory(question_id);
-              _model.getQuestions().removeQuestion(question_id);
-            };
-            case(?status){
-              // Add the associated key for the #STATUS order_by
-              _model.getQueries().add(KeyConverter.toStatusKey(question_id, status, date));
-              // Update the associated key for the #ARCHIVE order_by if applicable
-              if (status == #CLOSED){
-                let previous_key = Option.map(previous_closed_status, func((_, status_info) : (Nat, StatusInfo)) : Key {
-                  KeyConverter.toArchiveKey(question_id, status_info.date);
-                });
-                _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, date));
-              };
-              // Add a new associated key for the #TRASH order_by if applicable
-              if (status == #REJECTED(#TIMED_OUT) or status == #REJECTED(#CENSORED)){
-                // Only add if there is no previous closed status
-                if (Option.isNull(previous_closed_status)){
-                  _model.getQueries().add(KeyConverter.toTrashKey(question_id, date));
-                };
-              };
-              // Finally set the new status
-              ignore _model.getStatusManager().setCurrentStatus(question_id, status, date, Option.get(info, []));
-            };
-          };
-        };
-      };
+      await* StateMachine.submitEvent(_schema, status, question_id, event, date, caller);
     };
 
   };

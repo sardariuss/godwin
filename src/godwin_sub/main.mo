@@ -89,7 +89,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     await* getController().openQuestion(caller, text, Time.now());
   };
 
-  public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), [(?Status, Text)]> {
+  public shared({caller}) func reopenQuestion(question_id: QuestionId) : async Result<(), Text> {
     await* getController().reopenQuestion(caller, question_id, Time.now());
   };
 

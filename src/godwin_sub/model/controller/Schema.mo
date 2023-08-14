@@ -10,6 +10,7 @@ import StateMachine  "../../utils/StateMachine";
 
 import Option        "mo:base/Option";
 import Principal     "mo:base/Principal";
+import Debug         "mo:base/Debug";
 
 module {
 
@@ -20,17 +21,17 @@ module {
   type QuestionId              = Types.Current.QuestionId;
   type VoteId                  = Types.Current.VoteId;
   type VoteLink                = Types.Current.VoteLink;
+  type StatusInfo              = Types.Current.StatusInfo;
+  type Key                     = Types.Current.Key;
   type Model                   = Model.Model;
   type Event                   = Event.Event;
   
-  public type Schema           = StateMachine.Schema<Status, Event, [VoteLink], QuestionId>;
-  public type TransitionResult = StateMachine.TransitionResult<[VoteLink]>;
-  public type EventResult      = StateMachine.EventResult<Status, [VoteLink]>;
+  public type Schema           = StateMachine.Schema<Status, Event, QuestionId>;
 
   public class SchemaBuilder(_model: Model) {
 
     public func build() : Schema {
-      let schema = StateMachine.init<Status, Event, [VoteLink], QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
+      let schema = StateMachine.init<Status, Event, QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#TIMED_OUT),  candidateStatusEnded, [#TIME_UPDATE    ]);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#CENSORED),   censored,             [#TIME_UPDATE    ]);
       StateMachine.addTransition(schema, #CANDIDATE,            ?#OPEN,                  selected,             [#TIME_UPDATE    ]);
@@ -42,92 +43,171 @@ module {
       schema;
     };
 
-    // @todo: dangereous, the result can still be altered after the function returns
-    func passedDuration(question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> async* ()) : async* () {
+    func passedDuration(question_id: Nat, date: Time) : Bool {
       // If enough time has passed, perform the transition
       switch(_model.getStatusManager().endingDate(question_id, _model.getSchedulerParameters())){
-        case(null) {};
-        case(?ending_date) {
-          if (ending_date - date > 0) {
-            result.set(#err("Too soon to go to next status")); return;
-          };
-        };
+        case(null)         { false;                   };
+        case(?ending_date) { ending_date - date <= 0; };
       };
-      await* on_passed(result);
     };
 
-    func candidateStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
-
-      await* passedDuration(question_id, date, result, func(result: TransitionResult) : async* () {
-        let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
-        // Close the interest vote
-        await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, #TIMED_OUT);
-        // Perform the transition
-        result.set(#ok(null));
-      });
-    };
-  
-    func openStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
-
-      await* passedDuration(question_id, date, result, func(result: TransitionResult): async* () {
-        let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
-        // Lock up the opinion vote
-        _model.getOpinionVotes().lockVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
-        // Close the categorization vote
-        await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, status_info.iteration), date);
-        // Update the key for the opinion queries
-        _model.getQueries().replace(
-          ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, false),
-          ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
-        result.set(#ok(null));
-      });
-    };
-
-    func rejectedStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {  
-      // Do not delete questions that had been opened at least once
-      // @todo: so this question stays rejected for ever?
-      if (Option.isSome(_model.getStatusManager().findLastStatusInfo(question_id, #OPEN))){
-        result.set(#err("The question had been opened at least once"));
-        return;
-      };
-      await* passedDuration(question_id, date, result, func(result: TransitionResult) : async* () {
-        result.set(#ok(null));
-      });
-    };
-
-    func censored(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
+    func transition(question_id: Nat, date: Time, next: ?Status) : async*() {
       let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
 
-      let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
-      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
-
-      if (appeal.score >= 0.0) {
-        result.set(#err("Appeal score is positive")); return;
+      // Close the current vote(s) if applicable
+      switch(status_info.status){
+        case(#CANDIDATE){
+          let closure = switch(next){
+            case(?#OPEN)                 { #SELECTED;  };
+            case(?#REJECTED(#CENSORED))  { #CENSORED;  };
+            case(?#REJECTED(#TIMED_OUT)) { #TIMED_OUT; };
+            case(_)                      { Debug.trap("@todo"); };
+          };
+          // Close the interest vote
+          await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, closure);
+        };
+        case(#OPEN){
+          // Lock up the opinion vote and put the is_late flag to true for the opinion queries
+          _model.getOpinionVotes().lockVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
+          _model.getQueries().replace(
+            ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, false),
+            ?KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
+          // Close the categorization vote
+          await* _model.getCategorizationVotes().closeVote(_model.getCategorizationJoins().getVoteId(question_id, status_info.iteration), date);
+        };
+        case(_){
+        };
       };
 
-      let time_score_switch = switch(appeal.negative_score_date){
-        case(null){ result.set(#err("Appeal score has not switched yet")); return; };
-        case(?time_switch) { time_switch; };
+      // Update the queries, need to be done before setting up the new status!
+      updateQueries(question_id, status_info, next, date);
+
+      // Open up new votes(s) if applicable
+      switch(next){
+        case(null) {
+          // Remove status history and question
+          _model.getStatusManager().removeStatusHistory(question_id);
+          _model.getQuestions().removeQuestion(question_id);
+        };
+        case(?status) {
+          let votes = switch(status){
+            case(#OPEN){
+              // If there was a previous opinion vote, close it
+              switch(_model.getStatusManager().findLastStatusInfo(question_id, #OPEN)){
+                case(null) { /* Nothing to do */ };
+                case(?(_, { iteration; date; })){
+                  await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, iteration), date);
+                  // Remove the key for the opinion queries
+                  _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, date, true));
+                };
+              };
+              // Add the key for the opinion queries
+              _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
+              // Open up the opinion and categorization votes
+              [ 
+                { vote_kind = #OPINION;        vote_id = _model.getOpinionVotes().newVote(date); },
+                { vote_kind = #CATEGORIZATION; vote_id = _model.getCategorizationVotes().newVote(date); } 
+              ];
+            };
+            case(_) { []; }; // The interest vote is processed directly in the reopenQuestion transition
+          };
+          // Finally set the new status
+          ignore _model.getStatusManager().setCurrentStatus(question_id, status, date, votes);
+        };
       };
-
-      if (date < time_score_switch + Duration.toTime(_model.getSchedulerParameters().censor_timeout)){
-        result.set(#err("Too soon to get censored")); return;
-      };
-
-      // Close the interest vote
-      await* _model.getInterestVotes().closeVote(vote_id, date, #CENSORED);
-
-      result.set(#ok(null));
     };
 
-    func selected(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
-      
+    func updateQueries(question_id: Nat, old: StatusInfo, new: ?Status, date: Time) {
+      let previous_closed_status = _model.getStatusManager().findLastStatusInfo(question_id, #CLOSED);
+      // Remove the associated key for the #STATUS order_by
+      _model.getQueries().remove(KeyConverter.toStatusKey(question_id, old.status, old.date));
+      // Remove the old associated key for the #TRASH order_by if applicable
+      if (old.status == #REJECTED(#TIMED_OUT) or old.status == #REJECTED(#CENSORED)){
+        // The key will only exist if there was no previous closed status
+        if (Option.isNull(previous_closed_status)){
+          _model.getQueries().remove(KeyConverter.toTrashKey(question_id, old.date));
+        };
+      };
+
+      Option.iterate(new, func(status : Status){
+        // Add the associated key for the #STATUS order_by
+        _model.getQueries().add(KeyConverter.toStatusKey(question_id, status, date));
+        // Update the associated key for the #ARCHIVE order_by if applicable
+        if (status == #CLOSED){
+          let previous_key = Option.map(previous_closed_status, func((_, status_info) : (Nat, StatusInfo)) : Key {
+            KeyConverter.toArchiveKey(question_id, status_info.date);
+          });
+          _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, date));
+        };
+        // Add a new associated key for the #TRASH order_by if applicable
+        if (status == #REJECTED(#TIMED_OUT) or status == #REJECTED(#CENSORED)){
+          // Only add if there is no previous closed status
+          if (Option.isNull(previous_closed_status)){
+            _model.getQueries().add(KeyConverter.toTrashKey(question_id, date));
+          };
+        };
+      });
+    };
+
+    func candidateStatusEnded(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
+      // Verify if enough time has passed
+      if (not passedDuration(question_id, date)) {
+        return false;
+      };
+      // Perform the transition
+      await* transition(question_id, date, next);
+      true;
+    };
+  
+    func openStatusEnded(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
+      // Verify if enough time has passed
+      if (not passedDuration(question_id, date)) {
+        return false;
+      };
+      // Perform the transition
+      await* transition(question_id, date, next);
+      true;
+    };
+
+    func rejectedStatusEnded(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
+      // Verify if enough time has passed
+      if (not passedDuration(question_id, date)) {
+        return false;
+      };
+      // Perform the transition
+      await* transition(question_id, date, next);
+      true;
+    };
+
+    func censored(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
+      let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
+      let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
+      let appeal = _model.getInterestVotes().getVote(vote_id).aggregate;
+      // If the appeal score is positive, no need to censor
+      if (appeal.score >= 0.0) {
+        return false; 
+      };
+      // If the appeal score has not switched yet, no need to censor
+      let time_score_switch = switch(appeal.negative_score_date){
+        case(null){ return false; }; 
+        case(?time_switch) { time_switch; };
+      };
+      // Verify if enough time has passed
+      if (date < time_score_switch + Duration.toTime(_model.getSchedulerParameters().censor_timeout)){
+        return false; 
+      };
+      // Perform the transition
+      await* transition(question_id, date, next);
+      true;
+    };
+
+    func selected(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
       // Verify it is the most interesting question
       switch(_model.getQueries().iter(#HOTNESS, #BWD).next()){
-        case (null) { result.set(#err("The question is not listed in the #HOTNESS order by queries")); return; };
+        case (null) { return false; }; //The question is not listed in the #HOTNESS order by queries
         case(?most_interesting) {
           if (question_id != most_interesting) {
-            result.set(#err("The question is currently not the most interesting question")); return;
+            return false; // The question is not the current most interesting question
           };
         };
       };
@@ -138,52 +218,39 @@ module {
 
       // Verify the score is greater or equal to the required score
       if (appeal.score < _model.getSubMomentum().get().selection_score){
-        result.set(#err("The question's score is too low")); return;
+        return false; // The question's score is too low
       };
-
-      // Close the interest vote
-      await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current_status.iteration), date, #SELECTED);
-
-      // If there was a previous opinion vote, close it
-      switch(_model.getStatusManager().findLastStatusInfo(question_id, #OPEN)){
-        case(null) { /* Nothing to do */ };
-        case(?(_, status_info)){
-          await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
-          // Remove the key for the opinion queries
-          _model.getQueries().remove(KeyConverter.toOpinionVoteKey(question_id, status_info.date, true));
-        };
-      };
-
-      // Open up the opinion and categorization votes
-      let opinion_vote_link        = { vote_kind = #OPINION;        vote_id = _model.getOpinionVotes().newVote(date); };
-      let categorization_vote_link = { vote_kind = #CATEGORIZATION; vote_id = _model.getCategorizationVotes().newVote(date); };
-
-      // Add the key for the opinion queries
-      _model.getQueries().add(KeyConverter.toOpinionVoteKey(question_id, date, false));
 
       // Update the momentum args
       _model.getSubMomentum().setLastPick(date, appeal);
 
       // Perform the transition
-      result.set(#ok(?[opinion_vote_link, categorization_vote_link]));
+      await* transition(question_id, date, next);
+      true;
     };
 
-    func reopenQuestion(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
-
+    func reopenQuestion(question_id: Nat, date: Time, caller: Principal, next: ?Status) : async* Bool {
       // Verify that the caller is not anonymous
       if (Principal.isAnonymous(caller)){
-        result.set(#err("Principal is anonymous")); return;
+        return false;
       };
       // Verify that the question exists
       let question = switch(_model.getQuestions().findQuestion(question_id)){
-        case(null) { result.set(#err("Question not found")); return; };
-        case(?question) { question; };
+        case(null)      { return false; };
+        case(?question) { question;     };
       };
+      // Verify that the interest vote successfully opens
       // @todo: risk of reentry, user will loose tokens if the question has already been reopened
       switch(await* _model.getInterestVotes().openVote(caller, date, func(VoteId) : QuestionId { question.id; })){
-        case(#err(err)) { result.set(#err("Fail to open interest vote")); }; // @todo: stringify the error
+        case(#err(err)) { return false; };
         case(#ok((_, vote_id))) {
-          result.set(#ok(?[{ vote_kind = #INTEREST; vote_id; }])); 
+          // @todo: explanation
+          // Update the queries, need to be done before setting up the new status!
+          updateQueries(question_id, _model.getStatusManager().getCurrentStatus(question_id).1, next, date);
+          // Update the status
+          ignore _model.getStatusManager().setCurrentStatus(question_id, #CANDIDATE, date, [{ vote_kind = #INTEREST; vote_id; }]);
+          // Success
+          return true;
         };
       };
     };

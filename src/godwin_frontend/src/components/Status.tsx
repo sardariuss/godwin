@@ -145,7 +145,10 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, show
           <div className="flex flex-col w-full">
             <div className="flex flex-row items-center gap-x-1 w-full justify-start">
               <div className={`font-light text-sm ${ statusData.is_current && showBorder ? "group-hover/status:text-black group-hover/status:dark:text-white" : ""}`}>
-                { status !== undefined ? statusEnumToString(status) : "" } 
+                { status !== undefined ? 
+                  statusEnumToString(status) + (statusData.status_info.iteration > 0 ? 
+                    ("(" + (Number(statusData.status_info.iteration) + 1).toString() + ")") : "")
+                  : "" }
               </div>
               {
                 previousInterestVote !== undefined ?
