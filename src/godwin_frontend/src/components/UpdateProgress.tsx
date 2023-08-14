@@ -171,7 +171,7 @@ const UpdateProgress = <Error,>({
         : <div className="w-full flex flex-col items-center z-10">
           {
             error.length !== 0 ?
-              <Tooltip title={error} arrow>
+              <Tooltip title={error} enterTouchDelay={100} arrow>
                 <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
               </Tooltip> 
             : <DoneIcon color="success"/>

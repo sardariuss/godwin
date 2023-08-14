@@ -1,24 +1,24 @@
-import Types "Types";
-import WMap "../../utils/wrappers/WMap";
-import Ref "../../utils/Ref";
-import WRef "../../utils/wrappers/WRef";
+import Types     "Types";
+import WMap      "../../utils/wrappers/WMap";
+import Ref       "../../utils/Ref";
+import WRef      "../../utils/wrappers/WRef";
 
-import Map "mo:map/Map";
-import Set "mo:map/Set";
+import Map       "mo:map/Map";
+import Set       "mo:map/Set";
 
-import Nat "mo:base/Nat";
+import Nat       "mo:base/Nat";
 import Principal "mo:base/Principal";
-import Debug "mo:base/Debug";
-import Prelude "mo:base/Prelude";
-import Option "mo:base/Option";
-import Buffer "mo:base/Buffer";
-import Text "mo:base/Text";
-import Int "mo:base/Int";
-import Iter "mo:base/Iter";
+import Debug     "mo:base/Debug";
+import Prelude   "mo:base/Prelude";
+import Option    "mo:base/Option";
+import Buffer    "mo:base/Buffer";
+import Text      "mo:base/Text";
+import Int       "mo:base/Int";
+import Iter      "mo:base/Iter";
 
 import TextUtils "../../utils/Text";
-import Heap "mo:base/Heap";
-import Order "mo:base/Order";
+import Heap      "mo:base/Heap";
+import Order     "mo:base/Order";
 
 module {
 

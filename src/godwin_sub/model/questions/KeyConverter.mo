@@ -43,6 +43,10 @@ module {
     #ARCHIVE({question_id; date;})
   };
 
+  public func toTrashKey(question_id: Nat, date: Time) : Key {
+    #TRASH({question_id; date;})
+  };
+
   public func toHotnessKey(question_id: Nat, score: Float) : Key {
     #HOTNESS({
       question_id;
@@ -60,8 +64,9 @@ module {
       case(#TEXT          ({question_id})) { question_id; };
       case(#DATE          ({question_id})) { question_id; };
       case(#STATUS        ({question_id})) { question_id; };
-      case(#HOTNESS({question_id}))        { question_id; };
+      case(#HOTNESS       ({question_id})) { question_id; };
       case(#ARCHIVE       ({question_id})) { question_id; };
+      case(#TRASH         ({question_id})) { question_id; };
       case(#OPINION_VOTE  ({question_id})) { question_id; };
     };
   };

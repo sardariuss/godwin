@@ -187,8 +187,8 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, show
                   { date }
               </div>
               { 
-                statusEndDate !== undefined && statusData.is_current ?
-                <Countdown date={statusEndDate} renderer={props => <div className="text-xs font-light">{ "(ends " + formatTimeDiff(props.total / 1000) + ")"}</div>}/> : <></>
+                statusData.is_current && fromNullable(statusData.ending_date) !== undefined  ?
+                <Countdown date={new Date(Number(fromNullable(statusData.ending_date) / BigInt(1000000)))} renderer={props => <div className="text-xs font-light">{ "(ends " + formatTimeDiff(props.total / 1000) + ")"}</div>}/> : <></>
               }
             </div>
             <div className={ selectedVote !== undefined ? "mt-5" : "" }>

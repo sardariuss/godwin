@@ -5,6 +5,7 @@ import Types    "../stable/Types";
 import Joins    "votes/QuestionVoteJoins";
 
 import WMap     "../utils/wrappers/WMap";
+import Duration "../utils/Duration";
 
 import Buffer   "mo:stablebuffer/StableBuffer";
 import Map      "mo:map/Map";
@@ -26,14 +27,15 @@ module {
   type Buffer<T>        = Buffer.StableBuffer<T>;
 
   // For convenience: from types module
-  type Question         = Types.Current.Question;
-  type Status           = Types.Current.Status;
-  type QuestionId       = Types.Current.QuestionId;
-  type StatusInfo       = Types.Current.StatusInfo;
-  type StatusHistory    = Types.Current.StatusHistory;
-  type VoteKind         = Types.Current.VoteKind;
-  type VoteLink         = Types.Current.VoteLink;
-  type Joins            = Joins.QuestionVoteJoins;
+  type Question            = Types.Current.Question;
+  type Status              = Types.Current.Status;
+  type QuestionId          = Types.Current.QuestionId;
+  type StatusInfo          = Types.Current.StatusInfo;
+  type StatusHistory       = Types.Current.StatusHistory;
+  type VoteKind            = Types.Current.VoteKind;
+  type VoteLink            = Types.Current.VoteLink;
+  type SchedulerParameters = Types.Current.SchedulerParameters;
+  type Joins               = Joins.QuestionVoteJoins;
 
   public type Register = Map<QuestionId, StatusHistory>;
 
@@ -78,7 +80,7 @@ module {
         case(?history) { history; };
       };
       // Deduce the iteration from the last status info
-      let iteration = switch(findLastStatusInfo(status_history, status)){
+      let iteration = switch(findLastStatusInfoFromHistory(status_history, status)){
         case(null) { 0 };
         case(?(_, info)) { info.iteration + 1; };
       };
@@ -134,8 +136,14 @@ module {
       };
     };
 
+    // Return the index and status
+    public func findLastStatusInfo(question_id: QuestionId, status: Status) : ?(Nat, StatusInfo) {
+      let status_history = getStatusHistory(question_id);
+      findLastStatusInfoFromHistory(status_history, status);
+    };
+
     public func getLastStatusInfo(question_id: QuestionId, status: Status) : (Nat, StatusInfo) {
-      switch(findLastStatusInfo(getStatusHistory(question_id), status)){
+      switch(findLastStatusInfo(question_id, status)){
         case(null) { Debug.trap("Cannot find the last status info for the status '" # Status.toText(status) # "'"); };
         case(?match) { match; };
       };
@@ -158,10 +166,28 @@ module {
       _register.delete(question_id);
     };
 
+    // @todo: this method shall probably be moved somewhere else
+    public func endingDate(question_id: Nat, scheduler_parameters: SchedulerParameters) : ?Time {
+      let (_, status_info) = getCurrentStatus(question_id);
+      let status_duration = switch(status_info.status){
+        case(#CANDIDATE) { scheduler_parameters.candidate_status_duration; };
+        case(#OPEN)      { scheduler_parameters.open_status_duration;      };
+        case(#CLOSED)    { return null; };
+        case(#REJECTED(_)){ 
+          if (Option.isSome(findLastStatusInfo(question_id, #OPEN))){
+            return null;
+          } else {
+            scheduler_parameters.rejected_status_duration;
+          };
+        };
+      };
+      ?(status_info.date + Duration.toTime(status_duration));
+    };
+
   };
 
   // Return the index and status
-  public func findLastStatusInfo(status_history: StatusHistory, status: Status) : ?(Nat, StatusInfo) {
+  func findLastStatusInfoFromHistory(status_history: StatusHistory, status: Status) : ?(Nat, StatusInfo) {
     var match : ?(Nat, StatusInfo) = null;
     var index = 0;
     for (status_info in Buffer.vals(status_history)){

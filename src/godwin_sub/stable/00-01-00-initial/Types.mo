@@ -124,6 +124,7 @@ module {
     };
     #HOTNESS;
     #ARCHIVE;
+    #TRASH;
     #OPINION_VOTE;
   };
   
@@ -134,6 +135,7 @@ module {
     #STATUS: StatusEntry;
     #HOTNESS: InterestScore;
     #ARCHIVE: DateEntry;
+    #TRASH: DateEntry;
     #OPINION_VOTE: OpinionVoteEntry;
   };
 

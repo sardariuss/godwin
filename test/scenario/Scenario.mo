@@ -97,8 +97,7 @@ module {
         };
       };
 
-      await* controller.run(time);
-
+      await* controller.run(time, Principal.fromText("aaaaa-aa"));
     };
   };
 

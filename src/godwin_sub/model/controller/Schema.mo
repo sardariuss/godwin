@@ -3,18 +3,13 @@ import StatusManager "../StatusManager";
 import Model         "../Model";
 import Status        "../questions/Status";
 import KeyConverter  "../questions/KeyConverter";
-import Interests     "../votes/Interests";
-import InterestRules "../votes/InterestRules";
-import Opinions      "../votes/Opinions";
 import Types         "../../stable/Types";
 
 import Duration      "../../utils/Duration";
 import StateMachine  "../../utils/StateMachine";
 
 import Option        "mo:base/Option";
-import Debug         "mo:base/Debug";
 import Principal     "mo:base/Principal";
-import Float         "mo:base/Float";
 
 module {
 
@@ -36,31 +31,34 @@ module {
 
     public func build() : Schema {
       let schema = StateMachine.init<Status, Event, [VoteLink], QuestionId>(Status.status_hash, Status.opt_status_hash, Event.event_hash);
-      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#TIMED_OUT),  candidateStatusEnded, [#TIME_UPDATE(#id)    ]);
-      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#CENSORED),   censored,             [#TIME_UPDATE(#id)    ]);
-      StateMachine.addTransition(schema, #CANDIDATE,            ?#OPEN,                  selected,             [#TIME_UPDATE(#id)    ]);
-      StateMachine.addTransition(schema, #OPEN,                 ?#CLOSED,                openStatusEnded,      [#TIME_UPDATE(#id)    ]);
-      StateMachine.addTransition(schema, #CLOSED,               ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION(#id)]);
-      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION(#id)]);
-      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), null,                    rejectedStatusEnded,  [#TIME_UPDATE(#id)    ]);
-      StateMachine.addTransition(schema, #REJECTED(#CENSORED),  null,                    rejectedStatusEnded,  [#TIME_UPDATE(#id)    ]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#TIMED_OUT),  candidateStatusEnded, [#TIME_UPDATE    ]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#REJECTED(#CENSORED),   censored,             [#TIME_UPDATE    ]);
+      StateMachine.addTransition(schema, #CANDIDATE,            ?#OPEN,                  selected,             [#TIME_UPDATE    ]);
+      StateMachine.addTransition(schema, #OPEN,                 ?#CLOSED,                openStatusEnded,      [#TIME_UPDATE    ]);
+      StateMachine.addTransition(schema, #CLOSED,               ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION]);
+      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), ?#CANDIDATE,             reopenQuestion,       [#REOPEN_QUESTION]);
+      StateMachine.addTransition(schema, #REJECTED(#TIMED_OUT), null,                    rejectedStatusEnded,  [#TIME_UPDATE    ]);
+      StateMachine.addTransition(schema, #REJECTED(#CENSORED),  null,                    rejectedStatusEnded,  [#TIME_UPDATE    ]);
       schema;
     };
 
     // @todo: dangereous, the result can still be altered after the function returns
-    func passedDuration(duration: Duration, question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> async* ()) : async* () {
-      // Get the date of the current status
-      let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
-      // If enough time has passed (candidate_status_duration), perform the transition
-      if (date < status_info.date + Duration.toTime(duration)){
-        result.set(#err("Too soon to go to next status")); return;
+    func passedDuration(question_id: Nat, date: Time, result: TransitionResult, on_passed: (TransitionResult) -> async* ()) : async* () {
+      // If enough time has passed, perform the transition
+      switch(_model.getStatusManager().endingDate(question_id, _model.getSchedulerParameters())){
+        case(null) {};
+        case(?ending_date) {
+          if (ending_date - date > 0) {
+            result.set(#err("Too soon to go to next status")); return;
+          };
+        };
       };
       await* on_passed(result);
     };
 
-    func candidateStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let date = unwrapTime(event);
-      await* passedDuration(_model.getSchedulerParameters().candidate_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
+    func candidateStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
+
+      await* passedDuration(question_id, date, result, func(result: TransitionResult) : async* () {
         let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
         // Close the interest vote
         await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, #TIMED_OUT);
@@ -69,9 +67,9 @@ module {
       });
     };
   
-    func openStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let date = unwrapTime(event);
-      await* passedDuration(_model.getSchedulerParameters().open_status_duration, question_id, date, result, func(result: TransitionResult): async* () {
+    func openStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
+
+      await* passedDuration(question_id, date, result, func(result: TransitionResult): async* () {
         let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
         // Lock up the opinion vote
         _model.getOpinionVotes().lockVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
@@ -85,21 +83,19 @@ module {
       });
     };
 
-    func rejectedStatusEnded(question_id: Nat, event: Event, result: TransitionResult) : async* () {  
+    func rejectedStatusEnded(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {  
       // Do not delete questions that had been opened at least once
       // @todo: so this question stays rejected for ever?
-      if (Option.isSome(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN))){
+      if (Option.isSome(_model.getStatusManager().findLastStatusInfo(question_id, #OPEN))){
         result.set(#err("The question had been opened at least once"));
         return;
       };
-      let date = unwrapTime(event);
-      await* passedDuration(_model.getSchedulerParameters().rejected_status_duration, question_id, date, result, func(result: TransitionResult) : async* () {
+      await* passedDuration(question_id, date, result, func(result: TransitionResult) : async* () {
         result.set(#ok(null));
       });
     };
 
-    func censored(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let date = unwrapTime(event);
+    func censored(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
       let (_, status_info) = _model.getStatusManager().getCurrentStatus(question_id);
 
       let vote_id = _model.getInterestJoins().getVoteId(question_id, status_info.iteration);
@@ -124,8 +120,7 @@ module {
       result.set(#ok(null));
     };
 
-    func selected(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let date = unwrapTime(event);
+    func selected(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
       
       // Verify it is the most interesting question
       switch(_model.getQueries().iter(#HOTNESS, #BWD).next()){
@@ -150,7 +145,7 @@ module {
       await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, current_status.iteration), date, #SELECTED);
 
       // If there was a previous opinion vote, close it
-      switch(StatusManager.findLastStatusInfo(_model.getStatusManager().getStatusHistory(question_id), #OPEN)){
+      switch(_model.getStatusManager().findLastStatusInfo(question_id, #OPEN)){
         case(null) { /* Nothing to do */ };
         case(?(_, status_info)){
           await* _model.getOpinionVotes().closeVote(_model.getOpinionJoins().getVoteId(question_id, status_info.iteration), date);
@@ -173,11 +168,8 @@ module {
       result.set(#ok(?[opinion_vote_link, categorization_vote_link]));
     };
 
-    func reopenQuestion(question_id: Nat, event: Event, result: TransitionResult) : async* () {
-      let {date; caller;} = switch(event){
-        case(#REOPEN_QUESTION(#data(data))) { data; };
-        case(_) { Debug.trap("Invalid event type"); };
-      };
+    func reopenQuestion(question_id: Nat, date: Time, caller: Principal, result: TransitionResult) : async* () {
+
       // Verify that the caller is not anonymous
       if (Principal.isAnonymous(caller)){
         result.set(#err("Principal is anonymous")); return;
@@ -193,13 +185,6 @@ module {
         case(#ok((_, vote_id))) {
           result.set(#ok(?[{ vote_kind = #INTEREST; vote_id; }])); 
         };
-      };
-    };
-
-    func unwrapTime(event: Event) : Time {
-      switch(event){
-        case(#TIME_UPDATE(#data({time;}))) { time; };
-        case(_) { Debug.trap("Invalid event type"); };
       };
     };
 

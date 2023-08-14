@@ -51,6 +51,7 @@ module {
     addOrderBy(register, #STATUS(#CLOSED));
     addOrderBy(register, #STATUS(#REJECTED));
     addOrderBy(register, #ARCHIVE);
+    addOrderBy(register, #TRASH);
     addOrderBy(register, #OPINION_VOTE);
 
     let queries = Queries.build<OrderBy, Key>(
@@ -66,16 +67,17 @@ module {
 
   func toTextOrderBy(order_by: OrderBy) : Text {
     switch(order_by){
-      case(#AUTHOR)                       { "AUTHOR";              };
-      case(#TEXT)                         { "TEXT";                };
-      case(#DATE)                         { "DATE";                };
-      case(#STATUS(#CANDIDATE)           ){ "STATUS(CANDIDATE)";   };
-      case(#STATUS(#OPEN)                ){ "STATUS(OPEN)";        };
-      case(#STATUS(#CLOSED)              ){ "STATUS(CLOSED)";      };
-      case(#STATUS(#REJECTED))            { "STATUS(REJECTED)";    };
-      case(#HOTNESS)               { "HOTNESS";      };
-      case(#ARCHIVE)                      { "ARCHIVE";             };
-      case(#OPINION_VOTE)                 { "OPINION_VOTE";        };
+      case(#AUTHOR)            { "AUTHOR";              };
+      case(#TEXT)              { "TEXT";                };
+      case(#DATE)              { "DATE";                };
+      case(#STATUS(#CANDIDATE)){ "STATUS(CANDIDATE)";   };
+      case(#STATUS(#OPEN)     ){ "STATUS(OPEN)";        };
+      case(#STATUS(#CLOSED)   ){ "STATUS(CLOSED)";      };
+      case(#STATUS(#REJECTED)) { "STATUS(REJECTED)";    };
+      case(#HOTNESS)           { "HOTNESS";             };
+      case(#ARCHIVE)           { "ARCHIVE";             };
+      case(#TRASH)             { "TRASH";               };
+      case(#OPINION_VOTE)      { "OPINION_VOTE";        };
     };
   };
 
@@ -96,8 +98,9 @@ module {
           case(#REJECTED(_))   { #STATUS(#REJECTED);  };
         };
       };
-      case(#HOTNESS(_)) { #HOTNESS;     };
+      case(#HOTNESS(_))        { #HOTNESS;            };
       case(#ARCHIVE(_))        { #ARCHIVE;            };
+      case(#TRASH(_))          { #TRASH;              };
       case(#OPINION_VOTE(_))   { #OPINION_VOTE;       };
     };
   };
@@ -108,8 +111,9 @@ module {
       case(#TEXT)           { compareTextEntries       (unwrapText(a),             unwrapText(b)             ); };
       case(#DATE)           { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
       case(#STATUS(_))      { compareDateEntries       (unwrapStatusEntry(a),      unwrapStatusEntry(b)      ); };
-      case(#HOTNESS) { compareInterestScores    (unwrapInterestScore(a),    unwrapInterestScore(b)    ); };
-      case(#ARCHIVE)        { compareDateEntries       (unwrapDateEntry(a),        unwrapDateEntry(b)        ); };
+      case(#HOTNESS)        { compareInterestScores    (unwrapInterestScore(a),    unwrapInterestScore(b)    ); };
+      case(#ARCHIVE)        { compareDateEntries       (unwrapArchiveEntry(a),     unwrapArchiveEntry(b)     ); };
+      case(#TRASH)          { compareDateEntries       (unwrapTrashEntry(a),       unwrapTrashEntry(b)       ); };
       case(#OPINION_VOTE)   { compareOpinionVoteEntries(unwrapOpinionVoteEntry(a), unwrapOpinionVoteEntry(b) ); };
     };
   };
@@ -120,8 +124,9 @@ module {
       case(#TEXT(entry))           { entry.question_id; };
       case(#DATE(entry))           { entry.question_id; };
       case(#STATUS(entry))         { entry.question_id; };
-      case(#HOTNESS(entry)) { entry.question_id; };
+      case(#HOTNESS(entry))        { entry.question_id; };
       case(#ARCHIVE(entry))        { entry.question_id; };
+      case(#TRASH(entry))          { entry.question_id; };
       case(#OPINION_VOTE(entry))   { entry.question_id; };
     };
   };
@@ -141,7 +146,6 @@ module {
   func unwrapDateEntry(key: Key) : DateEntry {
     switch(key){
       case(#DATE(entry))         { entry; };
-      case(#ARCHIVE(entry))      { entry; };
       case(_) { Debug.trap("Failed to unwrap date entry"); };
     };
   };
@@ -161,6 +165,18 @@ module {
     switch(key){
       case(#OPINION_VOTE(entry)) { entry; };
       case(_) { Debug.trap("Failed to unwrap opinion vote entry"); };
+    };
+  };
+  func unwrapArchiveEntry(key: Key) : DateEntry {
+    switch(key){
+      case(#ARCHIVE(entry))      { entry; };
+      case(_) { Debug.trap("Failed to unwrap archive entry"); };
+    };
+  };
+  func unwrapTrashEntry(key: Key) : DateEntry {
+    switch(key){
+      case(#TRASH(entry))      { entry; };
+      case(_) { Debug.trap("Failed to unwrap trash entry"); };
     };
   };
 

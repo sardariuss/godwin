@@ -134,6 +134,7 @@ module {
     status_info: StatusInfo;
     previous_status: ?StatusVoteAggregates;
     is_current: Bool;
+    ending_date: ?Time;
   };
 
   public type VoteData = {
@@ -145,6 +146,7 @@ module {
 
   public type QueryQuestionItem = {
     question: Question;
+    can_reopen: Bool;
     status_data: StatusData;
   };
 

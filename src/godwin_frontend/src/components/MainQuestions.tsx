@@ -74,7 +74,7 @@ const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
     case BrowseFilter.ARCHIVED:
       return { 'ARCHIVE' : null };
     case BrowseFilter.REJECTED:
-      return { 'STATUS' : { 'REJECTED' : null  } } ;
+      return { 'TRASH' : null  } ;
   }
 }
 
@@ -99,7 +99,7 @@ const MainQuestions = () => {
         question: item.question,
         statusData: item.status_data,
         principal: getPrincipal(),
-        showReopenQuestion: statusToEnum(item.status_data.status_info.status) === StatusEnum.CLOSED || statusToEnum(item.status_data.status_info.status) === StatusEnum.TIMED_OUT,
+        showReopenQuestion: item.can_reopen,
         allowVote: false
       }}
     );

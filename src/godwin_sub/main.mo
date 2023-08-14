@@ -137,8 +137,8 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().findBallotTransactions(vote_kind, principal, id);
   };
 
-  public shared func run() : async() {
-    await* getController().run(Time.now());
+  public shared({caller}) func run() : async() {
+    await* getController().run(Time.now(), caller);
   };
 
   func getController() : Controller {

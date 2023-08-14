@@ -153,10 +153,10 @@ module {
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), [(?Status, Text)]> {
       let result = StateMachine.initEventResult<Status, [VoteLink]>();
-      await* submitEvent(question_id, #REOPEN_QUESTION(#data({date; caller;})), date, result);
+      await* submitEvent(question_id, #REOPEN_QUESTION, date, caller, result);
       switch(result.get()){
         case(#err(err)) { return #err(err); };
-        case(#ok(_)) { return #ok; };
+        case(#ok(_))    { return #ok;       };
       };
     };
 
@@ -180,10 +180,12 @@ module {
           #ok(Array.mapEntries<StatusInfo, StatusData>(
             history, 
             func(status_info: StatusInfo, index: Nat) : StatusData {
+              let is_current = (index == Int.abs(history.size() - 1));
               {
                 status_info;
                 previous_status = if (index > 0) { ?{ vote_aggregates = revealStatusAggregates(history[index - 1]) }; } else { null; };
-                is_current = (index == Int.abs(history.size() - 1));
+                is_current;
+                ending_date = if (is_current) { _model.getStatusManager().endingDate(question_id, _model.getSchedulerParameters()); } else { null; };
               };
             }));
         };
@@ -221,9 +223,18 @@ module {
               } else {
                 null;
               };
-              // Indicate if it is the current status
-              let is_current = (index == current.0);
-              { question; status_data = { status_info; previous_status; is_current; }; };
+              // Indicate if the status is the current
+              let is_current = index == current.0;
+              // Get the ending date if applicable
+              let ending_date = if (is_current) {
+                _model.getStatusManager().endingDate(question_id, _model.getSchedulerParameters());
+              } else {
+                null;
+              };
+              // Indicate if the question can be reopened
+              let can_reopen = StateMachine.hasTransition(_schema, #REOPEN_QUESTION, current.1.status);
+              // Get the time left
+              { question; can_reopen; status_data = { status_info; previous_status; is_current; ending_date; } };
             };
           };
         });
@@ -403,12 +414,12 @@ module {
       ));
     };
 
-    public func run(time: Time) : async* () {
+    public func run(date: Time, caller: Principal) : async* () {
       // Update the momentum
-      _model.getSubMomentum().update(time);
+      _model.getSubMomentum().update(date);
       // Iterate over the questions and update their status via the state machine
       for (question in _model.getQuestions().iter()){
-        await* submitEvent(question.id, #TIME_UPDATE(#data({time;})), time, StateMachine.initEventResult<Status, [VoteLink]>());
+        await* submitEvent(question.id, #TIME_UPDATE, date, caller, StateMachine.initEventResult<Status, [VoteLink]>());
       };
     };
 
@@ -419,21 +430,26 @@ module {
       #err(#AccessDenied({required_role;}));
     };
 
-    private func submitEvent(question_id: Nat, event: Event, date: Time, result: Schema.EventResult) : async* () {
+    private func submitEvent(question_id: Nat, event: Event, date: Time, caller: Principal, result: Schema.EventResult) : async* () {
 
       let (_, current) = _model.getStatusManager().getCurrentStatus(question_id);
 
       // Submit the event
-      await* StateMachine.submitEvent(_schema, current.status, question_id, event, result);
+      await* StateMachine.submitEvent(_schema, current.status, question_id, event, date, caller, result);
 
       switch(result.get()){
         case(#err(_)) {}; // No transition
         case(#ok({state; info;})) {
-          // When the question status changes, update the associated key for the #STATUS order_by
-          _model.getQueries().replace(
-            ?KeyConverter.toStatusKey(question_id, current.status, current.date),
-            Option.map(state, func(status: Status) : Key { KeyConverter.toStatusKey(question_id, status, date); })
-          );
+          let previous_closed_status = _model.getStatusManager().findLastStatusInfo(question_id, #CLOSED);
+          // Remove the associated key for the #STATUS order_by
+          _model.getQueries().remove(KeyConverter.toStatusKey(question_id, current.status, current.date));
+          // Remove the old associated key for the #TRASH order_by if applicable
+          if (current.status == #REJECTED(#TIMED_OUT) or current.status == #REJECTED(#CENSORED)){
+            // The key will only exist if there was no previous closed status
+            if (Option.isNull(previous_closed_status)){
+              _model.getQueries().remove(KeyConverter.toTrashKey(question_id, current.date));
+            };
+          };
           switch(state){
             case(null) {
               // Remove status history and question
@@ -441,21 +457,24 @@ module {
               _model.getQuestions().removeQuestion(question_id);
             };
             case(?status){
-              // Set the new status
-              let iteration = _model.getStatusManager().setCurrentStatus(question_id, status, date, Option.get(info, [])).iteration;
-              switch(status){
-                case(#CLOSED) {
-                  // Add the question to the archive queries
-                  let previous_key = if (iteration == 0) { null; } else {
-                    switch(_model.getStatusManager().findStatusInfo(question_id, #CLOSED, iteration - 1)){
-                      case(null) { null; };
-                      case(?status_info) { ?KeyConverter.toArchiveKey(question_id, status_info.date); };
-                    };
-                  };
-                  _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, date));
-                };
-                case(_) {};
+              // Add the associated key for the #STATUS order_by
+              _model.getQueries().add(KeyConverter.toStatusKey(question_id, status, date));
+              // Update the associated key for the #ARCHIVE order_by if applicable
+              if (status == #CLOSED){
+                let previous_key = Option.map(previous_closed_status, func((_, status_info) : (Nat, StatusInfo)) : Key {
+                  KeyConverter.toArchiveKey(question_id, status_info.date);
+                });
+                _model.getQueries().replace(previous_key, ?KeyConverter.toArchiveKey(question_id, date));
               };
+              // Add a new associated key for the #TRASH order_by if applicable
+              if (status == #REJECTED(#TIMED_OUT) or status == #REJECTED(#CENSORED)){
+                // Only add if there is no previous closed status
+                if (Option.isNull(previous_closed_status)){
+                  _model.getQueries().add(KeyConverter.toTrashKey(question_id, date));
+                };
+              };
+              // Finally set the new status
+              ignore _model.getStatusManager().setCurrentStatus(question_id, status, date, Option.get(info, []));
             };
           };
         };
