@@ -49,14 +49,7 @@ module {
     };
   };
 
-  public func submitEvent<S, E, M>(
-    schema: Schema<S, E, M>,
-    current: S,
-    model: M,
-    event: E,
-    time: Time,
-    caller: Principal
-  ) : async* Bool {
+  public func submitEvent<S, E, M>(schema: Schema<S, E, M>, current: S, model: M, event: E, time: Time, caller: Principal) : async* Bool {
     let { transitions; events; } = schema;
     var errors : [(?S, Text)] = [];
     for(next in getNextStates(events, event, current, schema.state_opt_hash)) {
@@ -65,7 +58,7 @@ module {
         case(?condition){
           if (await* condition(model, time, caller, next)){
             return true;
-          }
+          };
         };
       };
     };

@@ -14,6 +14,7 @@ import Principal     "mo:base/Principal";
 import Result        "mo:base/Result";
 import Option        "mo:base/Option";
 import Debug         "mo:base/Debug";
+import Trie          "mo:base/Trie";
 
 module {
 
@@ -49,6 +50,7 @@ module {
 
   public type Register    = Votes.Register<Answer, Aggregate>;
 
+  func key(p: Principal) : Trie.Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
   public func initRegister() : Register {
     Votes.initRegister<Answer, Aggregate>();
@@ -156,7 +158,7 @@ module {
 
       // If the vote is locked and the user voted when it was open, forbid the change
       if (vote.status == #LOCKED){
-        switch(Map.get(vote.ballots, Map.phash, principal)){
+        switch(Trie.get(vote.ballots, key(principal), Principal.equal)){
           case(null) {};
           case(?ballot) {
             if (Option.isNull(ballot.answer.late_decay)) { 

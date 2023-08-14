@@ -160,7 +160,7 @@ module {
   public type Vote<T, A> = {
     id: VoteId;
     var status: VoteStatus;
-    ballots: Map<Principal, Ballot<T>>;
+    var ballots: Trie<Principal, Ballot<T>>;
     var aggregate: A;
   };
 

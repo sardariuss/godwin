@@ -10,6 +10,7 @@ import Utils               "../utils/Utils";
 
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
+import Trie                "mo:base/Trie";
 
 import Map                 "mo:map/Map";
 
@@ -167,20 +168,20 @@ module {
     };
 
     func toInterestKindVote(v: InterestVote) : KindVote {
-      #INTEREST({ id = v.id; aggregate = v.aggregate; ballots = Map.toArray(v.ballots); });
+      #INTEREST({ id = v.id; aggregate = v.aggregate; ballots = Utils.trieToArray(v.ballots); });
     };
 
     func toOpinionKindVote(v: OpinionVote) : KindVote {
-      #OPINION({ id = v.id;  aggregate = v.aggregate; ballots = Map.toArray(v.ballots); });
+      #OPINION({ id = v.id;  aggregate = v.aggregate; ballots = Utils.trieToArray(v.ballots); });
     };
 
     func toCategorizationKindVote(v: CategorizationVote) : KindVote {
       #CATEGORIZATION({ 
         id = v.id;
         aggregate = toPolarizationArray(v.aggregate);
-        ballots = Map.toArray(Map.map<Principal, Ballot<CursorMap>, Ballot<CursorArray>>(
-          v.ballots, Map.phash, func(p: Principal, b: Ballot<CursorMap>) : Ballot<CursorArray> { 
-            { date = b.date; answer = toCursorArray(b.answer); } 
+        ballots = Utils.trieToArray(Trie.mapFilter<Principal, Ballot<CursorMap>, Ballot<CursorArray>>(
+          v.ballots, func(p: Principal, b: Ballot<CursorMap>) : ?Ballot<CursorArray> { 
+            ?{ date = b.date; answer = toCursorArray(b.answer); };
           }
         ));
       });

@@ -16,6 +16,7 @@ import Int           "mo:base/Int";
 import Option        "mo:base/Option";
 import Nat32         "mo:base/Nat32";
 import Array         "mo:base/Array";
+import Trie          "mo:base/Trie";
 import Prim          "mo:prim";
 
 
@@ -25,6 +26,7 @@ module {
   type Time                      = Int;
   type Principal                 = Principal.Principal;
   type Result <Ok, Err>          = Result.Result<Ok, Err>;
+  type Trie<K, V>                = Trie.Trie<K, V>;
     
   type Map<K, V>                 = Map.Map<K, V>;
   type Set<K>                    = Set.Set<K>;
@@ -56,6 +58,8 @@ module {
     Int.equal(ballot1.date, ballot2.date) and equal(ballot1.answer, ballot2.answer);
   };
 
+  func key(p: Principal) : Trie.Key<Principal> { { hash = Principal.hash(p); key = p; } };
+
   public type Register<T, A> = {
     votes: Map<VoteId, Vote<T, A>>;
     var index: VoteId;
@@ -79,7 +83,7 @@ module {
     {
       id = vote_id;
       var status = #OPEN;
-      ballots = Map.new<Principal, Ballot<T>>(Map.phash);
+      var ballots = Trie.empty<Principal, Ballot<T>>();
       var aggregate = empty_aggregate;
     };
   };
@@ -183,7 +187,8 @@ module {
           // Get the up-to-date vote (it is required to get it here because it might have changed during the async call)
           let updated_vote = getVote(vote_id);
           // Put the ballot
-          let old_ballot = Map.put(updated_vote.ballots, Map.phash, principal, ballot);
+          let (ballots, old_ballot) = Trie.put(updated_vote.ballots, key(principal), Principal.equal, ballot);
+          updated_vote.ballots := ballots;
           // Update the aggregate if applicable
           if(update_aggregate){
             updated_vote.aggregate := _policy.addToAggregate(updated_vote.aggregate, ballot, old_ballot);
@@ -212,13 +217,13 @@ module {
         case(#err(err)) { return #err(err); };
         case(#ok(v)) { v; };
       };
-      Result.fromOption(Map.get(vote.ballots, Map.phash, principal), #BallotNotFound);
+      Result.fromOption(Trie.get(vote.ballots, key(principal), Principal.equal), #BallotNotFound);
     };
 
     public func getVoterBallots(voter: Principal) : Map<VoteId, Ballot<T>> {
       let voter_ballots = Map.new<VoteId, Ballot<T>>(Map.nhash);
       for (vote_id in Array.vals(_voters_history.getVoterHistory(voter))){
-        switch(Map.get(getVote(vote_id).ballots, Map.phash, voter)){
+        switch(Trie.get(getVote(vote_id).ballots, key(voter), Principal.equal)){
           case(null) { Debug.trap("Could not find a ballot for vote with ID '" # Nat.toText(vote_id) # "'"); };
           case(?ballot) { Map.set(voter_ballots, Map.nhash, vote_id, ballot); };
         };
@@ -227,7 +232,7 @@ module {
     };
 
     public func hasBallot(principal: Principal, vote_id: VoteId) : Bool {
-      Map.has(getVote(vote_id).ballots, Map.phash, principal);
+      Option.isSome(Trie.get(getVote(vote_id).ballots, key(principal), Principal.equal));
     };
 
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
@@ -245,7 +250,7 @@ module {
         case(#err(err)) { return #err(err); };
         case(#ok(v)) { v; };
       };
-      let ballot = switch(Map.get(vote.ballots, Map.phash, voter)){
+      let ballot = switch(Trie.get(vote.ballots, key(voter), Principal.equal)){
         case(null) { return #err(#BallotNotFound); };
         case(?b) { b; };
       };

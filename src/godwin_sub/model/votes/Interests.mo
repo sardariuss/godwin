@@ -19,6 +19,8 @@ import Result              "mo:base/Result";
 import Nat                 "mo:base/Nat";
 import Option              "mo:base/Option";
 import Debug               "mo:base/Debug";
+import Trie                "mo:base/Trie";
+import Principal           "mo:base/Principal";
 
 module {
 
@@ -66,6 +68,8 @@ module {
   public type Register        = Votes.Register<Interest, Appeal>;
 
   let HOTNESS_TIME_UNIT_NS = 86_400_000_000_000; // 24 hours in nanoseconds @todo: make this a parameter
+
+  func key(p: Principal) : Trie.Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
   public func initRegister() : Register {
     Votes.initRegister<Interest, Appeal>();
@@ -221,7 +225,7 @@ module {
 
     public func canVote(vote: Vote, principal: Principal) : Result<(), PutBallotError> {
       // Verify the user did not vote already
-      if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
+      if (Option.isSome(Trie.get(vote.ballots, key(principal), Principal.equal))){
         return #err(#ChangeBallotNotAllowed);
       };
       #ok;

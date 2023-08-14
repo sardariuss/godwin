@@ -3,8 +3,7 @@ import Types               "Types";
 import PayForElement        "../token/PayForElement";
 import PayTypes             "../token/Types";
 
-import Map                 "mo:map/Map";
-
+import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
 import Buffer              "mo:base/Buffer";
@@ -15,7 +14,6 @@ module {
   // For convenience: from base module
   type Principal              = Principal.Principal;
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
-  type Map<K, V>              = Map.Map<K, V>;
 
   type VoteId                 = Types.VoteId;
   type PutBallotError         = Types.PutBallotError;
@@ -45,8 +43,8 @@ module {
     public func payout(vote: Vote<T, A>) : async* () {
       // Compute the recipients with their share
       let recipients = Buffer.Buffer<PayoutRecipient>(0);
-      for ((principal, ballot) in Map.entries(vote.ballots)) {
-        recipients.add({ to = principal; args = _compute_payout(ballot.answer, vote.aggregate, Map.size(vote.ballots)); });
+      for ((principal, ballot) in Trie.iter(vote.ballots)) {
+        recipients.add({ to = principal; args = _compute_payout(ballot.answer, vote.aggregate, Trie.size(vote.ballots)); });
       };
       if (recipients.size() > 0) {
         // Payout the recipients

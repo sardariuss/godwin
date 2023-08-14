@@ -14,6 +14,8 @@ import Map                 "mo:map/Map";
 
 import Result              "mo:base/Result";
 import Option              "mo:base/Option";
+import Trie                "mo:base/Trie";
+import Principal           "mo:base/Principal";
 
 module {
 
@@ -46,6 +48,8 @@ module {
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
+
+  func key(p: Principal) : Trie.Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
   public func initRegister() : Register {
     Votes.initRegister<CursorMap, PolarizationMap>();
@@ -89,7 +93,7 @@ module {
 
     public func canVote(vote: Vote, principal: Principal) : Result<(), PutBallotError> {
       // Verify the user did not vote already
-      if (Option.isSome(Map.get(vote.ballots, Map.phash, principal))){
+      if (Option.isSome(Trie.get(vote.ballots, key(principal), Principal.equal))){
         return #err(#ChangeBallotNotAllowed);
       };
       #ok;
