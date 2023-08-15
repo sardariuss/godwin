@@ -21,6 +21,7 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
   const queryVote = async () => {
     const vote = await sub.actor.revealVote(voteKindToCandidVariant(VoteKind.CATEGORIZATION), vote_id);
     if (vote['ok'] !== undefined) {
+      console.log(vote['ok']);
       setVote(unwrapCategorizationVote(vote['ok']));
     } else {
       console.error("Failed to query vote: ", vote['err']);
@@ -32,17 +33,19 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
     queryVote();
   }, [vote_id]);
 
-  // @todo: do not use the index
-  const getBallotsFromCategory = (categorizationVote: CategorizationVote, cat_index: number) : BallotPoint[] => {
+  const getBallotsFromCategory = (categorizationVote: CategorizationVote, category: string) : BallotPoint[] => {
     let ballots : BallotPoint[] = [];
     for (let [principal, ballot] of categorizationVote.ballots){
-      if (ballot.answer[cat_index] !== undefined){
-        ballots.push({
-          label: principal.toString(),
-          cursor: ballot.answer[cat_index][1],
-          date: ballot.date,
-          coef: 1.0
-        });
+      for (let single_cat of ballot.answer) {
+        if (single_cat[0] === category){
+          ballots.push({
+            label: principal.toString(),
+            cursor: single_cat[1],
+            date: ballot.date,
+            coef: 1.0
+          });
+          break;
+        }
       }
     }
     return ballots;
@@ -54,14 +57,14 @@ const CategorizationPolarizationBars = ({sub, vote_id}: CategorizationPolarizati
       {
         vote.ballots.length === 0 ? <></> :
         <ol className="w-full">
-          {[...Array.                                 from(vote.aggregate)].map(([category, aggregate], index) => (
+          {[...Array.from(vote.aggregate)].map(([category, aggregate]) => (
             <li key={category}>
               <PolarizationBar 
                 name={category}
                 showName={true}
                 polarizationInfo={toPolarizationInfo(sub.info.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
                 polarizationValue={aggregate}
-                ballots={getBallotsFromCategory(vote, index)}
+                ballots={getBallotsFromCategory(vote, category)}
                 chartType={chartType}
               />
             </li>

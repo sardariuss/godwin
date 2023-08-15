@@ -45,7 +45,7 @@ const InterestDetailedBallot = ({sub, vote_id, iteration, ballot, principal} : I
     <div className={`flex flex-col justify-between items-center w-full`}>
       <div className={`flex flex-row justify-between items-center w-full`}>
         <div className="text-sm font-light">
-          { "Iteration " + iteration.toString() }
+          { "Iteration " + (Number(iteration) + 1).toString() }
         </div>
         <div className="text-sm font-light">
           { nsToStrDate(ballot.date) }

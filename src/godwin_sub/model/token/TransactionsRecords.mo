@@ -67,6 +67,17 @@ module {
       Option.get(Map.get(_register, Map.phash, principal), Map.new<Id, TransactionsRecord>(Map.nhash));
     };
 
+    public func getRecordsForId(id: Id) : Map<Principal, TransactionsRecord> {
+      let id_records = Map.new<Principal, TransactionsRecord>(Map.phash);
+      Map.forEach(_register, func(principal: Principal, transactions: Map<Id, TransactionsRecord>) {
+        switch(Map.get(transactions, Map.nhash, id)){
+          case(null) { };
+          case(?records) { Map.set(id_records, Map.phash, principal, records); };
+        };
+      });
+      id_records;
+    };
+
   };
 
 };

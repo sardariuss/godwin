@@ -134,13 +134,13 @@ module {
 
   func errorCodeToString(code: Error.ErrorCode) : Text {
     switch(code){
-      case(#system_fatal){ "system_fatal" ; };
-      case(#system_transient){ "system_transient" ; };
-      case(#destination_invalid){ "destination_invalid" ; };
-      case(#canister_reject){ "canister_reject" ; };
-      case(#canister_error){ "canister_error" ; };
-      case(#future(_)){ "future" ; };
-      case(#call_error(_)){ "call_error" ; };
+      case(#system_fatal)       { "system_fatal";        };
+      case(#system_transient)   { "system_transient";    };
+      case(#destination_invalid){ "destination_invalid"; };
+      case(#canister_reject)    { "canister_reject";     };
+      case(#canister_error)     { "canister_error";      };
+      case(#future(_))          { "future";              };
+      case(#call_error(_))      { "call_error";          };
     };
   };
 

@@ -56,8 +56,8 @@ module {
       state.opened_questions.transactions
     );
 
-    let interest_join = QuestionVoteJoins.build(state.votes.interest.joins);
-    let interest_voters_history = VotersHistory.VotersHistory(state.votes.interest.voters_history, interest_join);
+    let interest_joins = QuestionVoteJoins.build(state.votes.interest.joins);
+    let interest_voters_history = VotersHistory.VotersHistory(state.votes.interest.voters_history, interest_joins);
     
     let interests = Interests.build(
       state.votes.interest.register,
@@ -65,14 +65,14 @@ module {
       state.votes.interest.transactions,
       token_interface,
       pay_to_open_question,
-      interest_join,
+      interest_joins,
       queries,
       pay_rules,
       state.creator,
       state.opened_questions.creator_rewards);
     
-    let opinion_join = QuestionVoteJoins.build(state.votes.opinion.joins);
-    let opinion_voters_history = VotersHistory.VotersHistory(state.votes.opinion.voters_history, opinion_join);
+    let opinion_joins = QuestionVoteJoins.build(state.votes.opinion.joins);
+    let opinion_voters_history = VotersHistory.VotersHistory(state.votes.opinion.voters_history, opinion_joins);
     
     let opinions = Opinions.build(
       state.votes.opinion.register,
@@ -80,8 +80,8 @@ module {
       WRef.WRef(state.votes.opinion.vote_decay_params),
       WRef.WRef(state.votes.opinion.late_ballot_decay_params));
     
-    let categorization_join = QuestionVoteJoins.build(state.votes.categorization.joins);
-    let categorization_voters_history = VotersHistory.VotersHistory(state.votes.categorization.voters_history, categorization_join);
+    let categorization_joins = QuestionVoteJoins.build(state.votes.categorization.joins);
+    let categorization_voters_history = VotersHistory.VotersHistory(state.votes.categorization.voters_history, categorization_joins);
     
     let categorizations = Categorizations.build(
       state.votes.categorization.register,
@@ -94,9 +94,9 @@ module {
 
     let status_manager = StatusManager.build(
       state.status.register,
-      interest_join,
-      opinion_join,
-      categorization_join
+      interest_joins,
+      opinion_joins,
+      categorization_joins
     );
 
     let model = Model.Model(
@@ -114,9 +114,9 @@ module {
       interests,
       opinions,
       categorizations,
-      interest_join,
-      opinion_join,
-      categorization_join,
+      interest_joins,
+      opinion_joins,
+      categorization_joins,
       interest_voters_history,
       opinion_voters_history,
       categorization_voters_history

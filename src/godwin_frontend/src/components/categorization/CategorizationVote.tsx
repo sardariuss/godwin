@@ -203,7 +203,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
                   <li className="w-full" key={index.toString()}>
                     <CategorizationDetailedBallot
                       sub={sub}
-                      vote_id={voteData.id}
+                      vote_id={ballot.vote_id}
                       iteration={iteration}
                       ballot={ballot}
                       principal={principal}

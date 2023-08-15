@@ -65,7 +65,6 @@ module {
     StatusManager(WMap.WMap(register, Map.nhash), interest_joins, opinion_joins, categorization_joins);
   };
   
-  // @todo: this class needs a rework
   public class StatusManager(
     _register: WMap.WMap<QuestionId, StatusHistory>,
     _interest_joins: Joins,

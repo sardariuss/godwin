@@ -175,19 +175,19 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, bottomPlacehold
             voteView === VoteView.BALLOT_HISTORY ?
             <ol className={`flex flex-col justify-center items-center space-y-2`}>
               {
-                ballotHistory.reverse().map((ballot, index) => (
-                  ballot[1] === undefined ? <></> :
+                ballotHistory.reverse().map(([iteration, ballot], index) => (
+                  ballot === undefined ? <></> :
                   <li className={`flex flex-row justify-between items-center w-full`} key={index.toString()}>
                     <div className="text-sm font-light">
-                      { "Iteration " + ballot[0].toString() }
+                      { "Iteration " + (Number(iteration) + 1).toString() }
                     </div>
                     <div className="text-sm font-light">
-                      { nsToStrDate(ballot[1].date) }
+                      { nsToStrDate(ballot.date) }
                     </div>
                     <CursorBallot
-                      cursorInfo={toOptCursorInfo((ballot[1].answer)?.cursor, CONSTANTS.OPINION_INFO)}
+                      cursorInfo={toOptCursorInfo((ballot.answer)?.cursor, CONSTANTS.OPINION_INFO)}
                       showValue={true}
-                      isLate={isLateBallot(ballot[1])}
+                      isLate={isLateBallot(ballot)}
                     />
                   </li>
                 ))

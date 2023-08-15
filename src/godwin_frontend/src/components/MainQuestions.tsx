@@ -2,13 +2,12 @@ import { TabButton }                                                           f
 import { MainTabButton }                                                       from "./MainTabButton";
 import OpenQuestion                                                            from "./OpenQuestion";
 import SubBanner                                                               from "./SubBanner";
+import QuestionComponent, { QuestionInput }                                    from "./Question";
+import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
 import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant, voteKindFromCandidVariant,
   convertScanResults, ScanLimitResult, statusToEnum, StatusEnum }              from "../utils";
 import { QuestionOrderBy, Direction, QueryQuestionItem, QueryVoteItem }        from "../../declarations/godwin_sub/godwin_sub.did";
-import QuestionComponent, { QuestionInput }                                    from "./Question";
-
-import ListComponents from "./base/ListComponents";
 
 import { useParams }                                                           from "react-router-dom";
 import React, { useState, useContext, useEffect }                              from "react";
@@ -83,11 +82,11 @@ type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: Qu
 const MainQuestions = () => {
 
   const { subgodwin } = useParams();
-  const {subs, getPrincipal} = useContext(ActorContext);
-  const [sub, setSub] = useState<Sub | undefined>(undefined);
-  const [currentMainTab, setCurrentMainTab] = useState<MainTab>(MainTab.HOME);
-  const [currentHomeFilter, setCurrentHomeFilter] = useState<VoteKind>(VoteKind.INTEREST);
-  const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter>(BrowseFilter.CANDIDATE);
+  const {subs,                getPrincipal          } = useContext(ActorContext);
+  const [sub,                 setSub                ] = useState<Sub | undefined>(undefined             );
+  const [currentMainTab,      setCurrentMainTab     ] = useState<MainTab        >(MainTab.HOME          );
+  const [currentHomeFilter,   setCurrentHomeFilter  ] = useState<VoteKind       >(VoteKind.INTEREST     );
+  const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter   >(BrowseFilter.CANDIDATE);
   
   const [queryQuestionInput, setQueryQuestionInput] = useState<QueryQuestionInputFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 

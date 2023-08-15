@@ -79,11 +79,12 @@ module {
         Buffer.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
       // Watchout, this loop only iterates on the refunds, not the rewards.
-      // It is assumed that if for a user there is no refund, there is no reward.
+      // It is assumed that if for a user there is no refund, then there is no reward.
+      // @todo: do not use this assumption!
       // @todo: should do a Trie.disj to get the union of both tries.
       for ((principal, result) in Trie.iter(refunds)) {
         let reward = switch(Trie.get(rewards, key(principal), Principal.equal)){
-          case(null) { Debug.trap("@todo: No reward for user"); };
+          case(null) { null; };
           case(?r) { r; };
         };
         _user_transactions.setPayout(principal, id, result, reward);
