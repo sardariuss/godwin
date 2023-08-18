@@ -115,11 +115,6 @@ module {
     #HIDDEN;
   };
 
-  public type BallotChangeAuthorization = {
-    #BALLOT_CHANGE_AUTHORIZED;
-    #BALLOT_CHANGE_FORBIDDEN;
-  };
-
   public type ComputeSelectionScoreArgs = {
     last_pick_date_ns: Time;
     last_pick_score: Float;

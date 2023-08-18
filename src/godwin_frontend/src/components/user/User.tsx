@@ -1,6 +1,6 @@
 import Convictions                                from "./Convictions";
 import { VoterHistory }                           from "./VoterHistory";
-import { AuthorQuestions }                        from "./AuthorQuestions";
+import { OpenedVotes }                            from "./OpenedVotes";
 import UserName                                   from "./UserName";
 import CopyIcon                                   from "../icons/CopyIcon";
 import SvgButton                                  from "../base/SvgButton"
@@ -156,7 +156,7 @@ const UserComponent = () => {
                     currentUserFilter === UserFilter.CATEGORIZATIONS ?
                       <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.CATEGORIZATION}/> :
                     currentUserFilter === UserFilter.QUESTIONS ? 
-                      <AuthorQuestions sub={sub} principal={principal}/> :
+                      <OpenedVotes sub={sub} principal={principal}/> :
                     <></>
                   }
                 </div>

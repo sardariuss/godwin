@@ -12,6 +12,7 @@ import QuestionTypes       "../questions/Types";
 import KeyConverter        "../questions/KeyConverter";
 
 import UtilsTypes          "../../utils/Types";
+import WMap                "../../utils/wrappers/WMap";
 
 import Map                 "mo:map/Map";
 
@@ -25,6 +26,7 @@ module {
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
   type Map<K, V>              = Map.Map<K, V>;
+  type WMap2D<K1, K2, V>      = WMap.WMap2D<K1, K2, V>;
   
   type VoteId                 = Types.VoteId;
   type Vote                   = Types.Vote<Interest, Appeal>;
@@ -73,6 +75,7 @@ module {
 
   public func build(
     vote_register: Votes.Register<Interest, Appeal>,
+    open_by: Map<Principal, Map<VoteId, Time>>,
     voters_history: IVotersHistory,
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
@@ -98,6 +101,7 @@ module {
           getPayoutFunction(pay_rules)
         )
       ),
+      WMap.WMap2D(open_by, Map.phash, Map.nhash),
       pay_for_new,
       joins,
       queries,
@@ -112,6 +116,7 @@ module {
 
   public class Interests(
     _votes: Votes<Interest, Appeal>,
+    _open_by: WMap2D<Principal, VoteId, Time>,
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries,
@@ -119,16 +124,26 @@ module {
     _reward_for_element: RewardForElement
   ) {
     
-    public func openVote(principal: Principal, date: Time, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
-      let { interest_vote_price_e8s; } = _pay_rules.getPrices();
-      switch(await* _pay_for_new.payin(principal, interest_vote_price_e8s, func() : VoteId { _votes.newVote(date); })){
-        case(#err(err)) { #err(err); };
-        case(#ok(vote_id)) {
-          let question_id = on_success(vote_id);
-          _queries.add(KeyConverter.toHotnessKey(question_id, _votes.getVote(vote_id).aggregate.hotness));
-          #ok((question_id, vote_id));
-        };
+    public func openVote(principal: Principal, date: Time, last_iteration: ?Nat, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
+      // Get the price to open the vote
+      let vote_price = if (Option.isNull(last_iteration)) { 
+        _pay_rules.getPrices().open_vote_price_e8s; 
+      } else { 
+        _pay_rules.getPrices().reopen_vote_price_e8s; 
       };
+      // The user has to pay to open up an interest vote
+      // The PayForNew payin function requires a callback to create the vote, it will be called only if the payement succeeds
+      let vote_id = switch(await* _pay_for_new.payin(principal, vote_price, func() : VoteId { _votes.newVote(date); })){
+        case(#err(err)) { return #err(err); };
+        case(#ok(id)) { id; };
+      };
+      // In order to retrieve who opened the vote, we need to store the vote id in the open_by map
+      _open_by.set(principal, vote_id, date);
+      // Add the vote to the hotness orderby query
+      let question_id = on_success(vote_id);
+      _queries.add(KeyConverter.toHotnessKey(question_id, _votes.getVote(vote_id).aggregate.hotness));
+      // Return the question and vote ids
+      #ok((question_id, vote_id));
     };
 
     public func closeVote(vote_id: Nat, date: Time, closure: InterestVoteClosure) : async* () {
@@ -190,7 +205,11 @@ module {
       _votes.findBallotTransactions(principal, id);
     };
 
-    public func findOpenVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+    public func getOpenedVotes(principal: Principal) : Map<VoteId, Time> {
+      _open_by.getAll(principal);
+    };
+
+    public func findOpenedVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
       _pay_for_new.findTransactionsRecord(principal, id);
     };
 

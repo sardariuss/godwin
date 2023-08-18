@@ -1,28 +1,19 @@
-import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon }           from "./icons/StatusIcons";
-import AppealDigest                                                                  from "./interest/AppealDigest";
-import OpinionAggregate                                                              from "./opinion/OpinionAggregate";
-import OpinionPolarizationBar                                                        from "./opinion/OpinionPolarizationBar";
-import AppealBar                                                                     from "./interest/AppealBar";
-import CategorizationAggregateDigest                                                 from "./categorization/CategorizationAggregateDigest";
-import CategorizationPolarizationBars                                                from "./categorization/CategorizationPolarizationBars";
-import { toMap, VoteKind, getStatusDuration, 
-  durationToNanoSeconds, StatusEnum, statusToEnum, statusEnumToString }              from "../utils";
-import { nsToStrDate, formatTimeDiff }                                               from "../utils/DateUtils";
-import { Sub }                                                                       from "../ActorContext";
-import { StatusData, SchedulerParameters, VoteAggregate, 
-  OpinionAggregate as OpinionAggregateDid, PolarizationArray, Appeal }               from "../../declarations/godwin_sub/godwin_sub.did";
+import { CandidateIcon, OpenIcon, ClosedIcon, TimedOutIcon, CensoredIcon } from "./icons/StatusIcons";
+import AppealDigest                                                        from "./interest/AppealDigest";
+import OpinionAggregate                                                    from "./opinion/OpinionAggregate";
+import OpinionPolarizationBar                                              from "./opinion/OpinionPolarizationBar";
+import AppealBar                                                           from "./interest/AppealBar";
+import CategorizationAggregateDigest                                       from "./categorization/CategorizationAggregateDigest";
+import CategorizationPolarizationBars                                      from "./categorization/CategorizationPolarizationBars";
+import { toMap, VoteKind, StatusEnum, statusToEnum, statusEnumToString }   from "../utils";
+import { nsToStrDate, formatTimeDiff }                                     from "../utils/DateUtils";
+import { Sub }                                                             from "../ActorContext";
+import { StatusData, VoteAggregate, 
+  OpinionAggregate as OpinionAggregateDid, PolarizationArray, Appeal }     from "../../declarations/godwin_sub/godwin_sub.did";
 
-import Countdown                                                                     from "react-countdown";
-import React, { useState, useEffect }                                                from "react";
-import { fromNullable }                                                              from "@dfinity/utils";
-
-const computeEndDate = (status_data: StatusData, scheduler_parameters: SchedulerParameters) : Date | undefined => {
-  let status_duration = getStatusDuration(status_data.status_info.status, scheduler_parameters);
-  if (status_duration === undefined) {
-    return undefined;
-  }
-  return new Date(Number((status_data.status_info.date + durationToNanoSeconds(status_duration)) / BigInt(1000000)));
-};
+import Countdown                                                           from "react-countdown";
+import React, { useState, useEffect }                                      from "react";
+import { fromNullable }                                                    from "@dfinity/utils";
 
 export const findInterestAggregate = (status_data: StatusData) : [bigint, Appeal]  | undefined => {
   let aggregates = getPreviousVoteAggregates(status_data);
@@ -77,7 +68,6 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, show
 
   const [status,                     setStatus                    ] = useState<StatusEnum                    | undefined>(undefined);
   const [date,                       setDate                      ] = useState<string                        | undefined>(undefined);
-  const [statusEndDate,              setStatusEndDate             ] = useState<Date                          | undefined>(undefined);
   const [selectedVote,               setSelectedVote              ] = useState<VoteKind                      | undefined>(undefined);
   const [previousInterestVote,       setPreviousInterestVote      ] = useState<[bigint, Appeal             ] | undefined>(undefined);
   const [previousOpinionVote,        setPreviousOpinionVote       ] = useState<[bigint, OpinionAggregateDid] | undefined>(undefined);
@@ -90,7 +80,6 @@ const StatusComponent = ({sub, statusData, isToggledHistory, toggleHistory, show
   const refreshStatusData = () => {
     setStatus(statusToEnum(statusData.status_info.status));
     setDate(nsToStrDate(statusData.status_info.date));
-    setStatusEndDate(computeEndDate(statusData, sub.info.scheduler_parameters));
     setPreviousInterestVote(findInterestAggregate(statusData));
     setPreviousOpinionVote(findOpinionAggregate(statusData));
     setPreviousCategorizationVote(findCategorizationAggregate(statusData));

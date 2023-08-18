@@ -6,7 +6,7 @@ import ResetIcon                                                         from ".
 import PutBallotIcon                                                     from "../icons/PutBallotIcon";
 import UpdateProgress                                                    from "../UpdateProgress";
 import ReturnIcon                                                        from "../icons/ReturnIcon";
-import { putBallotErrorToString, getOptStrongestCategory, voteStatusToEnum,
+import { putBallotErrorToString, getStrongestCategoryCursorInfo, voteStatusToEnum,
   VoteStatusEnum, VoteView, RevealableBallot, getCategorizationBallot, VoteKind,
   voteKindToCandidVariant, toCategorizationKindAnswer,
   unwrapRevealedCategorizationBallot }                                   from "../../utils";
@@ -111,7 +111,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
         <>
           { voteView === VoteView.LAST_BALLOT && ballot !== undefined ?
             <div className={`flex flex-row justify-center items-center w-20`}>
-              <CursorBallot cursorInfo={getOptStrongestCategory(ballot.answer, sub.info.categories)} dateNs={ballot.date}/> 
+              <CursorBallot cursorInfo={getStrongestCategoryCursorInfo(ballot.answer, sub.info.categories)} dateNs={ballot.date}/> 
               {
                 !canVote(voteData) ? <></> :
                 voteData.id !== ballot.vote_id ?

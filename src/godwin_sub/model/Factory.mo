@@ -61,6 +61,7 @@ module {
     
     let interests = Interests.build(
       state.votes.interest.register,
+      state.votes.interest.open_by,
       interest_voters_history,
       state.votes.interest.transactions,
       token_interface,

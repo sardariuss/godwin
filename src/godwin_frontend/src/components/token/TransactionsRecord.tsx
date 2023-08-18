@@ -18,7 +18,7 @@ export const TransactionsRecordComponent = ({tx_record}: TransactionsRecordInput
     <div className="py-1 px-6 w-full text-black dark:text-white py-1 text-sm">
     {
       tx_record === undefined ? <></> :
-      <div className="grid grid-cols-3">
+      <div className="grid grid-cols-3 gap-x-1">
         <div className="flex flex-col items-center text-red-600 dark:text-red-400">
           <div className="text-black dark:text-white">Payin</div>
           <div>

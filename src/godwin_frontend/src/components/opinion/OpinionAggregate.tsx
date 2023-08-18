@@ -17,11 +17,14 @@ const OpinionAggregate = ({ aggregate, selected, setSelected }: Props) => {
   const [cursorInfo, setCursorInfo] = useState<CursorInfo | undefined>(undefined);
 
   const refreshCursorInfo = async () => {
-    if (aggregate !== undefined) {
-      setCursorInfo(toCursorInfo(polarizationToCursor(aggregate.polarization), CONSTANTS.OPINION_INFO));
-    } else {
-      setCursorInfo(undefined);
-    }
+    if (aggregate !== undefined ) {
+      let polarization = polarizationToCursor(aggregate.polarization);
+      if (polarization !== undefined){
+        setCursorInfo(toCursorInfo(polarization, CONSTANTS.OPINION_INFO));
+        return;
+      };
+    } 
+    setCursorInfo(undefined);
   };
 
   useEffect(() => {

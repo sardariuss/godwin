@@ -28,6 +28,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type SchedulerParameters            = Types.SchedulerParameters;
   type QueryQuestionItem              = Types.QueryQuestionItem;
   type QueryVoteItem                  = Types.QueryVoteItem;
+  type QueryOpenedVoteItem            = Types.QueryOpenedVoteItem;
   type StatusData                     = Types.StatusData;
   type QuestionId                     = Types.QuestionId;
   type SubInfo                        = Types.SubInfo;
@@ -109,8 +110,12 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().getStatusHistory(question_id);
   };
 
-  public query func queryQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
-    getController().queryQuestionsFromAuthor(principal, direction, limit, previous_id);
+  public query func findOpenedVoteTransactions(principal: Principal, id: VoteId) : async ?TransactionsRecord {
+    getController().findOpenedVoteTransactions(principal, id);
+  };
+
+  public query func queryOpenedVotes(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : async ScanLimitResult<QueryOpenedVoteItem> {
+    getController().queryOpenedVotes(principal, direction, limit, previous_id);
   };
 
   public query func getVoterConvictions(principal: Principal) : async [(VoteId, BallotConvictionInput)] {

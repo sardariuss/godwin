@@ -52,6 +52,7 @@ module {
     votes                       : {
       interest                     : {
         register                      : InterestVoteRegister;
+        open_by                       : Map<Principal, Map<VoteId, Time>>;
         voters_history                : Map<Principal, Map<QuestionId, Map<Nat, VoteId>>>;
         joins                         : JoinsRegister;
         transactions                  : Map<Principal, Map<VoteId, TransactionsRecord>>;

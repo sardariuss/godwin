@@ -1,5 +1,7 @@
 import { ChartTypeEnum } from "../../utils";
 
+import React             from "react";
+
 type ChartTypeToggleProps = {
   chartType: ChartTypeEnum;
   setChartType: (chartType: ChartTypeEnum) => (void);

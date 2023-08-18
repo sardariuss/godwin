@@ -1,9 +1,10 @@
-import AggregateDigest                                                        from "../base/AggregateDigest";
-import CONSTANTS                                                              from "../../Constants";
-import { polarizationToCursor, CursorInfo, toCursorInfo, toPolarizationInfo } from "../../utils";
-import { Category, CategoryInfo, Polarization }                               from "./../../../declarations/godwin_sub/godwin_sub.did";
+import AggregateDigest                          from "../base/AggregateDigest";
+import CONSTANTS                                from "../../Constants";
+import { polarizationToCursor, CursorInfo,  
+   getStrongestCategoryCursorInfo }             from "../../utils";
+import { Category, CategoryInfo, Polarization } from "./../../../declarations/godwin_sub/godwin_sub.did";
 
-import React, { useState, useEffect }                                         from "react";
+import React, { useState, useEffect }           from "react";
 
 type Props = {
   aggregate: Map<Category, Polarization> | undefined,
@@ -18,16 +19,11 @@ const CategorizationAggregateDigest = ({ aggregate, categories, selected, setSel
 
   const refreshCursorInfo = async () => {
     if (aggregate !== undefined) {
-      var winning_cursor = 0;
-      var winning_dimension = "";
+      let cursor_array : [string, number][] = [];
       aggregate.forEach((polarization, dimension) => {
-        let cursor = polarizationToCursor(polarization);
-        if (Math.abs(cursor) > Math.abs(winning_cursor)) {
-          winning_cursor = cursor;
-          winning_dimension = dimension;
-        };
+        cursor_array.push([dimension, polarizationToCursor(polarization)]);
       });
-      setCursorInfo(toCursorInfo(winning_cursor, toPolarizationInfo(categories.get(winning_dimension), CONSTANTS.CATEGORIZATION_INFO.center)));
+      setCursorInfo(getStrongestCategoryCursorInfo(cursor_array, categories));
     } else {
       setCursorInfo(undefined);
     }

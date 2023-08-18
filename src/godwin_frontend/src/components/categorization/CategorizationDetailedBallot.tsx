@@ -2,7 +2,7 @@ import CursorBallot                                 from "../base/CursorBallot";
 import SvgButton                                    from "../base/SvgButton";
 import TransactionIcon                              from "../icons/TransactionIcon";
 import TransactionsRecordComponent                  from "../token/TransactionsRecord";
-import { getOptStrongestCategory, RevealableBallot,
+import { getStrongestCategoryCursorInfo, RevealableBallot,
   VoteKind, voteKindToCandidVariant }               from "../../utils";
 import { Sub }                                      from "../../ActorContext";
 import { nsToStrDate }                              from "../../utils/DateUtils";
@@ -51,7 +51,7 @@ const CategorizationDetailedBallot = ({sub, vote_id, iteration, ballot, principa
           { nsToStrDate(ballot.date) }
         </div>
         <CursorBallot
-          cursorInfo={getOptStrongestCategory(ballot.answer, sub.info.categories)}
+          cursorInfo={getStrongestCategoryCursorInfo(ballot.answer, sub.info.categories)}
           showValue={true}
         />
         <div className="svg-button w-6 h-6 self-center justify-self-center">

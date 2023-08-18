@@ -156,6 +156,14 @@ module {
     vote: (VoteKind, VoteData);
   };
 
+  public type QueryOpenedVoteItem = {
+    vote_id     : VoteId;
+    date        : Time;
+    question_id : QuestionId;
+    iteration   : Nat;
+    question    : ?Question;
+  };
+
   public type PrincipalError = {
     #PrincipalIsAnonymous;
   };

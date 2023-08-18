@@ -30,7 +30,6 @@ const InterestDetailedBallot = ({sub, vote_id, iteration, ballot, principal} : I
 
   const fetchTransaction = () => {
     sub.actor.findBallotTransactions(voteKind, principal, vote_id).then((record) => {
-      console.log(fromNullable(record));
       setTransactionsRecord(fromNullable(record));
     });
   }

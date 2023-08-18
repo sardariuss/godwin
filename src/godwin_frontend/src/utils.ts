@@ -166,7 +166,11 @@ export const toMap = (arr: Array<any>) => {
 };
 
 export const polarizationToCursor = (polarization: Polarization) : number => {
-  return (polarization.right - polarization.left) / (polarization.left + polarization.center + polarization.right);
+  let sum = polarization.left + polarization.center + polarization.right;
+  if (sum === 0.0) {
+    return 0.0;
+  }
+  return (polarization.right - polarization.left) / sum;
 };
 
 export const getNormalizedPolarization = (polarization: Polarization) : Polarization => {
@@ -330,10 +334,10 @@ export const convertScanResults = <T1, T2, >(scan_results: ScanResults<T1>, conv
   return { ids, next };
 }
 
-export const getStrongestCategory = (ballot: Map<Category, number>) : [Category, number] => {
+export const getStrongestCategory = (cursor_array: CursorArray) : [Category | undefined, number] => {
   var greatest_cursor = 0;
-  var winning_category : Category = ballot.keys().next().value;
-  ballot.forEach((cursor, category) => {
+  var winning_category : Category | undefined = undefined;
+  cursor_array.forEach(([category, cursor]) => {
     if (Math.abs(cursor) > Math.abs(greatest_cursor)) {
       greatest_cursor = cursor;
       winning_category = category;
@@ -342,17 +346,20 @@ export const getStrongestCategory = (ballot: Map<Category, number>) : [Category,
   return [winning_category, greatest_cursor];
 };
 
-export const getStrongestCategoryCursorInfo = (ballot: Map<Category, number>, categories: Map<Category, CategoryInfo>) : CursorInfo => {
-  const [winning_category, greatest_cursor] = getStrongestCategory(ballot);
-  return toCursorInfo(greatest_cursor, toPolarizationInfo(categories.get(winning_category), CONSTANTS.CATEGORIZATION_INFO.center));
-};
-
-export const getOptStrongestCategory = (categorization: CursorArray | undefined, categories: Map<Category, CategoryInfo>) : CursorInfo | undefined => {
-  if (categorization !== undefined){
-    return getStrongestCategoryCursorInfo(toMap(categorization), categories);
+export const getStrongestCategoryCursorInfo = (cursor_array: CursorArray | undefined, categories: Map<Category, CategoryInfo>) : CursorInfo | undefined => {
+  if (cursor_array === undefined) {
+    return undefined;
   }
-  return undefined;
-}
+  const [winning_category, greatest_cursor] = getStrongestCategory(cursor_array);
+  if (winning_category === undefined) { 
+    return undefined;
+  }
+  let category_info = categories.get(winning_category);
+  if (category_info === undefined) {
+    throw new Error('Invalid category');
+  }
+  return toCursorInfo(greatest_cursor, toPolarizationInfo(category_info, CONSTANTS.CATEGORIZATION_INFO.center));
+};
 
 export const getStatusDuration = (status: Status, parameters: SchedulerParameters) : Duration | undefined =>  {
   if (status['CANDIDATE'] !== undefined) return parameters.candidate_status_duration;

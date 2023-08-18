@@ -79,6 +79,7 @@ module {
       votes                       = {
         interest                     = {
           register                      = Interests.initRegister();
+          open_by                       = Map.new<Principal, Map<VoteId, Time>>(Map.phash);
           voters_history                = Map.new<Principal, Map<QuestionId, Map<Nat, VoteId>>>(Map.phash);
           joins                         = Joins.initRegister();
           transactions                  = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);

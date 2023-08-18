@@ -68,6 +68,7 @@ module {
   type VoteLink                    = VoteTypes.VoteLink;
   type OpinionBallot               = VoteTypes.OpinionBallot;
   type VoteId                      = VoteTypes.VoteId;
+  type QueryOpenedVoteItem         = Types.QueryOpenedVoteItem;
   // Errors
   type GetQuestionError            = Types.GetQuestionError;
   type ReopenQuestionError         = Types.ReopenQuestionError;
@@ -145,15 +146,15 @@ module {
         question.id;
       };
       // Open up the vote
-      switch(await* _model.getInterestVotes().openVote(caller, date, create_question)){
+      switch(await* _model.getInterestVotes().openVote(caller, date, null, create_question)){
         case(#err(err)) { return #err(err); };
         case(#ok((question_id, _))) { return #ok(question_id); };
       };
     };
 
     public func reopenQuestion(caller: Principal, question_id: Nat, date: Time) : async* Result<(), Text> {
-      if(await* submitEvent(question_id, #REOPEN_QUESTION, date, caller)){ #ok;                             }
-      else                                                               { #err("Fail to reopen question"); };
+      if(await* submitEvent(question_id, #REOPEN_QUESTION, date, caller)){ #ok; }
+      else { #err("Fail to reopen question"); };
     };
 
     public func revealBallot(vote_kind: VoteKind, caller: Principal, voter: Principal, vote_id: VoteId) : Result<KindRevealableBallot, FindBallotError> {
@@ -236,14 +237,22 @@ module {
         });
     };
 
-    // @todo: should filter based on the question status in order to properly hide the author ?
-    // This requires to remove the author from the Question type
-    // @todo: we should be able to query the reopened questions too
-    public func queryQuestionsFromAuthor(principal: Principal, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<(QuestionId, ?Question, ?TransactionsRecord)> {
-      let question_ids = Utils.setScanLimit<QuestionId>(_model.getQuestions().getQuestionIdsFromAuthor(principal), Map.nhash, direction, limit, previous_id);
-      Utils.mapScanLimitResult<QuestionId, (QuestionId, ?Question, ?TransactionsRecord)>(question_ids, func(question_id: QuestionId) : (QuestionId, ?Question, ?TransactionsRecord){
-        (question_id, _model.getQuestions().findQuestion(question_id), _model.getInterestVotes().findOpenVoteTransactions(principal, _model.getInterestJoins().getVoteId(question_id, 0)));
+    public func queryOpenedVotes(principal: Principal, direction: Direction, limit: Nat, previous_id: ?VoteId) : ScanLimitResult<QueryOpenedVoteItem> {
+      let vote_ids = Utils.mapScanLimit<VoteId, Time>(_model.getInterestVotes().getOpenedVotes(principal), Map.nhash, direction, limit, previous_id);
+      Utils.mapScanLimitResult<(VoteId, Time), QueryOpenedVoteItem>(vote_ids, func((vote_id, date): (VoteId, Time)) : QueryOpenedVoteItem {
+        let (question_id, iteration) = _model.getInterestJoins().getQuestionIteration(vote_id);
+        {
+          vote_id;
+          question_id;
+          iteration;
+          date;
+          question = _model.getQuestions().findQuestion(question_id);
+        };
       });
+    };
+
+    public func findOpenedVoteTransactions(principal: Principal, id: VoteId) : ?TransactionsRecord {
+      _model.getInterestVotes().findOpenedVoteTransactions(principal, id);
     };
 
     public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryVoteItem> {

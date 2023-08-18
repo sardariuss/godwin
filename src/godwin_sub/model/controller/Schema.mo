@@ -239,13 +239,13 @@ module {
         case(null)      { return false; };
         case(?question) { question;     };
       };
+      let (iteration, _) = _model.getInterestJoins().getLastVote(question.id);
       // Verify that the interest vote successfully opens
       // @todo: risk of reentry, user will loose tokens if the question has already been reopened
-      switch(await* _model.getInterestVotes().openVote(caller, date, func(VoteId) : QuestionId { question.id; })){
+      switch(await* _model.getInterestVotes().openVote(caller, date, ?iteration, func(vote_id: VoteId) : QuestionId { question.id; })){
         case(#err(err)) { return false; };
         case(#ok((_, vote_id))) {
-          // @todo: explanation
-          // Update the queries, need to be done before setting up the new status!
+          // Update the queries, WATCHOUT it needs to be done before setting up the new status
           updateQueries(question_id, _model.getStatusManager().getCurrentStatus(question_id).1, next, date);
           // Update the status
           ignore _model.getStatusManager().setCurrentStatus(question_id, #CANDIDATE, date, [{ vote_kind = #INTEREST; vote_id; }]);

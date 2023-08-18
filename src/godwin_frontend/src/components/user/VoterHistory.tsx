@@ -17,7 +17,7 @@ type VoterHistoryProps = {
   sub: Sub;
   isLoggedUser: boolean;
   voteKind: VoteKind;
-  onOpinionChange: () => void;
+  onOpinionChange?: () => void;
 };
 
 export const VoterHistory = ({principal, sub, isLoggedUser, voteKind, onOpinionChange}: VoterHistoryProps) => {
