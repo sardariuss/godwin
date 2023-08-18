@@ -93,7 +93,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
             <div className="flex flex-col w-full">
               <ol className="w-full">
               {
-                [...Array.from(polarizationMap.entries())].map(([category, polarization], index) => (
+                [...Array.from(polarizationMap.entries())].map(([category, polarization]) => (
                   (
                     <li key={category} style={{
                         filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
@@ -105,8 +105,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                         polarizationInfo={toPolarizationInfo(sub.info.categories.get(category), CONSTANTS.CATEGORIZATION_INFO.center)}
                         polarizationValue={polarization}
                         ballots={ballotsMap.get(category) ?? []}
-                        chartType={chartType}>
-                      </PolarizationBar>
+                        chartType={chartType}/>
                     </li>
                   )
                 ))

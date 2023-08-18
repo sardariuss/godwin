@@ -5,8 +5,8 @@ import SubBanner                                                               f
 import QuestionComponent, { QuestionInput }                                    from "./Question";
 import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
-import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant, voteKindFromCandidVariant,
-  convertScanResults, ScanLimitResult, statusToEnum, StatusEnum }              from "../utils";
+import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant, 
+  voteKindFromCandidVariant, convertScanResults, ScanLimitResult }             from "../utils";
 import { QuestionOrderBy, Direction, QueryQuestionItem, QueryVoteItem }        from "../../declarations/godwin_sub/godwin_sub.did";
 
 import { useParams }                                                           from "react-router-dom";
@@ -125,10 +125,10 @@ const MainQuestions = () => {
       setQueryQuestionInput(() => () => Promise.resolve({ ids : [], next: undefined}));
     } else if (currentMainTab === MainTab.BROWSE) {
       setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
-        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question.id] : []).then(convertQuestionScanResults));
+        sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question_id] : []).then(convertQuestionScanResults));
     } else if (currentMainTab === MainTab.HOME) {
       setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
-        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question.id] : []).then(convertVoteScanResults));
+        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question_id] : []).then(convertVoteScanResults));
     }
   }
 
@@ -147,8 +147,8 @@ const MainQuestions = () => {
       sub === undefined ?  
         <div>Unknown subgodwin @todo</div> : 
         <div className="flex flex-col items-center w-full">
-          <div className="flex flex-col sticky top-0 z-20 bg-white dark:bg-slate-900 items-center w-full">
-            <SubBanner sub={sub}/>
+          <SubBanner sub={sub}/>
+          <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <div className="flex flex-col border-x dark:border-gray-700 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
               <div className="border-b dark:border-gray-700 w-full">
                 <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">

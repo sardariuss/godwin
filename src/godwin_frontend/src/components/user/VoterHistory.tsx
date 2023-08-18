@@ -5,7 +5,6 @@ import { fromScanLimitResult, ScanResults, VoteKind, ScanLimitResult,
 import { Sub }                                                             from "./../../ActorContext";
 import { Direction, QueryVoteItem, }                                       from "../../../declarations/godwin_sub/godwin_sub.did";
 
-
 import { Principal }                                                       from "@dfinity/principal";
 import { fromNullable }                                                    from "@dfinity/utils";
 import React, { useState, useEffect }                                      from "react";

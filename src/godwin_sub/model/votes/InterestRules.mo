@@ -44,13 +44,16 @@ module {
     let total = Float.fromInt(ups + downs);
     let x = Float.fromInt(ups) / total;
 
-    // Compute the original score, use for the selection of the question
+    // Compute the original score base on the logit CDF so that
+    // a minority of up or down voters cannot influence the score too much
     let interest_coef = if (total == 0.0) { 0.0; } else {
       (2 * Math.logitNormalCDF(x, INTEREST_SCORE.LOGIT_NORMAL_CDF, null) - 1);
     };
     let score = total * interest_coef;
 
-    // Compute the modified score (for hot ranking only)
+    // Compute the hot modifier based on the logit normal PDF, 
+    // in order to increase the ranking of the question
+    // if there is a small minority of down votes
     let hot_modifier = if (total == 0.0) { 0.0; } else {
       Math.logitNormalPDF(x, HOTNESS.SCORE_MODIFIER.LOGIT_NORMAL_PDF, null);
     };

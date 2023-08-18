@@ -73,9 +73,13 @@ function Header({login, setShowAskQuestion}: Props) {
 
   return (
 		<>
-      <header className="bg-slate-100 dark:bg-gray-800 sticky top-0 z-30 w-full px-2 sm:px-2 py-2.5 sm:py-1">
-        <div className="w-full flex flex-row items-center justify-between xl:p-4 lg:p-3 md:p-2 sm:p-1 space-x-2">
-          <Link to="/" className="xl:text-2xl font-semibold whitespace-nowrap dark:text-white">
+      {
+        /* Uses the same padding as the footer
+           Uses an absolute height for the header so that it is possible to correctly align the top of the sticky tab in MainQuestions.tsx */ 
+      }
+      <header className="bg-slate-100 dark:bg-gray-800 sticky top-0 z-30 flex flex-row items-center w-full xl:px-4 lg:px-3 md:px-2 px-2 xl:h-18 lg:h-16 md:h-14 h-14">
+        <div className="w-full flex flex-row items-center justify-between space-x-2">
+          <Link to="/" className="xl:text-2xl text-xl font-semibold whitespace-nowrap dark:text-white">
             { "🧭 Godwin" }
           </Link>
           <div className="w-full flex flex-row items-center justify-end md:space-x-4">
