@@ -140,44 +140,55 @@ actor GodwinToken {
 
   // Additional functions specific to godwin
 
-  // Kind of an equivalent to icrc4_transfer_batch function, with pre_validate = false and batch_fee = null
-  // but where only one account can be specified
+  /// Reap an account by distributing its balance to the provided list of recipients. 
+  /// Each recipient receive the specified share of the balance.
+  /// The sum of all the shares must be less than or equal to 1.0.
+  /// If the sum of all the shares is less than 1.0, the remaining balance is burned.
+  /// \param[in] args, the ReapAccountArgs that contains the list of recipients, the memo
+  ///                  and the subaccount to reap.
+  /// \return Ok with the list of TransferResult if the reaping was successful.
+  ///         Err with the corresponding error otherwise.
+  /// @todo: implement this function directly in the module to avoid multiple usage of await* functions.
   public shared ({ caller }) func reap_account(args : ReapAccountArgs) : async ReapAccountResult {
     
+    // Get the balance of the account
     let account_balance = ICRC1.balance_of(token, { owner = caller; subaccount = args.subaccount; });
 
+    // Deduce the amount to distribute (by removing a fee for each recipient)
     let num_recipients = args.to.size();
-
-    if (num_recipients == 0) {
-      return #Err(#NoRecipients);
-    };
-
-    let amount_without_fees : Int = account_balance - token._fee * num_recipients;
-
-    if (amount_without_fees <= 0) {
+    let balance_without_fees : Int = account_balance - token._fee * num_recipients;
+    if (balance_without_fees <= 0) {
       return #Err(#InsufficientFunds({balance = account_balance;}));
     };
 
+    // Compute the share for every recipient
+    var total_amount : Nat = 0;
     var sum_shares = 0.0;
-    
+    let to_transfer = Buffer.Buffer<(Account, Balance)>(num_recipients);
     for ({account; share} in Array.vals(args.to)){
-      if (share <= 0.0) {
+      if (share < 0.0) {
+        // A share cannot be negative
         return #Err(#NegativeShare({account; share;}));
       };
+      let amount = Int.abs(Float.toInt(Float.trunc(Float.fromInt(balance_without_fees) * share)));
+      to_transfer.add(account, amount);
+      total_amount += amount;
       sum_shares += share;
     };
-
-    if (sum_shares <= 0.0){
-      return #Err(#DivisionByZero({sum_shares}));
+    // The sum of all the shares must be less than or equal to 1.0
+    // Perform the comparison on the total amount instead of the sum of the shares
+    // to avoid comparison errors due to floating point arithmetic.
+    if (total_amount > balance_without_fees){
+      return #Err(#BalanceExceeded({sum_shares; total_amount; balance_without_fees = Int.abs(balance_without_fees);}));
     };
 
+    // Transfer each share to the corresponding account
     let results = Buffer.Buffer<(TransferArgs, TransferResult)>(num_recipients);
-
     for ({account; share;} in args.to.vals()) {
       let tranfer_args : TransferArgs = {
         from_subaccount = args.subaccount;
         to = account;
-        amount = Int.abs(Float.toInt(Float.trunc((Float.fromInt(amount_without_fees) * share) / sum_shares)));
+        amount = Int.abs(Float.toInt(Float.trunc(Float.fromInt(balance_without_fees) * share)));
         fee = ?token._fee;
         memo = args.memo;
         created_at_time = null; // Has to be null because two transfers can't have the same timestamp
@@ -185,8 +196,19 @@ actor GodwinToken {
       results.add(tranfer_args, (await* ICRC1.transfer(token, tranfer_args, caller)));
     };
 
-    // @todo: burn the remaining balance if any?
+    // Burn the remaining balance if any
+    let remaining_balance = ICRC1.balance_of(token, { owner = caller; subaccount = args.subaccount; });
+    if (remaining_balance > 0) {
+      let burn_args = { 
+        from_subaccount = args.subaccount;
+        amount = remaining_balance;
+        memo = null;
+        created_at_time = null; // Has to be null because two transfers can't have the same timestamp
+      };
+      ignore await* ICRC1.burn(token, burn_args, caller);
+    };
     
+    // Return the results of the transfers
     return #Ok(Buffer.toArray(results));
   };
 

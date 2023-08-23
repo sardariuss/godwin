@@ -30,12 +30,9 @@ module {
   type Subaccount                     = Types.Subaccount;
   type Balance                        = Types.Balance;
   type Account                        = Types.Account;
-  type TxIndex                        = Types.TxIndex;
   type CanisterCallError              = Types.CanisterCallError;
   type TransferFromMasterResult       = Types.TransferFromMasterResult;
-  type TransferToMasterResult         = Types.TransferToMasterResult;
   type ReapAccountRecipient           = Types.ReapAccountRecipient;
-  type ReapAccountError               = Types.ReapAccountError;
   type ReapAccountResult              = Types.ReapAccountResult;
   type MintRecipient                  = Types.MintRecipient;
   type TransferArgs                   = Types.TransferArgs;

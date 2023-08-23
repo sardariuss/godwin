@@ -8,6 +8,9 @@ import Option                  "mo:base/Option";
 
 import { compare; optionalTestify; Testify; } = "common/Testify";
 
+import Debug                   "mo:base/Debug";
+import Float                   "mo:base/Float";
+
 suite("Pay rules module test suite", func() {
 
   type Duration = UtilsTypes.Duration;
@@ -19,50 +22,54 @@ suite("Pay rules module test suite", func() {
 //    ignore PayRules.computeInterestDistribution({ ups = 0; downs = 0; });
 //  });
 
+    let equal = Testify.interestDistribution.equal;
+
     test("Computing interest distribution with only up votes shall return 100% of up shares, 0% reward ratio", func() {
-      let expected_distribution = { shares = { up = 1.0; down = 0.0; }; reward_ratio = 0.0; };
-      compare(PayRules.computeInterestDistribution({ ups = 1;  downs = 0; }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 92; downs = 0; }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 82; downs = 0; }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 18; downs = 0; }), expected_distribution, Testify.interestDistribution.equal);
+      compare(PayRules.computeInterestDistribution({ ups = 1;  downs = 0; }), { shares = { up = 1.0;        down = 0.0; }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 92; downs = 0; }), { shares = { up = 1.0 / 92.0; down = 0.0; }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 82; downs = 0; }), { shares = { up = 1.0 / 82.0; down = 0.0; }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 18; downs = 0; }), { shares = { up = 1.0 / 18.0; down = 0.0; }; reward_ratio = 0.0; }, equal);
     });
 
     test("Computing interest distribution with only down votes shall return 100% of down shares, 0% reward ratio", func() {
-      let expected_distribution = { shares = { up = 0.0; down = 1.0; }; reward_ratio = 0.0; };
-      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 1;  }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 86; }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 15; }), expected_distribution, Testify.interestDistribution.equal);
-      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 67; }), expected_distribution, Testify.interestDistribution.equal);
+      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 1;  }), { shares = { up = 0.0; down = 1.0;        }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 86; }), { shares = { up = 0.0; down = 1.0 / 86.0; }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 15; }), { shares = { up = 0.0; down = 1.0 / 15.0; }; reward_ratio = 0.0; }, equal);
+      compare(PayRules.computeInterestDistribution({ ups = 0; downs = 67; }), { shares = { up = 0.0; down = 1.0 / 67.0; }; reward_ratio = 0.0; }, equal);
     });
 
-    test("The share of the loosers shall always be smaller than 1, the share of the winners shall always be greater than 1: 12 up VS 11 downs", func() {
+    test("The share of the loosers shall always be smaller than the share of the winners: 12 up VS 11 downs", func() {
       let { up; down; } = PayRules.computeInterestDistribution({ ups = 12; downs = 11; }).shares;
-      compare(down, 1.0, Testify.float.lessThan);
-      compare(up,   1.0, Testify.float.greaterThan);
+      Debug.print("up: " # Float.toText(up) # " down: " # Float.toText(down));
+      compare(up, down, Testify.float.greaterThan);
     });
 
-    test("The share of the loosers shall always be smaller than 1, the share of the winners shall always be greater than 1: 54 ups VS 5 downs", func() {
-      let { up; down; } = PayRules.computeInterestDistribution({ ups = 54; downs = 5; }).shares;
-      compare(down, 1.0, Testify.float.lessThan);
-      compare(up,   1.0, Testify.float.greaterThan);
+    test("The share of the loosers shall always be smaller than the share of the winners: 54 ups VS 5 downs", func() {
+      let { up; down; } = PayRules.computeInterestDistribution({ ups = 52; downs = 5; }).shares;
+      // 5 / 52 < 0.10, so the share of the winner shall at least be greater than 10 times the share of the loosers
+      compare(up, 10 * down, Testify.float.greaterThan);
     });
 
-    test("The share of the loosers shall always be smaller than 1, the share of the winners shall always be greater than 1: 3 ups VS 11 downs", func() {
+    test("The share of the loosers shall always be smaller than the share of the winners: 3 ups VS 11 downs", func() {
       let { up; down; } = PayRules.computeInterestDistribution({ ups = 3; downs = 11; }).shares;
-      compare(down, 1.0, Testify.float.greaterThan);
-      compare(up,   1.0, Testify.float.lessThan);
+      compare(up, down, Testify.float.lessThan);
     });
 
-    test("The share of the loosers shall always be smaller than 1, the share of the winners shall always be greater than 1: 64 ups VS 764 downs", func() {
+    test("The share of the loosers shall always be smaller than the share of the winners: 64 ups VS 764 downs", func() {
       let { up; down; } = PayRules.computeInterestDistribution({ ups = 64; downs = 764; }).shares;
-      compare(down, 1.0, Testify.float.greaterThan);
-      compare(up,   1.0, Testify.float.lessThan);
+      compare(up, down, Testify.float.lessThan);
     });
 
-    test("The maximum distribution share shall be for a majority of two thirds to one", func() {
-      let d1 = PayRules.computeInterestDistribution({ ups = 67; downs = 33; }).shares;
-      let d2 = PayRules.computeInterestDistribution({ ups = 66; downs = 34; }).shares;
-      let d3 = PayRules.computeInterestDistribution({ ups = 68; downs = 32; }).shares;
+    test("Expected values for a majority of two thirds to one", func() {
+      let { up; down; } = PayRules.computeInterestDistribution({ ups = 666_666; downs = 333_333; }).shares;
+      compare(up,  1.25 / Float.fromInt(999_999), Testify.float.equal);
+      compare(down, 0.5 / Float.fromInt(999_999),  Testify.float.equal);
+    });
+
+    test("The maximum winning distribution share shall be for a majority of two thirds to one", func() {
+      let d1 = PayRules.computeInterestDistribution({ ups = 666_667; downs = 333_333; }).shares;
+      let d2 = PayRules.computeInterestDistribution({ ups = 666_666; downs = 333_334; }).shares;
+      let d3 = PayRules.computeInterestDistribution({ ups = 666_668; downs = 333_332; }).shares;
       compare(d1.up, d2.up, Testify.float.greaterThan);
       compare(d1.up, d3.up, Testify.float.greaterThan);
     });
@@ -77,13 +84,13 @@ suite("Pay rules module test suite", func() {
 
     // Obtained via www.desmos.com/calculator/lejulppdny
     let distribution_values = [
-      ({ ups = 80; downs = 20;  }, { shares = { up = 1.0 + 0.1875; down = 1.0 - 0.75;   }; reward_ratio = 0.69445116006; }),
-      ({ ups = 59; downs = 100; }, { shares = { up = 1.0 - 0.41;   down = 1.0 + 0.2419; }; reward_ratio = 1.71911336949; }),
+      ({ ups = 80; downs = 20;  }, { shares = { up = (1.0 + 0.1875) / 100.0; down = (1.0 - 0.75)   / 100.0; }; reward_ratio = 0.69445116006; }),
+      ({ ups = 59; downs = 100; }, { shares = { up = (1.0 - 0.41)   / 159.0; down = (1.0 + 0.2419) / 159.0; }; reward_ratio = 1.71911336949; }),
     ];
 
     test("Test some values", func() {
       for ((input, expected) in Array.vals(distribution_values)) {
-        compare(PayRules.computeInterestDistribution(input), expected, Testify.interestDistribution.equal);
+        compare(PayRules.computeInterestDistribution(input), expected, equal);
       };
     });
   });
@@ -273,6 +280,12 @@ suite("Pay rules module test suite", func() {
         };
       };
     });
+  });
+
+  test("Test computation of category share", func () {
+    let { refund; reward; } = PayRules.computeCategoryShare(0.0, 0.0);
+    compare(refund, 1.0, Testify.float.equal);
+    compare(reward, 0.0, Testify.float.equal);
   });
 
   // @todo: categorization payout

@@ -99,6 +99,8 @@ module {
     // Prevent division by 0
     if (ups + downs == 0){ Debug.trap("Cannot compute interest distribution: there is 0 voter"); };
 
+    let total = Float.fromInt(ups + downs);
+
     let { winners; loosers; } = if (ups >= downs){ 
       { winners = Float.fromInt(ups);   loosers = Float.fromInt(downs); };
     } else {
@@ -109,8 +111,8 @@ module {
     let winner_share = 1.0 + (1.0 - looser_share) * looser_share;
 
     let shares = {
-      up   = if (ups >= downs){ winner_share; } else { looser_share; };
-      down = if (ups >= downs){ looser_share; } else { winner_share; };
+      up   = if (ups >= downs){ winner_share / total; } else { looser_share / total; };
+      down = if (ups >= downs){ looser_share / total; } else { winner_share / total; };
     };
 
     let { LOGIT_NORMAL_PDF_PARAMS; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
@@ -175,7 +177,7 @@ module {
       };
       case(#SELECTED({score})){
         // @todo: the minimum score shall be a hardcoded parameter, not a magic number
-        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score is must be superior than 1"); };
+        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score must be superior than 1"); };
         // If the question has been selected, reward the price it took to open the question
         // multiplied by the square root of the score
         let price_e8s = if (iteration == 0) { price_register.open_vote_price_e8s; } else { price_register.reopen_vote_price_e8s; };
@@ -230,7 +232,7 @@ module {
   };
 
   // see www.desmos.com/calculator/voiqqttaog
-  func computeCategoryShare(answer: Cursor, result: Cursor) : Payout {
+  public func computeCategoryShare(answer: Cursor, result: Cursor) : Payout {
 
     let { SIDE_CONTRIBUTION_LIMIT; LOGIT_NORMAL_CDF_PARAMS; } = CATEGORIZATION_PAYOUT_PARAMS;
 
@@ -254,7 +256,7 @@ module {
   // see www.desmos.com/calculator/iv87gjyqlx
   func attenuatePayout(payout: PayoutArgs, num_voters: Nat) : PayoutArgs {
     
-    // Return the original payout if there is no voter
+    // Return the original payout if there is no voter, also prevent dividing by 0
     if (num_voters == 0){ return payout; };
 
     let { refund_share; reward_tokens; } = payout;
@@ -262,9 +264,10 @@ module {
 
     let log_num_voters = Float.log(Float.fromInt(num_voters));
     let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
+    let equal_share = 1.0 / Float.fromInt(num_voters);
 
     {
-      refund_share  = refund_share * confidence + 1.0 * (1.0 - confidence);
+      refund_share  = confidence * refund_share  + (1.0 - confidence) * equal_share;
       reward_tokens = Option.map(reward_tokens, func(amount: Balance) : Balance {
         Int.abs(Float.toInt(Float.fromInt(amount) * confidence));
       });

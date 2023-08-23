@@ -47,7 +47,11 @@ module {
     #InsufficientFunds : { balance : Balance; };
     #NoRecipients;
     #NegativeShare: ReapAccountRecipient;
-    #DivisionByZero : { sum_shares : Float; };
+    #BalanceExceeded : { 
+      sum_shares: Float; 
+      total_amount: Balance;
+      balance_without_fees: Balance;
+    };
   };
 
   public type ReapAccountResult = {
@@ -64,6 +68,11 @@ module {
     subaccount : ?Subaccount;
     to : [ReapAccountRecipient];
     memo : ?Blob;
+    /// The time at which the transaction was created.
+    /// If this is set, the canister will check for duplicate transactions and reject them.
+    // @todo: this cannot be used with the current reap_account implementation, because many
+    // transfer are done at the same time.
+    //created_at_time : ?Nat64;
   };
 
   public type MintRecipient = {

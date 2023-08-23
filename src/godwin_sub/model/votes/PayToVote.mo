@@ -8,7 +8,6 @@ import Map                 "mo:map/Map";
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
 import Buffer              "mo:base/Buffer";
-import Float               "mo:base/Float";
 
 module {
 
