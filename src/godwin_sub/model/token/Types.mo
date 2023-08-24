@@ -5,13 +5,13 @@ import Map         "mo:map/Map";
 
 import Result      "mo:base/Result";
 import Error       "mo:base/Error";
-import Buffer      "mo:base/Buffer";
+import Iter        "mo:base/Iter";
 import Trie        "mo:base/Trie";
 
 module {
 
   type Result<Ok, Err> = Result.Result<Ok, Err>;
-  type Buffer<T>       = Buffer.Buffer<T>;
+  type Iter<T>         = Iter.Iter<T>;
   type Map<K, V>       = Map.Map<K, V>;
   type Trie<K, V>      = Trie.Trie<K, V>;
 
@@ -74,12 +74,22 @@ module {
 
   public type PayoutRecipient = { 
     to: Principal;
-    args: PayoutArgs; 
+    args: PayoutArgs;
+  };
+
+  public type RawPayout = {
+    refund_share: Float;
+    reward: ?Float;
   };
 
   public type PayoutArgs = {
     refund_share: Float;
     reward_tokens: ?Balance;
+  };
+
+  public type QuestionPayouts = {
+    author_payout: RawPayout;
+    creator_reward: ?Float;
   };
 
   public type TransactionsRecord = {
@@ -93,15 +103,10 @@ module {
     };
   };
 
-  public type QuestionPayouts = {
-    author_payout: PayoutArgs;
-    creator_reward: ?Balance;
-  };
-
   public type ITokenInterface = {
     transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
-    reapSubaccount: (subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) -> async* Trie<Principal, ?ReapAccountResult>;
-    mintBatch: (recipients: Buffer<MintRecipient>) -> async* Trie<Principal, ?MintResult>;
+    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountRecipient>) -> async* Trie<Principal, ?ReapAccountResult>;
+    mintBatch: (recipients: Iter<MintRecipient>) -> async* Trie<Principal, ?MintResult>;
     mint:(to: Principal, amount: Balance) -> async* MintResult;
   };
 

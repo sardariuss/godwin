@@ -184,11 +184,11 @@ actor GodwinToken {
 
     // Transfer each share to the corresponding account
     let results = Buffer.Buffer<(TransferArgs, TransferResult)>(num_recipients);
-    for ({account; share;} in args.to.vals()) {
+    for ((to, amount) in to_transfer.vals()) {
       let tranfer_args : TransferArgs = {
         from_subaccount = args.subaccount;
-        to = account;
-        amount = Int.abs(Float.toInt(Float.trunc(Float.fromInt(balance_without_fees) * share)));
+        to;
+        amount;
         fee = ?token._fee;
         memo = args.memo;
         created_at_time = null; // Has to be null because two transfers can't have the same timestamp

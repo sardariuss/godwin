@@ -6,7 +6,7 @@ import Map                 "mo:map/Map";
 
 import Principal           "mo:base/Principal";
 import Result              "mo:base/Result";
-import Buffer              "mo:base/Buffer";
+import Iter                "mo:base/Iter";
 import Float               "mo:base/Float";
 import Option              "mo:base/Option";
 import Debug               "mo:base/Debug";
@@ -18,7 +18,7 @@ module {
   // For convenience: from base module
   type Principal                = Principal.Principal;
   type Result<Ok, Err>          = Result.Result<Ok, Err>;
-  type Buffer<T>                = Buffer.Buffer<T>;
+  type Iter<T>                  = Iter.Iter<T>;
 
   type Map<K, V>                = Map.Map<K, V>;
   type Key<K>                   = Trie.Key<K>;
@@ -68,15 +68,15 @@ module {
       };
     };
 
-    public func payout(id: Id, recipients: Buffer<PayoutRecipient>) : async* () {
+    public func payout(id: Id, recipients: Iter<PayoutRecipient>) : async* () {
       // Refund the users
       let refunds = await* _token_interface.reapSubaccount(
         SubaccountGenerator.getSubaccount(_subaccount_prefix, id), 
-        Buffer.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountRecipient { { to; share = args.refund_share; }; })
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountRecipient { { to; share = args.refund_share; }; })
       );
       // Reward the users
       let rewards = await* _token_interface.mintBatch(
-        Buffer.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = Option.get(args.reward_tokens, 0); }; })
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
       // Watchout, this loop only iterates on the refunds, not the rewards.
       // It is assumed that if for a user there is no refund, then there is no reward.

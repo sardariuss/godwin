@@ -54,7 +54,7 @@ module {
   type ITokenInterface        = PayTypes.ITokenInterface;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type MintResult             = PayTypes.MintResult;
-  type PayoutArgs             = PayTypes.PayoutArgs;
+  type RawPayout              = PayTypes.RawPayout;
   type PayForNew              = PayForNew.PayForNew;
 
   type PayoutFunction         = PayToVote.PayoutFunction<Interest, Appeal>;
@@ -154,12 +154,25 @@ module {
       let (question_id, iteration) = _joins.getQuestionIteration(vote_id);
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
-      let { author_payout; creator_reward; } = _pay_rules.getQuestionPayouts(vote.aggregate, closure, iteration);
-      await* _pay_for_new.payout(vote_id, author_payout);
-      switch(creator_reward){
+      let price = if (iteration == 0) { 
+        _pay_rules.getPrices().open_vote_price_e8s; 
+      } else { 
+        _pay_rules.getPrices().reopen_vote_price_e8s; 
+      };
+      // Get the author raw payout
+      let author_payout = PayRules.attenuatePayout(
+        PayRules.computeQuestionAuthorPayout(closure, vote.aggregate), 
+        Map.size(vote.ballots),
+        1.0 // nominal share is the full refund
+      );
+      // Get the creator raw reward
+      let creator_reward = PayRules.deduceSubCreatorReward(author_payout);
+      
+      await* _pay_for_new.payout(vote_id, { author_payout with reward_tokens = PayRules.convertRewardToTokens(author_payout.reward, price); });
+      switch(PayRules.convertRewardToTokens(creator_reward, price)){
         case(null){};
-        case(?amount){
-          await* _reward_for_element.reward(vote_id, amount);
+        case(?reward){
+          await* _reward_for_element.reward(vote_id, reward);
         };
       };
     };
@@ -224,10 +237,10 @@ module {
   };
 
   func getPayoutFunction(pay_rules: PayRules) : PayoutFunction {
-    func(interest: Interest, appeal: Appeal, num_voters: Nat) : PayoutArgs {
+    func(interest: Interest, appeal: Appeal) : RawPayout {
       // @todo: the distribution shall not be computed every time the payout is calculated for a voter
       let distribution = PayRules.computeInterestDistribution(appeal);
-      pay_rules.getInterestVotePayout(distribution, num_voters, interest);
+      PayRules.computeInterestVotePayout(distribution, interest);
     };
   };
 

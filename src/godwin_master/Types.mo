@@ -38,15 +38,16 @@ module {
   public type ListSubUpgradesResults = [(Principal, SingleSubUpgradeResult)];
 
   public type SingleSubUpgradeResult = Result<(), FailedUpgradeError>;
+
+  public type RemoveSubResult = Result<Principal, RemoveSubError>;
   
   public type FailedUpgradeError = {
     code: Error.ErrorCode;
     message: Text;
   };
 
-  public type AddGodwinSubError = {
-    #NotAuthorized;
-    #AlreadyAdded;
+  public type RemoveSubError = AccessControlError or {
+    #SubNotFound;
   };
 
   public type CreateSubGodwinError = {

@@ -14,6 +14,7 @@ import Error       "mo:base/Error";
 import Array       "mo:base/Array";
 import Debug       "mo:base/Debug";
 import Trie        "mo:base/Trie";
+import Iter        "mo:base/Iter";
 
 module {
 
@@ -22,6 +23,7 @@ module {
   type Map<K, V>                      = Map.Map<K, V>;
   type Trie<K, V>                     = Trie.Trie<K, V>;
   type Key<K>                         = Trie.Key<K>;
+  type Iter<T>                        = Iter.Iter<T>;
   type Principal                      = Principal.Principal;
   func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
 
@@ -58,14 +60,14 @@ module {
     };
     
     // @todo: double ReapAccountRecipient types is confusing
-    public func reapSubaccount(subaccount: Blob, recipients: Buffer<ReapAccountRecipient>) : async* Trie<Principal, ?ReapAccountResult> {
+    public func reapSubaccount(subaccount: Blob, recipients: Iter<ReapAccountRecipient>) : async* Trie<Principal, ?ReapAccountResult> {
 
       var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<GodwinToken.ReapAccountRecipient>(recipients.size());
+      let to_accounts = Buffer.Buffer<GodwinToken.ReapAccountRecipient>(0);
 
-      for ({ to; share; }  in recipients.vals()){
+      for ({ to; share; } in recipients){
         if (share > 0.0) {
           // Add to the recipients 
           to_accounts.add({ account = getMasterAccount(?to); share; });
@@ -91,7 +93,7 @@ module {
 
       switch(reap_result) {
         case(#Err(err)) {    
-          for (recipient in recipients.vals()){
+          for (recipient in recipients){
             results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
           };
         };
@@ -108,14 +110,14 @@ module {
     };
 
     // @todo: double MintRecipient types is confusing
-    public func mintBatch(recipients: Buffer<MintRecipient>) : async* Trie<Principal, ?MintResult> {
+    public func mintBatch(recipients: Iter<MintRecipient>) : async* Trie<Principal, ?MintResult> {
 
       var results : Trie<Principal, ?MintResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<GodwinToken.MintRecipient>(recipients.size());
+      let to_accounts = Buffer.Buffer<GodwinToken.MintRecipient>(0);
 
-      for ({ to; amount; } in recipients.vals()){
+      for ({ to; amount; } in recipients){
         if (amount > 0) {
         // Add to the recipients 
         to_accounts.add({ account = getMasterAccount(?to); amount; });
@@ -139,7 +141,7 @@ module {
 
       switch(mint_batch) {
         case(#err(err)) {    
-          for (recipient in recipients.vals()){
+          for (recipient in recipients){
             results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
           };
         };

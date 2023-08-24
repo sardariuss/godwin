@@ -116,127 +116,85 @@ suite("Pay rules module test suite", func() {
 
   test("Test computation of opened question payout", func () {
 
-    let empty_appeal = { ups = 0; downs = 0; score = 0.0; negative_score_date = null; hot_timestamp = 0.0; hotness = 0.0; };
-   
-    let price_register = {
-      open_vote_price_e8s           = 2000;
-      reopen_vote_price_e8s         = 1000;
-      interest_vote_price_e8s       = 100;
-      categorization_vote_price_e8s = 300;
-    };
-
     test("Test payout when the question has been censored", func () {
-      for (iteration in Array.vals([0, 1, 2])) { // The iteration shall not matter
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #CENSORED, iteration),
-          { refund_share = 0.0; reward_tokens = null; },
-          Testify.payoutArgs.equal
-        );
-      };
+      compare(
+        PayRules.computeQuestionAuthorPayout(#CENSORED, { score = 0.0; }),
+        { refund_share = 0.0; reward = null; },
+        Testify.rawPayout.equal
+      );
     });
 
     test("Test payout when the question has timed-out", func () {
-      for (iteration in Array.vals([0, 1, 2])) { // The iteration shall not matter
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #TIMED_OUT, iteration),
-          { refund_share = 1.0; reward_tokens = null; },
-          Testify.payoutArgs.equal
-        );
-      };
+      compare(
+        PayRules.computeQuestionAuthorPayout(#TIMED_OUT, { score = 0.0; }),
+        { refund_share = 1.0; reward = null; },
+        Testify.rawPayout.equal
+      );
     });
 
     // Uncomment this test shall trap
 //    test("Test payout below the minimum score shall trap", func() {
 //      compare(
-//        PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 0.0}), 0), // @todo: minimum score should not be a magic number
-//        { refund_share = 1.0; reward_tokens = ?0; },
-//        Testify.payoutArgs.equal
+//        PayRules.computeQuestionAuthorPayout(#SELECTED, { score = 0.0; }), // @todo: minimum score should not be a magic number
+//        { refund_share = 1.0; reward = ?0.0; },
+//        Testify.rawPayout.equal
 //      );
 //    });
 
     test("Test payout when the question has been selected, but the score is the minimum", func () {
-      for (iteration in Array.vals([0, 1, 2])) { // The iteration shall not matter
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 1.0}), iteration), // @todo: minimum score should not be a magic number
-          { refund_share = 1.0; reward_tokens = ?0; },
-          Testify.payoutArgs.equal
-        );
-      };
-    });
-
-    test("Test few payouts when the question has been selected for the first iteration", func () {
       compare(
-        PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 9.0}), 0), 
-        { refund_share = 1.0; reward_tokens = ?4000; }, // ((sqrt(9) - 1 * 2000) = 2 * 2000 = 4000
-        Testify.payoutArgs.equal
-      );
-      compare(
-        PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 4.0}), 0), 
-        { refund_share = 1.0; reward_tokens = ?2000; }, // ((sqrt(4) - 1 * 2000) = 1 * 2000 = 2000
-        Testify.payoutArgs.equal
-      );
-      compare(
-        PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 144.0}), 0), 
-        { refund_share = 1.0; reward_tokens = ?22000; }, // ((sqrt(144) - 1 * 2000) = 11 * 2000 = 22000
-        Testify.payoutArgs.equal
+        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 1.0}), // @todo: minimum score should not be a magic number
+        { refund_share = 1.0; reward = ?0.0; },
+        Testify.rawPayout.equal
       );
     });
 
-    test("Test few payouts when the question has been reopened", func () {
-      for (iteration in Array.vals([1, 2, 3])) {
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 9.0}), iteration), 
-          { refund_share = 1.0; reward_tokens = ?2000; }, // ((sqrt(9) - 1 * 2000) = 2 * 1000 = 2000
-          Testify.payoutArgs.equal
-        );
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 4.0}), iteration), 
-          { refund_share = 1.0; reward_tokens = ?1000; }, // ((sqrt(4) - 1 * 2000) = 1 * 1000 = 1000
-          Testify.payoutArgs.equal
-        );
-        compare(
-          PayRules.computeQuestionAuthorPayout(price_register, #SELECTED({score = 144.0}), iteration), 
-          { refund_share = 1.0; reward_tokens = ?11000; }, // ((sqrt(144) - 1 * 2000) = 11 * 1000 = 11000
-          Testify.payoutArgs.equal
-        );
-      };
+    test("Test few payouts when the question has been selected", func () {
+      compare(
+        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 9.0}), 
+        { refund_share = 1.0; reward = ?2.0; }, // sqrt(9) - 1 = 2 
+        Testify.rawPayout.equal
+      );
+      compare(
+        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 4.0}), 
+        { refund_share = 1.0; reward = ?1.0; }, // sqrt(4) - 1 = 1
+        Testify.rawPayout.equal
+      );
+      compare(
+        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 144.0}), 
+        { refund_share = 1.0; reward = ?11.0; }, // sqrt(144) - 1 = 11
+        Testify.rawPayout.equal
+      );
     });
 
-    test("Test that if the author's reward is null, the creator's reward is also null", func () {
-      for(ratio in Array.vals([0.1, 0.5, 0.9])) {
-        compare(
-          PayRules.computeQuestionCreatorReward(ratio, { refund_share = 1.0; reward_tokens = null; }),
-          null,
-          optionalTestify(Testify.nat.equal));
-      };
-    });
-    
-    test("Test that if the author's reward is not null, the creator get the right ratio of it", func () {
-      compare(
-        PayRules.computeQuestionCreatorReward(0.1, { refund_share = 1.0; reward_tokens = ?1000; }),
-        ?100,
-        optionalTestify(Testify.nat.equal));
-      compare(
-        PayRules.computeQuestionCreatorReward(0.25, { refund_share = 1.0; reward_tokens = ?200; }),
-        ?50,
-        optionalTestify(Testify.nat.equal));
-      compare(
-        PayRules.computeQuestionCreatorReward(0.5, { refund_share = 1.0; reward_tokens = ?666; }),
-        ?333,
-        optionalTestify(Testify.nat.equal));
-    });
+  // @todo: To reactivate when the ratio is not hardcoded
+//    test("Test that if the author's reward is null, the creator's reward is also null", func () {
+//      for(ratio in Array.vals([0.1, 0.5, 0.9])) {
+//        compare(
+//          PayRules.deduceSubCreatorReward(ratio, { refund_share = 1.0; reward = null; }),
+//          null,
+//          optionalTestify(Testify.nat.equal));
+//      };
+//    });
+//    test("Test that if the author's reward is not null, the creator get the right ratio of it", func () {
+//      compare(
+//        PayRules.deduceSubCreatorReward(0.1, { refund_share = 1.0; reward_tokens = 0.1; }),
+//        ?0.01,
+//        optionalTestify(Testify.nat.equal));
+//      compare(
+//        PayRules.deduceSubCreatorReward(0.25, { refund_share = 1.0; reward_tokens = 0.2; }),
+//        ?0.05,
+//        optionalTestify(Testify.nat.equal));
+//      compare(
+//        PayRules.deduceSubCreatorReward(0.5, { refund_share = 1.0; reward_tokens = 0.666; }),
+//        ?0.333,
+//        optionalTestify(Testify.nat.equal));
+//    });
 
   });
 
   test("Test computation of interest vote question payout", func () {
    
-    let price_register = {
-      open_vote_price_e8s           = 2000;
-      reopen_vote_price_e8s         = 1000;
-      interest_vote_price_e8s       = 100;
-      categorization_vote_price_e8s = 300;
-    };
-
     let { coef; } = PayRules.INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
 
     let shares_array = [
@@ -252,14 +210,14 @@ suite("Pay rules module test suite", func() {
     test("Test that if the distribution reward is 0, the voter gets a null reward and the corresponding share", func () {
       for (shares in Array.vals(shares_array)){
         compare(
-          PayRules.computeInterestVotePayout(price_register, { shares; reward_ratio = 0.0; }, #UP),
-          { refund_share = shares.up; reward_tokens = null; },
-          Testify.payoutArgs.equal
+          PayRules.computeInterestVotePayout({ shares; reward_ratio = 0.0; }, #UP),
+          { refund_share = shares.up; reward = null; },
+          Testify.rawPayout.equal
         );
         compare(
-          PayRules.computeInterestVotePayout(price_register, { shares; reward_ratio = 0.0; }, #DOWN),
-          { refund_share = shares.down; reward_tokens = null; },
-          Testify.payoutArgs.equal
+          PayRules.computeInterestVotePayout({ shares; reward_ratio = 0.0; }, #DOWN),
+          { refund_share = shares.down; reward = null; },
+          Testify.rawPayout.equal
         );
       };
     });
@@ -268,24 +226,18 @@ suite("Pay rules module test suite", func() {
       for (shares in Array.vals(shares_array)){
         for (reward_ratio in Array.vals(reward_ratios)){
           do {
-            let { refund_share; reward_tokens } = PayRules.computeInterestVotePayout(price_register, { shares; reward_ratio; }, #UP);
+            let { refund_share; reward; } = PayRules.computeInterestVotePayout({ shares; reward_ratio; }, #UP);
             compare(refund_share, shares.up, Testify.float.equal);
-            assert(Option.isSome(reward_tokens));
+            assert(Option.isSome(reward));
           }; 
           do {
-            let { refund_share; reward_tokens } = PayRules.computeInterestVotePayout(price_register, { shares; reward_ratio; }, #DOWN);
+            let { refund_share; reward; } = PayRules.computeInterestVotePayout({ shares; reward_ratio; }, #DOWN);
             compare(refund_share, shares.down, Testify.float.equal);
-            assert(Option.isSome(reward_tokens));
+            assert(Option.isSome(reward));
           }; 
         };
       };
     });
-  });
-
-  test("Test computation of category share", func () {
-    let { refund; reward; } = PayRules.computeCategoryShare(0.0, 0.0);
-    compare(refund, 1.0, Testify.float.equal);
-    compare(reward, 0.0, Testify.float.equal);
   });
 
   // @todo: categorization payout

@@ -11,7 +11,7 @@ import Map                 "mo:map/Map";
 import Result              "mo:base/Result";
 import Debug               "mo:base/Debug";
 import Nat                 "mo:base/Nat";
-import Buffer              "mo:base/Buffer";
+import Array               "mo:base/Array";
 import Iter                "mo:base/Iter";
 import Trie                "mo:base/Trie";
 import Principal           "mo:base/Principal";
@@ -88,7 +88,7 @@ module {
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      let reap_result = await* _token_interface.reapSubaccount(subaccount, Buffer.fromArray<ReapAccountRecipient>([{to; share = args.refund_share;}]));
+      let reap_result = await* _token_interface.reapSubaccount(subaccount, Array.vals<ReapAccountRecipient>([{to; share = args.refund_share;}]));
       let refund = Option.chain(Trie.get(reap_result, key(to), Principal.equal), func(res: ?ReapAccountResult) : ?ReapAccountResult { res; });
       let reward = switch(args.reward_tokens){
         case(?amount) { ?(await* _token_interface.mint(to, amount)); };
