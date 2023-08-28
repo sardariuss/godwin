@@ -1,5 +1,6 @@
 import Types               "Types";
 
+import PayRules             "../PayRules";
 import PayForElement        "../token/PayForElement";
 import PayTypes             "../token/Types";
 
@@ -23,11 +24,12 @@ module {
   type Vote<T, A>             = Types.Vote<T, A>;
 
   type PayoutRecipient        = PayTypes.PayoutRecipient;
+  type RawPayout              = PayTypes.RawPayout;
   type PayoutArgs             = PayTypes.PayoutArgs;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type Balance                = PayTypes.Balance;
 
-  public type PayoutFunction<T, A> = (T, A, Nat) -> PayoutArgs;
+  public type PayoutFunction<T, A> = (T, A) -> RawPayout;
 
   public class PayToVote<T, A>(
     _pay_for_element: PayForElement.PayForElement,
@@ -43,15 +45,37 @@ module {
     };
 
     public func payout(vote: Vote<T, A>) : async* () {
-      // Compute the recipients with their share
-      let recipients = Buffer.Buffer<PayoutRecipient>(0);
-      for ((principal, ballot) in Map.entries(vote.ballots)) {
-        recipients.add({ to = principal; args = _compute_payout(ballot.answer, vote.aggregate, Map.size(vote.ballots)); });
+
+      let number_voters = Map.size(vote.ballots);
+      if (number_voters == 0) {
+        return;
       };
-      if (recipients.size() > 0) {
-        // Payout the recipients
-        await* _pay_for_element.payout(vote.id, recipients);
+
+      // Compute the raw payouts and accumulate the sum of shares
+      // WATCHOUT, it seems that there is a bug with Map.map that replaces 
+      // the principals to anonymous principals, use a loop instead
+      var sum_shares = 0.0;
+      let raw_payouts = Map.new<Principal, RawPayout>(Map.phash);
+      for ((principal, ballot) in Map.entries(vote.ballots)){
+        let raw_payout = _compute_payout(ballot.answer, vote.aggregate);
+        sum_shares += raw_payout.refund_share;
+        Map.set(raw_payouts, Map.phash, principal, raw_payout);
       };
+
+      let recipients = Map.new<Principal, PayoutRecipient>(Map.phash);
+      for ((principal, raw_payout) in Map.entries(raw_payouts)){
+        // Normalize the refund shares, so that the sum of shares makes 1
+        let normalized_payout = { raw_payout with refund_share = raw_payout.refund_share / sum_shares; }; 
+        // Attenuate the payout
+        let attenuated_payout = PayRules.attenuatePayout(normalized_payout, number_voters, 1.0 / Float.fromInt(number_voters));
+        // Convert the reward in tokens
+        let payout_args = { attenuated_payout with reward_tokens = PayRules.convertRewardToTokens(attenuated_payout.reward, _get_payin_price()); };
+        // Return the full recipient (required by the payout function)
+        Map.set(recipients, Map.phash, principal, { to = principal; args = payout_args; });
+      };
+
+      // Payout the recipients
+      await* _pay_for_element.payout(vote.id, Map.vals(recipients));
     };
 
     public func findTransactionsRecord(principal: Principal, id: VoteId) : ?TransactionsRecord {

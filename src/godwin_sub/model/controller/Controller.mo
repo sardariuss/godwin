@@ -95,7 +95,7 @@ module {
         categories = Iter.toArray(_model.getCategories().entries());
         selection_parameters = _model.getSelectionParameters();
         scheduler_parameters = _model.getSchedulerParameters();
-        prices = _model.getPayRules().getPrices();
+        prices = _model.getSubPrices().getPrices();
         momentum = _model.getSubMomentum().get();
       };
     };
@@ -109,14 +109,14 @@ module {
     public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setSelectionParameters(params);
-        _model.getPayRules().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
+        _model.getSubPrices().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
       });
     };
 
     public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setBasePriceParameters(params);
-        _model.getPayRules().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
+        _model.getSubPrices().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
       });
     };
 

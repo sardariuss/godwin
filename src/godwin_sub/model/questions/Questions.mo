@@ -162,7 +162,6 @@ module {
       for (question in iter()) {
         let lower_text = TextUtils.toLowerCase(question.text, lower_case_array);
         let match_count = TextUtils.matchCount(lower_text, lower_text);
-        Debug.print("Match count for " # Nat.toText(question.id) # ": " # Nat.toText(match_count) # "\n");
         heap.put({ count = match_count; id = question.id; });
       };
 

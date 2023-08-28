@@ -375,7 +375,11 @@ module {
     #InsufficientFunds : { balance : Balance; };
     #NoRecipients;
     #NegativeShare: GodwinTokenReapAccountRecipient;
-    #DivisionByZero : { sum_shares : Float; };
+    #BalanceExceeded: { 
+      sum_shares: Float;
+      total_amount: Balance;
+      balance_without_fees: Balance;
+    };
   };
   public type GodwinTokenReapAccountRecipient = {
     account : Account;

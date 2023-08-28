@@ -2,12 +2,8 @@ import SubMomentum   "SubMomentum";
 import PayTypes      "token/Types";
 import VoteTypes     "votes/Types";
 import Polarization  "votes/representation/Polarization";
-import Types         "../stable/Types";
 
-import Ref           "../utils/Ref";
-import WRef          "../utils/wrappers/WRef";
 import Math          "../utils/Math";
-import Duration      "../utils/Duration";
 
 import Trie          "mo:base/Trie";
 import Debug         "mo:base/Debug";
@@ -18,12 +14,6 @@ import Option        "mo:base/Option";
 
 module {
 
-  type Ref<K>               = Ref.Ref<K>;
-  type WRef<K>              = WRef.WRef<K>;
-
-  type BasePriceParameters  = Types.Current.BasePriceParameters;
-  type SelectionParameters  = Types.Current.SelectionParameters;
-  type PriceRegister        = Types.Current.PriceRegister;
   type Appeal               = VoteTypes.Appeal;
   type Interest             = VoteTypes.Interest;
   type CursorMap            = VoteTypes.CursorMap;
@@ -34,6 +24,7 @@ module {
   type InterestVoteClosure  = VoteTypes.InterestVoteClosure;
   type InterestDistribution = VoteTypes.InterestDistribution;
   type Balance              = PayTypes.Balance;
+  type RawPayout            = PayTypes.RawPayout;
   type PayoutArgs           = PayTypes.PayoutArgs;
   type QuestionPayouts      = PayTypes.QuestionPayouts;
 
@@ -76,19 +67,8 @@ module {
   // Allow to specify only what's required to compute the interest distribution
   type ReducedAppeal = {ups: Nat; downs: Nat};
 
-  // This type is used by the function computeQuestionAuthorPayouts
-  type ClosureInfo = {
-    #CENSORED;
-    #TIMED_OUT;
-    #SELECTED: { score : Float; };
-  };
-
-  func toClosureInfo(closure: InterestVoteClosure, appeal: Appeal) : ClosureInfo {
-    switch (closure) {
-      case(#CENSORED)   { #CENSORED;                          };
-      case(#TIMED_OUT)  { #TIMED_OUT;                         };
-      case(#SELECTED)   { #SELECTED{ score = appeal.score; }; };
-    };
+  public func convertRewardToTokens(reward: ?Float, price: Balance) : ?Balance {
+    Option.map(reward, func(r: Float) : Balance { Int.abs(Float.toInt(r * Float.fromInt(price))); });
   };
 
   // see www.desmos.com/calculator/lejulppdny
@@ -98,6 +78,8 @@ module {
 
     // Prevent division by 0
     if (ups + downs == 0){ Debug.trap("Cannot compute interest distribution: there is 0 voter"); };
+
+    let total = Float.fromInt(ups + downs);
 
     let { winners; loosers; } = if (ups >= downs){ 
       { winners = Float.fromInt(ups);   loosers = Float.fromInt(downs); };
@@ -109,8 +91,8 @@ module {
     let winner_share = 1.0 + (1.0 - looser_share) * looser_share;
 
     let shares = {
-      up   = if (ups >= downs){ winner_share; } else { looser_share; };
-      down = if (ups >= downs){ looser_share; } else { winner_share; };
+      up   = if (ups >= downs){ winner_share / total; } else { looser_share / total; };
+      down = if (ups >= downs){ looser_share / total; } else { winner_share / total; };
     };
 
     let { LOGIT_NORMAL_PDF_PARAMS; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
@@ -120,94 +102,45 @@ module {
     { shares; reward_ratio; };
   };
 
-  public func computeSubPrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) : PriceRegister {
-    let { base_selection_period; reopen_vote_price_e8s; open_vote_price_e8s; interest_vote_price_e8s; categorization_vote_price_e8s; } = base_price_params;
-    let { selection_period } = selection_params;
-    let coef = Float.fromInt(Duration.toTime(selection_period)) / Float.fromInt(Duration.toTime(base_selection_period));
-    return {
-      open_vote_price_e8s           = Int.abs(Float.toInt(Float.fromInt(open_vote_price_e8s          ) * coef));
-      reopen_vote_price_e8s         = Int.abs(Float.toInt(Float.fromInt(reopen_vote_price_e8s        ) * coef));
-      interest_vote_price_e8s       = Int.abs(Float.toInt(Float.fromInt(interest_vote_price_e8s      ) * coef));
-      categorization_vote_price_e8s = Int.abs(Float.toInt(Float.fromInt(categorization_vote_price_e8s) * coef));
-    };
-  };
-
-  public func build(price_register: Ref<PriceRegister>) : PayRules {
-    PayRules(WRef.WRef(price_register));
-  };
-
-  public class PayRules(_price_register: WRef<PriceRegister>) {
-
-    public func updatePrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) {
-      _price_register.set(computeSubPrices(base_price_params, selection_params));
-    };
-
-    public func getPrices() : PriceRegister {
-      _price_register.get();
-    };
-
-    public func getQuestionPayouts(appeal: Appeal, closure: InterestVoteClosure, iteration: Nat) : QuestionPayouts {
-      let author_payout = attenuatePayout(computeQuestionAuthorPayout(getPrices(), toClosureInfo(closure, appeal), iteration), appeal.ups + appeal.downs);
-      let creator_reward = computeQuestionCreatorReward(OPENED_QUESTION_PAYOUT_PARAMS.CREATOR_REWARD_EXTRA_RATIO, author_payout);
-      { author_payout; creator_reward; };
-    };
-
-    public func getInterestVotePayout(distribution: InterestDistribution, num_voters: Nat, ballot: Interest) : PayoutArgs {
-      attenuatePayout(computeInterestVotePayout(getPrices(), distribution, ballot), num_voters);
-    };
-
-    public func getCategorizationPayout(ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
-      attenuatePayout(computeCategorizationPayout(getPrices(), ballot, result, num_voters), num_voters);
-    };
-
-  };
-
   // see www.desmos.com/calculator/vkyld4yntw
-  public func computeQuestionAuthorPayout(price_register: PriceRegister, closure_info: ClosureInfo, iteration: Nat) : PayoutArgs {
-    switch(closure_info){
+  public func computeQuestionAuthorPayout(closure: InterestVoteClosure, appeal : { score : Float; }) : RawPayout {
+    switch(closure){
       case(#CENSORED){
         // If the question has been censored, no refund and no reward
-        { refund_share = 0.0; reward_tokens = null; };
+        { refund_share = 0.0; reward = null; };
       };
       case(#TIMED_OUT){
         // If the question has timed out, refund the price it took to open the question, but no reward
-        { refund_share = 1.0; reward_tokens = null; };
+        { refund_share = 1.0; reward = null; };
       };
-      case(#SELECTED({score})){
+      case(#SELECTED){
+        let { score } = appeal;
         // @todo: the minimum score shall be a hardcoded parameter, not a magic number
-        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score is must be superior than 1"); };
+        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score must be superior than 1"); };
         // If the question has been selected, reward the price it took to open the question
         // multiplied by the square root of the score
-        let price_e8s = if (iteration == 0) { price_register.open_vote_price_e8s; } else { price_register.reopen_vote_price_e8s; };
-        { refund_share = 1.0; reward_tokens = ?Int.abs(Float.toInt((Float.sqrt(score) - 1.0) * Float.fromInt(price_e8s))); };
+        { refund_share = 1.0; reward = ?(Float.sqrt(score) - 1.0); };
       };
     };
   };
 
-  public func computeQuestionCreatorReward(creator_ratio: Float, author_payout: PayoutArgs) : ?Balance {
+  public func deduceSubCreatorReward(author_payout: RawPayout) : ?Float {
     // If the author got any reward, the creator gets a percentage of it
-    Option.map(author_payout.reward_tokens, func(amount: Balance) : Balance {
-      Int.abs(Float.toInt(Float.fromInt(amount) * creator_ratio));
-    });
+    Option.map(author_payout.reward, func(reward: Float) : Float { reward * OPENED_QUESTION_PAYOUT_PARAMS.CREATOR_REWARD_EXTRA_RATIO; });
   };
 
-  public func computeInterestVotePayout(price_register: PriceRegister, distribution: InterestDistribution, ballot: Interest) : PayoutArgs {
+  public func computeInterestVotePayout(distribution: InterestDistribution, ballot: Interest) : RawPayout {
 
     let { shares; reward_ratio; } = distribution;
     let { coef; } = INTEREST_PAYOUT_PARAMS.REWARD_PARAMS;
-    let price_e8s = price_register.interest_vote_price_e8s;
 
     {
       refund_share  = switch(ballot){ case(#UP) shares.up; case(#DOWN) shares.down; };
-      reward_tokens = if (reward_ratio > 0.0) { ?Int.abs(Float.toInt(coef * reward_ratio * Float.fromInt(price_e8s))) } else { null; };
+      reward = if (reward_ratio > 0.0) { ?(coef * reward_ratio); } else { null; };
     };
   };
 
-  public func computeCategorizationPayout(price_register: PriceRegister, ballot: CursorMap, result: PolarizationMap, num_voters: Nat) : PayoutArgs {
-
-    if (num_voters == 0){
-      Debug.trap("It is impossible to payout voters if there is no voter");
-    };
+  public func computeCategorizationPayout(ballot: CursorMap, result: PolarizationMap) : RawPayout {
 
     let accumulate_payout = func(category: Category, result: Polarization, payout: Payout) : Payout {
       sumPayouts(payout, switch(Trie.get(ballot, key(category), Text.equal)){
@@ -221,16 +154,14 @@ module {
     if (payout.refund < 0.0){ Debug.trap("Negative refund"); };
     if (payout.reward < 0.0){ Debug.trap("Negative reward"); };
 
-    let price_e8s = price_register.categorization_vote_price_e8s;
-
     {
       refund_share = payout.refund;
-      reward_tokens = ?Int.abs(Float.toInt(payout.reward * Float.fromInt(price_e8s)));
+      reward = ?(payout.reward);
     };
   };
 
   // see www.desmos.com/calculator/voiqqttaog
-  func computeCategoryShare(answer: Cursor, result: Cursor) : Payout {
+  public func computeCategoryShare(answer: Cursor, result: Cursor) : Payout {
 
     let { SIDE_CONTRIBUTION_LIMIT; LOGIT_NORMAL_CDF_PARAMS; } = CATEGORIZATION_PAYOUT_PARAMS;
 
@@ -252,22 +183,20 @@ module {
   };
 
   // see www.desmos.com/calculator/iv87gjyqlx
-  func attenuatePayout(payout: PayoutArgs, num_voters: Nat) : PayoutArgs {
+  public func attenuatePayout(payout: RawPayout, num_voters: Nat, nominal_share: Float) : RawPayout {
     
-    // Return the original payout if there is no voter
+    // Return the original payout if there is no voter, also prevent dividing by 0
     if (num_voters == 0){ return payout; };
 
-    let { refund_share; reward_tokens; } = payout;
+    let { refund_share; reward; } = payout;
     let { coef; exponent; } = ATTENUATE_MODIFIER_PARAMS;
 
     let log_num_voters = Float.log(Float.fromInt(num_voters));
     let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
 
     {
-      refund_share  = refund_share * confidence + 1.0 * (1.0 - confidence);
-      reward_tokens = Option.map(reward_tokens, func(amount: Balance) : Balance {
-        Int.abs(Float.toInt(Float.fromInt(amount) * confidence));
-      });
+      refund_share  = confidence * refund_share  + (1.0 - confidence) * nominal_share;
+      reward = Option.map(reward, func(r: Float) : Float { r * confidence; });
     };
   };
 

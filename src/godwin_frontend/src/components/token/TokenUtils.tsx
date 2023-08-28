@@ -44,7 +44,7 @@ export const reapAccountErrorToString = (err: ReapAccountError) : string => {
   if(err['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
   if(err['BadBurn']                !== undefined) return 'BadBurn';            // { 'min_burn_amount' : Balance } }
   if(err['Duplicate']              !== undefined) return 'Duplicate';          // { 'duplicate_of' : TxIndex } }
-  if(err['DivisionByZero']         !== undefined) return 'DivisionByZero';     // { 'sum_shares' : number } }
+  if(err['BalanceExceeded']        !== undefined) return 'BalanceExceeded : sum_shares = ' + err['BalanceExceeded']['sum_shares'].toString();     // { 'sum_shares' : number } }
   if(err['SingleReapLost']         !== undefined) return 'SingleReapLost';     // { 'subgodwin_subaccount' : Subaccount__1, 'share' : number,}}
   if(err['NoRecipients']           !== undefined) return 'NoRecipients';
   if(err['SingleTransferError']    !== undefined) return 'SingleTransferError';// { 'args' : TransferArgs, 'error' : TransferError }}

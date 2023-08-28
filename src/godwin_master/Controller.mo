@@ -40,6 +40,7 @@ module {
   type AccessControlError     = Types.AccessControlError;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
   type SingleSubUpgradeResult = Types.SingleSubUpgradeResult;
+  type RemoveSubResult        = Types.RemoveSubResult;
   type MintBatchResult        = Types.MintBatchResult;
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
@@ -185,6 +186,22 @@ module {
       };
 
       #ok(Buffer.toArray(update_results));
+    };
+
+    public func removeSub(caller: Principal, identifier: Text) : RemoveSubResult {
+      switch(verifyAuthorizedAccess(caller, #ADMIN)){
+        case(#err(err)) { return #err(err); };
+        case(#ok()) {};
+      };
+
+      switch(_model.getSubGodwins().find(func(p: Principal, id: Text) : Bool { id == identifier; })){
+        case(null) { return #err(#SubNotFound); };
+        case(?(principal, _)) {
+          // @todo: remove cycles, delete the canister
+          _model.getSubGodwins().delete(principal);
+          #ok(principal);
+        };
+      };
     };
 
     public func listSubGodwins() : [(Principal, Text)] {

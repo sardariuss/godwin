@@ -9,7 +9,7 @@ import Interests              "../../model/votes/Interests";
 import Categorizations        "../../model/votes/Categorizations";
 import Opinions               "../../model/votes/Opinions";
 import Joins                  "../../model/votes/QuestionVoteJoins";
-import PayRules               "../../model/PayRules";
+import SubPrices               "../../model/SubPrices";
 
 import Ref                    "../../utils/Ref";
 
@@ -62,7 +62,7 @@ module {
         selection_score = selection.minimum_score;
         last_pick = null;
       });
-      price_register              = Ref.init<PriceRegister>(PayRules.computeSubPrices(price_parameters, selection));
+      price_register              = Ref.init<PriceRegister>(SubPrices.computeSubPrices(price_parameters, selection));
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);
       };

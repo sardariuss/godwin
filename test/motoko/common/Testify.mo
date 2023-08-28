@@ -34,7 +34,8 @@ module {
   type InterestDistribution = VoteTypes.InterestDistribution;
   type RealNumber           = UtilsTypes.RealNumber;
   type PayoutArgs           = PayTypes.PayoutArgs;
-  type QuestionPayouts = PayTypes.QuestionPayouts;
+  type QuestionPayouts      = PayTypes.QuestionPayouts;
+  type RawPayout            = PayTypes.RawPayout;
   type PriceRegister        = Types.Current.PriceRegister;
   
   let FLOAT_EPSILON : Float = 1e-12;
@@ -138,9 +139,19 @@ module {
     "reward_tokens = " # optToText(p.reward_tokens, Nat.toText);
   };
 
+  func rawPayoutToText(p: RawPayout) : Text {
+    "refund_share = "  # Float.toText(p.refund_share) # ", " #
+    "reward = " # optToText(p.reward, Float.toText);
+  };
+
   func payoutArgsEqual(p1: PayoutArgs, p2: PayoutArgs) : Bool {
     Float.equalWithin(p1.refund_share, p2.refund_share, FLOAT_EPSILON) and
     optEqual(p1.reward_tokens, p2.reward_tokens, Nat.equal);
+  };
+
+  func rawPayoutEqual(p1: RawPayout, p2: RawPayout) : Bool {
+    Float.equalWithin(p1.refund_share, p2.refund_share, FLOAT_EPSILON) and
+    optEqual(p1.reward, p2.reward, equalFloat);
   };
 
   /// Submodule of primitive testify functions (excl. 'Any', 'None' and 'Null').
@@ -451,15 +462,19 @@ module {
       equal : Testify<PayoutArgs> = { toText = payoutArgsToText; compare = payoutArgsEqual; };
     };
 
+    public let rawPayout = {
+      equal : Testify<RawPayout> = { toText = rawPayoutToText; compare = rawPayoutEqual; };
+    };
+
     public let openedQuestionPayout = {
       equal : Testify<QuestionPayouts> = {
         toText = func(p: QuestionPayouts) : Text {
-          "author_payout = " # payoutArgsToText(p.author_payout) # ", " #
-          "creator_reward = " # optToText(p.creator_reward, Nat.toText);
+          "author_payout = " # rawPayoutToText(p.author_payout) # ", " #
+          "creator_reward = " # optToText(p.creator_reward, Float.toText);
         };
         compare = func(p1: QuestionPayouts, p2: QuestionPayouts) : Bool {
-          payoutArgsEqual(p1.author_payout, p2.author_payout) and
-          optEqual(p1.creator_reward, p2.creator_reward, Nat.equal);
+          rawPayoutEqual(p1.author_payout, p2.author_payout) and
+          optEqual(p1.creator_reward, p2.creator_reward, Float.equal);
         };
       };
     };

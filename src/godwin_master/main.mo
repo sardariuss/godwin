@@ -29,6 +29,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   type TransferResult         = Types.TransferResult;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
   type MintBatchResult        = Types.MintBatchResult;
+  type RemoveSubResult        = Types.RemoveSubResult;
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
   type AccessControlError     = Types.AccessControlError;
@@ -93,6 +94,10 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
 
   public shared({caller}) func upgradeAllSubs(args: SubMigrationArgs) : async UpgradeAllSubsResult {
     await getController().upgradeAllSubs(caller, args);
+  };
+
+  public shared({caller}) func removeSub(identifier: Text) : async RemoveSubResult {
+    getController().removeSub(caller, identifier);
   };
 
   public query func listSubGodwins() : async [(Principal, Text)] {

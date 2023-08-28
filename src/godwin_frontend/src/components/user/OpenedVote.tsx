@@ -41,11 +41,11 @@ const OpenedVote = ({sub, principal, opened_vote} : OpenedVoteInput) => {
           <div> { opened_vote.iteration > 0 ? ("Reopened (" + (Number(opened_vote.iteration) + 1).toString() + ")") : "Author" } </div>
         </div>
         <div className="col-span-1 justify-self-start text-sm">
-          <div> { timeAgo(new Date(Number(opened_vote.date) / 1000000)) }  </div>
+          <div> { timeAgo(new Date(Number(opened_vote.date) / 1000000)) } </div>
         </div>
         <div className="col-span-8 flex flex-col justify-between w-full space-y-2 justify-start text-sm font-normal break-words">
         {
-          opened_vote.question === undefined ?
+          fromNullable(opened_vote.question) === undefined ?
           <div className="italic text-gray-600 dark:text-gray-400 text-xs">
             { CONSTANTS.HELP_MESSAGE.DELETED_QUESTION }
           </div> :
