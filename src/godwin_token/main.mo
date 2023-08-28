@@ -35,7 +35,6 @@ actor GodwinToken {
   type ReapAccountResult       = Types.ReapAccountResult;
   type ReapAccountRecipient    = Types.ReapAccountRecipient;
   type ReapAccountArgs         = Types.ReapAccountArgs;
-  type MintRecipient           = Types.MintRecipient;
   type MintBatchArgs           = Types.MintBatchArgs;
   type MintBatchResult         = Types.MintBatchResult;
 

@@ -1,7 +1,7 @@
 import StatusManager       "StatusManager";
 import SubMomentum         "SubMomentum";
 import Categories          "Categories";
-import PayRules            "PayRules";
+import SubPrices           "SubPrices";
 import Categorizations     "votes/Categorizations";
 import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
@@ -29,7 +29,7 @@ module {
   type BasePriceParameters  = Types.Current.BasePriceParameters;
   
   type Categories           = Categories.Categories;
-  type PayRules             = PayRules.PayRules;
+  type SubPrices            = SubPrices.SubPrices;
   type Questions            = Questions.Questions;
   type QuestionQueries      = QuestionTypes.QuestionQueries;
   type StatusManager        = StatusManager.StatusManager;
@@ -47,7 +47,7 @@ module {
     _selection_parameters: WRef<SelectionParameters>,
     _base_price_parameters: WRef<BasePriceParameters>,
     _categories: Categories,
-    _pay_rules: PayRules,
+    _sub_prices: SubPrices,
     _questions: Questions,
     _status_manager: StatusManager,
     _sub_momentum: SubMomentum,
@@ -107,8 +107,8 @@ module {
       _categories;
     };
 
-    public func getPayRules() : PayRules {
-      _pay_rules;
+    public func getSubPrices() : SubPrices {
+      _sub_prices;
     };
 
     public func getQuestions() : Questions {

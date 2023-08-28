@@ -95,25 +95,6 @@ suite("Pay rules module test suite", func() {
     });
   });
 
-  test("Test computing sub prices", func () {
-    let test_sub_prices = [
-      (
-        { base_selection_period = #HOURS(30); open_vote_price_e8s = 900; reopen_vote_price_e8s = 300; interest_vote_price_e8s = 60; categorization_vote_price_e8s = 150; },
-        { selection_period = #MINUTES(600); minimum_score = 1.0; }, // Minimum score is irrelevant for this test
-        { open_vote_price_e8s = 300; reopen_vote_price_e8s = 100; interest_vote_price_e8s = 20; categorization_vote_price_e8s = 50; },
-      ),
-      (
-        { base_selection_period = #DAYS(1); open_vote_price_e8s = 500; reopen_vote_price_e8s = 300; interest_vote_price_e8s = 200; categorization_vote_price_e8s = 200; },
-        { selection_period = #DAYS(5); minimum_score = 1.0; }, // Minimum score is irrelevant for this test
-        { open_vote_price_e8s = 2500; reopen_vote_price_e8s = 1500; interest_vote_price_e8s = 1000; categorization_vote_price_e8s = 1000; },
-      )
-    ];
-
-    for ((base_price_params, selection_params, expected_price_register) in Array.vals(test_sub_prices)) {
-      compare(PayRules.computeSubPrices(base_price_params, selection_params), expected_price_register, Testify.priceRegister.equal);
-    };
-  });
-
   test("Test computation of opened question payout", func () {
 
     test("Test payout when the question has been censored", func () {

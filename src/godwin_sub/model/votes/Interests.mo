@@ -4,6 +4,7 @@ import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
 import InterestRules       "InterestRules";
 import PayRules            "../PayRules";
+import SubPrices           "../SubPrices";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
@@ -62,7 +63,7 @@ module {
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
 
-  type PayRules               = PayRules.PayRules;
+  type SubPrices              = SubPrices.SubPrices;
   type RewardForElement       = RewardForElement.RewardForElement;
   
   public type Register        = Votes.Register<Interest, Appeal>;
@@ -82,7 +83,7 @@ module {
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries,
-    pay_rules: PayRules,
+    sub_prices: SubPrices,
     creator: Principal,
     creator_rewards_register: Map<Nat, MintResult>
   ) : Interests {
@@ -97,15 +98,15 @@ module {
             token_interface,
             #PUT_INTEREST_BALLOT,
           ),
-          func() : Nat { pay_rules.getPrices().interest_vote_price_e8s; },
-          getPayoutFunction(pay_rules)
+          func() : Nat { sub_prices.getPrices().interest_vote_price_e8s; },
+          getPayoutFunction(sub_prices)
         )
       ),
       WMap.WMap2D(open_by, Map.phash, Map.nhash),
       pay_for_new,
       joins,
       queries,
-      pay_rules,
+      sub_prices,
       RewardForElement.RewardForElement(
         creator,
         creator_rewards_register,
@@ -120,16 +121,16 @@ module {
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries,
-    _pay_rules: PayRules,
+    _sub_prices: SubPrices,
     _reward_for_element: RewardForElement
   ) {
     
     public func openVote(principal: Principal, date: Time, last_iteration: ?Nat, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
       // Get the price to open the vote
       let vote_price = if (Option.isNull(last_iteration)) { 
-        _pay_rules.getPrices().open_vote_price_e8s; 
+        _sub_prices.getPrices().open_vote_price_e8s; 
       } else { 
-        _pay_rules.getPrices().reopen_vote_price_e8s; 
+        _sub_prices.getPrices().reopen_vote_price_e8s; 
       };
       // The user has to pay to open up an interest vote
       // The PayForNew payin function requires a callback to create the vote, it will be called only if the payement succeeds
@@ -155,9 +156,9 @@ module {
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
       let price = if (iteration == 0) { 
-        _pay_rules.getPrices().open_vote_price_e8s; 
+        _sub_prices.getPrices().open_vote_price_e8s; 
       } else { 
-        _pay_rules.getPrices().reopen_vote_price_e8s; 
+        _sub_prices.getPrices().reopen_vote_price_e8s; 
       };
       // Get the author raw payout
       let author_payout = PayRules.attenuatePayout(
@@ -236,7 +237,7 @@ module {
 
   };
 
-  func getPayoutFunction(pay_rules: PayRules) : PayoutFunction {
+  func getPayoutFunction(sub_prices: SubPrices) : PayoutFunction {
     func(interest: Interest, appeal: Appeal) : RawPayout {
       // @todo: the distribution shall not be computed every time the payout is calculated for a voter
       let distribution = PayRules.computeInterestDistribution(appeal);

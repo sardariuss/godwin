@@ -6,6 +6,7 @@ import CursorMap           "representation/CursorMap";
 import PayForElement       "../token/PayForElement";
 import PayTypes            "../token/Types";
 import PayRules            "../PayRules";
+import SubPrices           "../SubPrices";
 import Categories          "../Categories";
 
 import UtilsTypes          "../../utils/Types";
@@ -33,7 +34,7 @@ module {
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
-  type PayRules               = PayRules.PayRules;
+  type SubPrices              = SubPrices.SubPrices;
 
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
@@ -57,7 +58,7 @@ module {
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
-    pay_rules: PayRules
+    sub_prices: SubPrices
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
@@ -69,7 +70,7 @@ module {
           token_interface,
           #PUT_CATEGORIZATION_BALLOT,
         ),
-        func() : Nat { pay_rules.getPrices().categorization_vote_price_e8s; },
+        func() : Nat { sub_prices.getPrices().categorization_vote_price_e8s; },
         PayRules.computeCategorizationPayout
       )
     );
