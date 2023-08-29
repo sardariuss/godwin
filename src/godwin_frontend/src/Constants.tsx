@@ -92,7 +92,8 @@ const CONSTANTS = {
       late_ballot_half_life: { 'DAYS'   : BigInt(7)  },
     },
     CHARACTER_LIMIT: BigInt(500)
-  }
+  },
+  SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name."
 };
 
 export default CONSTANTS;

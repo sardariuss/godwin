@@ -89,7 +89,6 @@ module {
     };
 
     public func setBasePriceParameters(caller: Principal, base_price_parameters: BasePriceParameters) : async Result<(), AccessControlError> {
-      // @todo: update the price of all the subs
       switch(verifyAuthorizedAccess(caller, #ADMIN)){
         case(#err(err)) { return #err(err); };
         case(#ok) {};

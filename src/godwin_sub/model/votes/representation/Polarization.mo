@@ -4,6 +4,7 @@ import Types  "Types";
 import Float  "mo:base/Float";
 import Text   "mo:base/Text";
 import Option "mo:base/Option";
+import Debug  "mo:base/Debug";
 
 module {
 
@@ -38,12 +39,15 @@ module {
   };
 
   public func sub(polarization_1: Polarization, polarization_2: Polarization) : Polarization {
-    // @todo: Should assert that the result is valid, i.e. polarization2 < polarization1
-    {
+    let polarization = {
       left    = polarization_1.left   - polarization_2.left;
       center  = polarization_1.center - polarization_2.center;
       right   = polarization_1.right  - polarization_2.right;
     };
+    if (not isValid(polarization)) {
+      Debug.trap("Polarization is not valid");
+    };
+    polarization;
   };
 
   public func mul(polarization_1: Polarization, polarization_2: Polarization) : Polarization {

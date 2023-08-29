@@ -15,9 +15,8 @@ module {
   // The smaller positive number a float64 can hold is 4.940656458e-324, which is approx. equal to exp(-744)
   // To be able to make the exponential decay formula not overflow for the longest period of time, 
   // the initial time value is shifted closer to the lower bound.
-  // Choose -200 so that if the decay is squared (decay are multiplied in convictions computation) or multiplied 
-  // further, it shall stay within the range of a float64 ( 10^-200 * 10^-200 = 10^-400 >> 10^-744)
-  // @todo: not up to date, decay are devided not multiplied
+  // Choose -200 so that if the decay is ever squared (decay are multiplied in convictions computation) or multiplied 
+  // further, it shall stay within the range of a float64 ( 10^-200 * 10^-200 = 10^-400 << 10^-744)
   let SHIFT_EXP : Float = -200;
 
   public func computeDecay(params: DecayParameters, date: Time) : Float {

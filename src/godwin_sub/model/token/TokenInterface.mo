@@ -85,7 +85,7 @@ module {
         await GodwinToken.reap_account({
           subaccount = ?subaccount;
           to = Buffer.toArray(to_accounts);
-          memo = null; // @todo: memo
+          memo = null;
         });
       } catch(e) {
         #Err(#CanisterCallError(Error.code(e)));
@@ -133,7 +133,7 @@ module {
       let mint_batch = try {
         await _master.mintBatch({
           to = Buffer.toArray(to_accounts);
-          memo = null; // @todo: memo
+          memo = null;
         });
       } catch(e) {
         #err(#CanisterCallError(Error.code(e)));
@@ -161,7 +161,7 @@ module {
       let args = {
         to = getMasterAccount(?to);
         amount;
-        memo = null; // @todo: memo
+        memo = null;
         created_at_time = null;
       };
       

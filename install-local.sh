@@ -110,8 +110,7 @@ dfx canister install internet_identity
 
 dfx canister install godwin_clock
 
-# @todo: Deploy the frontend
-dfx canister create godwin_frontend
-
 # Generate the candid files
 dfx generate
+
+dfx canister install godwin_frontend

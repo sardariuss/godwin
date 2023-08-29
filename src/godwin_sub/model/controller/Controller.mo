@@ -171,7 +171,7 @@ module {
 
     public func getStatusHistory(question_id: Nat) : Result<[StatusData], ReopenQuestionError> {
       switch(_model.getQuestions().findQuestion(question_id)){
-        case(null) { #err(#PrincipalIsAnonymous); }; // @todo
+        case(null) { #err(#QuestionNotFound); };
         case(?question) { 
           let history = StableBuffer.toArray(_model.getStatusManager().getStatusHistory(question_id));
           #ok(Array.mapEntries<StatusInfo, StatusData>(

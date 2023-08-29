@@ -61,7 +61,7 @@ module {
             case(?#OPEN)                 { #SELECTED;  };
             case(?#REJECTED(#CENSORED))  { #CENSORED;  };
             case(?#REJECTED(#TIMED_OUT)) { #TIMED_OUT; };
-            case(_)                      { Debug.trap("@todo"); };
+            case(_)                      { Debug.trap("Transition from #CANDIDATE shall be restricted to #OPEN or #REJECTED states"); };
           };
           // Close the interest vote
           await* _model.getInterestVotes().closeVote(_model.getInterestJoins().getVoteId(question_id, status_info.iteration), date, closure);

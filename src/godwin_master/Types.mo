@@ -95,21 +95,6 @@ module {
     mint: shared(TokenTypes.Mint) -> async TransferResult;
   };
 
-  // @todo
-  public func transferErrorToText(error: TransferError) : Text {
-    switch error {
-      case (#TooOld) { "TooOld" };
-      case (#CreatedInFuture({ledger_time})) { "CreatedInFuture (ledger_time=" # Nat64.toText(ledger_time) # ")"; };
-      case (#BadFee({expected_fee})) { "BadFee (expected_fee=" # Nat.toText(expected_fee) # ")"; };
-      case (#BadBurn({min_burn_amount})) { "BadBurn (min_burn_amount=" # Nat.toText(min_burn_amount) # ")"; };
-      case (#InsufficientFunds({balance})) { "InsufficientFunds (balance=" # Nat.toText(balance) # ")"; };
-      case (#Duplicate({duplicate_of})) { "Duplicate (duplicate_of=" # Nat.toText(duplicate_of) # ")"; };
-      case (#TemporarilyUnavailable) { "TemporarilyUnavailable" };
-      case (#GenericError({error_code; message;})) { "GenericError (error_code=" # Nat.toText(error_code) # ", message=" # message # ")"; };
-      case (#AccessDenied(_)) { "AccessDenied" };
-    };
-  };
-
   public type TokenResult<Ok, Err> = {
     #Ok: Ok;
     #Err: Err;

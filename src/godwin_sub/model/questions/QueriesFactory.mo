@@ -44,8 +44,8 @@ module {
 
   public func build(register: Register) : QuestionQueries {
 
+    // Only these order by are currently used
     addOrderBy(register, #HOTNESS);
-    // @todo: #STATUS(#CANDIDATE) and #STATUS(#CLOSED) could be removed when the scenario is removed
     addOrderBy(register, #STATUS(#CANDIDATE));
     addOrderBy(register, #STATUS(#OPEN));
     addOrderBy(register, #STATUS(#CLOSED));

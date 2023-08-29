@@ -5,6 +5,7 @@ import SubBanner                                                               f
 import QuestionComponent, { QuestionInput }                                    from "./Question";
 import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
+import CONSTANTS                                                               from "../Constants";
 import { ScanResults, fromScanLimitResult, VoteKind, voteKindToCandidVariant, 
   voteKindFromCandidVariant, convertScanResults, ScanLimitResult }             from "../utils";
 import { QuestionOrderBy, Direction, QueryQuestionItem, QueryVoteItem }        from "../../declarations/godwin_sub/godwin_sub.did";
@@ -67,9 +68,9 @@ const browse_filters = [BrowseFilter.CANDIDATE, BrowseFilter.OPEN, BrowseFilter.
 const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   switch (filter) {
     case BrowseFilter.CANDIDATE:
-      return { 'HOTNESS' : null          };
+      return { 'HOTNESS' : null };
     case BrowseFilter.OPEN:
-      return { 'STATUS' : { 'OPEN' : null     } };
+      return { 'STATUS' : { 'OPEN' : null } };
     case BrowseFilter.ARCHIVED:
       return { 'ARCHIVE' : null };
     case BrowseFilter.REJECTED:
@@ -145,7 +146,9 @@ const MainQuestions = () => {
 	return (
     (
       sub === undefined ?  
-        <div>Unknown subgodwin @todo</div> : 
+        <div className="flex flex-col items-center w-full text-black dark:text-white">
+          { CONSTANTS.SUB_DOES_NOT_EXIST }
+        </div> : 
         <div className="flex flex-col items-center w-full">
           <SubBanner sub={sub}/>
           <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">

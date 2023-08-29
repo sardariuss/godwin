@@ -276,7 +276,6 @@ export const toPolarizationInfo = (category_info: CategoryInfo, center: Category
   };
 }
 
-// @todo: return the ranges instead ?
 export const cursorToColor = (cursor: number, polarizationInfo: PolarizationInfo, alpha : number = 1.0) : string => {
   
   const white = new Color("#dddddd");

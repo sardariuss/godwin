@@ -33,7 +33,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
 
   public type AirdropResult = Result.Result<TokenTypes.TxIndex, AirdropError>;
   
-  let { toBaseResult; transferErrorToText; } = MasterTypes;
+  let { toBaseResult; } = MasterTypes;
 
   stable var _controller          = controller;
   stable var _amount_e8s_per_user = amount_e8s_per_user;
@@ -66,7 +66,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
     }));
 
     switch(transfer_result){
-      case(#err(err)) { Debug.print(transferErrorToText(err)); };
+      case(#err(err))     { return #err(err);                                        };
       case(#ok(tx_index)) { ignore Set.put(_airdropped_users, Set.phash, principal); };
     };
 

@@ -87,7 +87,6 @@ type Props = {
   chartType: ChartTypeEnum;
 };
 
-// @todo: bug: when switching principal, the charts are not updated
 const PolarizationBar = ({name, showName, polarizationInfo, polarizationValue, ballots, chartType}: Props) => {
 
   const [scatterData, setScatterData] = useState<any>(getScatterChartData(ballots, polarizationInfo));

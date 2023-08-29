@@ -233,7 +233,7 @@ module {
     public func revealVote(id: VoteId) : Result<Vote<T, A>, RevealVoteError> {
       Result.chain<Vote<T, A>, Vote<T, A>, RevealVoteError>(findVote(id), func(vote) {
         if(vote.status == #OPEN){
-          #err(#VoteOpen); // @todo
+          #err(#VoteOpen);
         } else {
           #ok(vote);
         };

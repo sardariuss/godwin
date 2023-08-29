@@ -93,7 +93,7 @@ const UpdateProgress = <Error,>({
     if (run_countdown && countdownProgress === null) {
       setCountdownProgress(delay_duration_ms);
       setInterval(interval_duration_ms);
-      setError(null); // @todo: probably not needed
+      setError(null);
     } else if (!run_countdown) {
       stopCountdown();
     }
