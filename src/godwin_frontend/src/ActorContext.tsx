@@ -1,24 +1,22 @@
 import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, Category, CategoryInfo, 
+import { _SERVICE as SubService, CategoryInfo, 
   SchedulerParameters, PriceRegister, SubInfo as IdlSubInfo, 
   SelectionParameters, Momentum  }                                               from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
 import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
-import { godwin_token }                                                          from "../declarations/godwin_token";
+import { canisterId as tokenId, createActor as createToken, godwin_token }       from "../declarations/godwin_token";
 import { canisterId as airdropId, createActor as createAirdrop, godwin_airdrop } from "../declarations/godwin_airdrop";
 import { createActor as createSub }                                              from "../declarations/godwin_sub";
 
 import { AuthClient }                                                            from "@dfinity/auth-client";
-import { ActorSubclass }                                                         from "@dfinity/agent";
+import { ActorSubclass, Identity }                                               from "@dfinity/agent";
 import { Principal }                                                             from "@dfinity/principal";
 import { fromNullable }                                                          from "@dfinity/utils";
 
-import { useState, useEffect }                                                   from "react";
+import { createContext, useContext, useEffect, useState }                        from "react";
 import { useNavigate }                                                           from "react-router-dom";
-
-import React                                                                     from 'react'
 
 type SubInfo = {
   name: string;
@@ -47,111 +45,134 @@ export type Sub = {
   info: SubInfo;
 };
 
-export const ActorContext = React.createContext<{
-  authClient?: AuthClient;
-  setAuthClient?: React.Dispatch<AuthClient>;
-  isAuthenticated?: boolean | null;
-  setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
-  refreshSubs?: () => Promise<void>;
-  addSub: (principal: Principal, id: string) => Promise<void>;
-  login: () => void;
-  logout: () => void;
+export const ActorContext = createContext<{
+  isAuthenticated: boolean,
+  principal: Principal,
   token: ActorSubclass<TokenService>;
   airdrop: ActorSubclass<AirdopService>;
   master: ActorSubclass<MasterService>;
   subs: Map<string, Sub>;
-  userAccount?: Account | null;
-  balance: bigint | null;
-  refreshBalance: () => void;
   loggedUserName?: string | undefined;
+  userAccount?: Account | null;
+  balance?: bigint | null;
+  login: () => void;
+  logout: () => void;
+  refreshSubs?: () => Promise<void>;
+  addSub: (principal: Principal, id: string) => Promise<void>;
+  refreshBalance: () => void;
   refreshLoggedUserName: () => void;
-  getPrincipal: () => Principal;
 }>({
-  addSub: () => Promise.resolve(),
-  login: () => {},
-  logout: () => {},
+  isAuthenticated: false,
+  principal: Principal.anonymous(),
   token: godwin_token,
   airdrop: godwin_airdrop,
   master: godwin_master,
   subs: new Map(),
-  balance: null,
+  login: () => {},
+  logout: () => {},
+  addSub: () => Promise.resolve(),
   refreshBalance: () => {},
-  loggedUserName: undefined,
   refreshLoggedUserName: () => {},
-  getPrincipal: () => Principal.anonymous()
 });
 
-export function useAuthClient() {
+const defaultOptions = {
+  /**
+   *  @type {import("@dfinity/auth-client").AuthClientCreateOptions}
+   */
+  createOptions: {
+    idleOptions: {
+      // Set to true if you do not want idle functionality
+      disableIdle: true,
+    },
+  },
+  /**
+   * @type {import("@dfinity/auth-client").AuthClientLoginOptions}
+   */
+  loginOptions: {
+    identityProvider:
+      import.meta.env.DFX_NETWORK === "ic"
+        ? "https://identity.ic0.app/#authorize"
+        : `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
+  },
+};
+
+/**
+ *
+ * @param options - Options for the AuthClient
+ * @param {AuthClientCreateOptions} options.createOptions - Options for the AuthClient.create() method
+ * @param {AuthClientLoginOptions} options.loginOptions - Options for the AuthClient.login() method
+ * @returns
+ */
+export const useAuthClient = (options = defaultOptions) => {
+
   const navigate = useNavigate();
 
-  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
-  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
-  const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token  );
+  // Authentication
+  const [authClient,      setAuthClient     ] = useState<AuthClient | null>           (null          );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>                     (false         );
+  const [identity,        setIdentity       ] = useState<Identity | null>             (null          );
+  const [principal,       setPrincipal      ] = useState<Principal>                   (Principal.anonymous());
+  // Actors
+  const [token,           setToken          ] = useState<ActorSubclass<TokenService>> (godwin_token  );
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master );
   const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService>>(godwin_airdrop);
   const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
-  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
+  // Misc
   const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
+  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
   const [balance,         setBalance        ] = useState<bigint | null>               (null          );
+
+  useEffect(() => {
+    // Initialize AuthClient
+    AuthClient.create(options.createOptions).then(async (client) => {
+      updateClient(client);
+    });
+  }, []);
 
   const login = () => {
     authClient?.login({
-      identityProvider:
-      import.meta.env.DFX_NETWORK === "ic"
-          ? "https://identity.ic0.app/#authorize"
-          : `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
-      // 7 days in nanoseconds
-      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
+      ...options.loginOptions,
       onSuccess: () => {
-        setIsAuthenticated(true);
+        updateClient(authClient);
       },
     });
   };
 
-  const initAirdrop = () => {
-    if (isAuthenticated) {
-      const actor = createAirdrop(airdropId as string, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
-      setAirdrop(actor);
-    } else {
-      setAirdrop(godwin_airdrop);
-    }
+  async function updateClient(client: AuthClient) {
+    // Update all authentication related state
+    const isAuthenticated = await client.isAuthenticated();
+    setIsAuthenticated(isAuthenticated);
+    const identity = client.getIdentity();
+    setIdentity(identity);
+    const principal = identity.getPrincipal();
+    setPrincipal(principal);
+    setAuthClient(client);
+
+    // Update all actors
+    setToken  (createToken  (tokenId   as string, {agentOptions: { identity }}));
+    setMaster (createMaster (masterId  as string, {agentOptions: { identity }}));
+    setAirdrop(createAirdrop(airdropId as string, {agentOptions: { identity }}));
+    await fetchSubs();
+
+    // Update misc
+    refreshLoggedUserName();
+    refreshUserAccount();
+    refreshBalance();
   }
 
-  const initMaster = () => {
-    if (isAuthenticated) {
-      const actor = createMaster(masterId as string, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
-      setMaster(actor);
-    } else {
-      setMaster(godwin_master);
+  async function logout() {
+    if (authClient !== null){
+      await authClient.logout();
+      await updateClient(authClient);
     }
-  }
-
-  const logout = () => {
-    authClient?.logout().then(() => {
-      // Somehow if only the isAuthenticated flag is set to false, the next login will fail
-      // Refreshing the auth client fixes this behavior
-      refreshAuthClient();
-      navigate("/");
-    });
+    navigate("/");
   }
 
   const addSub = async (principal: Principal, id: string) : Promise<void> => {
     if (subs.has(id)) {
       return;
     }
-    let actor = createSub(principal, {
-      agentOptions: {
-        identity: authClient?.getIdentity(),
-      },
-    });
+    let actor = createSub(principal, {agentOptions: { identity } });
     let info = await actor.getSubInfo();
     setSubs((subs) => new Map(subs).set(id, {actor, info: fromIdlSubInfo(info)}));
   }
@@ -170,11 +191,7 @@ export function useAuthClient() {
     let listSubs = await master.listSubGodwins();
 
     await Promise.all(listSubs.map(async ([principal, id]) => {
-      let actor = createSub(principal, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
+      let actor = createSub(principal, { agentOptions: { identity } });
       let info = await actor.getSubInfo();
       newSubs.set(id, {actor, info: fromIdlSubInfo(info)});
     }));
@@ -183,72 +200,28 @@ export function useAuthClient() {
   }
 
   const refreshUserAccount = () => {
-    if (isAuthenticated) {
-      let principal = authClient?.getIdentity().getPrincipal();
-      if (principal !== undefined && !principal.isAnonymous()){
-        master.getUserAccount(principal).then((account) => {
-          setUserAccount(account);
-        });
-        return;
-      }
+    if (principal !== undefined && !principal.isAnonymous()){
+      master.getUserAccount(principal).then((account) => { setUserAccount(account) });
+    } else {
+      setUserAccount(null);
     }
-    setUserAccount(null);
   }
 
   const refreshBalance = () => {
     if (userAccount !== null) {
-      token.icrc1_balance_of(userAccount).then((balance) => {;
-        setBalance(balance);
-      });
+      token.icrc1_balance_of(userAccount).then((balance) => { setBalance(balance) });
     } else {
       setBalance(null);
     }
   }
 
   const refreshLoggedUserName = () => {
-    let principal = authClient?.getIdentity().getPrincipal();
-    if (principal !== undefined){
-      master.getUserName(principal).then((name) => {
-        setLoggedUserName(fromNullable(name));
-      }
-    )} else {
+    if (principal !== undefined && !principal.isAnonymous()){
+      master.getUserName(principal).then((name) => { setLoggedUserName(fromNullable(name)) });
+    } else {
       setLoggedUserName(undefined);
     }
   }
-
-  const getPrincipal = () => {
-    return authClient?.getIdentity().getPrincipal() ?? Principal.anonymous();
-  };
-
-  const refreshAuthClient = () => {
-    AuthClient.create({
-      idleOptions: {
-        disableDefaultIdleCallback: true,
-        disableIdle: true
-      }
-    }).then(async (client) => {
-      const is_authenticated = await client.isAuthenticated();
-      setAuthClient(client);
-      setIsAuthenticated(is_authenticated);
-    })
-    .catch((error) => {
-      console.error(error);
-      setAuthClient(undefined);
-      setIsAuthenticated(false);
-    });
-  };
-
-  useEffect(() => {
-    refreshAuthClient();
-  }, []);
-
-  useEffect(() => {
-    initMaster();
-    initAirdrop();
-    refreshUserAccount();
-    refreshLoggedUserName();
-    fetchSubs();
-  }, [isAuthenticated]);
 
   // Refreshing balance when userAccount changes
   useEffect(() => {
@@ -256,23 +229,31 @@ export function useAuthClient() {
   }, [userAccount]);
 
   return {
-    authClient,
-    setAuthClient,
     isAuthenticated,
-    setIsAuthenticated,
-    refreshSubs,
-    addSub,
-    login,
-    logout,
+    principal,
     token,
-    airdrop,
     master,
+    airdrop,
     subs,
+    loggedUserName,
     userAccount,
     balance,
+    login,
+    logout,
+    refreshSubs,
+    addSub,
     refreshBalance,
-    loggedUserName,
-    refreshLoggedUserName,
-    getPrincipal
+    refreshLoggedUserName
   };
-}
+};
+
+/**
+ * @type {React.FC}
+ */
+export const AuthProvider = ({ children }) => {
+  const auth = useAuthClient();
+
+  return <ActorContext.Provider value={auth}>{children}</ActorContext.Provider>;
+};
+
+export const useAuth = () => useContext(ActorContext);

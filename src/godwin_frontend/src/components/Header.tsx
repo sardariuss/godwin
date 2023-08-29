@@ -1,20 +1,20 @@
 import Balance                                    from "./base/Balance";
-import { ActorContext }                           from "../ActorContext"
+import { useAuth }                           from "../ActorContext"
 import useClickOutside                            from "../utils/useClickOutside";
 import CONSTANTS                                  from "../Constants";
 
 import { Link }                                   from "react-router-dom";
 import React, { useContext, useEffect, useState,
   useRef, useCallback } from "react";
+import { Principal } from "@dfinity/principal";
 
 type Props = {
-  login: () => (void),
-  setShowAskQuestion: (boolean) => (void)
+  setShowAskQuestion: (show: boolean) => (void)
 };
 
-function Header({login, setShowAskQuestion}: Props) {
+function Header({setShowAskQuestion}: Props) {
 
-  const {isAuthenticated, authClient, balance, loggedUserName} = useContext(ActorContext);
+  const {isAuthenticated, balance, loggedUserName, principal, login} = useAuth();
 
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
@@ -92,7 +92,7 @@ function Header({login, setShowAskQuestion}: Props) {
                 <Balance amount={ balance !== null ? balance : undefined } />
               </div> : <></>
             }
-            { isAuthenticated && authClient !== undefined ? 
+            { isAuthenticated && principal !== Principal.anonymous() ? 
               <button type="button" className="relative inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
                 onClick={(e)=>{setShowMenu(!showMenu); e.stopPropagation(); }}>
                 <span className="sr-only">Open main menu</span>
@@ -108,9 +108,9 @@ function Header({login, setShowAskQuestion}: Props) {
               <div className={`relative md:block md:w-auto ${showMenu ? "" : "hidden"}`} dir="rtl">
                 <ul ref={popover} className="w-4/5-screen p-4 md:p-0 mt-4 md:mt-0 grow md:w-auto absolute md:relative inset-inline-start bg-slate-100 dark:bg-gray-800 font-medium flex flex-col border border-gray-300 rounded-lg md:flex-row-reverse md:items-center md:space-x-4 md:border-0 dark:border-gray-600">
                   <li>
-                    { isAuthenticated && authClient !== undefined ?
+                    { isAuthenticated && principal !== Principal.anonymous() ?
                       <Link className="block py-2 px-3 text-end text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                        to={"/profile/" + authClient.getIdentity().getPrincipal().toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
+                        to={"/profile/" + principal.toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
                         { loggedUserName !== undefined ? loggedUserName : CONSTANTS.USER_NAME.DEFAULT }
                       </Link> : <></>
                     }

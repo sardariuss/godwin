@@ -93,7 +93,8 @@ const CONSTANTS = {
     },
     CHARACTER_LIMIT: BigInt(500)
   },
-  SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name."
+  SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name.",
+  USER_DOES_NOT_EXIST: "Sorry, there isn't any user with that principal."
 };
 
 export default CONSTANTS;

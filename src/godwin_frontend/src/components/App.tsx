@@ -5,7 +5,7 @@ import MainQuestions                   from "./MainQuestions";
 import CreateSub                       from "./CreateSub";
 import UserComponent                   from "./user/User";
 import ListSubs                        from "./ListSubs";
-import { ActorContext, useAuthClient } from "../ActorContext";
+import { AuthProvider }                from "../ActorContext";
 
 import { Route, Routes }               from "react-router-dom";
 
@@ -14,62 +14,20 @@ import React, { useState }             from "react";
 function App() {
 
   const [showAskQuestion, setShowAskQuestion] = useState(false);
-  
-  const {
-    authClient,
-    setAuthClient,
-    isAuthenticated,
-    setIsAuthenticated,
-    refreshSubs,
-    addSub,
-    login,
-    logout,
-    token,
-    airdrop,
-    master,
-    subs,
-    userAccount,
-    balance,
-    refreshBalance,
-    loggedUserName,
-    refreshLoggedUserName,
-    getPrincipal
-  } = useAuthClient();
-
-  if (!authClient) return null;
 
   return (
 		<>
       <div className="flex flex-col min-h-screen w-full bg-white dark:bg-slate-900 dark:border-gray-700 justify-between">
-        <ActorContext.Provider value={{
-          authClient,
-          setAuthClient,
-          isAuthenticated,
-          setIsAuthenticated,
-          refreshSubs,
-          addSub,
-          login,
-          logout,
-          token,
-          airdrop,
-          master,
-          subs,
-          userAccount,
-          balance,
-          refreshBalance,
-          loggedUserName,
-          refreshLoggedUserName,
-          getPrincipal
-        }}>
+        <AuthProvider>
           <div className="flex flex-col w-full">
-            <Header login={login} setShowAskQuestion={setShowAskQuestion}/>
+            <Header setShowAskQuestion={setShowAskQuestion}/>
             <Routes>
               <Route
                 path="/g/:subgodwin"
                 element={ <MainQuestions/> }
               />
               <Route
-                path="/profile/:user"
+                path="/profile/:user_principal"
                 element={ <UserComponent/> }
               />
               <Route
@@ -84,7 +42,7 @@ function App() {
           </div>
           <OpenQuestionPopup showAskQuestion={showAskQuestion} setShowAskQuestion={setShowAskQuestion}></OpenQuestionPopup>
           <Footer/>
-        </ActorContext.Provider>
+        </AuthProvider>
       </div>
     </>
   );
