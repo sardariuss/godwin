@@ -30,6 +30,7 @@ module {
     creation_date               : Time;
     name                        : Ref<Text>;
     master                      : Ref<Principal>;
+    token                       : Ref<Principal>;
     categories                  : Map<Category, CategoryInfo>;
     scheduler_params            : Ref<SchedulerParameters>;
     base_price_params           : Ref<BasePriceParameters>;
@@ -82,6 +83,7 @@ module {
 
   public type InitArgs = {
     master: Principal;
+    token: Principal;
     creator: Principal;
     sub_parameters: SubParameters;
     price_parameters: BasePriceParameters;

@@ -19,6 +19,8 @@ shared({caller = controller}) actor class GodwinAirdrop(
   allow_self_airdrop: Bool
 ) = this {
 
+  let _token : TokenTypes.FullInterface = actor(Principal.toText(Principal.fromActor(GodwinToken)));
+
   public type AuthorizationError = {
     #NotAuthorized;
   };
@@ -74,7 +76,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
   };
 
   public shared func getRemainingSupply() : async TokenTypes.Balance {
-    await GodwinToken.icrc1_balance_of({ owner = Principal.fromActor(this); subaccount = null; });
+    await _token.icrc1_balance_of({ owner = Principal.fromActor(this); subaccount = null; });
   };
 
   public shared({caller}) func airdropSelf() : async AirdropResult {
@@ -97,7 +99,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
       return #err(#AlreadySupplied);
     };
 
-    let transfer_result = toBaseResult(await GodwinToken.icrc1_transfer({
+    let transfer_result = toBaseResult(await _token.icrc1_transfer({
       to = {
         owner = Principal.fromActor(GodwinMaster);
         subaccount = ?Account.toSubaccount(principal);
@@ -109,7 +111,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
       fee = ?10_000; // @todo: fix bug where null is not allowed
     }));
 
-    Result.iterate(transfer_result, func(tx_index: GodwinToken.TxIndex){
+    Result.iterate(transfer_result, func(tx_index: TokenTypes.TxIndex){
       ignore Set.put(_airdropped_users, Set.phash, principal);
     });
 

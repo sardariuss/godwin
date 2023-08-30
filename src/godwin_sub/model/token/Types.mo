@@ -33,6 +33,9 @@ module {
   public type TransferArgs   = TokenTypes.TransferArgs;
   public type TransferError  = TokenTypes.TransferError;
   public type Mint           = TokenTypes.Mint;
+  public type ReapAccountRecipient = TokenTypes.ReapAccountRecipient;
+  public type MintRecipient   = TokenTypes.MintRecipient;
+  public type GodwinTokenInterface = TokenTypes.FullInterface;
 
   public type CanisterCallError = {
     #CanisterCallError: Error.ErrorCode;
@@ -46,7 +49,7 @@ module {
   public type TransferToMasterResult = Result<TxIndex, TransferError or CanisterCallError>;
   
   // Reap account types
-  public type ReapAccountRecipient  = { to: Principal; share: Float; };
+  public type ReapAccountReceiver  = { to: Principal; share: Float; };
   public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
   public type ReapAccountError = TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
     #SingleReapLost: {
@@ -60,7 +63,7 @@ module {
   };
 
   // Mint types
-  public type MintRecipient    = { to: Principal; amount: Balance; };
+  public type MintReceiver    = { to: Principal; amount: Balance; };
   public type MintResult       = Result<TxIndex, MintError>;
   public type MintError        = MasterTypes.TransferError or CanisterCallError or { 
     #SingleMintLost: {
@@ -105,8 +108,8 @@ module {
 
   public type ITokenInterface = {
     transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
-    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountRecipient>) -> async* Trie<Principal, ?ReapAccountResult>;
-    mintBatch: (recipients: Iter<MintRecipient>) -> async* Trie<Principal, ?MintResult>;
+    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountReceiver>) -> async* Trie<Principal, ?ReapAccountResult>;
+    mintBatch: (recipients: Iter<MintReceiver>) -> async* Trie<Principal, ?MintResult>;
     mint:(to: Principal, amount: Balance) -> async* MintResult;
   };
 

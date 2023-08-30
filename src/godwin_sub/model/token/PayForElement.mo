@@ -25,7 +25,7 @@ module {
   func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
   
   type SubaccountPrefix         = Types.SubaccountPrefix;
-  type ReapAccountRecipient     = Types.ReapAccountRecipient;
+  type ReapAccountReceiver      = Types.ReapAccountReceiver;
   type ReapAccountError         = Types.ReapAccountError;
   type ReapAccountResult        = Types.ReapAccountResult;
   type TransferFromMasterResult = Types.TransferFromMasterResult;
@@ -34,7 +34,7 @@ module {
   type Balance                  = Types.Balance;
   type PayoutRecipient          = Types.PayoutRecipient;
   type MintResult               = Types.MintResult;
-  type MintRecipient            = Types.MintRecipient;
+  type MintReceiver             = Types.MintReceiver;
 
   type Id                       = Nat;
 
@@ -72,11 +72,11 @@ module {
       // Refund the users
       let refunds = await* _token_interface.reapSubaccount(
         SubaccountGenerator.getSubaccount(_subaccount_prefix, id), 
-        Iter.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountRecipient { { to; share = args.refund_share; }; })
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountReceiver { { to; share = args.refund_share; }; })
       );
       // Reward the users
       let rewards = await* _token_interface.mintBatch(
-        Iter.map(recipients, func({to; args;} : PayoutRecipient): MintRecipient { { to; amount = Option.get(args.reward_tokens, 0); }; })
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): MintReceiver { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
       // Watchout, this loop only iterates on the refunds, not the rewards.
       // It is assumed that if for a user there is no refund, then there is no reward.

@@ -22,6 +22,8 @@ shared({caller = controller}) actor class GodwinAirdrop(
   allow_self_airdrop: Bool
 ) {
 
+  let _token : TokenTypes.FullInterface = actor(Principal.toText(Principal.fromActor(GodwinToken)));
+
   public type AuthorizationError = {
     #NotAuthorized;
   };
@@ -53,7 +55,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
       return #err(#AlreadySupplied);
     };
 
-    let transfer_result = toBaseResult(await GodwinToken.icrc1_transfer({
+    let transfer_result = toBaseResult(await _token.icrc1_transfer({
       to = {
         owner = Principal.fromActor(GodwinMaster);
         subaccount = ?Account.toSubaccount(principal);

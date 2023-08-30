@@ -47,7 +47,7 @@ module {
 
     let sub_prices = SubPrices.build(state.price_register);
 
-    let token_interface = TokenInterface.build(state.master.v);
+    let token_interface = TokenInterface.build({ master = state.master.v; token = state.token.v; });
     let pay_to_open_question = PayForNew.build(
       token_interface,
       #OPEN_QUESTION,

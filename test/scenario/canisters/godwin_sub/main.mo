@@ -33,6 +33,7 @@ actor class GodwinSubScenario(){
     let args = switch(_state){
       case(#v0_1_0(state)) { {
           master = state.master.v;
+          token = state.token.v;
           creator = state.creator;
           sub_parameters = {
             name = state.name.v;

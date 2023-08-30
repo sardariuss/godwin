@@ -17,6 +17,7 @@ module {
   type Controller          = Controller.Controller;
 
   public func build(state: State) : Controller {
+    let token                  = WRef.WRef<Principal>                 (state.token                                                                 );
     let admin                  = WRef.WRef<Principal>                 (state.admin                                                                 );
     let sub_godwins            = WMap.WMap<Principal, Text>           (state.sub_godwins, Map.phash                                                );
     let users                  = WMap.WMap<Principal, Text>           (state.users, Map.phash                                                      );
@@ -25,6 +26,7 @@ module {
     let base_price_parameters  = WRef.WRef<BasePriceParameters>       (state.base_price_parameters                                                 );
     let sub_params_validator   = SubParamsValidator.SubParamsValidator(WRef.WRef<ValidationParams>(state.validation_parameters), sub_godwins, users);
     let model = Model.Model(
+      token,
       admin,
       cycles_parameters,
       sub_creation_price_e8s,

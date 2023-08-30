@@ -1,20 +1,23 @@
-import Types      "../../src/godwin_sub/model/Types";
-import Controller "../../src/godwin_sub/model/controller/Controller";
-import Factory    "../../src/godwin_sub/model/Factory";
-import Duration   "../../src/godwin_sub/utils/Duration";
+import EightValues "EightValues";
+import Types       "../../src/godwin_sub/model/Types";
+import Controller  "../../src/godwin_sub/model/controller/Controller";
+import Factory     "../../src/godwin_sub/model/Factory";
+import Duration    "../../src/godwin_sub/utils/Duration";
 
-import Utils      "../../src/godwin_sub/utils/Utils";
+import Utils       "../../src/godwin_sub/utils/Utils";
 
-import Random     "../motoko/common/Random";
+import Random      "../motoko/common/Random";
 
-import Principal  "mo:base/Principal";
-import Debug      "mo:base/Debug";
-import Nat        "mo:base/Nat";
-import Result     "mo:base/Result";
-import Error      "mo:base/Error";
-import Array      "mo:base/Array";
+import Map         "mo:map/Map";
 
-import Fuzz       "mo:fuzz";
+import Principal   "mo:base/Principal";
+import Debug       "mo:base/Debug";
+import Nat         "mo:base/Nat";
+import Result      "mo:base/Result";
+import Error       "mo:base/Error";
+import Array       "mo:base/Array";
+
+import Fuzz        "mo:fuzz";
 
 module {
 
@@ -40,6 +43,9 @@ module {
 
     let fuzzer = Fuzz.fromSeed(SEED);
 
+    let eight_values = EightValues.EightValues();
+    let categorizations = Map.new<Nat, [(Text, Float)]>(Map.nhash);
+
     let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
 
     let categories = controller.getSubInfo().categories;
@@ -50,10 +56,14 @@ module {
       
       time := time + Duration.toTime(tick_duration);
 
-      if (Random.random(fuzzer) < 0.3) {
+      if (Random.random(fuzzer) < 0.15) {
         let principal = Random.randomUser(fuzzer, principals);
-        switch(await* controller.openQuestion(principal, Random.randomQuestion(fuzzer), time)){
-          case(#ok(question_id)){ Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question_id));};
+        let { text; categorization; } = eight_values.pickQuestion(fuzzer);
+        switch(await* controller.openQuestion(principal, text, time)){
+          case(#ok(question_id)){ 
+            Debug.print(Principal.toText(principal) # " opened question " # Nat.toText(question_id));
+            Map.set(categorizations, Map.nhash, question_id, categorization);
+          };
           case(#err(err)) { Debug.print("Fail to open question: " # openQuestionErrorToString(err)); };
         };
       };
@@ -77,10 +87,11 @@ module {
             };
           };
         };
-        for ({vote} in Array.vals(controller.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
+        for ({question_id; vote;} in Array.vals(controller.queryFreshVotes(principal, #CATEGORIZATION, #FWD, 10, null).keys)){
           if (Random.random(fuzzer) < 0.1 and Result.isErr(controller.revealBallot(#CATEGORIZATION, principal, principal, vote.1.id))){
             Debug.print("User '" # Principal.toText(principal) # "' gives his categorization on " # Nat.toText(vote.1.id));
-            switch(await* controller.putBallot(#CATEGORIZATION, principal, vote.1.id, time, #CATEGORIZATION(Random.randomCategorization(fuzzer, categories)))){
+            let categorization = switch(Map.get(categorizations, Map.nhash, question_id)) { case(?cat) { cat }; case(null) { Debug.trap("Categorization not found"); } };
+            switch(await* controller.putBallot(#CATEGORIZATION, principal, vote.1.id, time, #CATEGORIZATION(Random.randomCategorization(fuzzer, categorization)))){
               case(#ok(_)){};
               case(#err(err)) { Debug.print("Fail to put categorization ballot: " # putBallotErrorToString(err)); };
             };
@@ -90,7 +101,7 @@ module {
 
       for (queried_question in Array.vals(controller.queryQuestions(#STATUS(#CLOSED), #FWD, 1000, null).keys)){
         let question_id = queried_question.question.id;
-        if (Random.random(fuzzer) < 0.2){
+        if (Random.random(fuzzer) < 0.1){
           let principal = Random.randomUser(fuzzer, principals);
           Debug.print("User '" # Principal.toText(principal) # "' reopens " # Nat.toText(question_id));
           ignore await* controller.reopenQuestion(principal, question_id, time);

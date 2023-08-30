@@ -29,14 +29,14 @@ export TRANSFER_TO_MASTER="dfx canister call godwin_token icrc1_transfer '(
 eval "$TRANSFER_TO_MASTER"
 
 # Create first sub godwin
-export SUB_PARAMETERS=$(cat ./test/scenario/parameters/classic6.did)
-export SUB_COMMAND="dfx canister call godwin_master createSubGodwin '(\"classic6\", "$SUB_PARAMETERS")'"
+export SUB_PARAMETERS=$(cat ./test/scenario/parameters/8values.did)
+export SUB_COMMAND="dfx canister call godwin_master createSubGodwin '(\"8values\", "$SUB_PARAMETERS")'"
 export SUB_RESULT=$(eval "$SUB_COMMAND")
 export SUB=${SUB_RESULT:27:27}
 
 export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/scenario_sub/scenario_sub.wasm\" --mode=upgrade --yes"
 eval "$SUB_UPGRADE_1"
-export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { MINUTES = 1700 : nat } , variant { MINUTES = 20 : nat } )'"
+export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { DAYS = 14 : nat } , variant { MINUTES = 60 : nat } )'"
 eval "$RUN_SUB_SCENARIO"
 export SUB_UPGRADE_2="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/godwin_sub/godwin_sub.wasm\" --mode=upgrade --yes --argument='(variant {none})'"
 eval "$SUB_UPGRADE_2"

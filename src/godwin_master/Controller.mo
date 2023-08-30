@@ -7,6 +7,8 @@ import UtilsTypes         "../godwin_sub/utils/Types";
 import Account            "../godwin_sub/utils/Account";
 import SubMigrationTypes  "../godwin_sub/stable/Types";
 
+import TokenTypes         "../godwin_token/Types";
+
 import Map                "mo:map/Map";
 import Set                "mo:map/Set";
 
@@ -18,8 +20,6 @@ import Iter               "mo:base/Iter";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Buffer             "mo:base/Buffer";
 import Error              "mo:base/Error";
-
-import GodwinToken        "canister:godwin_token";
 
 module {
 
@@ -53,6 +53,8 @@ module {
   let { toBaseResult; } = Types;
 
   public class Controller(_model: Model) {
+
+    let _token : TokenTypes.FullInterface = actor(Principal.toText(_model.getToken()));
 
     public func getAdmin() : Principal {
       _model.getAdmin();
@@ -132,7 +134,7 @@ module {
       };
 
       // Proceed with the payment
-      switch(await GodwinToken.burn({
+      switch(await _token.burn({
         from_subaccount = ?Account.toSubaccount(user);
         amount = _model.getSubCreationPriceE8s();
         memo = null;
@@ -149,7 +151,7 @@ module {
         compute_allocation = null; // @todo: add this parameters in the model
         memory_allocation = null;
         freezing_threshold = null;
-      }})(#init({ master; creator = user; sub_parameters; price_parameters = _model.getBasePriceParameters(); }));
+      }})(#init({ master; token = Principal.fromActor(_token); creator = user; sub_parameters; price_parameters = _model.getBasePriceParameters(); }));
 
       let principal = Principal.fromActor(new_sub);
 
@@ -215,7 +217,7 @@ module {
       };
 
       toBaseResult(
-        await GodwinToken.icrc1_transfer({
+        await _token.icrc1_transfer({
           amount;
           created_at_time = ?Nat64.fromNat(Int.abs(time));
           fee = ?10_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
@@ -229,27 +231,27 @@ module {
       );
     };
 
-    public func mintBatch(caller: Principal, args: GodwinToken.MintBatchArgs) : async MintBatchResult {
+    public func mintBatch(caller: Principal, args: TokenTypes.MintBatchArgs) : async MintBatchResult {
 
       switch(verifyAuthorizedAccess(caller, #SUB)){
         case(#err(err)) { return #err(err); };
         case(#ok()) {};
       };
 
-      toBaseResult(await GodwinToken.mint_batch(args));
+      toBaseResult(await _token.mint_batch(args));
     };
 
-    public func mint(caller: Principal, args: GodwinToken.Mint) : async TransferResult {
+    public func mint(caller: Principal, args: TokenTypes.Mint) : async TransferResult {
 
       switch(verifyAuthorizedAccess(caller, #SUB)){
         case(#err(err)) { return #err(err); };
         case(#ok()) {};
       };
 
-      toBaseResult(await GodwinToken.mint(args));
+      toBaseResult(await _token.mint(args));
     };
 
-    public func getUserAccount(principals: Principals) : GodwinToken.Account {
+    public func getUserAccount(principals: Principals) : TokenTypes.Account {
       let { master; user; } = principals;
       { owner = master; subaccount = ?Account.toSubaccount(user) };
     };

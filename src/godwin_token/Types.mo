@@ -27,7 +27,6 @@ module {
 
   public type TokenInterface          = ICRC1.TokenInterface;
   public type RosettaInterface        = ICRC1.RosettaInterface;
-  public type FullInterface           = ICRC1.FullInterface;
 
   public type ArchiveInterface        = ICRC1.ArchiveInterface;
 
@@ -90,4 +89,15 @@ module {
     #Err : TransferError;
   };
 
-}
+  public type GodwinTokenInterface = actor {
+    // Mint and burn are missing in ICRC1
+    mint: shared (Mint) -> async TransferResult;
+    burn: shared (BurnArgs) -> async TransferResult;
+    // Specific to the godwin token
+    reap_account : shared (ReapAccountArgs) -> async ReapAccountResult;
+    mint_batch : shared (MintBatchArgs) -> async MintBatchResult;
+  };
+
+  public type FullInterface = GodwinTokenInterface and ICRC1.FullInterface;
+
+};

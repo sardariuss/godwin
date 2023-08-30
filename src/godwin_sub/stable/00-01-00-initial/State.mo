@@ -41,7 +41,7 @@ module {
   type DowngradeArgs              = Types.DowngradeArgs;
 
   public func init(date: Time, args: InitArgs) : State {
-    let { master; creator; sub_parameters; price_parameters; } = args;
+    let { master; token; creator; sub_parameters; price_parameters; } = args;
     let { name; categories; scheduler; character_limit; convictions; selection; } = sub_parameters;
 
     if (selection.minimum_score <= 0.0) {
@@ -53,6 +53,7 @@ module {
       creation_date               = date;
       name                        = Ref.init<Text>(name);
       master                      = Ref.init<Principal>(master);
+      token                       = Ref.init<Principal>(token);
       categories                  = Categories.initRegister(categories);
       scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
       base_price_params           = Ref.init<BasePriceParameters>(price_parameters);

@@ -1,5 +1,5 @@
-#dfx stop
-#dfx start --background --clean
+dfx stop
+dfx start --background --clean
 
 dfx canister create --all
 
@@ -25,42 +25,42 @@ export AIRDROP_ALLOW_SELF="true"
 
 # Master
 export MASTER_CANISTER=$(dfx canister id godwin_master)
+export GODWIN_CANISTER=$(dfx canister id godwin_token)
 
-dfx canister install godwin_token
-
-#dfx canister install godwin_token --argument '( record {
-#  name              = "'${NAME}'";
-#  symbol            = "'${SYMBOL}'";
-#  decimals          = '${DEMICALS}';
-#  fee               = '${FEE}';
-#  max_supply        = '${MAX_SUPPLY}';
-#  min_burn_amount   = '${MIN_BURN_AMOUNT}';
-#  initial_balances  = vec {
-#    record {
-#      record {
-#        owner = principal "'${DEPLOYER_PRINCIPAL}'";
-#        subaccount = null
-#      };
-#      '${DEPLOYER_AMOUNT}'
-#    };
-#    record {
-#      record {
-#        owner = principal "'${AIRDROP_CANISTER}'";
-#        subaccount = null
-#      };
-#      '${AIRDROP_AMOUNT}'
-#    }
-#  };
-#  minting_account   = opt record { 
-#    owner = principal "'${MASTER_CANISTER}'";
-#    subaccount = null; 
-#  };
-#  advanced_settings = null;
-#})'
+dfx canister install godwin_token --argument '( record {
+  name              = "'${NAME}'";
+  symbol            = "'${SYMBOL}'";
+  decimals          = '${DEMICALS}';
+  fee               = '${FEE}';
+  max_supply        = '${MAX_SUPPLY}';
+  min_burn_amount   = '${MIN_BURN_AMOUNT}';
+  initial_balances  = vec {
+    record {
+      record {
+        owner = principal "'${DEPLOYER_PRINCIPAL}'";
+        subaccount = null
+      };
+      '${DEPLOYER_AMOUNT}'
+    };
+    record {
+      record {
+        owner = principal "'${AIRDROP_CANISTER}'";
+        subaccount = null
+      };
+      '${AIRDROP_AMOUNT}'
+    }
+  };
+  minting_account   = opt record { 
+    owner = principal "'${MASTER_CANISTER}'";
+    subaccount = null; 
+  };
+  advanced_settings = null;
+})'
 
 dfx canister install godwin_airdrop --argument '('${AIRDROP_PER_USER}', '${AIRDROP_ALLOW_SELF}')'
 
 dfx canister install godwin_master --argument='( variant { init = record {
+  token = principal "'${GODWIN_CANISTER}'";
   admin = principal "'${DEPLOYER_PRINCIPAL}'";
   cycles_parameters = record {
     create_sub_cycles  = 50_000_000_000;

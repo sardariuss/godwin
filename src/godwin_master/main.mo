@@ -5,13 +5,12 @@ import Controller         "Controller";
 
 // Sub types import master types, so we need to import them here to avoid circular dependencies
 import SubTypes           "../godwin_sub/model/Types";
+import TokenTypes         "../godwin_token/Types";
 
 import Result             "mo:base/Result";
 import Principal          "mo:base/Principal";
 import Time               "mo:base/Time";
 import Debug              "mo:base/Debug";
-
-import GodwinToken        "canister:godwin_token";
 
 shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterInterface = this {
 
@@ -108,15 +107,15 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     await getController().pullTokens(caller, user, amount, subaccount, Time.now());
   };
 
-  public shared({caller}) func mintBatch(args: GodwinToken.MintBatchArgs) : async MintBatchResult {
+  public shared({caller}) func mintBatch(args: TokenTypes.MintBatchArgs) : async MintBatchResult {
     await getController().mintBatch(caller, args);
   };
 
-  public shared({caller}) func mint(args: GodwinToken.Mint) : async TransferResult {
+  public shared({caller}) func mint(args: TokenTypes.Mint) : async TransferResult {
     await getController().mint(caller, args);
   };
 
-  public query func getUserAccount(user: Principal) : async GodwinToken.Account {
+  public query func getUserAccount(user: Principal) : async TokenTypes.Account {
     getController().getUserAccount({ master = Principal.fromActor(this); user;});
   };
 

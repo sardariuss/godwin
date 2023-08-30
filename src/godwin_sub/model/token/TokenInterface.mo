@@ -2,8 +2,6 @@ import Types       "Types";
 
 import Account     "../../utils/Account";
 
-import GodwinToken "canister:godwin_token";
-
 import Map         "mo:map/Map";
 
 import Result      "mo:base/Result";
@@ -29,13 +27,16 @@ module {
 
   let { toBaseResult; } = Types;
   type MasterInterface                = Types.MasterInterface;
+  type GodwinTokenInterface           = Types.GodwinTokenInterface;
   type Subaccount                     = Types.Subaccount;
   type Balance                        = Types.Balance;
   type Account                        = Types.Account;
   type CanisterCallError              = Types.CanisterCallError;
   type TransferFromMasterResult       = Types.TransferFromMasterResult;
+  type ReapAccountReceiver            = Types.ReapAccountReceiver;
   type ReapAccountRecipient           = Types.ReapAccountRecipient;
   type ReapAccountResult              = Types.ReapAccountResult;
+  type MintReceiver                   = Types.MintReceiver;
   type MintRecipient                  = Types.MintRecipient;
   type TransferArgs                   = Types.TransferArgs;
   type TransferResult                 = Types.TransferResult;
@@ -44,12 +45,14 @@ module {
   type Mint                           = Types.Mint;
   type ITokenInterface                = Types.ITokenInterface;
 
-  public func build(principal: Principal) : TokenInterface {
-    let master : MasterInterface = actor(Principal.toText(principal));
-    TokenInterface(master);
+  public func build({master: Principal; token: Principal}) : TokenInterface {
+    TokenInterface(
+      actor(Principal.toText(master)) : MasterInterface,
+      actor(Principal.toText(token)) : GodwinTokenInterface
+    );
   };
 
-  public class TokenInterface(_master: MasterInterface) : ITokenInterface {
+  public class TokenInterface(_master: MasterInterface, _token: GodwinTokenInterface) : ITokenInterface {
 
     public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async* TransferFromMasterResult {
       try {
@@ -59,15 +62,14 @@ module {
       };
     };
     
-    // @todo: double ReapAccountRecipient types is confusing
-    public func reapSubaccount(subaccount: Blob, recipients: Iter<ReapAccountRecipient>) : async* Trie<Principal, ?ReapAccountResult> {
+    public func reapSubaccount(subaccount: Blob, receivers: Iter<ReapAccountReceiver>) : async* Trie<Principal, ?ReapAccountResult> {
 
       var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<GodwinToken.ReapAccountRecipient>(0);
+      let to_accounts = Buffer.Buffer<ReapAccountRecipient>(0);
 
-      for ({ to; share; } in recipients){
+      for ({ to; share; } in receivers){
         if (share > 0.0) {
           // Add to the recipients 
           to_accounts.add({ account = getMasterAccount(?to); share; });
@@ -82,7 +84,7 @@ module {
 
       let reap_result = try {
         // Call the token reap_account method
-        await GodwinToken.reap_account({
+        await _token.reap_account({
           subaccount = ?subaccount;
           to = Buffer.toArray(to_accounts);
           memo = null;
@@ -93,8 +95,8 @@ module {
 
       switch(reap_result) {
         case(#Err(err)) {    
-          for (recipient in recipients){
-            results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
+          for (receiver in receivers){
+            results := Trie.put(results, key(receiver.to), Principal.equal, ?#err(err)).0;
           };
         };
         case(#Ok(transfer_results)){
@@ -109,15 +111,14 @@ module {
       results;
     };
 
-    // @todo: double MintRecipient types is confusing
-    public func mintBatch(recipients: Iter<MintRecipient>) : async* Trie<Principal, ?MintResult> {
+    public func mintBatch(receivers: Iter<MintReceiver>) : async* Trie<Principal, ?MintResult> {
 
       var results : Trie<Principal, ?MintResult> = Trie.empty();
 
       let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<GodwinToken.MintRecipient>(0);
+      let to_accounts = Buffer.Buffer<MintRecipient>(0);
 
-      for ({ to; amount; } in recipients){
+      for ({ to; amount; } in receivers){
         if (amount > 0) {
         // Add to the recipients 
         to_accounts.add({ account = getMasterAccount(?to); amount; });
@@ -141,8 +142,8 @@ module {
 
       switch(mint_batch) {
         case(#err(err)) {    
-          for (recipient in recipients){
-            results := Trie.put(results, key(recipient.to), Principal.equal, ?#err(err)).0;
+          for (receiver in receivers){
+            results := Trie.put(results, key(receiver.to), Principal.equal, ?#err(err)).0;
           };
         };
         case(#ok(transfer_results)){

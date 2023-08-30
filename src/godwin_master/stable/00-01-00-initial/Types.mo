@@ -5,6 +5,7 @@ module {
   type Map<K, V> = Map.Map<K, V>;
 
   public type State = {
+    token                   : Ref<Principal>;
     admin                   : Ref<Principal>;
     cycles_parameters       : Ref<CyclesParameters>;
     sub_creation_price_e8s  : Ref<Nat>;
@@ -22,6 +23,7 @@ module {
   };
 
   public type InitArgs = {
+    token                  : Principal;
     admin                  : Principal;
     cycles_parameters      : CyclesParameters;
     sub_creation_price_e8s : Nat;

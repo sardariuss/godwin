@@ -14,6 +14,7 @@ module {
   type SubParamsValidator  = SubParamsValidator.SubParamsValidator;
 
   public class Model(
+    _token                   : WRef<Principal>,
     _admin                   : WRef<Principal>,
     _cycles_parameters       : WRef<CyclesParameters>,
     _sub_creation_price_e8s  : WRef<Nat>,
@@ -22,6 +23,14 @@ module {
     _sub_godwins             : WMap<Principal, Text>,
     _users                   : WMap<Principal, Text>
     ) {
+
+    public func getToken() : Principal {
+      _token.get();
+    };
+
+    public func setToken(token: Principal) {
+      _token.set(token);
+    };
 
     public func getAdmin() : Principal {
       _admin.get();
