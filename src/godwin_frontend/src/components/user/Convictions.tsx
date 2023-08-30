@@ -95,10 +95,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
               {
                 [...Array.from(polarizationMap.entries())].map(([category, polarization]) => (
                   (
-                    <li key={category} style={{
-                        filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
-                                hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
-                        }}>
+                    <li key={category}>
                       <PolarizationBar 
                         name={category}
                         showName={true}

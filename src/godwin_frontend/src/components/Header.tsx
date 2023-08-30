@@ -110,7 +110,7 @@ function Header({login, setShowAskQuestion}: Props) {
                   <li>
                     { isAuthenticated && authClient !== undefined ?
                       <Link className="block py-2 px-3 text-end text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                        to={"/profile/" + authClient.getIdentity().getPrincipal().toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
+                        to={"/user/" + authClient.getIdentity().getPrincipal().toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
                         { loggedUserName !== undefined ? loggedUserName : CONSTANTS.USER_NAME.DEFAULT }
                       </Link> : <></>
                     }

@@ -4,6 +4,7 @@ import OpenQuestionPopup               from "./OpenQuestionPopup";
 import MainQuestions                   from "./MainQuestions";
 import CreateSub                       from "./CreateSub";
 import UserComponent                   from "./user/User";
+import SubProfile                      from "./user/SubProfile";
 import ListSubs                        from "./ListSubs";
 import { ActorContext, useAuthClient } from "../ActorContext";
 
@@ -69,8 +70,12 @@ function App() {
                 element={ <MainQuestions/> }
               />
               <Route
-                path="/profile/:user"
+                path="/user/:user"
                 element={ <UserComponent/> }
+              />
+              <Route
+                path="/g/:subgodwin/user/:user"
+                element={ <SubProfile/> }
               />
               <Route
                 path="/"
