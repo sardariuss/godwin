@@ -1,15 +1,26 @@
 import UserName                                   from "./UserName";
+import Spinner                                    from "../Spinner";
 import CopyIcon                                   from "../icons/CopyIcon";
 import SvgButton                                  from "../base/SvgButton"
 import LogoutIcon                                 from "../icons/LogoutIcon";
 import { getEncodedAccount }                      from "../../utils/LedgerUtils";
+import { airdropErrorToString }                   from "../../utils";
 import { ActorContext }                           from "../../ActorContext"
 import { Account }                                from "../../../declarations/godwin_master/godwin_master.did";
 
 import React, { useEffect, useState, useContext } from "react";
 import { Link }                                   from "react-router-dom";
-
+import { Tooltip }                                from "@mui/material";
+import ErrorOutlineIcon                           from "@mui/icons-material/ErrorOutline";
+import DoneIcon                                   from '@mui/icons-material/Done';
 import { Principal }                              from "@dfinity/principal";
+
+enum SubmittingState {
+  STILL,
+  SUBMITTING,
+  SUCCESS,
+  ERROR,
+};
 
 type UserInfoProps = {
   principal: Principal;
@@ -19,8 +30,10 @@ const UserInfo = ({ principal } : UserInfoProps) => {
 
   const {isAuthenticated, authClient, master, airdrop, logout, refreshBalance} = useContext(ActorContext);
 
-  const [isLoggedUser, setIsLoggedUser] = useState<boolean>              (false    );
-  const [account,      setAccount     ] = useState<Account | undefined>  (undefined);
+  const [isLoggedUser, setIsLoggedUser] = useState<boolean>              (false                );
+  const [account,      setAccount     ] = useState<Account | undefined>  (undefined            );
+  const [state,        setState       ] = useState<SubmittingState>      (SubmittingState.STILL);
+  const [error,        setError       ] = useState<string | undefined>   (undefined            );
 
 	const refreshLoggedUser = async () => {
     setIsLoggedUser(authClient?.getIdentity().getPrincipal().compareTo(principal) === "eq");
@@ -37,8 +50,16 @@ const UserInfo = ({ principal } : UserInfoProps) => {
 
   const claimAirdrop = () => {
     // @todo: temporary airdrop
-    airdrop.airdropSelf().then(() => {;
-      refreshBalance();
+    setError(undefined);
+    setState(SubmittingState.SUBMITTING);
+    airdrop.airdropSelf().then((result) => {
+      if (result['ok'] !== undefined) {
+        setState(SubmittingState.SUCCESS);
+        refreshBalance();
+      } else if (result['err'] !== undefined) {
+        setState(SubmittingState.ERROR);
+        setError(airdropErrorToString(result['err']));
+      }
     });
   }
 
@@ -71,12 +92,37 @@ const UserInfo = ({ principal } : UserInfoProps) => {
               </div>
             </div> : <></>
           }
-          {
-            isLoggedUser ?
-            <button type="button" onClick={(e) => claimAirdrop()} className="button-blue">
-              Airdrop
-            </button> : <></>
-          }
+          <div className="flex flex-row items-center space-x-2">
+            {
+              isLoggedUser ?
+              <button type="button" onClick={(e) => claimAirdrop()} className="flex flex-col items-center button-blue w-24" disabled={state === SubmittingState.SUBMITTING}>
+                {
+                  state === SubmittingState.SUBMITTING ?
+                  <div className="w-5 h-5">
+                    <Spinner/>
+                  </div> : 
+                  <div className="text-white">
+                    Airdrop
+                  </div>
+                }
+              </button> : <></>
+            }
+            <div className="flex flex-col w-6 min-w-6 items-center text-sm">
+            {
+              state === SubmittingState.ERROR ?
+                <div className="w-full">
+                  <Tooltip title={error} arrow>
+                    <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+                  </Tooltip>
+                </div> : 
+              state === SubmittingState.SUCCESS ?
+                <div className="w-full">
+                  <DoneIcon color="success"/>
+                </div> :
+                <></>
+            }
+            </div>
+          </div>
         </div>
       </div>
       <div className="col-start-5 flex justify-end self-end">
