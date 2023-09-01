@@ -122,6 +122,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().getVoterConvictions(Time.now(), principal);
   };
 
+  public query func getNumberVotes(vote_kind: VoteKind, voter: Principal) : async Nat {
+    getController().getNumberVotes(vote_kind, voter);
+  };
+
   public query func queryQuestions(order_by: QuestionOrderBy, direction: Direction, limit: Nat, previous_id: ?QuestionId) : async ScanLimitResult<QueryQuestionItem> {
     getController().queryQuestions(order_by, direction, limit, previous_id);
   };

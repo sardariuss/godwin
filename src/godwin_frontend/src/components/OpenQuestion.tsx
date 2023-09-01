@@ -80,69 +80,79 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
           required
         />
       </div>
-      <div className="flex flex-row p-2 space-x-2 items-center place-self-end">
+      <div className={`flex flex-row p-2 ${ text.length > 0 ? "justify-between" : "justify-end"}`}>
         { sub !== undefined && text.length > sub.info.character_limit ? 
-          <div className="text-red-500 text-xs">{CONSTANTS.MAX_NUM_CHARACTERS_REACHED}</div> : <></>
+            <div className="flex text-red-500 text-xs items-center">{CONSTANTS.MAX_NUM_CHARACTERS_REACHED}</div> : 
+          text.indexOf("?") > -1 ?	
+            <div className="flex text-red-500 text-xs items-center">{CONSTANTS.QUESTION_MARK_NOT_ALLOWED}</div> :
+          text.length > 0 ? 
+            <div className="flex grid grid-rows-3 text-black dark:text-white place-self-start text-xs items-center">
+              <span>{"Tips:"}</span>
+              <span className="ml-1 italic">{" · write a statement (not a question)"}</span>
+              <span className="ml-1 italic">{" · try to avoid negation"}</span>
+            </div> : <></>
         }
-        {
-          canSelectSub ? 
-          <div>
-            <button 
-              onClick={(e)=>{setShowSubsList(!showSubsList)}} 
-              className="button-simple h-9"
-              type="button"
-            >
-              {
-                sub !== undefined ? sub.info.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
-              } 
-              <svg className="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div id="dropdown" className={"absolute bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 " + (showSubsList ? "" : "hidden")}>
-              <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
-                {
-                  [...Array.from(subs.entries())].map((elem) => (
-                    <li key={elem[0]}>
-                      <div onClick={(e)=>{setSelectedSubId(elem[0]); setShowSubsList(false);}} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white hover:cursor-pointer">{"g/" + elem[0]}</div>
-                    </li>
-                  ))
-                }
-              </ul>
-            </div>
-          </div> : <></>
-        }
-        <button 
-          className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center"
-          type="submit"
-          disabled={sub===undefined || text.length <= 0 || state === SubmittingState.SUBMITTING || text.length > sub.info.character_limit}
-          onClick={(e) => submitQuestion()}
-        >
+        <div className="flex flex-row p-2 space-x-2 items-center place-self-end">
           {
-            state === SubmittingState.SUBMITTING ?
-            <div className="w-5 h-5">
-              <Spinner/>
-            </div> :
-            <div className="flex flex-row items-center gap-x-1 text-white">
-              Propose
-              <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e8s : undefined}/>
-            </div>
+            canSelectSub ? 
+            <div>
+              <button 
+                onClick={(e)=>{setShowSubsList(!showSubsList)}} 
+                className="button-simple h-9"
+                type="button"
+              >
+                {
+                  sub !== undefined ? sub.info.name : CONSTANTS.OPEN_QUESTION.PICK_SUB
+                } 
+                <svg className="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div id="dropdown" className={"absolute bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 " + (showSubsList ? "" : "hidden")}>
+                <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
+                  {
+                    [...Array.from(subs.entries())].map((elem) => (
+                      <li key={elem[0]}>
+                        <div onClick={(e)=>{setSelectedSubId(elem[0]); setShowSubsList(false);}} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white hover:cursor-pointer">{"g/" + elem[0]}</div>
+                      </li>
+                    ))
+                  }
+                </ul>
+              </div>
+            </div> : <></>
           }
-        </button>
-        <div className="flex flex-col w-6 min-w-6 items-center text-sm">
-        {
-          state === SubmittingState.ERROR ?
-            <div className="w-full">
-              <Tooltip title={error} arrow>
-                <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
-              </Tooltip>
-            </div> : 
-          state === SubmittingState.SUCCESS ?
-            <div className="w-full">
-              <DoneIcon color="success"/>
-            </div> :
-            <></>
-        }
+          <button 
+            className="button-simple w-36 min-w-36 h-9 flex flex-col justify-center items-center"
+            type="submit"
+            disabled={sub===undefined || text.length <= 0 || state === SubmittingState.SUBMITTING || text.length > sub.info.character_limit || text.indexOf("?") > -1}
+            onClick={(e) => submitQuestion()}
+          >
+            {
+              state === SubmittingState.SUBMITTING ?
+              <div className="w-5 h-5">
+                <Spinner/>
+              </div> :
+              <div className="flex flex-row items-center gap-x-1 text-white">
+                Propose
+                <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e8s : undefined}/>
+              </div>
+            }
+          </button>
+          <div className="flex flex-col w-6 min-w-6 items-center text-sm">
+          {
+            state === SubmittingState.ERROR ?
+              <div className="w-full">
+                <Tooltip title={error} arrow>
+                  <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
+                </Tooltip>
+              </div> : 
+            state === SubmittingState.SUCCESS ?
+              <div className="w-full">
+                <DoneIcon color="success"/>
+              </div> :
+              <></>
+          }
+          </div>
         </div>
       </div>
     </div>

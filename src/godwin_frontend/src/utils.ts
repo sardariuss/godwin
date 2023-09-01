@@ -3,6 +3,7 @@ import { AccessControlError, VoteStatus, PutBallotError, VoteKind as VoteKindIdl
   KindRevealableBallot, OpinionAnswer, CursorArray, VoteData, KindAnswer, KindVote,
   InterestVote, OpinionVote, CategorizationVote } from "./../declarations/godwin_sub/godwin_sub.did";
 import { Category, CreateSubGodwinError, Result_1 } from "../declarations/godwin_master/godwin_master.did";
+import { AirdropError } from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import CONSTANTS from "./Constants";
 import { fromNullable } from "@dfinity/utils";
 import { InterestEnum, interestToEnum, enumToInterest } from "./components/interest/InterestTypes";
@@ -434,6 +435,21 @@ export const createSubGodwinErrorToString = (error: CreateSubGodwinError) : stri
   if (error['TooOld']                     !== undefined) return 'TooOld'
   if (error['InsufficientFunds']          !== undefined) return 'InsufficientFunds';
   throw new Error('Invalid CreateSubGodwinError');
+}
+
+export const airdropErrorToString = (error: AirdropError) : string => {
+  if (error['NotAuthorized']              !== undefined) return 'NotAuthorized';
+  if (error['AlreadySupplied']            !== undefined) return 'AlreadySupplied';
+  // From transfer error
+  if (error['GenericError']               !== undefined) return 'GenericError';
+  if (error['TemporarilyUnavailable']     !== undefined) return 'TemporarilyUnavailable'
+  if (error['BadBurn']                    !== undefined) return 'BadBurn';
+  if (error['Duplicate']                  !== undefined) return 'Duplicate';
+  if (error['BadFee']                     !== undefined) return 'BadFee';
+  if (error['CreatedInFuture']            !== undefined) return 'CreatedInFuture';
+  if (error['TooOld']                     !== undefined) return 'TooOld'
+  if (error['InsufficientFunds']          !== undefined) return 'InsufficientFunds';
+  throw new Error('Invalid AirdropError');
 }
 
 export const createSubResultToError = (result: Result_1) : string | undefined => {

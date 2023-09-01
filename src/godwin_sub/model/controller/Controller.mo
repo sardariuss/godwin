@@ -255,6 +255,20 @@ module {
       _model.getInterestVotes().findOpenedVoteTransactions(principal, id);
     };
 
+    public func getNumberVotes(vote_kind: VoteKind, voter: Principal) : Nat {
+      switch(vote_kind){
+        case(#INTEREST){
+          _model.getInterestVotersHistory().getVoterHistory(voter).size();
+        };
+        case(#OPINION){
+          _model.getOpinionVotersHistory().getVoterHistory(voter).size();
+        };
+        case(#CATEGORIZATION){
+          _model.getCategorizationVotersHistory().getVoterHistory(voter).size();
+        };
+      };
+    };
+
     public func queryFreshVotes(principal: Principal, vote_kind: VoteKind, direction: Direction, limit: Nat, previous_id: ?QuestionId) : ScanLimitResult<QueryVoteItem> {
       
       let (order_by, votes, joins) = switch(vote_kind){

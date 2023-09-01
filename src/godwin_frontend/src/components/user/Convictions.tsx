@@ -96,9 +96,9 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                 [...Array.from(polarizationMap.entries())].map(([category, polarization]) => (
                   (
                     <li key={category} style={{
-                        filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
-                                hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
-                        }}>
+                      filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
+                              hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
+                      }}>
                       <PolarizationBar 
                         name={category}
                         showName={true}
@@ -120,7 +120,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
                 chartType={chartType}
                 setChartType={setChartType}
               />
-              <div className=" place-self-center">
+              <div className="place-self-center">
               { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
               </div>
             </div>

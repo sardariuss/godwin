@@ -71,6 +71,7 @@ const CONSTANTS = {
     HUE_ROTATE_DEG: 39,
   },
   MAX_NUM_CHARACTERS_REACHED: 'Max number of characters reached',
+  QUESTION_MARK_NOT_ALLOWED: 'Question mark is not allowed',
   MAX_NUM_CATEGORIES: 8,
   NEW_SUB_DEFAULT_PARAMETERS: {
     CATEGORY: {
@@ -93,7 +94,8 @@ const CONSTANTS = {
     },
     CHARACTER_LIMIT: BigInt(500)
   },
-  SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name."
+  SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name.",
+  USER_DOES_NOT_EXIST: "Sorry, there isn't any user with that principal.",
 };
 
 export default CONSTANTS;

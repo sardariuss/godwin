@@ -38,12 +38,12 @@ const OpenedVote = ({sub, principal, opened_vote} : OpenedVoteInput) => {
     <div className="flex flex-col items-center w-full grow justify-items-center border-b dark:border-gray-700 hover:bg-slate-50 hover:dark:bg-slate-850 px-5">
       <div className="grid grid-cols-12 text-black dark:text-white w-full gap-x-5 items-center py-1">
         <div className="col-span-2 justify-self-start text-sm">
-          <div> { opened_vote.iteration > 0 ? ("Reopened (" + (Number(opened_vote.iteration) + 1).toString() + ")") : "Author" } </div>
+          <div> { opened_vote.iteration > 0 ? "Reopened" : "Author" } </div>
         </div>
-        <div className="col-span-1 justify-self-start text-sm">
+        <div className="col-span-2 justify-self-start text-sm">
           <div> { timeAgo(new Date(Number(opened_vote.date) / 1000000)) } </div>
         </div>
-        <div className="col-span-8 flex flex-col justify-between w-full space-y-2 justify-start text-sm font-normal break-words">
+        <div className="col-span-7 flex flex-col justify-between w-full space-y-2 justify-start text-sm font-normal break-words">
         {
           fromNullable(opened_vote.question) === undefined ?
           <div className="italic text-gray-600 dark:text-gray-400 text-xs">

@@ -35,6 +35,6 @@ record {
   };
   convictions = record {
     vote_half_life        = variant { DAYS = 365 : nat };
-    late_ballot_half_life = variant { DAYS = 7   : nat };
+    late_ballot_half_life = variant { DAYS = 30  : nat };
   };
 }
