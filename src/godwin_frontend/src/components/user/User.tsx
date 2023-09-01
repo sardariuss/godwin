@@ -1,4 +1,5 @@
 import UserInfo                                   from "./UserInfo";
+import LinkSubProfile                             from "./LinkSubProfile";
 import { ActorContext }                           from "../../ActorContext"
 import CONSTANTS                                  from "../../Constants";
 
@@ -40,16 +41,9 @@ const UserComponent = () => {
           <UserInfo principal={principal}/>
           <ol className="flex flex-col text-black dark:text-white">
             {
-              [...Array.from(subs.entries())].map((sub, index) => (
+              [...Array.from(subs.entries())].map((sub) => (
                 <li key={sub[0]}>
-                  <Link to={ "/g/" + sub[0] + "/user/" + user }>
-                    <div className={`block w-full flex flex-col hover:bg-slate-50 hover:dark:bg-slate-850 px-5 w-full ${index < (subs.size - 1) ? "border-b dark:border-gray-700" : "" }` }>
-                      <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{sub[1].info.name}</h5>
-                      <p className="font-normal text-gray-700 dark:text-gray-400">{sub[1].info.categories.size.toString() + " dimension" + (sub[1].info.categories.size > 1 ? "s" : "")}</p>
-                      <p className="font-normal text-gray-700 dark:text-gray-400"> { sub[1].info.momentum.num_votes_opened.toString() + " lifetime votes"} </p>
-                      <p className="font-normal text-gray-700 dark:text-gray-400"> { fromNullable(sub[1].info.momentum.last_pick)?.total_votes.toString() + " users"} </p>
-                    </div>
-                  </Link>
+                  <LinkSubProfile sub={sub} principal={principal}/>
                 </li>
               ))
             }
