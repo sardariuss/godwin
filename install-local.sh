@@ -8,19 +8,19 @@ dfx build --all
 # Token settings
 export NAME="Godwin"
 export SYMBOL="GDW"
-export DEMICALS="8"
-export FEE="10_000" # 0.0001
-export MAX_SUPPLY="100_000_000_000_000_000" # 1 billion
-export MIN_BURN_AMOUNT="10_000" # Same as fee
+export DEMICALS="9"
+export FEE="100_000"
+export MAX_SUPPLY="1_000_000_000_000_000_000" # 1 billion
+export MIN_BURN_AMOUNT="100_000" # Same as fee
 
 # Deployer
 export DEPLOYER_PRINCIPAL=$(dfx identity get-principal)
-export DEPLOYER_AMOUNT="30_000_000_000_000_000" # 300 million
+export DEPLOYER_AMOUNT="300_000_000_000_000_000" # 300 million
 
 # Airdrop
 export AIRDROP_CANISTER=$(dfx canister id godwin_airdrop)
-export AIRDROP_AMOUNT="100_000_000_000_000" # 1 million
-export AIRDROP_PER_USER="8_000_000_000" # 80 per user, 12.5k users
+export AIRDROP_AMOUNT="10_000_000_000_000_000" # 10 million
+export AIRDROP_PER_USER="10_000_000_000_000" # 10_000 tokens per user, for 1000 users
 export AIRDROP_ALLOW_SELF="true"
 
 # Master
@@ -66,13 +66,13 @@ dfx canister install godwin_master --argument='( variant { init = record {
     create_sub_cycles  = 50_000_000_000;
     upgrade_sub_cycles = 10_000_000_000;
   };
-  sub_creation_price_e8s = 8_000_000_000;
+  sub_creation_price_e9s = 25_000_000_000_000;
   base_price_parameters = record {
     base_selection_period         = variant { DAYS = 1 : nat };
-    open_vote_price_e8s           =  1_000_000_000;
-    reopen_vote_price_e8s         =    500_000_000;
-    interest_vote_price_e8s       =    100_000_000;
-    categorization_vote_price_e8s =    300_000_000;
+    open_vote_price_e9s           =  10_000_000_000_000;
+    reopen_vote_price_e9s         =   5_000_000_000_000;
+    interest_vote_price_e9s       =   1_000_000_000_000;
+    categorization_vote_price_e9s =   3_000_000_000_000;
   };
   validation_parameters = record {
     username = record {

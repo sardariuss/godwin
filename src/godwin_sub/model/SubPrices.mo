@@ -17,14 +17,14 @@ module {
   type PriceRegister        = Types.Current.PriceRegister;
 
   public func computeSubPrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) : PriceRegister {
-    let { base_selection_period; reopen_vote_price_e8s; open_vote_price_e8s; interest_vote_price_e8s; categorization_vote_price_e8s; } = base_price_params;
+    let { base_selection_period; reopen_vote_price_e9s; open_vote_price_e9s; interest_vote_price_e9s; categorization_vote_price_e9s; } = base_price_params;
     let { selection_period } = selection_params;
     let coef = Float.fromInt(Duration.toTime(selection_period)) / Float.fromInt(Duration.toTime(base_selection_period));
     return {
-      open_vote_price_e8s           = Int.abs(Float.toInt(Float.fromInt(open_vote_price_e8s          ) * coef));
-      reopen_vote_price_e8s         = Int.abs(Float.toInt(Float.fromInt(reopen_vote_price_e8s        ) * coef));
-      interest_vote_price_e8s       = Int.abs(Float.toInt(Float.fromInt(interest_vote_price_e8s      ) * coef));
-      categorization_vote_price_e8s = Int.abs(Float.toInt(Float.fromInt(categorization_vote_price_e8s) * coef));
+      open_vote_price_e9s           = Int.abs(Float.toInt(Float.fromInt(open_vote_price_e9s          ) * coef));
+      reopen_vote_price_e9s         = Int.abs(Float.toInt(Float.fromInt(reopen_vote_price_e9s        ) * coef));
+      interest_vote_price_e9s       = Int.abs(Float.toInt(Float.fromInt(interest_vote_price_e9s      ) * coef));
+      categorization_vote_price_e9s = Int.abs(Float.toInt(Float.fromInt(categorization_vote_price_e9s) * coef));
     };
   };
 

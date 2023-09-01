@@ -98,7 +98,7 @@ module {
             token_interface,
             #PUT_INTEREST_BALLOT,
           ),
-          func() : Nat { sub_prices.getPrices().interest_vote_price_e8s; },
+          func() : Nat { sub_prices.getPrices().interest_vote_price_e9s; },
           getPayoutFunction(sub_prices)
         )
       ),
@@ -128,9 +128,9 @@ module {
     public func openVote(principal: Principal, date: Time, last_iteration: ?Nat, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
       // Get the price to open the vote
       let vote_price = if (Option.isNull(last_iteration)) { 
-        _sub_prices.getPrices().open_vote_price_e8s; 
+        _sub_prices.getPrices().open_vote_price_e9s; 
       } else { 
-        _sub_prices.getPrices().reopen_vote_price_e8s; 
+        _sub_prices.getPrices().reopen_vote_price_e9s; 
       };
       // The user has to pay to open up an interest vote
       // The PayForNew payin function requires a callback to create the vote, it will be called only if the payement succeeds
@@ -156,9 +156,9 @@ module {
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
       let price = if (iteration == 0) { 
-        _sub_prices.getPrices().open_vote_price_e8s; 
+        _sub_prices.getPrices().open_vote_price_e9s; 
       } else { 
-        _sub_prices.getPrices().reopen_vote_price_e8s; 
+        _sub_prices.getPrices().reopen_vote_price_e9s; 
       };
       // Get the author raw payout
       let author_payout = PayRules.attenuatePayout(

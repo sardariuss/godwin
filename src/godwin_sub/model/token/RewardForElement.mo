@@ -27,11 +27,11 @@ module {
     _token_interface: ITokenInterface
   ) {
 
-    public func reward(id: Id, token_amount_e8s: Balance) : async* () {
+    public func reward(id: Id, token_amount_e9s: Balance) : async* () {
       if (Map.has(_mint_register, Map.nhash, id)){
         Debug.trap("The element " # Nat.toText(id) # " has already been rewarded.");
       };
-      let result = await* _token_interface.mint(_beneficiary, token_amount_e8s);
+      let result = await* _token_interface.mint(_beneficiary, token_amount_e9s);
       Map.set(_mint_register, Map.nhash, id, result);
     };
 

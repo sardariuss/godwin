@@ -134,7 +134,7 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
               </div> :
               <div className="flex flex-row items-center gap-x-1 text-white">
                 Propose
-                <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e8s : undefined}/>
+                <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e9s : undefined}/>
               </div>
             }
           </button>

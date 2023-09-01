@@ -18,7 +18,7 @@ import GodwinToken  "canister:godwin_token";
 import GodwinMaster "canister:godwin_master";
 
 shared({caller = controller}) actor class GodwinAirdrop(
-  amount_e8s_per_user: Nat,
+  amount_e9s_per_user: Nat,
   allow_self_airdrop: Bool
 ) {
 
@@ -38,7 +38,7 @@ shared({caller = controller}) actor class GodwinAirdrop(
   let { toBaseResult; } = MasterTypes;
 
   stable var _controller          = controller;
-  stable var _amount_e8s_per_user = amount_e8s_per_user;
+  stable var _amount_e9s_per_user = amount_e9s_per_user;
   stable var _allow_self_airdrop  = allow_self_airdrop;
   stable let _airdropped_users    = Set.new<Principal>(Set.phash);
 
@@ -61,10 +61,10 @@ shared({caller = controller}) actor class GodwinAirdrop(
         subaccount = ?Account.toSubaccount(principal);
       };
       from_subaccount = null;
-      amount = _amount_e8s_per_user;
+      amount = _amount_e9s_per_user;
       memo = null;
       created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-      fee = ?10_000; // @todo: fix bug where null is not allowed
+      fee = ?100_000; // @todo: fix bug where null is not allowed
     }));
 
     switch(transfer_result){

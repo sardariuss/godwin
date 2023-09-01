@@ -1,5 +1,5 @@
 # Airdrop scenario
-export AIRDROP_PER_USER="100_000_000_000 : nat" # 1 thousand per user, 10 thousands users
+export AIRDROP_PER_USER="10_000_000_000_000 : nat" # 10_000 tokens per user, for 1000 users
 export AIRDROP_ALLOW_SELF="true"
 export AIRDROP_CANISTER=$(dfx canister id godwin_airdrop)
 
@@ -20,10 +20,10 @@ export TRANSFER_TO_MASTER="dfx canister call godwin_token icrc1_transfer '(
   record {
     to = "${DEPLOYER_MASTER_ACCOUNT}";
     from_subaccount = null;
-    amount = 100_000_000_000;
+    amount = 50_000_000_100_000;
     memo = null;
     created_at_time = null;
-    fee = opt 10_000;
+    fee = opt 100_000;
   }
 )'"
 eval "$TRANSFER_TO_MASTER"
@@ -36,7 +36,7 @@ export SUB=${SUB_RESULT:27:27}
 
 export SUB_UPGRADE_1="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/scenario_sub/scenario_sub.wasm\" --mode=upgrade --yes"
 eval "$SUB_UPGRADE_1"
-export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { DAYS = 14 : nat } , variant { MINUTES = 60 : nat } )'"
+export RUN_SUB_SCENARIO="dfx canister call "${SUB}" runScenario '(variant { DAYS = 10 : nat } , variant { MINUTES = 50 : nat } )'"
 eval "$RUN_SUB_SCENARIO"
 export SUB_UPGRADE_2="dfx canister install "${SUB}" --wasm=\".dfx/local/canisters/godwin_sub/godwin_sub.wasm\" --mode=upgrade --yes --argument='(variant {none})'"
 eval "$SUB_UPGRADE_2"

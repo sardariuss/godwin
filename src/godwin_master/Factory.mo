@@ -22,14 +22,14 @@ module {
     let sub_godwins            = WMap.WMap<Principal, Text>           (state.sub_godwins, Map.phash                                                );
     let users                  = WMap.WMap<Principal, Text>           (state.users, Map.phash                                                      );
     let cycles_parameters      = WRef.WRef<CyclesParameters>          (state.cycles_parameters                                                     );
-    let sub_creation_price_e8s = WRef.WRef<Nat>                       (state.sub_creation_price_e8s                                                );
+    let sub_creation_price_e9s = WRef.WRef<Nat>                       (state.sub_creation_price_e9s                                                );
     let base_price_parameters  = WRef.WRef<BasePriceParameters>       (state.base_price_parameters                                                 );
     let sub_params_validator   = SubParamsValidator.SubParamsValidator(WRef.WRef<ValidationParams>(state.validation_parameters), sub_godwins, users);
     let model = Model.Model(
       token,
       admin,
       cycles_parameters,
-      sub_creation_price_e8s,
+      sub_creation_price_e9s,
       base_price_parameters,
       sub_params_validator,
       sub_godwins,

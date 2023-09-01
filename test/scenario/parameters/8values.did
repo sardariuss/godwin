@@ -25,7 +25,7 @@ record {
   };
   selection = record {
     minimum_score = 1.0;
-    selection_period = variant { HOURS = 8 : nat };
+    selection_period = variant { HOURS = 6 : nat };
   };
   scheduler = record {
     censor_timeout            = variant { HOURS = 4  : nat };

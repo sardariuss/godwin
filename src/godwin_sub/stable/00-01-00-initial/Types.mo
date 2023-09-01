@@ -285,17 +285,17 @@ module {
 
   public type BasePriceParameters = {
     base_selection_period         : Duration;
-    open_vote_price_e8s           : Nat;
-    reopen_vote_price_e8s         : Nat;
-    interest_vote_price_e8s       : Nat;
-    categorization_vote_price_e8s : Nat;
+    open_vote_price_e9s           : Nat;
+    reopen_vote_price_e9s         : Nat;
+    interest_vote_price_e9s       : Nat;
+    categorization_vote_price_e9s : Nat;
   };
 
   public type PriceRegister = {
-    open_vote_price_e8s           : Nat;
-    reopen_vote_price_e8s         : Nat;
-    interest_vote_price_e8s       : Nat;
-    categorization_vote_price_e8s : Nat;
+    open_vote_price_e9s           : Nat;
+    reopen_vote_price_e9s         : Nat;
+    interest_vote_price_e9s       : Nat;
+    categorization_vote_price_e9s : Nat;
   };
 
   public type Category = Text;

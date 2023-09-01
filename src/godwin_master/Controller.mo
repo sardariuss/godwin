@@ -220,7 +220,7 @@ module {
         await _token.icrc1_transfer({
           amount;
           created_at_time = ?Nat64.fromNat(Int.abs(time));
-          fee = ?10_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
+          fee = ?100_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
           from_subaccount = ?Account.toSubaccount(user);
           memo = null;
           to = {

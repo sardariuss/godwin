@@ -179,7 +179,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
                     set_run_countdown={setCountdownVote}
                     trigger_update={triggerVote}
                     set_trigger_update={setTriggerVote}
-                    cost={sub.info.prices.categorization_vote_price_e8s}>
+                    cost={sub.info.prices.categorization_vote_price_e9s}>
                   <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote }>
                     <PutBallotIcon/>
                   </SvgButton>

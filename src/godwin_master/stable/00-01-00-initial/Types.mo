@@ -8,7 +8,7 @@ module {
     token                   : Ref<Principal>;
     admin                   : Ref<Principal>;
     cycles_parameters       : Ref<CyclesParameters>;
-    sub_creation_price_e8s  : Ref<Nat>;
+    sub_creation_price_e9s  : Ref<Nat>;
     base_price_parameters   : Ref<BasePriceParameters>;
     validation_parameters   : Ref<ValidationParams>;
     sub_godwins             : Map<Principal, Text>;
@@ -26,7 +26,7 @@ module {
     token                  : Principal;
     admin                  : Principal;
     cycles_parameters      : CyclesParameters;
-    sub_creation_price_e8s : Nat;
+    sub_creation_price_e9s : Nat;
     base_price_parameters  : BasePriceParameters;
     validation_parameters  : ValidationParams;
   };
@@ -81,10 +81,10 @@ module {
 
   public type BasePriceParameters = {
     base_selection_period         : Duration;
-    open_vote_price_e8s           : Nat;
-    reopen_vote_price_e8s         : Nat;
-    interest_vote_price_e8s       : Nat;
-    categorization_vote_price_e8s : Nat;
+    open_vote_price_e9s           : Nat;
+    reopen_vote_price_e9s         : Nat;
+    interest_vote_price_e9s       : Nat;
+    categorization_vote_price_e9s : Nat;
   };
 
   public type CyclesParameters = {

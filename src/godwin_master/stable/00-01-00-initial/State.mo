@@ -20,13 +20,13 @@ module {
 
   public func init(date: Time, args: InitArgs) : State {
     
-    let { token; admin; cycles_parameters; sub_creation_price_e8s; base_price_parameters; validation_parameters; } = args;
+    let { token; admin; cycles_parameters; sub_creation_price_e9s; base_price_parameters; validation_parameters; } = args;
 
     #v0_1_0({
       token                   = Ref.init<Principal>(token);
       admin                   = Ref.init<Principal>(admin);
       cycles_parameters       = Ref.init<CyclesParameters>(cycles_parameters);
-      sub_creation_price_e8s  = Ref.init<Nat>(sub_creation_price_e8s);
+      sub_creation_price_e9s  = Ref.init<Nat>(sub_creation_price_e9s);
       base_price_parameters   = Ref.init<BasePriceParameters>(base_price_parameters);
       validation_parameters   = Ref.init<ValidationParams>(validation_parameters);
       sub_godwins             = Map.new<Principal, Text>(Map.phash);

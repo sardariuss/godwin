@@ -5,8 +5,8 @@ import { ReapAccountError, MintError, TransferError } from "../../../declaration
 import { fromNullable } from "@dfinity/utils";
 import { Mint } from "../../../declarations/godwin_master/godwin_master.did";
 
-export const frome8s = (e8s: bigint) : number => {
-  return Number(e8s) / 100000000;
+export const frome9s = (e9s: bigint) : number => {
+  return Number(e9s) / 1000000000;
 }
 
 export const transactionKindToString = (kind: TransactionKind) : string => {

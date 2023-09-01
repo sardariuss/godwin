@@ -63,8 +63,8 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().getSubCreationPriceE8s();
   };
 
-  public shared({caller}) func setSubCreationPriceE8s(sub_creation_price_e8s: Balance) : async Result<(), AccessControlError> {
-    getController().setSubCreationPriceE8s(caller, sub_creation_price_e8s);
+  public shared({caller}) func setSubCreationPriceE8s(sub_creation_price_e9s: Balance) : async Result<(), AccessControlError> {
+    getController().setSubCreationPriceE8s(caller, sub_creation_price_e9s);
   };
 
   public shared query func getBasePriceParameters() : async BasePriceParameters {

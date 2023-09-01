@@ -165,7 +165,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
                       set_run_countdown={setCountdownVote}
                       trigger_update={triggerVote}
                       set_trigger_update={setTriggerVote}
-                      cost={sub.info.prices.interest_vote_price_e8s}
+                      cost={sub.info.prices.interest_vote_price_e9s}
                     >
                       <SvgButton onClick={() => setTriggerVote(true)}>
                         <PutBallotIcon/>

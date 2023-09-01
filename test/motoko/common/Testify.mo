@@ -444,16 +444,16 @@ module {
     public let priceRegister = {
       equal : Testify<PriceRegister> = {
         toText = func(register: PriceRegister) : Text {
-          "open_vote_price_e8s = "           # Nat.toText(register.open_vote_price_e8s)     # ", " #
-          "reopen_vote_price_e8s = "         # Nat.toText(register.reopen_vote_price_e8s)   # ", " #
-          "interest_vote_price_e8s = "       # Nat.toText(register.interest_vote_price_e8s) # ", " #
-          "categorization_vote_price_e8s = " # Nat.toText(register.categorization_vote_price_e8s);
+          "open_vote_price_e9s = "           # Nat.toText(register.open_vote_price_e9s)     # ", " #
+          "reopen_vote_price_e9s = "         # Nat.toText(register.reopen_vote_price_e9s)   # ", " #
+          "interest_vote_price_e9s = "       # Nat.toText(register.interest_vote_price_e9s) # ", " #
+          "categorization_vote_price_e9s = " # Nat.toText(register.categorization_vote_price_e9s);
         };
         compare = func(r1: PriceRegister, r2: PriceRegister) : Bool {
-          r1.open_vote_price_e8s           == r2.open_vote_price_e8s and
-          r1.reopen_vote_price_e8s         == r2.reopen_vote_price_e8s and
-          r1.interest_vote_price_e8s       == r2.interest_vote_price_e8s and
-          r1.categorization_vote_price_e8s == r2.categorization_vote_price_e8s;
+          r1.open_vote_price_e9s           == r2.open_vote_price_e9s and
+          r1.reopen_vote_price_e9s         == r2.reopen_vote_price_e9s and
+          r1.interest_vote_price_e9s       == r2.interest_vote_price_e9s and
+          r1.categorization_vote_price_e9s == r2.categorization_vote_price_e9s;
         };
       };
     };

@@ -17,7 +17,7 @@ module {
     _token                   : WRef<Principal>,
     _admin                   : WRef<Principal>,
     _cycles_parameters       : WRef<CyclesParameters>,
-    _sub_creation_price_e8s  : WRef<Nat>,
+    _sub_creation_price_e9s  : WRef<Nat>,
     _base_price_parameters   : WRef<BasePriceParameters>,
     _sub_params_validator    : SubParamsValidator,
     _sub_godwins             : WMap<Principal, Text>,
@@ -49,11 +49,11 @@ module {
     };
 
     public func getSubCreationPriceE8s() : Nat {
-      _sub_creation_price_e8s.get();
+      _sub_creation_price_e9s.get();
     };
 
-    public func setSubCreationPriceE8s(sub_creation_price_e8s: Nat) {
-      _sub_creation_price_e8s.set(sub_creation_price_e8s);
+    public func setSubCreationPriceE8s(sub_creation_price_e9s: Nat) {
+      _sub_creation_price_e9s.set(sub_creation_price_e9s);
     };
     
     public func getBasePriceParameters() : BasePriceParameters {
