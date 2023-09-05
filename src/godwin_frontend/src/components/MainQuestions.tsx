@@ -3,6 +3,7 @@ import { MainTabButton }                                                       f
 import OpenQuestion                                                            from "./OpenQuestion";
 import SubBanner                                                               from "./SubBanner";
 import QuestionComponent, { QuestionInput }                                    from "./Question";
+import Spinner                                                                 from "./Spinner";
 import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
 import CONSTANTS                                                               from "../Constants";
@@ -82,8 +83,11 @@ type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: Qu
 
 const MainQuestions = () => {
 
-  const { subgodwin } = useParams();
-  const {subs,                getPrincipal          } = useContext(ActorContext);
+  const { subgodwin }                                 = useParams();
+  
+  const {subs, getPrincipal }                         = useContext(ActorContext);
+  
+  const [initialized,         setInitialized        ] = useState<boolean>        (false                 );
   const [sub,                 setSub                ] = useState<Sub | undefined>(undefined             );
   const [currentMainTab,      setCurrentMainTab     ] = useState<MainTab        >(MainTab.HOME          );
   const [currentHomeFilter,   setCurrentHomeFilter  ] = useState<VoteKind       >(VoteKind.INTEREST     );
@@ -137,18 +141,29 @@ const MainQuestions = () => {
     if (subgodwin !== undefined) {
       setSub(subs.get(subgodwin));
     }
-  }, [subgodwin, subs]);
+    // A first useeffect is called before the context is up-to-date with the all the subs
+    // We consider the component initialized only after the second useEffect call, when the map of subs is populated
+    if (subs.size > 0) {
+      setInitialized(true);
+    };
+  }, [subs]);
 
   useEffect(() => {
     refreshQueryQuestions();
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
 	return (
-    (
-      sub === undefined ?  
-        <div className="flex flex-col items-center w-full text-black dark:text-white">
+    <div className="flex flex-col items-center w-full">
+      {
+      !initialized? 
+        <div className="w-6 h-6 mt-4">
+          <Spinner/>
+        </div>
+      : sub === undefined ?  
+        <div className="text-black dark:text-white">
           { CONSTANTS.SUB_DOES_NOT_EXIST }
-        </div> : 
+        </div> 
+      : 
         <div className="flex flex-col items-center w-full">
           <SubBanner sub={sub}/>
           <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">
@@ -203,7 +218,8 @@ const MainQuestions = () => {
             </div>
           </div>
         </div>
-    )
+      }
+    </div>
 	);
 };
 

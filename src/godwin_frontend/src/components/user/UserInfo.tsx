@@ -30,10 +30,11 @@ const UserInfo = ({ principal } : UserInfoProps) => {
 
   const {isAuthenticated, authClient, master, airdrop, logout, refreshBalance} = useContext(ActorContext);
 
-  const [isLoggedUser, setIsLoggedUser] = useState<boolean>              (false                );
-  const [account,      setAccount     ] = useState<Account | undefined>  (undefined            );
-  const [state,        setState       ] = useState<SubmittingState>      (SubmittingState.STILL);
-  const [error,        setError       ] = useState<string | undefined>   (undefined            );
+  const [isLoggedUser,         setIsLoggedUser        ] = useState<boolean>              (false                );
+  const [isSelfAirdropAllowed, setIsSelfAirdropAllowed] = useState<boolean>              (false                );
+  const [account,              setAccount             ] = useState<Account | undefined>  (undefined            );
+  const [state,                setState               ] = useState<SubmittingState>      (SubmittingState.STILL);
+  const [error,                setError               ] = useState<string | undefined>   (undefined            );
 
 	const refreshLoggedUser = async () => {
     setIsLoggedUser(authClient?.getIdentity().getPrincipal().compareTo(principal) === "eq");
@@ -46,6 +47,10 @@ const UserInfo = ({ principal } : UserInfoProps) => {
       let account = await master.getUserAccount(principal);
       setAccount(account);
     }
+  }
+
+  const refreshSelfAirdropAllowed = async () => {
+    setIsSelfAirdropAllowed(await airdrop.isSelfAirdropAllowed());
   }
 
   const claimAirdrop = () => {
@@ -62,6 +67,10 @@ const UserInfo = ({ principal } : UserInfoProps) => {
       }
     });
   }
+
+  useEffect(() => {
+    refreshSelfAirdropAllowed();
+  }, []);
 
   useEffect(() => {
 		refreshLoggedUser();
@@ -83,7 +92,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
             account !== undefined ? 
             <div className="flex flex-row gap-x-1 items-center">
               <div>
-              { "Account" }
+                { "Account" }
               </div>
               <div className="w-5 h-5">
                 <SvgButton onClick={(e) => navigator.clipboard.writeText(getEncodedAccount(account))} disabled={false} hidden={false}>
@@ -94,7 +103,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
           }
           <div className="flex flex-row items-center space-x-2">
             {
-              isLoggedUser ?
+              isLoggedUser && isSelfAirdropAllowed ?
               <button type="button" onClick={(e) => claimAirdrop()} className="flex flex-col items-center button-blue w-24" disabled={state === SubmittingState.SUBMITTING}>
                 {
                   state === SubmittingState.SUBMITTING ?

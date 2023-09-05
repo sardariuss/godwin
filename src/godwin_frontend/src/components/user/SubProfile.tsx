@@ -4,6 +4,7 @@ import { VoterHistory }                           from "./VoterHistory";
 import { OpenedVotes }                            from "./OpenedVotes";
 import { MainTabButton }                          from "../MainTabButton";
 import SubBanner                                  from "../SubBanner";
+import Spinner                                    from "../Spinner";
 import { VoteKind }                               from "../../utils";
 import { ActorContext, Sub }                      from "../../ActorContext"
 import CONSTANTS                                  from "../../Constants";
@@ -40,6 +41,7 @@ const SubProfile = () => {
   const {user, subgodwin} = useParams<string>();
   const {subs, authClient} = useContext(ActorContext);
 
+  const [initialized,       setInitialized      ] = useState<boolean>              (false    );
   const [principal,         setPrincipal        ] = useState<Principal | undefined>(undefined);
   const [sub,               setSub              ] = useState<Sub | undefined>      (undefined);
   const [isLoggedUser,      setIsLoggedUser     ] = useState<boolean>              (false    );
@@ -71,14 +73,26 @@ const SubProfile = () => {
   useEffect(() => {
     refreshPrincipal();
 		refreshSub();
+
+    // A first useeffect is called before the context is up-to-date with the all the subs
+    // We consider the component initialized only after the second useEffect call, when the map of subs is populated
+    if (subs.size > 0) {
+      setInitialized(true);
+    };
   }, [subs]);
 
 	return (
-    (
-      sub === undefined ?  
-        <div className="flex flex-col items-center w-full text-black dark:text-white">
+    <div className="flex flex-col items-center w-full">
+    {
+      !initialized? 
+        <div className="w-6 h-6 mt-4">
+          <Spinner/>
+        </div>
+      : sub === undefined ?  
+        <div className="text-black dark:text-white">
           { CONSTANTS.SUB_DOES_NOT_EXIST }
-        </div> : 
+        </div> 
+      : 
         <div className="flex flex-col items-center w-full">
           <SubBanner sub={sub}/>
           {
@@ -101,9 +115,7 @@ const SubProfile = () => {
           }
           {
             principal === undefined ? 
-              <div className="flex flex-col items-center w-full text-black dark:text-white">
-                {CONSTANTS.USER_DOES_NOT_EXIST}
-              </div> : 
+              <></> : 
               <div className="flex flex-col w-full border-x dark:border-gray-700 dark:border-gray-700 text-gray-900 dark:text-white xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
                 {
                   currentUserFilter === UserFilter.CONVICTIONS ?
@@ -119,7 +131,8 @@ const SubProfile = () => {
               </div>
             }
         </div>
-      )
+    }
+    </div>
   );
 };
 

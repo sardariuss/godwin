@@ -101,10 +101,8 @@ export function useAuthClient() {
           ? "https://identity.ic0.app/#authorize"
           : `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
       // 7 days in nanoseconds
-      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
-      onSuccess: () => {
-        setIsAuthenticated(true);
-      },
+      maxTimeToLive: BigInt(8) * BigInt(3_600_000_000_000),
+      onSuccess: () => { setIsAuthenticated(true); },
     });
   };
 
@@ -223,8 +221,8 @@ export function useAuthClient() {
   const refreshAuthClient = () => {
     AuthClient.create({
       idleOptions: {
-        disableDefaultIdleCallback: true,
-        disableIdle: true
+        captureScroll: true,
+        idleTimeout: 900000, // 15 minutes
       }
     }).then(async (client) => {
       const is_authenticated = await client.isAuthenticated();
