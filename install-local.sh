@@ -6,8 +6,8 @@ dfx canister create --all
 dfx build --all
 
 # Token settings
-export NAME="Godwin"
-export SYMBOL="GDW"
+export NAME="GodwinCoin"
+export SYMBOL="GDWC"
 export DEMICALS="9"
 export FEE="100_000"
 export MAX_SUPPLY="1_000_000_000_000_000_000" # 1 billion
@@ -25,7 +25,7 @@ export AIRDROP_ALLOW_SELF="true"
 
 # Master
 export MASTER_CANISTER=$(dfx canister id godwin_master)
-export GODWIN_CANISTER=$(dfx canister id godwin_token)
+export TOKEN_CANISTER=$(dfx canister id godwin_token)
 
 dfx canister install godwin_token --argument '( record {
   name              = "'${NAME}'";
@@ -60,11 +60,11 @@ dfx canister install godwin_token --argument '( record {
 dfx canister install godwin_airdrop --argument '('${AIRDROP_PER_USER}', '${AIRDROP_ALLOW_SELF}')'
 
 dfx canister install godwin_master --argument='( variant { init = record {
-  token = principal "'${GODWIN_CANISTER}'";
+  token = principal "'${TOKEN_CANISTER}'";
   admin = principal "'${DEPLOYER_PRINCIPAL}'";
   cycles_parameters = record {
-    create_sub_cycles  = 50_000_000_000;
-    upgrade_sub_cycles = 10_000_000_000;
+    create_sub_cycles  = 200_000_000_000;
+    upgrade_sub_cycles =  10_000_000_000;
   };
   sub_creation_price_e9s = 25_000_000_000_000;
   base_price_parameters = record {
