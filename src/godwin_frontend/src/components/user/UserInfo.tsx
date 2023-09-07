@@ -44,20 +44,20 @@ const UserInfo = ({ principal } : UserInfoProps) => {
     if (principal === undefined) {
       setAccount(undefined);
     } else {
-      let account = await master.getUserAccount(principal);
+      let account = await master?.getUserAccount(principal);
       setAccount(account);
     }
   }
 
   const refreshSelfAirdropAllowed = async () => {
-    setIsSelfAirdropAllowed(await airdrop.isSelfAirdropAllowed());
+    setIsSelfAirdropAllowed(airdrop === undefined ? false : await airdrop.isSelfAirdropAllowed());
   }
 
   const claimAirdrop = () => {
     // @todo: temporary airdrop
     setError(undefined);
     setState(SubmittingState.SUBMITTING);
-    airdrop.airdropSelf().then((result) => {
+    airdrop?.airdropSelf().then((result) => {
       if (result['ok'] !== undefined) {
         setState(SubmittingState.SUCCESS);
         refreshBalance();
@@ -70,7 +70,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
 
   useEffect(() => {
     refreshSelfAirdropAllowed();
-  }, []);
+  }, [airdrop]);
 
   useEffect(() => {
 		refreshLoggedUser();
@@ -78,7 +78,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
 
   useEffect(() => {
     refreshAccount();
-  }, [principal]);
+  }, [principal, master]);
 
 	return (
     <div className="grid grid-cols-5 border-b dark:border-gray-700">

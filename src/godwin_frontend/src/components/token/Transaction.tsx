@@ -19,7 +19,7 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
   const {token} = useContext(ActorContext);
 
   const refreshTx = () => {
-    token.get_transaction(tx_index).then(tx => {
+    token?.get_transaction(tx_index).then(tx => {
       let opt_tx = fromNullable(tx);
       setTx(old => { return opt_tx !== undefined ? transactionFromIdlType(opt_tx) : null; });
     });
@@ -27,7 +27,7 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
   
   useEffect(() => {
     refreshTx();
-  }, [tx_index]);
+  }, [tx_index, token]);
 
   return (
     <div>

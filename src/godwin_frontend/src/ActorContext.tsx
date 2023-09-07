@@ -1,14 +1,15 @@
+import { createActor }                                                           from "./AgentUtils";
 import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
-import { _SERVICE as SubService, Category, CategoryInfo, 
+import { _SERVICE as SubService, CategoryInfo, 
   SchedulerParameters, PriceRegister, SubInfo as IdlSubInfo, 
   SelectionParameters, Momentum  }                                               from "../declarations/godwin_sub/godwin_sub.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
 import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
-import { canisterId as masterId, createActor as createMaster, godwin_master }    from "../declarations/godwin_master";
+import { canisterId as masterId, idlFactory as masterFactory, godwin_master   }  from "../declarations/godwin_master";
 import { godwin_token }                                                          from "../declarations/godwin_token";
-import { canisterId as airdropId, createActor as createAirdrop, godwin_airdrop } from "../declarations/godwin_airdrop";
-import { createActor as createSub }                                              from "../declarations/godwin_sub";
+import { canisterId as airdropId, idlFactory as airdropFactory, godwin_airdrop } from "../declarations/godwin_airdrop";
+import { idlFactory as subFactory }                                              from "../declarations/godwin_sub";
 
 import { AuthClient }                                                            from "@dfinity/auth-client";
 import { ActorSubclass }                                                         from "@dfinity/agent";
@@ -56,9 +57,9 @@ export const ActorContext = React.createContext<{
   addSub: (principal: Principal, id: string) => Promise<void>;
   login: () => void;
   logout: () => void;
-  token: ActorSubclass<TokenService>;
-  airdrop: ActorSubclass<AirdopService>;
-  master: ActorSubclass<MasterService>;
+  token: ActorSubclass<TokenService> | undefined;
+  airdrop: ActorSubclass<AirdopService> | undefined;
+  master: ActorSubclass<MasterService> | undefined;
   subs: Map<string, Sub>;
   userAccount?: Account | null;
   balance: bigint | null;
@@ -86,9 +87,9 @@ export function useAuthClient() {
 
   const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
-  const [token                              ] = useState<ActorSubclass<TokenService>> (godwin_token  );
-  const [master,          setMaster         ] = useState<ActorSubclass<MasterService>>(godwin_master );
-  const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService>>(godwin_airdrop);
+  const [token                              ] = useState<ActorSubclass<TokenService> | undefined> (godwin_token  );
+  const [master,          setMaster         ] = useState<ActorSubclass<MasterService> | undefined>(godwin_master );
+  const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService> | undefined>(godwin_airdrop);
   const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
   const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
   const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
@@ -97,40 +98,14 @@ export function useAuthClient() {
   const login = () => {
     authClient?.login({
       identityProvider:
-      import.meta.env.DFX_NETWORK === "ic"
-          ? "https://identity.ic0.app/#authorize"
-          : `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
+        import.meta.env.DFX_NETWORK === "ic" ? 
+          `https://identity.ic0.app/#authorize` : 
+          `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
       // 7 days in nanoseconds
       maxTimeToLive: BigInt(8) * BigInt(3_600_000_000_000),
       onSuccess: () => { setIsAuthenticated(true); },
     });
   };
-
-  const initAirdrop = () => {
-    if (isAuthenticated) {
-      const actor = createAirdrop(airdropId as string, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
-      setAirdrop(actor);
-    } else {
-      setAirdrop(godwin_airdrop);
-    }
-  }
-
-  const initMaster = () => {
-    if (isAuthenticated) {
-      const actor = createMaster(masterId as string, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
-      setMaster(actor);
-    } else {
-      setMaster(godwin_master);
-    }
-  }
 
   const logout = () => {
     authClient?.logout().then(() => {
@@ -141,40 +116,57 @@ export function useAuthClient() {
     });
   }
 
-  const addSub = async (principal: Principal, id: string) : Promise<void> => {
-    if (subs.has(id)) {
-      return;
-    }
-    let actor = createSub(principal, {
-      agentOptions: {
-        identity: authClient?.getIdentity(),
-      },
+  const refreshAirdrop = async () => {
+    setAirdrop(
+      await createActor({
+        canisterId: airdropId,
+        idlFactory: airdropFactory,
+        identity: authClient?.getIdentity(), 
+      })
+    );
+  }
+
+  const refreshMaster = async () => {
+    setMaster(
+      await createActor({
+        canisterId: masterId,
+        idlFactory: masterFactory,
+        identity: authClient?.getIdentity(), 
+      })
+    );
+  }
+
+  const createSub = async (principal: Principal) : Promise<Sub> => {
+    let actor : ActorSubclass<SubService> = await createActor({
+      canisterId: principal.toString(),
+      idlFactory: subFactory,
+      identity: authClient?.getIdentity(), 
     });
     let info = await actor.getSubInfo();
-    setSubs((subs) => new Map(subs).set(id, {actor, info: fromIdlSubInfo(info)}));
+    return {actor, info: fromIdlSubInfo(info)};
+  }
+
+  const addSub = async (principal: Principal, id: string) => {
+    if (!subs.has(id)) {
+      let sub = await createSub(principal);
+      setSubs((subs) => new Map(subs).set(id, sub));
+    }
   }
 
   const refreshSubs = async () => {
-    let listSubs = await master.listSubGodwins();
+    let listSubs = await master?.listSubGodwins() ?? [];
     await Promise.all(listSubs.map(async ([principal, id]) => {
-      if (!subs.has(id)) {
-        await addSub(principal, id);
-      }
+      addSub(principal, id);
     }));
   }
 
   const fetchSubs = async() => {
     let newSubs = new Map<string, Sub>();
-    let listSubs = await master.listSubGodwins();
+    let listSubs = await master?.listSubGodwins() ?? [];
 
     await Promise.all(listSubs.map(async ([principal, id]) => {
-      let actor = createSub(principal, {
-        agentOptions: {
-          identity: authClient?.getIdentity(),
-        },
-      });
-      let info = await actor.getSubInfo();
-      newSubs.set(id, {actor, info: fromIdlSubInfo(info)});
+      let sub = await createSub(principal);
+      newSubs.set(id, sub);
     }));
 
     setSubs(newSubs);
@@ -184,7 +176,7 @@ export function useAuthClient() {
     if (isAuthenticated) {
       let principal = authClient?.getIdentity().getPrincipal();
       if (principal !== undefined && !principal.isAnonymous()){
-        master.getUserAccount(principal).then((account) => {
+        master?.getUserAccount(principal).then((account) => {
           setUserAccount(account);
         });
         return;
@@ -195,7 +187,7 @@ export function useAuthClient() {
 
   const refreshBalance = () => {
     if (userAccount !== null) {
-      token.icrc1_balance_of(userAccount).then((balance) => {;
+      token?.icrc1_balance_of(userAccount).then((balance) => {;
         setBalance(balance);
       });
     } else {
@@ -206,7 +198,7 @@ export function useAuthClient() {
   const refreshLoggedUserName = () => {
     let principal = authClient?.getIdentity().getPrincipal();
     if (principal !== undefined){
-      master.getUserName(principal).then((name) => {
+      master?.getUserName(principal).then((name) => {
         setLoggedUserName(fromNullable(name));
       }
     )} else {
@@ -241,8 +233,8 @@ export function useAuthClient() {
   }, []);
 
   useEffect(() => {
-    initMaster();
-    initAirdrop();
+    refreshMaster();
+    refreshAirdrop();
     refreshUserAccount();
     refreshLoggedUserName();
     fetchSubs();
