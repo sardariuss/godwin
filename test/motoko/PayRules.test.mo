@@ -114,36 +114,33 @@ suite("Pay rules module test suite", func() {
     });
 
     // Uncomment this test shall trap
-//    test("Test payout below the minimum score shall trap", func() {
+//    test("Test payout below with a null or negative score shall trap", func() {
 //      compare(
-//        PayRules.computeQuestionAuthorPayout(#SELECTED, { score = 0.0; }), // @todo: minimum score should not be a magic number
+//        PayRules.computeQuestionAuthorPayout(#SELECTED, { score = 0.0; }),
 //        { refund_share = 1.0; reward = ?0.0; },
 //        Testify.rawPayout.equal
 //      );
 //    });
 
-    test("Test payout when the question has been selected, but the score is the minimum", func () {
-      compare(
-        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 1.0}), // @todo: minimum score should not be a magic number
-        { refund_share = 1.0; reward = ?0.0; },
-        Testify.rawPayout.equal
-      );
-    });
-
     test("Test few payouts when the question has been selected", func () {
       compare(
+        PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 1.0}),
+        { refund_share = 1.0; reward = ?1.0; }, // sqrt(1) = 1
+        Testify.rawPayout.equal
+      );
+      compare(
         PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 9.0}), 
-        { refund_share = 1.0; reward = ?2.0; }, // sqrt(9) - 1 = 2 
+        { refund_share = 1.0; reward = ?3.0; }, // sqrt(9) = 3
         Testify.rawPayout.equal
       );
       compare(
         PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 4.0}), 
-        { refund_share = 1.0; reward = ?1.0; }, // sqrt(4) - 1 = 1
+        { refund_share = 1.0; reward = ?2.0; }, // sqrt(4) = 2
         Testify.rawPayout.equal
       );
       compare(
         PayRules.computeQuestionAuthorPayout(#SELECTED, {score = 144.0}), 
-        { refund_share = 1.0; reward = ?11.0; }, // sqrt(144) - 1 = 11
+        { refund_share = 1.0; reward = ?12.0; }, // sqrt(144) = 12
         Testify.rawPayout.equal
       );
     });
