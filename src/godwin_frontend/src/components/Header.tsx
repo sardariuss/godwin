@@ -79,8 +79,9 @@ function Header({login, setShowAskQuestion}: Props) {
       }
       <header className="bg-slate-100 dark:bg-gray-800 sticky top-0 z-30 flex flex-row items-center w-full xl:px-4 lg:px-3 md:px-2 px-2 xl:h-18 lg:h-16 md:h-14 h-14">
         <div className="w-full flex flex-row items-center justify-between space-x-2">
-          <Link to="/" className="xl:text-2xl text-xl font-semibold whitespace-nowrap dark:text-white">
-            { "🧭 Godwin" }
+          <Link to="/" className="flex flex-row items-center space-x-1">
+            <span className="text-4xl">{ "🛸" }</span>
+            <span className="xl:text-2xl text-xl font-semibold whitespace-nowrap dark:text-white">{ "Godwin" }</span>
           </Link>
           <div className="w-full flex flex-row items-center justify-end md:space-x-4">
             <button id="theme-toggle" type="button" className="fill-indigo-600 hover:fill-indigo-900 dark:fill-yellow-400 dark:hover:fill-yellow-200 rounded-lg text-sm p-2.5">

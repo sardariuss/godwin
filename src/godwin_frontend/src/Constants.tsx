@@ -96,6 +96,8 @@ const CONSTANTS = {
   },
   SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name.",
   USER_DOES_NOT_EXIST: "Sorry, there isn't any user with that principal.",
+  EMPTY_HOME: "You're done! Come back later or browse the results 🔎",
+  GENERIC_EMPTY: "It's quite empty here 💤",
 };
 
 export default CONSTANTS;

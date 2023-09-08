@@ -40,6 +40,20 @@
   }
 }
 
+.input-box{
+  height: max-content;
+  padding: 0.5rem;
+  outline: none;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.input-box[contenteditable=true]:empty:not(:focus):before{
+  content: attr(placeholder);
+  pointer-events: none;
+  display: block; /* For Firefox */
+}
+
 textarea {
   border: none;
   background-color: transparent;

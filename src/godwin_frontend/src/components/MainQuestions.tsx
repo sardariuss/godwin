@@ -153,7 +153,7 @@ const MainQuestions = () => {
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
 	return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full flex-grow">
       {
       !initialized? 
         <div className="w-6 h-6 mt-4">
@@ -164,7 +164,7 @@ const MainQuestions = () => {
           { CONSTANTS.SUB_DOES_NOT_EXIST }
         </div> 
       : 
-        <div className="flex flex-col items-center w-full">
+        <div className="flex flex-col items-center w-full flex-grow">
           <SubBanner sub={sub}/>
           <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <div className="flex flex-col border-x dark:border-gray-700 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
@@ -199,20 +199,21 @@ const MainQuestions = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col border mb-5 dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
+          <div className="flex flex-col border dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full flex-grow">
             {
               currentMainTab === MainTab.HOME ?
               <div className="border-b dark:border-gray-700">
-                <OpenQuestion onSubmitQuestion={()=>{ refreshQueryQuestions(); }} subId={subgodwin} canSelectSub={false}></OpenQuestion>
+                <OpenQuestion textInputId={"propose_vote_sub"} onSubmitQuestion={()=>{ refreshQueryQuestions(); }} subId={subgodwin} canSelectSub={false}></OpenQuestion>
               </div> : <></>
             }
-            <div className="w-full flex">
+            <div className="w-full flex flex-grow">
             {
               React.createElement(ListComponents<QuestionInput, QuestionInput>, {
                 query_components: queryQuestionInput,
                 generate_input: (item: QuestionInput) => { return item },
                 build_component: QuestionComponent,
-                generate_key: (item: QuestionInput) => { return item.question_id.toString() }
+                generate_key: (item: QuestionInput) => { return item.question_id.toString() },
+                empty_list_message: () => { return currentMainTab === MainTab.HOME ? CONSTANTS.EMPTY_HOME : CONSTANTS.GENERIC_EMPTY }
               })
             }
             </div>

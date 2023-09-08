@@ -62,7 +62,7 @@ function App() {
           refreshLoggedUserName,
           getPrincipal
         }}>
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col w-full flex-grow">
             <Header login={login} setShowAskQuestion={setShowAskQuestion}/>
             <Routes>
               <Route

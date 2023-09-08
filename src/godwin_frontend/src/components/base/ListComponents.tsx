@@ -1,21 +1,25 @@
-import React, { useEffect, useState } from "react";
+import Spinner                        from "../Spinner";
 import { ScanResults }                from "../../utils";
 import { Direction, }                 from "../../../declarations/godwin_sub/godwin_sub.did";
+
+import React, { useEffect, useState } from "react";
 
 export type ListComponentsInput<T, Input> = {
   query_components: (direction: Direction, limit: bigint, next: T | undefined) => Promise<ScanResults<T>>,
   generate_input: (T) => Input,
   build_component: (input: Input) => JSX.Element,
   generate_key: (T) => string,
+  empty_list_message: () => string,
 };
 
-export const ListComponents = <T, Input>({query_components, generate_input, build_component, generate_key}: ListComponentsInput<T, Input>) => {
+export const ListComponents = <T, Input>({query_components, generate_input, build_component, generate_key, empty_list_message}: ListComponentsInput<T, Input>) => {
 
   const direction = { 'BWD' : null };
   const limit = BigInt(10);
 
-  const [results,      setResults]     = useState<ScanResults<T>>({ ids : [], next: undefined});
-  const [trigger_next, setTriggerNext] = useState<boolean>       (false);
+  const [initialized,  setInitialized] = useState<boolean>       (false                       );
+  const [results,      setResults    ] = useState<ScanResults<T>>({ ids : [], next: undefined});
+  const [trigger_next, setTriggerNext] = useState<boolean>       (false                       );
 	
   const refreshComponents = async () => {
     let res = await query_components(direction, limit, undefined);
@@ -48,6 +52,7 @@ export const ListComponents = <T, Input>({query_components, generate_input, buil
 
   useEffect(() => {
     refreshComponents();
+    setInitialized(true);
     window.addEventListener('scroll', scrolling, {passive: true});
     return () => {
       window.removeEventListener('scroll', scrolling);
@@ -62,15 +67,27 @@ export const ListComponents = <T, Input>({query_components, generate_input, buil
   }, [trigger_next]);
   
 	return (
-    <ol className="w-full flex flex-col">
-      {[...results.ids].map((element) => (
-        <li key={generate_key(element)}>
-        {
-          React.createElement(build_component, generate_input(element))
-        }
-        </li>
-      ))}
-    </ol>
+    <div className="flex flex-col items-center w-full flex-grow">
+      {
+        !initialized? 
+          <div className="w-6 h-6 mt-4">
+            <Spinner/>
+          </div> :
+        results.ids.length === 0 ?
+          <div className="text-black dark:text-white text-sm mt-5 my-2 flex-grow">
+            { empty_list_message() }
+          </div> :
+        <ol className="w-full flex flex-col">
+          {[...results.ids].map((element) => (
+            <li key={generate_key(element)}>
+            {
+              React.createElement(build_component, generate_input(element))
+            }
+            </li>
+          ))}
+        </ol>
+      }
+    </div>
 	);
 };
 

@@ -34,7 +34,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
 
   const {refreshBalance} = useContext(ActorContext);
 
-  const countdownDurationMs = 3000;
+  const countdownDurationMs = 5000;
   const voteKind = voteKindToCandidVariant(VoteKind.INTEREST);
 
   const [countdownVote, setCountdownVote] = useState<boolean>                                               (false                      );
@@ -138,16 +138,16 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
       createPortal(
         <>
           { voteView === VoteView.VOTE && canVote(voteData) ?
-            <div className={`grid grid-cols-2 w-32 content-center items-center py-2 -mr-5`}>
+            <div className={`grid grid-cols-2 w-32 content-center items-center py-1 -mr-5`}>
               <div className={`w-full flex flex-col items-center justify-center content-center transition duration-2000
                 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
-                <div className={`w-6`}>
+                <div className={`w-6 -mb-1`}>
                   <SvgButton onClick={ () => { incrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Up}>
                     <ArrowUpIcon/>
                   </SvgButton>
                 </div>
                 <InterestBallot answer={interest} dateNs={undefined}/>
-                <div className={`w-6`}>
+                <div className={`w-6 -mt-1`}>
                   <SvgButton onClick={ () => { decrementCursorValue(); } } disabled={triggerVote || interest === InterestEnum.Down}>
                     <ArrowDownIcon/>
                   </SvgButton>

@@ -18,21 +18,21 @@ export enum UserFilter {
   CONVICTIONS,
   INTERESTS,
   CATEGORIZATIONS,
-  QUESTIONS
+  PROPOSALS
 };
 
-const filters = [UserFilter.CONVICTIONS, UserFilter.INTERESTS, UserFilter.CATEGORIZATIONS, UserFilter.QUESTIONS];
+const filters = [UserFilter.CONVICTIONS, UserFilter.INTERESTS, UserFilter.CATEGORIZATIONS, UserFilter.PROPOSALS];
 
 const filterToText = (filter: UserFilter) => {
   switch (filter) {
     case UserFilter.CONVICTIONS:
       return "Convictions";
     case UserFilter.INTERESTS:
-      return "Interests";
+      return "Interest";
     case UserFilter.CATEGORIZATIONS:
-      return "Categorizations";
-    case UserFilter.QUESTIONS:
-      return "Questions";
+      return "Categorized";
+    case UserFilter.PROPOSALS:
+      return "Proposed";
   }
 }
 
@@ -82,7 +82,7 @@ const SubProfile = () => {
   }, [subs]);
 
 	return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full flex-grow">
     {
       !initialized? 
         <div className="w-6 h-6 mt-4">
@@ -93,7 +93,7 @@ const SubProfile = () => {
           { CONSTANTS.SUB_DOES_NOT_EXIST }
         </div> 
       : 
-        <div className="flex flex-col items-center w-full">
+        <div className="flex flex-col items-center w-full flex-grow">
           <SubBanner sub={sub}/>
           {
             principal === undefined ? 
@@ -116,7 +116,7 @@ const SubProfile = () => {
           {
             principal === undefined ? 
               <></> : 
-              <div className="flex flex-col w-full border-x dark:border-gray-700 dark:border-gray-700 text-gray-900 dark:text-white xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
+              <div className="flex flex-col w-full border-x dark:border-gray-700 dark:border-gray-700 text-gray-900 dark:text-white xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full flex-grow">
                 {
                   currentUserFilter === UserFilter.CONVICTIONS ?
                     <Convictions sub={sub} principal={principal} isLoggedUser={isLoggedUser}/> :
@@ -124,7 +124,7 @@ const SubProfile = () => {
                     <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.INTEREST}/> :
                   currentUserFilter === UserFilter.CATEGORIZATIONS ?
                     <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.CATEGORIZATION}/> :
-                  currentUserFilter === UserFilter.QUESTIONS ? 
+                  currentUserFilter === UserFilter.PROPOSALS ? 
                     <OpenedVotes sub={sub} principal={principal}/> :
                   <></>
                 }
