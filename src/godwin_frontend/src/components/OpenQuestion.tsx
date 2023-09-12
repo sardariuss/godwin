@@ -89,27 +89,16 @@ const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Prop
   }, []);
 
 	return (
-    <div className="flex flex-col w-full gap-y-1 mb-2 mx-1">
+    <div className="flex flex-col w-full gap-y-1 mb-2">
       <div id={textInputId} className={`input-box break-words w-full text-sm
         ${text.length > 0 ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
         placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} contentEditable="true">
       </div>
-      { 
-        text.length > 0 ? 
-          <div className="flex flex-col text-sm items-start">
-            <span className={`${text.indexOf("?") > -1 ? "text-red-500" : "text-black dark:text-white"}`}>
-              {"🏹 Write a statement, not a question 💂"}
-            </span>
-            <span className={'text-black dark:text-white'}>{"🏹 Try to avoid negation 🙅"}</span>
-            {
-              sub !== undefined ? 
-                <span className={`${text.length > sub.info.character_limit ? "text-red-500" : "text-black dark:text-white"}`}>
-                  {"🏹 " + sub.info.character_limit.toString() + " characters maximum 👮"}
-                </span> : <></>
-            }
-          </div> : <></>
-      }
       <div className={`flex flex-row justify-end`}>
+        <div className="flex flex-col text-sm w-full justify-center text-red-500">
+          <div>{text.indexOf("?") > -1 ? "Write a statement, not a question 💂" : ""}</div>
+          <div>{sub !== undefined && text.length > sub.info.character_limit ? sub.info.character_limit.toString() + " characters maximum 💂" : ""}</div>
+        </div>
         <div className="flex flex-row space-x-2 items-center place-self-end">
           {
             canSelectSub ? 

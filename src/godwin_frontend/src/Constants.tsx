@@ -2,9 +2,9 @@
 const CONSTANTS = {
   INTEREST_INFO: {
     down: {
-      symbol: '🤡',
+      symbol: '👹',
       color: '#DB4437',
-      name: 'TROLL',
+      name: 'CENSOR',
     },
     neutral: {
       symbol: '😴',
@@ -12,7 +12,7 @@ const CONSTANTS = {
       name: 'BORING',
     },
     up: {
-      symbol: '🤓',
+      symbol: '🧐',
       color: '#4285F4',
       name: 'LEGIT',
     }
@@ -58,8 +58,9 @@ const CONSTANTS = {
     BORDER_COLOR_DARK: '#333333',
     BAR_CHART_BORDER_WIDTH: 1.2,
   },
+  INSTRUCTION_BULLET: "🔫",
+  INFO_BULLET: "🛸",
   HELP_MESSAGE: {
-    CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...',
     DELETED_QUESTION: 'This question has been deleted.',
   },
   OPEN_QUESTION: {
