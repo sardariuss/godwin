@@ -7,6 +7,7 @@ import CONSTANTS                               from "../../Constants";
 import { Sub }                                 from "../../ActorContext";
 
 import React, { useState, useEffect }          from "react";
+import { fromNullable }                        from "@dfinity/utils";
 
 type OpinionPolarizationBarProps = {
   sub: Sub;
@@ -15,12 +16,13 @@ type OpinionPolarizationBarProps = {
 
 const OpinionPolarizationBar = ({sub, vote_id}: OpinionPolarizationBarProps) => {
 
-  const [vote,      setVote     ] = useState<OpinionVote|undefined>(undefined        );
-  const [chartType, setChartType] = useState<ChartTypeEnum        >(ChartTypeEnum.Bar);
+  const [vote,      setVote     ] = useState<OpinionVote | undefined>(undefined        );
+  const [chartType, setChartType] = useState<ChartTypeEnum          >(ChartTypeEnum.Bar);
 
   const queryVote = async () => {
     const vote = await sub.actor.revealVote(voteKindToCandidVariant(VoteKind.OPINION), vote_id);
     if (vote['ok'] !== undefined) {
+      console.log(vote['ok']);
       setVote(unwrapOpinionVote(vote['ok']));
     } else {
       console.error("Failed to query vote: ", vote['err']);
@@ -42,12 +44,11 @@ const OpinionPolarizationBar = ({sub, vote_id}: OpinionPolarizationBarProps) => 
           showName={false}
           polarizationInfo={CONSTANTS.OPINION_INFO}
           polarizationValue={vote.aggregate.polarization}
-          ballots={vote.ballots.map(([principal, ballot]) => { return {
-            label: principal.toString(),
-            cursor: ballot.answer.cursor,
-            date: ballot.date,
-            coef: 1.0
-          }})}
+          ballots={
+            // Do not show late ballots
+            vote.ballots.filter(([_, ballot]) => { return fromNullable(ballot.answer.late_decay) === undefined })
+            .map(([principal, ballot]) => { return { label: principal.toString(), cursor: ballot.answer.cursor, date: ballot.date, coef: 1.0 }})
+          }
           chartType={chartType}/>
       </div>
       }
