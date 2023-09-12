@@ -183,6 +183,11 @@ const MainQuestions = () => {
     refreshQueryQuestions();
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
+  // Hide the help message when the current tab changes
+  useEffect(() => {
+    setToggleHelp(false);
+  }, [currentMainTab, currentHomeFilter, currentBrowseFilter]);
+
 	return (
     <div className="flex flex-col items-center w-full flex-grow">
       {

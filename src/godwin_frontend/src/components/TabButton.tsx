@@ -10,13 +10,6 @@ type TabButtonProps = {
 
 export const TabButton = ({label, isCurrent, setIsCurrent, isHelpVisible, setIsHelpVisible}: TabButtonProps) => {
 
-  const toggle = () => {
-    if (!isCurrent){
-      setIsHelpVisible(false);
-      setIsCurrent();
-    }
-  }
-
   return (
     <button 
       className={
@@ -26,7 +19,7 @@ export const TabButton = ({label, isCurrent, setIsCurrent, isHelpVisible, setIsH
       } 
       type="button"
       role="tab"
-      onClick={(e) => { toggle(); }}>
+      onClick={(e) => setIsCurrent() }>
         <div className="flex flex-row items-center">
           {label}
           { isCurrent ? 
