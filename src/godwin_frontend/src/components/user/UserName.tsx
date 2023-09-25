@@ -96,7 +96,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
             autoFocus={true}
           /> :
           <div className="break-words">
-            { userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT }
+            { userName !== undefined ? userName : CONSTANTS.USER.DEFAULT_NAME }
           </div>
       }
       {

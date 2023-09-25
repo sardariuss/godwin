@@ -46,6 +46,7 @@ const fromIdlSubInfo = (info: IdlSubInfo) : SubInfo => {
 export type Sub = {
   actor: ActorSubclass<SubService>;
   info: SubInfo;
+  id: string;
 };
 
 export const ActorContext = React.createContext<{
@@ -136,19 +137,19 @@ export function useAuthClient() {
     );
   }
 
-  const createSub = async (principal: Principal) : Promise<Sub> => {
+  const createSub = async (principal: Principal, id: string) : Promise<Sub> => {
     let actor : ActorSubclass<SubService> = await createActor({
       canisterId: principal.toString(),
       idlFactory: subFactory,
       identity: authClient?.getIdentity(), 
     });
     let info = await actor.getSubInfo();
-    return {actor, info: fromIdlSubInfo(info)};
+    return {id, actor, info: fromIdlSubInfo(info)};
   }
 
   const addSub = async (principal: Principal, id: string) => {
     if (!subs.has(id)) {
-      let sub = await createSub(principal);
+      let sub = await createSub(principal, id);
       setSubs((subs) => new Map(subs).set(id, sub));
     }
   }
@@ -165,7 +166,7 @@ export function useAuthClient() {
     let listSubs = await master?.listSubGodwins() ?? [];
 
     await Promise.all(listSubs.map(async ([principal, id]) => {
-      let sub = await createSub(principal);
+      let sub = await createSub(principal, id);
       newSubs.set(id, sub);
     }));
 

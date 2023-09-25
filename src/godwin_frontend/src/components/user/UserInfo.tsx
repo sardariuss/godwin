@@ -6,6 +6,7 @@ import LogoutIcon                                 from "../icons/LogoutIcon";
 import { getEncodedAccount }                      from "../../utils/LedgerUtils";
 import { airdropErrorToString }                   from "../../utils";
 import { ActorContext }                           from "../../ActorContext"
+import CONSTANTS                                  from "../../Constants";
 import { Account }                                from "../../../declarations/godwin_master/godwin_master.did";
 
 import React, { useEffect, useState, useContext } from "react";
@@ -84,7 +85,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
     <div className="grid grid-cols-5 border-b dark:border-gray-700">
       <div className="col-start-2 col-span-3 flex flex-row justify-center dark:fill-white items-center">
         <Link className="flex text-6xl text-center" to={"/user/" + principal.toText()}>
-          { "👽" }
+          { CONSTANTS.USER.DEFAULT_AVATAR }
         </Link>
         <div className="flex flex-col mt-1 justify-evenly">
           <UserName principal={principal} isLoggedUser={isLoggedUser}/>

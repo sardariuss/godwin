@@ -183,7 +183,7 @@ export const HelpRejectedDetails = () => {
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
-        <span>{" You can try again to open a timed-out statement for a reduced price."}</span>
+        <span>{" You can try to open a timed-out statement again for a reduced price."}</span>
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>

@@ -16,21 +16,21 @@ import { Principal }                              from "@dfinity/principal";
 
 export enum UserFilter {
   CONVICTIONS,
-  INTERESTS,
-  CATEGORIZATIONS,
+  SELECTION,
+  POSITION,
   PROPOSALS
 };
 
-const filters = [UserFilter.CONVICTIONS, UserFilter.INTERESTS, UserFilter.CATEGORIZATIONS, UserFilter.PROPOSALS];
+const filters = [UserFilter.CONVICTIONS, UserFilter.POSITION, UserFilter.SELECTION, UserFilter.PROPOSALS];
 
 const filterToText = (filter: UserFilter) => {
   switch (filter) {
     case UserFilter.CONVICTIONS:
       return "Convictions";
-    case UserFilter.INTERESTS:
-      return "Interest";
-    case UserFilter.CATEGORIZATIONS:
-      return "Categorized";
+    case UserFilter.SELECTION:
+      return "Selections";
+    case UserFilter.POSITION:
+      return "Positions";
     case UserFilter.PROPOSALS:
       return "Proposed";
   }
@@ -120,9 +120,9 @@ const SubProfile = () => {
                 {
                   currentUserFilter === UserFilter.CONVICTIONS ?
                     <Convictions sub={sub} principal={principal} isLoggedUser={isLoggedUser}/> :
-                  currentUserFilter === UserFilter.INTERESTS ?
+                  currentUserFilter === UserFilter.SELECTION ?
                     <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.INTEREST}/> :
-                  currentUserFilter === UserFilter.CATEGORIZATIONS ?
+                  currentUserFilter === UserFilter.POSITION ?
                     <VoterHistory sub={sub} principal={principal} isLoggedUser={isLoggedUser} voteKind={VoteKind.CATEGORIZATION}/> :
                   currentUserFilter === UserFilter.PROPOSALS ? 
                     <OpenedVotes sub={sub} principal={principal}/> :

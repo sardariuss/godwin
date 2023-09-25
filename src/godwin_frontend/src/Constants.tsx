@@ -1,5 +1,6 @@
 
 const CONSTANTS = {
+  LOGO: '🛸',
   INTEREST_INFO: {
     down: {
       symbol: '👹',
@@ -46,8 +47,9 @@ const CONSTANTS = {
       name: 'CENTER'
     }
   },
-  USER_NAME: {
-    DEFAULT: 'New user'
+  USER: {
+    DEFAULT_NAME: 'New user',
+    DEFAULT_AVATAR: '👽'
   },
   TOKEN_DECIMALS: 0,
   CURSOR_DECIMALS: 2,

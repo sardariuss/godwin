@@ -5,6 +5,16 @@ module.exports = {
 			inter: "'Inter', sans-serif",
 		},
 		extend: {
+			fontSize: {
+				'humongous': '10rem',
+				'humongous-2': '12rem',
+				'humongous-3': '14rem',
+				'humongous-4': '16rem',
+				'humongous-5': '18rem',
+			},
+			minHeight: {
+				'half-screen': '50vh',
+			},
 			spacing: {
         '160': '40rem',
       },
