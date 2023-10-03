@@ -2,6 +2,7 @@ import { Sub }             from "../ActorContext";
 import Momentum            from "./Momentum";
 
 import React, { useState } from "react";
+import { Link }            from "react-router-dom";
 
 type Props = {
   sub: Sub;
@@ -14,9 +15,12 @@ const SubBanner = ({sub} : Props) => {
 
   return (
     <div className="flex flex-col text-center w-full items-center">
-      <div className="w-full bg-gradient-to-r from-purple-200 dark:from-purple-700 from-10% dark:via-indigo-800 via-indigo-100 via-30% dark:to-sky-600 to-sky-200 to-90% text-black dark:text-white font-medium pt-2 pb-1">
+      <Link className="w-full text-black dark:text-white font-medium pt-2 pb-1
+          bg-gradient-to-r from-purple-200 dark:from-purple-700 from-10% 
+                           via-indigo-100  dark:via-indigo-800  via-30% 
+                           to-sky-200      dark:to-sky-600      to-90%" to={"/g/" + sub.id}>
         { sub.info.name }
-      </div>
+      </Link>
       { /* use a gradient because setting the background color normally does not apply to the sides (when scrolling the bar left and right) */ }
       <div className="relative w-full overflow-clip bg-gradient-to-b from-gray-200 from-50% to-slate-100 to-50% dark:from-gray-700 dark:from-50% dark:to-gray-800 dark:to-50%">
         <div className="dark:text-white flex flex-col font-normal whitespace-nowrap w-full items-center"

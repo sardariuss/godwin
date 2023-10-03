@@ -4,10 +4,9 @@ import { ActorContext }                           from "../../ActorContext"
 import CONSTANTS                                  from "../../Constants";
 
 import React, { useEffect, useState, useContext } from "react";
-import { useParams, Link }                        from "react-router-dom";
+import { useParams       }                        from "react-router-dom";
 
 import { Principal }                              from "@dfinity/principal";
-import { fromNullable }                           from "@dfinity/utils";
 
 const UserComponent = () => {
 

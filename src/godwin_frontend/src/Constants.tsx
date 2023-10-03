@@ -1,10 +1,11 @@
 
 const CONSTANTS = {
+  LOGO: '🛸',
   INTEREST_INFO: {
     down: {
-      symbol: '🤡',
+      symbol: '👹',
       color: '#DB4437',
-      name: 'TROLL',
+      name: 'CENSOR',
     },
     neutral: {
       symbol: '😴',
@@ -12,7 +13,7 @@ const CONSTANTS = {
       name: 'BORING',
     },
     up: {
-      symbol: '🤓',
+      symbol: '🧐',
       color: '#4285F4',
       name: 'LEGIT',
     }
@@ -46,8 +47,9 @@ const CONSTANTS = {
       name: 'CENTER'
     }
   },
-  USER_NAME: {
-    DEFAULT: 'New user'
+  USER: {
+    DEFAULT_NAME: 'New user',
+    DEFAULT_AVATAR: '👽'
   },
   TOKEN_DECIMALS: 0,
   CURSOR_DECIMALS: 2,
@@ -58,8 +60,9 @@ const CONSTANTS = {
     BORDER_COLOR_DARK: '#333333',
     BAR_CHART_BORDER_WIDTH: 1.2,
   },
+  INSTRUCTION_BULLET: "🔫",
+  INFO_BULLET: "🛸",
   HELP_MESSAGE: {
-    CATEGORIZATION_VOTE: 'Users who agree on this statement shall have their convictions updated towards...',
     DELETED_QUESTION: 'This question has been deleted.',
   },
   OPEN_QUESTION: {
@@ -96,6 +99,8 @@ const CONSTANTS = {
   },
   SUB_DOES_NOT_EXIST: "Sorry, there isn't any sub with that name.",
   USER_DOES_NOT_EXIST: "Sorry, there isn't any user with that principal.",
+  EMPTY_HOME: "You're done! Come back later or browse the results 🔎",
+  GENERIC_EMPTY: "It's quite empty here 💤",
 };
 
 export default CONSTANTS;

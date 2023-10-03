@@ -59,9 +59,10 @@ module {
     };
   };
 
+  // @todo: these parameters shall be settable from the master
   let ATTENUATE_MODIFIER_PARAMS = {
-    coef     = 0.5; // The greater, the less number of voters it takes to fully apply the payout rules
-    exponent = 2.5; // The greater, the more the payout rules are attenuated for small number of voters
+    coef     = 2.0; // The greater, the less number of voters it takes to fully apply the payout rules
+    exponent = 1.0; // The greater, the more the payout rules are attenuated for a small number of voters
   };
 
   // Allow to specify only what's required to compute the interest distribution
@@ -102,7 +103,6 @@ module {
     { shares; reward_ratio; };
   };
 
-  // see www.desmos.com/calculator/vkyld4yntw
   public func computeQuestionAuthorPayout(closure: InterestVoteClosure, appeal : { score : Float; }) : RawPayout {
     switch(closure){
       case(#CENSORED){
@@ -115,11 +115,10 @@ module {
       };
       case(#SELECTED){
         let { score } = appeal;
-        // @todo: the minimum score shall be a hardcoded parameter, not a magic number
-        if (score < 1.0) { Debug.trap("Cannot compute question author payout: score must be superior than 1"); };
+        if (score <= 0.0) { Debug.trap("Cannot compute question author payout: score must be positive"); };
         // If the question has been selected, reward the price it took to open the question
         // multiplied by the square root of the score
-        { refund_share = 1.0; reward = ?(Float.sqrt(score) - 1.0); };
+        { refund_share = 1.0; reward = ?Float.sqrt(score); };
       };
     };
   };

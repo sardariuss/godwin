@@ -1,6 +1,5 @@
 import Header                          from "./Header";
 import Footer                          from "./Footer";
-import OpenQuestionPopup               from "./OpenQuestionPopup";
 import MainQuestions                   from "./MainQuestions";
 import CreateSub                       from "./CreateSub";
 import UserComponent                   from "./user/User";
@@ -10,11 +9,7 @@ import { ActorContext, useAuthClient } from "../ActorContext";
 
 import { Route, Routes }               from "react-router-dom";
 
-import React, { useState }             from "react";
-
 function App() {
-
-  const [showAskQuestion, setShowAskQuestion] = useState(false);
   
   const {
     authClient,
@@ -62,8 +57,8 @@ function App() {
           refreshLoggedUserName,
           getPrincipal
         }}>
-          <div className="flex flex-col w-full">
-            <Header login={login} setShowAskQuestion={setShowAskQuestion}/>
+          <div className="flex flex-col w-full flex-grow">
+            <Header/>
             <Routes>
               <Route
                 path="/g/:subgodwin"
@@ -87,7 +82,6 @@ function App() {
               />
             </Routes>
           </div>
-          <OpenQuestionPopup showAskQuestion={showAskQuestion} setShowAskQuestion={setShowAskQuestion}></OpenQuestionPopup>
           <Footer/>
         </ActorContext.Provider>
       </div>

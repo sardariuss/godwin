@@ -12,6 +12,7 @@ import ErrorOutlineIcon                           from "@mui/icons-material/Erro
 import DoneIcon                                   from '@mui/icons-material/Done';
 
 type Props = {
+  textInputId: string,
   canSelectSub: boolean,
   subId: string | undefined,
   onSubmitQuestion: (question_id: bigint) => (void)
@@ -24,7 +25,7 @@ enum SubmittingState {
   ERROR,
 };
 
-const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
+const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Props) => {
 
   const {subs, refreshBalance} = useContext(ActorContext);
   
@@ -65,34 +66,40 @@ const OpenQuestion = ({canSelectSub, subId, onSubmitQuestion}: Props) => {
 
   useEffect(() => {
     setError(undefined);
+
+    let proposeVoteInput = document.getElementById(textInputId);
+
+    const listener = function (this: HTMLElement, event : Event) {
+      setError(undefined);
+      setState(SubmittingState.STILL);
+      setText(this.textContent ?? "");
+
+      // see https://stackoverflow.com/a/73813273
+      if (this.innerText.length === 1 && this.children.length === 1){
+        this.firstChild?.remove();
+      }      
+    };
+
+    proposeVoteInput?.addEventListener('input', listener);
+
+    return () => {
+      proposeVoteInput?.removeEventListener('input', listener);
+    }
+
   }, []);
 
 	return (
-    <div className="flex flex-col w-full dark:border-gray-700">
-      <div className="px-4 py-2 border-b dark:border-gray-700 outline-red-300 dark:outline-red-300">
-        <textarea 
-          className={`w-full focus:outline-none px-0 text-sm text-gray-900 dark:text-white dark:placeholder-gray-400`}
-          rows={4}
-          onChange={(e) => { setError(undefined); setState(SubmittingState.STILL); setText(e.target.value)} }
-          placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} 
-          disabled={state === SubmittingState.SUBMITTING}
-          value={text}
-          required
-        />
+    <div className="flex flex-col w-full gap-y-1 mb-2">
+      <div id={textInputId} className={`input-box break-words w-full text-sm
+        ${text.length > 0 ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
+        placeholder={CONSTANTS.OPEN_QUESTION.PLACEHOLDER} contentEditable="true">
       </div>
-      <div className={`flex flex-row p-2 ${ text.length > 0 ? "justify-between" : "justify-end"}`}>
-        { sub !== undefined && text.length > sub.info.character_limit ? 
-            <div className="flex text-red-500 text-xs items-center">{CONSTANTS.MAX_NUM_CHARACTERS_REACHED}</div> : 
-          text.indexOf("?") > -1 ?	
-            <div className="flex text-red-500 text-xs items-center">{CONSTANTS.QUESTION_MARK_NOT_ALLOWED}</div> :
-          text.length > 0 ? 
-            <div className="flex grid grid-rows-3 text-black dark:text-white place-self-start text-xs items-center">
-              <span>{"Tips:"}</span>
-              <span className="ml-1 italic">{" · write a statement (not a question)"}</span>
-              <span className="ml-1 italic">{" · try to avoid negation"}</span>
-            </div> : <></>
-        }
-        <div className="flex flex-row p-2 space-x-2 items-center place-self-end">
+      <div className={`flex flex-row justify-end`}>
+        <div className="flex flex-col text-sm w-full justify-center text-red-500">
+          <div>{text.indexOf("?") > -1 ? "Write a statement, not a question 💂" : ""}</div>
+          <div>{sub !== undefined && text.length > sub.info.character_limit ? sub.info.character_limit.toString() + " characters maximum 💂" : ""}</div>
+        </div>
+        <div className="flex flex-row space-x-2 items-center place-self-end">
           {
             canSelectSub ? 
             <div>

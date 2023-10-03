@@ -54,7 +54,7 @@ const CreateSub = () => {
 
   const refreshSubCreationPrice = async () => {
     
-    master.getSubCreationPriceE8s().then((price) => {
+    master?.getSubCreationPriceE8s().then((price) => {
       setSubCreationPrice(price);
     }).catch((err) => {
       console.error(err);
@@ -75,7 +75,7 @@ const CreateSub = () => {
     setError(undefined);
     setSubmitting(true);
     
-    master.createSubGodwin(identifier, { 
+    master?.createSubGodwin(identifier, { 
       name,
       categories,
       selection: selectionParameters,
@@ -119,21 +119,21 @@ const CreateSub = () => {
             id={"name"}
             input={name}
             onInputChange={setName}
-            validate={(input) => { return master.validateSubName(input).then(createSubResultToError) }}
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSubName(input).then(createSubResultToError) }}
           />
           <TextInput 
             label="Identitifer" 
             id={"identifier"} 
             input={identifier}  
             onInputChange={setIdentifier} 
-            validate={(input) => { return master.validateSubIdentifier(input).then(createSubResultToError) }}
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSubIdentifier(input).then(createSubResultToError) }}
           />
           <NumberInput
             label="Question character limit"
             id={"character_limit"}
             input={Number(characterLimit)}
             onInputChange={(input: number) => { setCharacterLimit(BigInt(input)); } }
-            validate={(input: number) => { return master.validateCharacterLimit(BigInt(input)).then(createSubResultToError) }}
+            validate={(input: number) => { return master === undefined ? Promise.resolve(undefined) : master.validateCharacterLimit(BigInt(input)).then(createSubResultToError) }}
           />
         </div>
       </CreateSubButton>
@@ -192,13 +192,13 @@ const CreateSub = () => {
         <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"selection_period"} label={"Question selection period"} input={selectionParameters.selection_period } 
             onInputChange={(input)=> { setSelectionParameters(params => { params.selection_period = input; return params; } )}}
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
           <NumberInput
             label="Minimum interest score"
             id={"minimum_interest_score"}
             input={selectionParameters.minimum_score}
             onInputChange={(input)=> { setSelectionParameters(params => { params.minimum_score = input; return params; } )}}
-            validate={(input: number) => { return master.validateMinimumInterestScore(input).then(createSubResultToError) }}
+            validate={(input: number) => { return master === undefined ? Promise.resolve(undefined) : master.validateMinimumInterestScore(input).then(createSubResultToError) }}
           />
         </div>
       </CreateSubButton>
@@ -206,26 +206,26 @@ const CreateSub = () => {
         <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"censor_timeout"}            label={"Censoring timeout"}         input={schedulerParameters.censor_timeout           } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.censor_timeout            = input; return params; } )}} 
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
           <DurationInput id={"candidate_status_duration"} label={"Candidate status duration"} input={schedulerParameters.candidate_status_duration} 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.candidate_status_duration = input; return params; } )}} 
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
           <DurationInput id={"open_status_duration"}      label={"Open status duration"}      input={schedulerParameters.open_status_duration     } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.open_status_duration      = input; return params; } )}} 
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
           <DurationInput id={"rejected_status_duration"}  label={"Rejected status duration"}  input={schedulerParameters.rejected_status_duration } 
             onInputChange={(input)=> { setSchedulerParameters(params => { params.rejected_status_duration  = input; return params; } )}} 
-            validate={(input) => { return master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateSchedulerDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
       <CreateSubButton show={showConvictionsParams} setShow={setShowConvictionsParams} label={"Convictions parameters"}>
         <div className="flex flex-col w-full gap-y-6 mb-3 items-center">
           <DurationInput id={"vote_half_life"}            label={"Opinion vote half-life"}        input={convictionsParameters.vote_half_life       } 
             onInputChange={(input)=> { setConvictionsParameters(params => { params.vote_half_life        = input; return params; } )}} 
-            validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateConvictionDuration(input).then(createSubResultToError) }}/>
           <DurationInput id={"late_ballot_half_life"}     label={"Late opinion ballot half-life"} input={convictionsParameters.late_ballot_half_life} 
             onInputChange={(input)=> { setConvictionsParameters(params => { params.late_ballot_half_life = input; return params; } )}} 
-            validate={(input) => { return master.validateConvictionDuration(input).then(createSubResultToError) }}/>
+            validate={(input) => { return master === undefined ? Promise.resolve(undefined) : master.validateConvictionDuration(input).then(createSubResultToError) }}/>
         </div>
       </CreateSubButton>
       <div className="flex flex-row items-center gap-x-2">

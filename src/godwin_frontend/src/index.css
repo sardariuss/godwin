@@ -40,6 +40,20 @@
   }
 }
 
+.input-box{
+  height: max-content;
+  padding: 0.5rem;
+  outline: none;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.input-box[contenteditable=true]:empty:not(:focus):before{
+  content: attr(placeholder);
+  pointer-events: none;
+  display: block; /* For Firefox */
+}
+
 textarea {
   border: none;
   background-color: transparent;
@@ -98,6 +112,7 @@ textarea {
     background-repeat: no-repeat;
     cursor: var(--cursor-type);
     background-image: var(--slider-image);
+    filter: drop-shadow(0 0 #0000);
   }
 
   /*Important: to be able to make the categories slider draggable on chrome, 
@@ -141,6 +156,7 @@ input[type="range"]::-moz-range-thumb {
   background-repeat: no-repeat;
   background-image: var(--slider-image);
   cursor: var(--cursor-type);
+  filter: drop-shadow(0 0 #0000);
 }
 
 input[type="range"].categories::-moz-range-track {

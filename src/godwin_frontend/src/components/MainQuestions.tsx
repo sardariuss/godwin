@@ -3,6 +3,10 @@ import { MainTabButton }                                                       f
 import OpenQuestion                                                            from "./OpenQuestion";
 import SubBanner                                                               from "./SubBanner";
 import QuestionComponent, { QuestionInput }                                    from "./Question";
+import Spinner                                                                 from "./Spinner";
+import { HelpProposeDetails, HelpSelectDetails, HelpVoteDetails, 
+  HelpPositionDetails, HelpArchivedDetails, HelpOpenDetails,
+  HelpCandidateDetails, HelpRejectedDetails }                                  from "./HelpMessages";
 import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
 import CONSTANTS                                                               from "../Constants";
@@ -30,18 +34,40 @@ const mainTabToText = (mainTab: MainTab) => {
 
 const mainTabs = [MainTab.HOME, MainTab.BROWSE];
 
-const voteKindAction = (vote_kind: VoteKind) => {
-  switch (vote_kind) {
-    case VoteKind.INTEREST:
+export enum HomeFilter {
+  PROPOSE,
+  SELECT,
+  VOTE,
+  POSITION
+};
+
+const homeFilterToText = (filter: HomeFilter) => {
+  switch (filter) {
+    case HomeFilter.PROPOSE:
+      return "Propose";
+    case HomeFilter.SELECT:
       return "Select";
-    case VoteKind.OPINION:
+    case HomeFilter.VOTE:
       return "Vote";
-    case VoteKind.CATEGORIZATION:
-      return "Categorize";
+    case HomeFilter.POSITION:
+      return "Position";
   }
 }
 
-const vote_kind_filters = [VoteKind.INTEREST, VoteKind.OPINION, VoteKind.CATEGORIZATION];
+const homeFilterToVoteKind = (filter: HomeFilter) : VoteKind | undefined => {
+  switch (filter) {
+    case HomeFilter.PROPOSE:
+      return undefined;
+    case HomeFilter.SELECT:
+      return VoteKind.INTEREST;
+    case HomeFilter.VOTE:
+      return VoteKind.OPINION;
+    case HomeFilter.POSITION:
+      return VoteKind.CATEGORIZATION;
+  }
+}
+
+const home_filters = [HomeFilter.VOTE, HomeFilter.POSITION, HomeFilter.SELECT, HomeFilter.PROPOSE];
 
 export enum BrowseFilter {
   CANDIDATE,
@@ -63,7 +89,7 @@ const browseFilterToText = (filter: BrowseFilter) => {
   }
 }
 
-const browse_filters = [BrowseFilter.CANDIDATE, BrowseFilter.OPEN, BrowseFilter.ARCHIVED, BrowseFilter.REJECTED];
+const browse_filters = [BrowseFilter.ARCHIVED, BrowseFilter.OPEN, BrowseFilter.CANDIDATE , BrowseFilter.REJECTED];
 
 const getQueryOrderBy = (filter: BrowseFilter) : QuestionOrderBy => {
   switch (filter) {
@@ -82,12 +108,16 @@ type QueryQuestionInputFunction = (direction: Direction, limit: bigint, next: Qu
 
 const MainQuestions = () => {
 
-  const { subgodwin } = useParams();
-  const {subs,                getPrincipal          } = useContext(ActorContext);
+  const { subgodwin }                                 = useParams();
+  
+  const {subs, getPrincipal }                         = useContext(ActorContext);
+  
+  const [initialized,         setInitialized        ] = useState<boolean>        (false                 );
   const [sub,                 setSub                ] = useState<Sub | undefined>(undefined             );
   const [currentMainTab,      setCurrentMainTab     ] = useState<MainTab        >(MainTab.HOME          );
-  const [currentHomeFilter,   setCurrentHomeFilter  ] = useState<VoteKind       >(VoteKind.INTEREST     );
+  const [currentHomeFilter,   setCurrentHomeFilter  ] = useState<HomeFilter     >(HomeFilter.VOTE       );
   const [currentBrowseFilter, setCurrentBrowseFilter] = useState<BrowseFilter   >(BrowseFilter.CANDIDATE);
+  const [toggleHelp,          setToggleHelp         ] = useState<boolean        >(false                 );
   
   const [queryQuestionInput, setQueryQuestionInput] = useState<QueryQuestionInputFunction>(() => () => Promise.resolve({ ids : [], next: undefined}));
 
@@ -128,8 +158,13 @@ const MainQuestions = () => {
       setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
         sub.actor.queryQuestions(getQueryOrderBy(currentBrowseFilter), direction, limit, next? [next.question_id] : []).then(convertQuestionScanResults));
     } else if (currentMainTab === MainTab.HOME) {
-      setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
-        sub.actor.queryFreshVotes(voteKindToCandidVariant(currentHomeFilter), direction, limit, next? [next.question_id] : []).then(convertVoteScanResults));
+      let vote_kind = homeFilterToVoteKind(currentHomeFilter);
+      if (vote_kind !== undefined) {
+        setQueryQuestionInput(() => (direction: Direction, limit: bigint, next: QuestionInput | undefined) =>
+          sub.actor.queryFreshVotes(voteKindToCandidVariant(vote_kind), direction, limit, next? [next.question_id] : []).then(convertVoteScanResults));
+      } else {
+        setQueryQuestionInput(() => () => Promise.resolve({ ids : [], next: undefined}));
+      }
     }
   }
 
@@ -137,19 +172,35 @@ const MainQuestions = () => {
     if (subgodwin !== undefined) {
       setSub(subs.get(subgodwin));
     }
-  }, [subgodwin, subs]);
+    // A first useEffect is called before the context is up-to-date with the all the subs
+    // We consider the component initialized only after the second useEffect call, when the map of subs is populated
+    if (subs.size > 0) {
+      setInitialized(true);
+    };
+  }, [subs]);
 
   useEffect(() => {
     refreshQueryQuestions();
   }, [sub, currentBrowseFilter, currentHomeFilter, currentMainTab]);
 
+  // Hide the help message when the current tab changes
+  useEffect(() => {
+    setToggleHelp(false);
+  }, [currentMainTab, currentHomeFilter, currentBrowseFilter]);
+
 	return (
-    (
-      sub === undefined ?  
-        <div className="flex flex-col items-center w-full text-black dark:text-white">
+    <div className="flex flex-col items-center w-full flex-grow">
+      {
+      !initialized? 
+        <div className="w-6 h-6 mt-4">
+          <Spinner/>
+        </div>
+      : sub === undefined ?  
+        <div className="text-black dark:text-white">
           { CONSTANTS.SUB_DOES_NOT_EXIST }
-        </div> : 
-        <div className="flex flex-col items-center w-full">
+        </div> 
+      : 
+        <div className="flex flex-col items-center w-full flex-grow">
           <SubBanner sub={sub}/>
           <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">
             <div className="flex flex-col border-x dark:border-gray-700 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
@@ -168,14 +219,26 @@ const MainQuestions = () => {
                 <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center w-full">
                 {
                   currentMainTab === MainTab.HOME ? (
-                    vote_kind_filters.map((filter, index) => (
-                      <li key={index} className="w-1/3">
-                        <TabButton label={voteKindAction(filter)} isCurrent={filter == currentHomeFilter} setIsCurrent={() => setCurrentHomeFilter(filter)}/>
+                    home_filters.map((filter, index) => (
+                      <li key={index} className="w-1/4">
+                        <TabButton 
+                          label={homeFilterToText(filter)} 
+                          isCurrent={filter == currentHomeFilter} 
+                          setIsCurrent={() => { setCurrentHomeFilter(filter); }}
+                          isHelpVisible={toggleHelp}
+                          setIsHelpVisible={setToggleHelp}
+                        />
                       </li>))
                   ) : (
                     browse_filters.map((filter, index) => (
                       <li key={index} className="w-1/4">
-                        <TabButton label={browseFilterToText(filter)} isCurrent={filter == currentBrowseFilter} setIsCurrent={() => setCurrentBrowseFilter(filter)}/>
+                        <TabButton 
+                          label={browseFilterToText(filter)} 
+                          isCurrent={filter == currentBrowseFilter} 
+                          setIsCurrent={() => setCurrentBrowseFilter(filter)} 
+                          isHelpVisible={toggleHelp}
+                          setIsHelpVisible={setToggleHelp}
+                        />
                       </li>
                     ))
                   )
@@ -184,26 +247,43 @@ const MainQuestions = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col border mb-5 dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
+          <div className="flex flex-col border dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full flex-grow">
             {
+              !toggleHelp ? <></> :
               currentMainTab === MainTab.HOME ?
-              <div className="border-b dark:border-gray-700">
-                <OpenQuestion onSubmitQuestion={()=>{ refreshQueryQuestions(); }} subId={subgodwin} canSelectSub={false}></OpenQuestion>
-              </div> : <></>
+                currentHomeFilter === HomeFilter.VOTE          ? <HelpVoteDetails/>                                                  :
+                currentHomeFilter === HomeFilter.POSITION      ? <HelpPositionDetails/>                                              :
+                currentHomeFilter === HomeFilter.SELECT        ? <HelpSelectDetails/>                                                :
+                currentHomeFilter === HomeFilter.PROPOSE       ? <HelpProposeDetails max_num_characters={sub.info.character_limit}/> : <></> :
+              currentMainTab === MainTab.BROWSE ?
+                currentBrowseFilter === BrowseFilter.ARCHIVED  ? <HelpArchivedDetails/>                                              :
+                currentBrowseFilter === BrowseFilter.OPEN      ? <HelpOpenDetails/>                                                  :
+                currentBrowseFilter === BrowseFilter.CANDIDATE ? <HelpCandidateDetails/>                                             :
+                currentBrowseFilter === BrowseFilter.REJECTED  ? <HelpRejectedDetails/>                                              : <></> : <></>
             }
-            <div className="w-full flex">
+            {
+              currentMainTab === MainTab.HOME && currentHomeFilter === HomeFilter.PROPOSE ?
+                <OpenQuestion textInputId={"propose_vote_sub"} onSubmitQuestion={()=>{ refreshQueryQuestions(); }} subId={subgodwin} canSelectSub={false}/>
+                : <></>
+            }
+            <div className="w-full flex flex-grow">
             {
               React.createElement(ListComponents<QuestionInput, QuestionInput>, {
                 query_components: queryQuestionInput,
                 generate_input: (item: QuestionInput) => { return item },
                 build_component: QuestionComponent,
-                generate_key: (item: QuestionInput) => { return item.question_id.toString() }
+                generate_key: (item: QuestionInput) => { return item.question_id.toString() },
+                empty_list_message: () => { 
+                  return currentMainTab === MainTab.HOME ? 
+                    currentHomeFilter === HomeFilter.PROPOSE ? "" : CONSTANTS.EMPTY_HOME : CONSTANTS.GENERIC_EMPTY 
+                }
               })
             }
             </div>
           </div>
         </div>
-    )
+      }
+    </div>
 	);
 };
 

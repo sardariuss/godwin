@@ -1,5 +1,6 @@
-import OpenedVote, { OpenedVoteInput } from "./OpenedVote";
+import OpenedVote, { OpenedVoteInput }         from "./OpenedVote";
 import ListComponents                          from "../base/ListComponents";
+import CONSTANTS                               from "../../Constants";
 import { Sub }                                 from "../../ActorContext";
 import { ScanResults, fromScanLimitResult }    from "../../utils";
 import { Direction, QueryOpenedVoteItem }      from "../../../declarations/godwin_sub/godwin_sub.did";
@@ -29,6 +30,7 @@ export const OpenedVotes = ({principal, sub}: OpenedVotesProps) => {
         generate_input: (opened_vote: QueryOpenedVoteItem) => { return { opened_vote, sub, principal  } },
         build_component: OpenedVote,
         generate_key: (result: QueryOpenedVoteItem) => { return result.vote_id.toString(); },
+        empty_list_message: () => { return CONSTANTS.GENERIC_EMPTY }
       })
     }
     </>

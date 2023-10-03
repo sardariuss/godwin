@@ -43,7 +43,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
 
   const {refreshBalance}   = useContext(ActorContext);
 
-  const countdownDurationMs = 5000;
+  const countdownDurationMs = 10000;
   const voteKind = voteKindToCandidVariant(VoteKind.CATEGORIZATION);
 
   const [countdownVote,  setCountdownVote ] = useState<boolean>                                            (false                                  );

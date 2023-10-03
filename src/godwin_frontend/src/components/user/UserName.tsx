@@ -36,7 +36,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
   const [errorMessage,      setErrorMessage] = useState<string>               (""                );
 
   const refreshUserName = async () => {
-    if (principal !== undefined && !principal.isAnonymous()) {
+    if (principal !== undefined && !principal.isAnonymous() && master !== undefined) {
       let user_name = fromNullable(await master.getUserName(principal));
       setUserName(user_name);
     }
@@ -48,7 +48,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
 
   const saveUserName = () => {
     setEditState(EditingState.SAVING);
-    master.setUserName(editingName).then((result) => {
+    master?.setUserName(editingName).then((result) => {
       if (result['ok'] !== undefined) {
         setEditState(EditingState.SAVED);
         setUserName(editingName);
@@ -72,7 +72,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
 
   useEffect(() => {
     refreshUserName();
-  }, [principal]);
+  }, [master, principal]);
 
   useEffect(() => {
 		refreshEditingName();
@@ -96,7 +96,7 @@ const UserName = ({principal, isLoggedUser} : UserNameProps) => {
             autoFocus={true}
           /> :
           <div className="break-words">
-            { userName !== undefined ? userName : CONSTANTS.USER_NAME.DEFAULT }
+            { userName !== undefined ? userName : CONSTANTS.USER.DEFAULT_NAME }
           </div>
       }
       {
