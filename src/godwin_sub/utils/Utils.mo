@@ -12,7 +12,9 @@ import Result  "mo:base/Result";
 import Iter    "mo:base/Iter";
 import Char    "mo:base/Char";
 import Nat32   "mo:base/Nat32";
+import Nat8   "mo:base/Nat8";
 import Text    "mo:base/Text";
+import Blob    "mo:base/Blob";
 import Debug   "mo:base/Debug";
 
 module {
@@ -280,6 +282,20 @@ module {
       };
     };
     true;
+  };
+
+  public func blobToText(blob: Blob) : Text {
+    Array.foldLeft(Blob.toArray(blob), "", func(text: Text, byte: Nat8) : Text {
+      Text.concat(text, Nat8.toText(byte));
+    });
+  };
+
+  public func mapFilter2D<K1, K2, V, U>(map: Map<K1, Map<K2, V>>, hash1: HashUtils<K1>, hash2: HashUtils<K2>, mapEntry: (K1, K2, V) -> ?U) : Map<K1, Map<K2, U>> {
+    Map.mapFilter(map, hash1, func(k1: K1, inner: Map<K2, V>) : ?Map<K2, U> {
+      ?Map.mapFilter(inner, hash2, func(k2: K2, v: V) : ?U {
+        mapEntry(k1, k2, v);
+      });
+    });
   };
 
 };

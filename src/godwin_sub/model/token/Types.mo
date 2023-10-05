@@ -25,16 +25,16 @@ module {
   };
 
   // Token general types
-  public type Subaccount     = Blob;
-  public type Balance        = TokenTypes.Balance;
-  public type Account        = TokenTypes.Account;
-  public type TxIndex        = TokenTypes.TxIndex;
-  public type TransferResult = TokenTypes.TransferResult;
-  public type TransferArgs   = TokenTypes.TransferArgs;
-  public type TransferError  = TokenTypes.TransferError;
-  public type Mint           = TokenTypes.Mint;
+  public type Subaccount           = Blob;
+  public type Balance              = TokenTypes.Balance;
+  public type Account              = TokenTypes.Account;
+  public type TxIndex              = TokenTypes.TxIndex;
+  public type TransferResult       = TokenTypes.TransferResult;
+  public type TransferArgs         = TokenTypes.TransferArgs;
+  public type TransferError        = TokenTypes.TransferError;
+  public type Mint                 = TokenTypes.Mint;
   public type ReapAccountRecipient = TokenTypes.ReapAccountRecipient;
-  public type MintRecipient   = TokenTypes.MintRecipient;
+  public type MintRecipient        = TokenTypes.MintRecipient;
   public type GodwinTokenInterface = TokenTypes.FullInterface;
 
   public type CanisterCallError = {
@@ -51,14 +51,18 @@ module {
   // Reap account types
   public type ReapAccountReceiver  = { to: Principal; share: Float; };
   public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
-  public type ReapAccountError = TransferError or TokenTypes.ReapAccountError or CanisterCallError or {
-    #SingleReapLost: {
+  public type ReapAccountError = TransferError or CanisterCallError or {
+    #InsufficientFees: {
       share: Float;
-      subgodwin_subaccount: Subaccount;
+      subaccount: Subaccount;
+      balance: Balance;
+      sum_fees: Balance;
     };
-    #SingleTransferError: {
-      args: TransferArgs;
-      error: TransferError;
+    #InvalidSumShares: {
+      owed: Balance;
+      subaccount: Subaccount;
+      balance_without_fees: Balance;
+      total_owed: Balance;
     };
   };
 
@@ -107,10 +111,10 @@ module {
   };
 
   public type ITokenInterface = {
-    transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async* TransferFromMasterResult;
-    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountReceiver>) -> async* Trie<Principal, ?ReapAccountResult>;
-    mintBatch: (recipients: Iter<MintReceiver>) -> async* Trie<Principal, ?MintResult>;
-    mint:(to: Principal, amount: Balance) -> async* MintResult;
+    transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async TransferFromMasterResult;
+    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountReceiver>) -> async Trie<Principal, ?ReapAccountResult>;
+    mintBatch: (recipients: Iter<MintReceiver>) -> async Trie<Principal, ?MintResult>;
+    mint:(to: Principal, amount: Balance) -> async MintResult;
   };
 
 };

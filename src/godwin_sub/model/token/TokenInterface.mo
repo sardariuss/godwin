@@ -13,6 +13,8 @@ import Array       "mo:base/Array";
 import Debug       "mo:base/Debug";
 import Trie        "mo:base/Trie";
 import Iter        "mo:base/Iter";
+import Int         "mo:base/Int";
+import Float       "mo:base/Float";
 
 module {
 
@@ -54,7 +56,7 @@ module {
 
   public class TokenInterface(_master: MasterInterface, _token: GodwinTokenInterface) : ITokenInterface {
 
-    public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async* TransferFromMasterResult {
+    public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async TransferFromMasterResult {
       try {
         await _master.pullTokens(from, amount, ?to_subaccount);
       } catch(e) {
@@ -62,56 +64,70 @@ module {
       };
     };
     
-    public func reapSubaccount(subaccount: Blob, receivers: Iter<ReapAccountReceiver>) : async* Trie<Principal, ?ReapAccountResult> {
+    public func reapSubaccount(subaccount: Blob, receivers: Iter<ReapAccountReceiver>) : async Trie<Principal, ?ReapAccountResult> {
 
       var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
 
-      let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<ReapAccountRecipient>(0);
+      // Get the receivers in an array to be able to iterate over them more than once
+      let array_receivers = Iter.toArray(receivers);
 
-      for ({ to; share; } in receivers){
-        if (share > 0.0) {
-          // Add to the recipients 
-          to_accounts.add({ account = getMasterAccount(?to); share; });
-          // Keep the mapping of subaccount <-> principal
-          Map.set(map_recipients, Map.bhash, Account.toSubaccount(to), to);
-          // Initialize the results map in case no error is found
-          results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleReapLost({ share; subgodwin_subaccount = subaccount; }))).0;
-        } else {
-          results := Trie.put(results, key(to), Principal.equal, null).0;
+      let fee = await _token.icrc1_fee();
+      let balance = await _token.icrc1_balance_of({ owner = Principal.fromText("aaaaa-aa"); subaccount = ?subaccount; }); // @todo
+
+      // Remove a fee for each positive share to distribute
+      // Return insufficient fees error if the sum of the fees is greater or equal to the subaccount balance
+      let sum_fees = Array.foldLeft(array_receivers, 0, func(sum: Nat, { share; }: ReapAccountReceiver) : Nat {
+        if (share > 0.0) { sum + fee; } else { sum; };
+      });
+      if (sum_fees >= balance) {
+        for ({ to; share; } in Array.vals(array_receivers)){
+          let result = #err(#InsufficientFees({ share; subaccount; balance; sum_fees; }));
+          results := Trie.put(results, key(to), Principal.equal, ?result).0;
         };
+        return results;
       };
 
-      let reap_result = try {
-        // Call the token reap_account method
-        await _token.reap_account({
-          subaccount = ?subaccount;
-          to = Buffer.toArray(to_accounts);
-          memo = null;
-        });
-      } catch(e) {
-        #Err(#CanisterCallError(Error.code(e)));
+      // Initialize the results with what is owed to each receiver
+      // Return an error if the sum of shares is greater than the balance without the fees
+      var total_owed : Nat = 0;
+      let balance_without_fees = Int.abs(balance - sum_fees); // Convert to float here to avoid doing it everytime in the loop
+      let to_transfer = Array.map<ReapAccountReceiver, (Principal, Balance)>(array_receivers, func({ to; share; }: ReapAccountReceiver) : (Principal, Balance) {
+        let owed = if (share > 0.0) { Int.abs(Float.toInt(Float.fromInt(balance_without_fees) * share)); } else { 0; };
+        total_owed += owed;
+        (to, owed);
+      });
+      if (total_owed > balance_without_fees){
+        for ((to, owed) in Array.vals(to_transfer)){
+          let result = #err(#InvalidSumShares({ owed; subaccount; total_owed; balance_without_fees; }));
+          results := Trie.put(results, key(to), Principal.equal, ?result).0;
+        };
+        return results;
       };
 
-      switch(reap_result) {
-        case(#Err(err)) {    
-          for (receiver in receivers){
-            results := Trie.put(results, key(receiver.to), Principal.equal, ?#err(err)).0;
-          };
+      for ((to, owed) in Array.vals(to_transfer)){
+        let result = if (owed == 0) { null; } else {
+          ?toBaseResult(
+            try {
+              await _token.icrc1_transfer({
+                from_subaccount = ?subaccount;
+                to = getMasterAccount(?to);
+                memo = null;
+                amount = owed;
+                fee = ?fee;
+                created_at_time = null;
+              });
+            } catch(e) {
+              #Err(#CanisterCallError(Error.code(e)));
+            }
+          );
         };
-        case(#Ok(transfer_results)){
-          for ((args, result) in Array.vals(transfer_results)){
-            Option.iterate(transferToReapAccountResult(map_recipients, args, result), func((principal, result): (Principal, ReapAccountResult)){
-              results := Trie.put(results, key(principal), Principal.equal, ?result).0;
-            });
-          };
-        };
+        results := Trie.put(results, key(to), Principal.equal, result).0;
       };
 
-      results;
+      return results;
     };
 
-    public func mintBatch(receivers: Iter<MintReceiver>) : async* Trie<Principal, ?MintResult> {
+    public func mintBatch(receivers: Iter<MintReceiver>) : async Trie<Principal, ?MintResult> {
 
       var results : Trie<Principal, ?MintResult> = Trie.empty();
 
@@ -158,7 +174,7 @@ module {
       results;
     };
 
-    public func mint(to: Principal, amount: Balance) : async* MintResult {
+    public func mint(to: Principal, amount: Balance) : async MintResult {
       let args = {
         to = getMasterAccount(?to);
         amount;
@@ -177,26 +193,6 @@ module {
       { owner = Principal.fromActor(_master); subaccount = Option.map(principal, func(p: Principal) : Blob { Account.toSubaccount(p); }); };
     };
 
-  };
-
-  // @todo: in case the subaccount or the principal is ever null, the transfer will be lost
-  func transferToReapAccountResult(map_recipients: Map<Subaccount, Principal>, args: TransferArgs, result: TransferResult) : ?(Principal, ReapAccountResult) {
-    let opt_subaccount = args.to.subaccount;
-    switch(opt_subaccount){
-      case(null) { null; };
-      case(?subaccount) {
-        let opt_principal = Map.get(map_recipients, Map.bhash, subaccount);
-        switch(opt_principal){
-          case(null) { null; };
-          case(?principal) {
-            switch(result){
-              case(#Ok(tx_index)) { ?(principal, #ok(tx_index));                                             };
-              case(#Err(err))     { ?(principal, #err(#SingleTransferError({ args = args; error = err; }))); };
-            };
-          };
-        };
-      };
-    };
   };
 
   // @todo: in case the subaccount or the principal is ever null, the transfer will be lost

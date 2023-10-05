@@ -59,7 +59,7 @@ module {
   ) {
 
     public func payin(id: Id, principal: Principal, amount: Balance) : async* TransferFromMasterResult {
-      switch(await* _token_interface.transferFromMaster(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
+      switch(await _token_interface.transferFromMaster(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
         case(#err(err)) { #err(err); };
         case(#ok(tx_index)) { 
           _user_transactions.initWithPayin(principal, id, tx_index);
@@ -70,24 +70,24 @@ module {
 
     public func payout(id: Id, recipients: Iter<PayoutRecipient>) : async* () {
       // Refund the users
-      let refunds = await* _token_interface.reapSubaccount(
+      let refunds = await _token_interface.reapSubaccount(
         SubaccountGenerator.getSubaccount(_subaccount_prefix, id), 
         Iter.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountReceiver { { to; share = args.refund_share; }; })
       );
       // Reward the users
-      let rewards = await* _token_interface.mintBatch(
+      let rewards = await _token_interface.mintBatch(
         Iter.map(recipients, func({to; args;} : PayoutRecipient): MintReceiver { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
-      // Watchout, this loop only iterates on the refunds, not the rewards.
-      // It is assumed that if for a user there is no refund, then there is no reward.
-      // @todo: do not use this assumption!
-      // @todo: should do a Trie.disj to get the union of both tries.
-      for ((principal, result) in Trie.iter(refunds)) {
-        let reward = switch(Trie.get(rewards, key(principal), Principal.equal)){
-          case(null) { null; };
-          case(?r) { r; };
+      // Join the refunds and rewards into a single trie
+      type Payout = { refund: ?ReapAccountResult; reward: ?MintResult };
+      let payouts = Trie.disj(refunds, rewards, Principal.equal, func(refund: ??ReapAccountResult, reward: ??MintResult) : Payout {
+        {
+          refund = switch(refund){ case(null) { null; }; case(?r) { r; }; };
+          reward = switch(reward){ case(null) { null; }; case(?r) { r; }; };
         };
-        _user_transactions.setPayout(principal, id, result, reward);
+      });
+      for ((principal, {refund; reward;}) in Trie.iter(payouts)) {
+        _user_transactions.setPayout(principal, id, refund, reward);
       };
     };
 

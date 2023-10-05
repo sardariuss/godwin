@@ -57,9 +57,9 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   _state := Migrations.migrate(_state, Time.now(), args);
 
-  // In subsequent versions, the facade will be set to null if the version of the state is not the last one
   let _controller = switch(_state){
-    case(#v0_1_0(state)) { ?Factory.build(state); };
+    case(#v0_2_0(state)) { ?Factory.build(state); };
+    case(_)              { null;                  };
   };
 
   public query func getSubInfo() : async SubInfo {

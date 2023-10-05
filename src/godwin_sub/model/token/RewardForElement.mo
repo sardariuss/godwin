@@ -31,7 +31,7 @@ module {
       if (Map.has(_mint_register, Map.nhash, id)){
         Debug.trap("The element " # Nat.toText(id) # " has already been rewarded.");
       };
-      let result = await* _token_interface.mint(_beneficiary, token_amount_e9s);
+      let result = await _token_interface.mint(_beneficiary, token_amount_e9s);
       Map.set(_mint_register, Map.nhash, id, result);
     };
 

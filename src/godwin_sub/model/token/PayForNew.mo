@@ -72,7 +72,7 @@ module {
 
     public func payin(buyer: Principal, price: Balance, create_new: () -> Id) : async* Result<Id, TransferFromMasterError>{
       let subaccount = getNextSubaccount();
-      switch(await* _token_interface.transferFromMaster(buyer, subaccount, price)) {
+      switch(await _token_interface.transferFromMaster(buyer, subaccount, price)) {
         case (#err(err)) { #err(err); };
         case (#ok(tx_index)) {
           let id = create_new();
@@ -88,10 +88,10 @@ module {
         case(null) { Debug.trap("Refund aborted (elem '" # Nat.toText(id) # "'') : not found in the map"); };
         case(?v) { v; };
       };
-      let reap_result = await* _token_interface.reapSubaccount(subaccount, Array.vals<ReapAccountReceiver>([{to; share = args.refund_share;}]));
+      let reap_result = await _token_interface.reapSubaccount(subaccount, Array.vals<ReapAccountReceiver>([{to; share = args.refund_share;}]));
       let refund = Option.chain(Trie.get(reap_result, key(to), Principal.equal), func(res: ?ReapAccountResult) : ?ReapAccountResult { res; });
       let reward = switch(args.reward_tokens){
-        case(?amount) { ?(await* _token_interface.mint(to, amount)); };
+        case(?amount) { ?(await _token_interface.mint(to, amount)); };
         case(null) { null; };
       };
       _user_transactions.setPayout(to, id, refund, reward);
