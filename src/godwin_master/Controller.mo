@@ -20,6 +20,10 @@ import Iter               "mo:base/Iter";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Buffer             "mo:base/Buffer";
 import Error              "mo:base/Error";
+import Blob               "mo:base/Blob";
+import Option             "mo:base/Option";
+
+import ckBTC              "canister:ck_btc";
 
 module {
 
@@ -47,6 +51,7 @@ module {
   type CyclesParameters       = Types.CyclesParameters;
   type PriceParameters        = Types.PriceParameters;
   type ValidationParams       = Types.ValidationParams;
+  type LedgerType             = Types.LedgerType;
   type Duration               = UtilsTypes.Duration;
   type GodwinSub              = GodwinSub.GodwinSub;
 
@@ -113,7 +118,7 @@ module {
     };
 
     // @todo: it is dangerous to have the master and caller as parameters, use a named Principal inside a record instead
-    public func createSubGodwin(principals: Principals, identifier: Text, sub_parameters: SubParameters, time: Time) : async CreateSubGodwinResult  {
+    public func createSubGodwin(principals: Principals, identifier: Text, sub_parameters: SubParameters, time: Time, payement: LedgerType) : async CreateSubGodwinResult  {
 
       let { master; user; } = principals;
 
@@ -124,12 +129,30 @@ module {
       };
 
       // Proceed with the payment
-      switch(await _token.burn({
-        from_subaccount = ?Account.toSubaccount(user);
-        amount = _model.getPriceParameters().sub_creation_price_sats;
-        memo = null;
-        created_at_time = ?Nat64.fromNat(Int.abs(time));
-      })){
+      let transfer = switch(payement){
+        case(#BTC) {
+          await ckBTC.icrc1_transfer({
+            from_subaccount = ?Blob.toArray(Account.toSubaccount(user));
+            to = { owner = getAdmin(); subaccount = null; };
+            fee = ?10;
+            amount = _model.getPriceParameters().sub_creation_price_sats;
+            memo = null;
+            created_at_time = ?Nat64.fromNat(Int.abs(time));
+          });
+        };
+        case(#GWC) {
+          await _token.icrc1_transfer({
+            from_subaccount = ?Account.toSubaccount(user);
+            to = { owner = getAdmin(); subaccount = null; };
+            fee = ?100_000; // Fee might not be required if admin is the owner of the token
+            amount = _model.getPriceParameters().sub_creation_price_gwc_e9s;
+            memo = null;
+            created_at_time = ?Nat64.fromNat(Int.abs(time));
+          });
+        };
+      };
+     
+      switch(transfer){
         case(#Err(err)) { return #err(err); };
         case(#Ok(_)) {};
       };
@@ -207,15 +230,15 @@ module {
       };
 
       toBaseResult(
-        await _token.icrc1_transfer({
+        await ckBTC.icrc1_transfer({
           amount;
           created_at_time = ?Nat64.fromNat(Int.abs(time));
-          fee = ?100_000; // @todo: null is supposed to work according to the Token standard, but it doesn't...
-          from_subaccount = ?Account.toSubaccount(user);
+          fee = ?10; // @todo: null is supposed to work according to the Token standard, but it doesn't...
+          from_subaccount = ?Blob.toArray(Account.toSubaccount(user));
           memo = null;
           to = {
             owner = caller;
-            subaccount;
+            subaccount = Option.map(subaccount, Blob.toArray);
           };
         })
       );

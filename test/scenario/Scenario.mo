@@ -1,23 +1,30 @@
-import EightValues "EightValues";
-import Types       "../../src/godwin_sub/model/Types";
-import Controller  "../../src/godwin_sub/model/controller/Controller";
-import Factory     "../../src/godwin_sub/model/Factory";
-import Duration    "../../src/godwin_sub/utils/Duration";
+import EightValues  "EightValues";
+import Types        "../../src/godwin_sub/model/Types";
+import Controller   "../../src/godwin_sub/model/controller/Controller";
+import Factory      "../../src/godwin_sub/model/Factory";
+import Duration     "../../src/godwin_sub/utils/Duration";
+import Account      "../../src/godwin_sub/utils/Account";
 
-import Utils       "../../src/godwin_sub/utils/Utils";
+import Utils        "../../src/godwin_sub/utils/Utils";
 
-import Random      "../motoko/common/Random";
+import Random       "../motoko/common/Random";
 
-import Map         "mo:map/Map";
+import Map          "mo:map/Map";
 
-import Principal   "mo:base/Principal";
-import Debug       "mo:base/Debug";
-import Nat         "mo:base/Nat";
-import Result      "mo:base/Result";
-import Error       "mo:base/Error";
-import Array       "mo:base/Array";
+import Principal    "mo:base/Principal";
+import Debug        "mo:base/Debug";
+import Nat          "mo:base/Nat";
+import Result       "mo:base/Result";
+import Error        "mo:base/Error";
+import Array        "mo:base/Array";
+import Nat64        "mo:base/Nat64";
+import Int          "mo:base/Int";
+import Blob         "mo:base/Blob";
 
-import Fuzz        "mo:fuzz";
+import Fuzz         "mo:fuzz";
+
+import ckBTC        "canister:ck_btc";
+import GodwinMaster "canister:godwin_master";
 
 module {
 
@@ -39,14 +46,17 @@ module {
     Random.generatePrincipals(fuzzer, NUM_USERS);
   };
 
-  public func run(controller: Controller, start_date: Time, end_date: Time, tick_duration: Duration) : async*() {
+  public func run(controller: Controller, start_date: Time, end_date: Time, tick_duration: Duration, airdrop_sats_per_user: Nat) : async*() {
 
     let fuzzer = Fuzz.fromSeed(SEED);
 
+    let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
+    for (principal in Array.vals(principals)){
+      await airdrop(principal, airdrop_sats_per_user);
+    };
+
     let eight_values = EightValues.EightValues();
     let categorizations = Map.new<Nat, [(Text, Float)]>(Map.nhash);
-
-    let principals = Random.generatePrincipals(fuzzer, NUM_USERS);
 
     let categories = controller.getSubInfo().categories;
 
@@ -152,6 +162,26 @@ module {
       case(#canister_error)     { "canister_error";      };
       case(#future(_))          { "future";              };
       case(#call_error(_))      { "call_error";          };
+    };
+  };
+
+  func airdrop(principal: Principal, airdrop_sats_per_user: Nat) : async () {
+
+    let transfer_result = await ckBTC.icrc1_transfer({
+      to = {
+        owner = Principal.fromActor(GodwinMaster);
+        subaccount = ?(Blob.toArray(Account.toSubaccount(principal)));
+      };
+      from_subaccount = null;
+      amount = airdrop_sats_per_user;
+      memo = null;
+      created_at_time = null;
+      fee = ?10; // @todo: fix bug where null is not allowed
+    });
+
+    switch(transfer_result){
+      case(#Err(err))     { return Debug.print("Airdrop transfer to user failed") };
+      case(#Ok(tx_index)) { };
     };
   };
 

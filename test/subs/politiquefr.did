@@ -1,0 +1,45 @@
+record {
+  name = "Cocorico 🐔";
+  character_limit = 240 : nat;
+  categories = vec {
+    record {
+      "ÉCONOMIE";
+      record { left  = record { name = "SOCIALISME";     symbol = "🌹"; color = "#ca2002"; }; 
+               right = record { name = "CAPITALISME";    symbol = "🎩"; color = "#ca4802"; }; } 
+    };
+    record {
+      "RÉPRESSION";
+      record { left  = record { name = "RÉHABILITATION"; symbol = "📚"; color = "#f26c0d"; }; 
+               right = record { name = "PUNITION";       symbol = "🥊"; color = "#f2a60d"; }; }
+    };
+    record {
+      "ENVIRONNEMENT";
+      record { left  = record { name = "ÉCOLOGIE";       symbol = "🌿"; color = "#02ca13"; }; 
+               right = record { name = "PRODUCTION";     symbol = "⚙️"; color = "#02ca9f"; }; }
+    };
+    record {
+      "IMMIGRATION";
+      record { left  = record { name = "LIBRE";         symbol = "🪁"; color = "#11aebf"; }; 
+               right = record { name = "CONTROLÉE";     symbol = "🛡️"; color = "#097eeb"; }; }
+    };
+    record {
+      "SOUVERAINETÉ";
+      record { left  = record { name = "FRANCE";        symbol = "🇫🇷"; color = "#2c00cc"; }; 
+               right = record { name = "EUROPE";        symbol = "🇪🇺"; color = "#5f00cc"; }; }
+    };
+  };
+  selection = record {
+    minimum_score = 1.0;
+    selection_period = variant { DAYS = 1 : nat };
+  };
+  scheduler = record {
+    censor_timeout            = variant { HOURS = 8 : nat };
+    candidate_status_duration = variant { DAYS = 3  : nat };
+    open_status_duration      = variant { DAYS = 2  : nat };
+    rejected_status_duration  = variant { DAYS = 3  : nat };
+  };
+  convictions = record {
+    vote_half_life        = variant { DAYS = 365 : nat };
+    late_ballot_half_life = variant { DAYS = 30  : nat };
+  };
+}

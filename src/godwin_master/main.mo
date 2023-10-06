@@ -33,6 +33,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
   type AccessControlError     = Types.AccessControlError;
+  type LedgerType             = Types.LedgerType;
   type Controller             = Controller.Controller;
 
   stable var _state = Migrations.install(Time.now(), args);
@@ -84,8 +85,8 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().getCyclesBalance();
   };
 
-  public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters) : async CreateSubGodwinResult  {
-    await getController().createSubGodwin({ master = Principal.fromActor(this); user = caller; }, identifier, sub_parameters, Time.now());
+  public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters, payement: LedgerType) : async CreateSubGodwinResult  {
+    await getController().createSubGodwin({ master = Principal.fromActor(this); user = caller; }, identifier, sub_parameters, Time.now(), payement);
   };
 
   public shared({caller}) func upgradeAllSubs(args: SubMigrationArgs) : async UpgradeAllSubsResult {

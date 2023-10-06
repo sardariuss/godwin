@@ -1,11 +1,11 @@
-import Types          "../../../../src/godwin_sub/model/Types";
-import MigrationTypes "../../../../src/godwin_sub/stable/Types";
-import Migrations     "../../../../src/godwin_sub/stable/Migrations";
-import Factory        "../../../../src/godwin_sub/model/Factory";
+import Types          "../../src/godwin_sub/model/Types";
+import MigrationTypes "../../src/godwin_sub/stable/Types";
+import Migrations     "../../src/godwin_sub/stable/Migrations";
+import Factory        "../../src/godwin_sub/model/Factory";
 
-import Duration       "../../../../src/godwin_sub/utils/Duration";
+import Duration       "../../src/godwin_sub/utils/Duration";
 
-import Scenario       "../../Scenario";
+import Scenario       "Scenario";
 
 import GodwinMaster  "canister:godwin_master";
 
@@ -26,7 +26,8 @@ actor class GodwinSubScenario(){
 
   public shared func runScenario(
     scenario_duration: Types.Duration,
-    tick_duration: Types.Duration
+    tick_duration: Types.Duration,
+    airdrop_sats_per_user: Nat,
   ) : async () {
     let now = Time.now();
     
@@ -61,7 +62,7 @@ actor class GodwinSubScenario(){
       case(_) { Debug.trap("Expect state v0_2_0"); };
     };
     // Run the scenario
-    await* Scenario.run(facade, start_date, now, tick_duration);
+    await* Scenario.run(facade, start_date, now, tick_duration, airdrop_sats_per_user);
   };
 
 };

@@ -1,19 +1,17 @@
-#dfx stop
-#dfx start --background --clean
+dfx stop
+dfx start --background --clean
 
-#dfx canister create --all
+dfx canister create --all
 
-#dfx build --all
+dfx build --all
 
 export DEPLOYER_PRINCIPAL=$(dfx identity get-principal)
-export SCENARIO_ID=$(dfx canister id scenario_sub)
 export MASTER_ID=$(dfx canister id godwin_master)
 export TOKEN_ID=$(dfx canister id godwin_token)
 
 # Local deployement parameters
 # ckBTC
 export CK_BTC_MINTER=${DEPLOYER_PRINCIPAL} # The deployer is the minter in local environment
-export CK_BTC_SCENARIO_PRE_MINT_AMOUNT="1_000_000_000" # The scenario canister requires some BTC to transfer to the users so they can participate
 # Godwin token
 export TOKEN_NAME="GodwinCoin"
 export TOKEN_SYMBOL="GDWC"
@@ -33,6 +31,7 @@ export MASTER_PRICE_SATS_REOPEN_VOTE="1_000"
 export MASTER_PRICE_SATS_INTEREST_VOTE="200"
 export MASTER_PRICE_SATS_CATEGORIZATION_VOTE="500"
 export MASTER_PRICE_SATS_SUB_CREATION="50_000"
+export MASTER_PRICE_GWC_E9S_SUB_CREATION="10_000_000_000"
 
 dfx canister install ck_btc --argument '( record {
   name              = "ckBTC";
@@ -41,15 +40,7 @@ dfx canister install ck_btc --argument '( record {
   fee               = 10;
   max_supply        = 2_100_000_000_000_000;
   min_burn_amount   = 1_000;
-  initial_balances  = vec {
-    record {
-      record {
-        owner = principal "'${SCENARIO_ID}'";
-        subaccount = null
-      };
-      '${CK_BTC_SCENARIO_PRE_MINT_AMOUNT}'
-    }
-  };
+  initial_balances  = vec {};
   minting_account   = opt record { 
     owner = principal "'${CK_BTC_MINTER}'";
     subaccount = null; 
@@ -93,6 +84,7 @@ dfx canister install godwin_master --argument='( variant { init = record {
     interest_vote_price_sats       = '${MASTER_PRICE_SATS_INTEREST_VOTE}';
     categorization_vote_price_sats = '${MASTER_PRICE_SATS_CATEGORIZATION_VOTE}';
     sub_creation_price_sats        = '${MASTER_PRICE_SATS_SUB_CREATION}';
+    sub_creation_price_gwc_e9s     = '${MASTER_PRICE_GWC_E9S_SUB_CREATION}';
   };
   validation_parameters = record {
     username = record {

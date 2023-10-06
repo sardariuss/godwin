@@ -1,12 +1,5 @@
 {
   "canisters": {
-    "godwin_token":{
-      "main": "src/godwin_token/main.mo",
-      "type": "motoko",
-      "declarations": {
-        "output": "src/godwin_frontend/declarations/godwin_token"
-      }
-    },
     "ck_btc": {
       "main": "src/godwin_token/main.mo",
       "type": "motoko",
@@ -15,6 +8,13 @@
         "id": {
           "ic": "mxzaz-hqaaa-aaaar-qaada-cai"
         }
+      }
+    },
+    "godwin_token":{
+      "main": "src/godwin_token/main.mo",
+      "type": "motoko",
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/godwin_token"
       }
     },
     "godwin_master":{
@@ -26,17 +26,6 @@
       ],
       "declarations": {
         "output": "src/godwin_frontend/declarations/godwin_master"
-      }
-    },
-    "godwin_airdrop":{
-      "main": "src/godwin_airdrop/main.mo",
-      "type": "motoko",
-      "dependencies": [
-        "godwin_token",
-        "godwin_master"
-      ],
-      "declarations": {
-        "output": "src/godwin_frontend/declarations/godwin_airdrop"
       }
     },
     "godwin_sub": {
@@ -88,26 +77,15 @@
         "output": "src/godwin_frontend/declarations/internet_identity"
       }
     },
-    "scenario_sub": {
-      "main": "test/scenario/canisters/godwin_sub/main.mo",
+    "scenario": {
+      "main": "test/scenario/main.mo",
       "type": "motoko",
       "dependencies": [
         "godwin_token",
         "godwin_master"
       ],
       "declarations": {
-        "output": "src/godwin_frontend/declarations/scenario_sub"
-      }
-    },
-    "scenario_airdrop": {
-      "main": "test/scenario/canisters/godwin_airdrop/main.mo",
-      "type": "motoko",
-      "dependencies": [
-        "godwin_token",
-        "godwin_master"
-      ],
-      "declarations": {
-        "output": "src/godwin_frontend/declarations/scenario_airdrop"
+        "output": "src/godwin_frontend/declarations/scenario"
       }
     }
   },

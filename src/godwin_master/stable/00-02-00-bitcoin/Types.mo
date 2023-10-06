@@ -84,6 +84,7 @@ module {
     interest_vote_price_sats       : Nat;
     categorization_vote_price_sats : Nat;
     sub_creation_price_sats        : Nat;
+    sub_creation_price_gwc_e9s     : Nat;
   };
 
   public type CyclesParameters = {

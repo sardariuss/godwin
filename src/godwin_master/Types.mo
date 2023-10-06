@@ -24,6 +24,11 @@ module {
 
   public type ValidationParams = StableTypes.Current.ValidationParams;
 
+  public type LedgerType = {
+    #BTC;
+    #GWC;
+  };
+
   public type AccessControlRole = {
     #ADMIN;
     #SUB;
