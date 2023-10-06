@@ -48,11 +48,10 @@ module {
   public type StatusInfo                     = StableTypes.Current.StatusInfo;
   public type SchedulerParameters            = StableTypes.Current.SchedulerParameters;
   public type ConvictionsParameters          = StableTypes.Current.ConvictionsParameters;
-  public type BasePriceParameters            = StableTypes.Current.BasePriceParameters;
+  public type PriceParameters                = StableTypes.Current.PriceParameters;
   public type SubParameters                  = StableTypes.Current.SubParameters;
   public type SelectionParameters            = StableTypes.Current.SelectionParameters;
   public type Momentum                       = StableTypes.Current.Momentum;
-  public type PriceRegister                  = StableTypes.Current.PriceRegister;
   public type Category                       = StableTypes.Current.Category;
   public type CategoryArray                  = StableTypes.Current.CategoryArray;
   public type CategoryInfo                   = StableTypes.Current.CategoryInfo;
@@ -73,7 +72,6 @@ module {
     categories: CategoryArray;
     selection_parameters: SelectionParameters;
     scheduler_parameters: SchedulerParameters;
-    prices: PriceRegister;
     momentum: Momentum;
   };
 

@@ -1,5 +1,4 @@
 import Model                  "Model";
-import SubPrices              "SubPrices";
 import Categories             "Categories";
 import StatusManager          "StatusManager";
 import SubMomentum            "SubMomentum";
@@ -45,8 +44,6 @@ module {
 
     let sub_momentum = SubMomentum.build(state.momentum, state.selection_params);
 
-    let sub_prices = SubPrices.build(state.price_register);
-
     let token_interface = TokenInterface.build({ master = state.master.v; token = state.token.v; });
     let pay_to_open_question = PayForNew.build(
       token_interface,
@@ -68,7 +65,7 @@ module {
       pay_to_open_question,
       interest_joins,
       queries,
-      sub_prices,
+      state.price_params,
       state.creator,
       state.opened_questions.creator_rewards);
     
@@ -90,7 +87,7 @@ module {
       state.votes.categorization.transactions,
       token_interface,
       categories,
-      sub_prices
+      state.price_params
     );
 
     let status_manager = StatusManager.build(
@@ -105,9 +102,8 @@ module {
       WRef.WRef(state.master),
       WRef.WRef(state.scheduler_params),
       WRef.WRef(state.selection_params),
-      WRef.WRef(state.base_price_params),
+      WRef.WRef(state.price_params),
       categories,
-      sub_prices,
       questions,
       status_manager,
       sub_momentum,

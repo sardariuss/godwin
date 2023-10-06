@@ -6,10 +6,10 @@ import CursorMap           "representation/CursorMap";
 import PayForElement       "../token/PayForElement";
 import PayTypes            "../token/Types";
 import PayRules            "../PayRules";
-import SubPrices           "../SubPrices";
 import Categories          "../Categories";
 
 import UtilsTypes          "../../utils/Types";
+import Ref                 "../../utils/Ref";
 
 import Map                 "mo:map/Map";
 
@@ -21,8 +21,10 @@ module {
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
   type Time                   = Int;
   type Map<K, V>              = Map.Map<K, V>;
+  type Ref<T>                 = Ref.Ref<T>;
 
   type Categories             = Categories.Categories;
+  type PriceParameters        = Types.PriceParameters;
   type VoteId                 = Types.VoteId;
   type CursorMap              = Types.CursorMap;
   type PolarizationMap        = Types.PolarizationMap;
@@ -34,7 +36,6 @@ module {
   type TransactionsRecord     = PayTypes.TransactionsRecord;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type PayoutArgs             = PayTypes.PayoutArgs;
-  type SubPrices              = SubPrices.SubPrices;
 
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
@@ -43,7 +44,7 @@ module {
   type RevealVoteError        = Types.RevealVoteError;
   type FindBallotError        = Types.FindBallotError;
   type PutBallotError         = Types.PutBallotError;
-  type RevealableBallot<T>      = Types.RevealableBallot<T>;
+  type RevealableBallot<T>    = Types.RevealableBallot<T>;
 
   public type Register        = Votes.Register<CursorMap, PolarizationMap>;
   public type Categorizations = Votes.Votes<CursorMap, PolarizationMap>;
@@ -58,7 +59,7 @@ module {
     transactions_register: Map<Principal, Map<VoteId, TransactionsRecord>>,
     token_interface: ITokenInterface,
     categories: Categories,
-    sub_prices: SubPrices
+    price_parameters: Ref<PriceParameters>
   ) : Categorizations {
     Votes.Votes<CursorMap, PolarizationMap>(
       vote_register,
@@ -70,7 +71,7 @@ module {
           token_interface,
           #PUT_CATEGORIZATION_BALLOT,
         ),
-        func() : Nat { sub_prices.getPrices().categorization_vote_price_e9s; },
+        func() : Nat { price_parameters.v.categorization_vote_price_sats; },
         PayRules.computeCategorizationPayout
       )
     );

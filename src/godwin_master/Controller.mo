@@ -45,7 +45,7 @@ module {
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
   type CyclesParameters       = Types.CyclesParameters;
-  type BasePriceParameters    = Types.BasePriceParameters;
+  type PriceParameters        = Types.PriceParameters;
   type ValidationParams       = Types.ValidationParams;
   type Duration               = UtilsTypes.Duration;
   type GodwinSub              = GodwinSub.GodwinSub;
@@ -76,33 +76,23 @@ module {
       });
     };
 
-    public func getSubCreationPriceE8s() : Balance {
-      _model.getSubCreationPriceE8s();
+    public func getPriceParameters() : PriceParameters {
+      _model.getPriceParameters();
     };
 
-    public func setSubCreationPriceE8s(caller: Principal, price: Balance) : Result<(), AccessControlError> {
-      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #ADMIN), func() {
-        _model.setSubCreationPriceE8s(price); 
-      });
-    };
-
-    public func getBasePriceParameters() : BasePriceParameters {
-      _model.getBasePriceParameters();
-    };
-
-    public func setBasePriceParameters(caller: Principal, base_price_parameters: BasePriceParameters) : async Result<(), AccessControlError> {
+    public func setPriceParameters(caller: Principal, base_price_parameters: PriceParameters) : async Result<(), AccessControlError> {
       switch(verifyAuthorizedAccess(caller, #ADMIN)){
         case(#err(err)) { return #err(err); };
         case(#ok) {};
       };
       
-      _model.setBasePriceParameters(base_price_parameters);
+      _model.setPriceParameters(base_price_parameters);
       
       // Update the base price for all the subs
       // @todo: do not ignore the returned results, return an array of results instead
       for (principal in _model.getSubGodwins().keys()){
         let sub : GodwinSub = actor(Principal.toText(principal));
-        ignore await sub.setBasePriceParameters(base_price_parameters);
+        ignore await sub.setPriceParameters(base_price_parameters);
       };
 
       #ok;
@@ -136,7 +126,7 @@ module {
       // Proceed with the payment
       switch(await _token.burn({
         from_subaccount = ?Account.toSubaccount(user);
-        amount = _model.getSubCreationPriceE8s();
+        amount = _model.getPriceParameters().sub_creation_price_sats;
         memo = null;
         created_at_time = ?Nat64.fromNat(Int.abs(time));
       })){
@@ -151,7 +141,7 @@ module {
         compute_allocation = null; // @todo: add this parameters in the model
         memory_allocation = null;
         freezing_threshold = null;
-      }})(#init({ master; token = Principal.fromActor(_token); creator = user; sub_parameters; price_parameters = _model.getBasePriceParameters(); }));
+      }})(#init({ master; token = Principal.fromActor(_token); creator = user; sub_parameters; price_parameters = _model.getPriceParameters(); }));
 
       let principal = Principal.fromActor(new_sub);
 

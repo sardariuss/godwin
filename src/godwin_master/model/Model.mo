@@ -10,19 +10,18 @@ module {
   type WMap<K, V>          = WMap.WMap<K, V>;
   
   type CyclesParameters    = StableTypes.Current.CyclesParameters;
-  type BasePriceParameters = StableTypes.Current.BasePriceParameters;
+  type PriceParameters     = StableTypes.Current.PriceParameters;
   type SubParamsValidator  = SubParamsValidator.SubParamsValidator;
 
   public class Model(
     _token                   : WRef<Principal>,
     _admin                   : WRef<Principal>,
     _cycles_parameters       : WRef<CyclesParameters>,
-    _sub_creation_price_e9s  : WRef<Nat>,
-    _base_price_parameters   : WRef<BasePriceParameters>,
+    _price_parameters        : WRef<PriceParameters>,
     _sub_params_validator    : SubParamsValidator,
     _sub_godwins             : WMap<Principal, Text>,
     _users                   : WMap<Principal, Text>
-    ) {
+  ) {
 
     public func getToken() : Principal {
       _token.get();
@@ -47,21 +46,13 @@ module {
     public func setCyclesParameters(cycles_parameters: CyclesParameters) {
       _cycles_parameters.set(cycles_parameters);
     };
-
-    public func getSubCreationPriceE8s() : Nat {
-      _sub_creation_price_e9s.get();
-    };
-
-    public func setSubCreationPriceE8s(sub_creation_price_e9s: Nat) {
-      _sub_creation_price_e9s.set(sub_creation_price_e9s);
-    };
     
-    public func getBasePriceParameters() : BasePriceParameters {
-      _base_price_parameters.get();
+    public func getPriceParameters() : PriceParameters {
+      _price_parameters.get();
     };
 
-    public func setBasePriceParameters(base_price_parameters: BasePriceParameters) {
-      _base_price_parameters.set(base_price_parameters);
+    public func setPriceParameters(brice_parameters: PriceParameters) {
+      _price_parameters.set(brice_parameters);
     };
 
     public func getSubParamsValidator() : SubParamsValidator {

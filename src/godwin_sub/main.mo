@@ -24,7 +24,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type Duration                       = Types.Duration;
   type Status                         = Types.Status;
   type TransactionsRecord             = Types.TransactionsRecord;
-  type BasePriceParameters            = Types.BasePriceParameters;
+  type PriceParameters                = Types.PriceParameters;
   type SchedulerParameters            = Types.SchedulerParameters;
   type QueryQuestionItem              = Types.QueryQuestionItem;
   type QueryVoteItem                  = Types.QueryVoteItem;
@@ -62,6 +62,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     case(_)              { null;                  };
   };
 
+  public query func getVersions() : async MigrationTypes.Versions {
+    Migrations.getVersions(_state);
+  };
+
   public query func getSubInfo() : async SubInfo {
     getController().getSubInfo();
   };
@@ -74,8 +78,8 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().setSelectionParameters(caller, params);
   };
 
-  public shared({caller}) func setBasePriceParameters(params: BasePriceParameters) : async Result<(), AccessControlError> {
-    getController().setBasePriceParameters(caller, params);
+  public shared({caller}) func setPriceParameters(params: PriceParameters) : async Result<(), AccessControlError> {
+    getController().setPriceParameters(caller, params);
   };
 
   public query func searchQuestions(text: Text, limit: Nat) : async [QuestionId] {

@@ -1,78 +1,98 @@
-dfx stop
-dfx start --background --clean
+#dfx stop
+#dfx start --background --clean
 
-dfx canister create --all
+#dfx canister create --all
 
-dfx build --all
+#dfx build --all
 
-# Token settings
-export NAME="GodwinCoin"
-export SYMBOL="GDWC"
-export DEMICALS="9"
-export FEE="100_000"
-export MAX_SUPPLY="1_000_000_000_000_000_000" # 1 billion
-export MIN_BURN_AMOUNT="100_000" # Same as fee
-
-# Deployer
 export DEPLOYER_PRINCIPAL=$(dfx identity get-principal)
-export DEPLOYER_AMOUNT="300_000_000_000_000_000" # 300 million
+export SCENARIO_ID=$(dfx canister id scenario_sub)
+export MASTER_ID=$(dfx canister id godwin_master)
+export TOKEN_ID=$(dfx canister id godwin_token)
 
-# Airdrop
-export AIRDROP_CANISTER=$(dfx canister id godwin_airdrop)
-export AIRDROP_AMOUNT="10_000_000_000_000_000" # 10 million
-export AIRDROP_PER_USER="10_000_000_000_000" # 10_000 tokens per user, for 1000 users
-export AIRDROP_ALLOW_SELF="true"
+# Local deployement parameters
+# ckBTC
+export CK_BTC_MINTER=${DEPLOYER_PRINCIPAL} # The deployer is the minter in local environment
+export CK_BTC_SCENARIO_PRE_MINT_AMOUNT="1_000_000_000" # The scenario canister requires some BTC to transfer to the users so they can participate
+# Godwin token
+export TOKEN_NAME="GodwinCoin"
+export TOKEN_SYMBOL="GDWC"
+export TOKEN_DEMICALS="9"
+export TOKEN_FEE="100_000"
+export TOKEN_MAX_SUPPLY="1_000_000_000_000_000_000" # 1 billion
+export TOKEN_MIN_BURN_AMOUNT="100_000" # Same as fee
+export TOKEN_MINTER=${DEPLOYER_PRINCIPAL} # The deployer is the minter in local environment
+export TOKEN_MASTER_PRE_MINT_AMOUNT="300_000_000_000_000_000" # 300 million pre-mined
+# Godwin master
+export MASTER_ADMIN=${DEPLOYER_PRINCIPAL} # The deployer is the admin in local environment, will become SNS in production
+export MASTER_REWARD_TOKEN=${TOKEN_ID};
+export MASTER_CYCLES_CREATE_SUB="200_000_000_000"
+export MASTER_CYCLES_UPGRADE_SUB="10_000_000_000"
+export MASTER_PRICE_SATS_OPEN_VOTE="2_000"
+export MASTER_PRICE_SATS_REOPEN_VOTE="1_000"
+export MASTER_PRICE_SATS_INTEREST_VOTE="200"
+export MASTER_PRICE_SATS_CATEGORIZATION_VOTE="500"
+export MASTER_PRICE_SATS_SUB_CREATION="50_000"
 
-# Master
-export MASTER_CANISTER=$(dfx canister id godwin_master)
-export TOKEN_CANISTER=$(dfx canister id godwin_token)
-
-dfx canister install godwin_token --argument '( record {
-  name              = "'${NAME}'";
-  symbol            = "'${SYMBOL}'";
-  decimals          = '${DEMICALS}';
-  fee               = '${FEE}';
-  max_supply        = '${MAX_SUPPLY}';
-  min_burn_amount   = '${MIN_BURN_AMOUNT}';
+dfx canister install ck_btc --argument '( record {
+  name              = "ckBTC";
+  symbol            = "ckBTC";
+  decimals          = 8;
+  fee               = 10;
+  max_supply        = 2_100_000_000_000_000;
+  min_burn_amount   = 1_000;
   initial_balances  = vec {
     record {
       record {
-        owner = principal "'${DEPLOYER_PRINCIPAL}'";
+        owner = principal "'${SCENARIO_ID}'";
         subaccount = null
       };
-      '${DEPLOYER_AMOUNT}'
-    };
-    record {
-      record {
-        owner = principal "'${AIRDROP_CANISTER}'";
-        subaccount = null
-      };
-      '${AIRDROP_AMOUNT}'
+      '${CK_BTC_SCENARIO_PRE_MINT_AMOUNT}'
     }
   };
   minting_account   = opt record { 
-    owner = principal "'${MASTER_CANISTER}'";
+    owner = principal "'${CK_BTC_MINTER}'";
     subaccount = null; 
   };
   advanced_settings = null;
 })'
 
-dfx canister install godwin_airdrop --argument '('${AIRDROP_PER_USER}', '${AIRDROP_ALLOW_SELF}')'
+dfx canister install godwin_token --argument '( record {
+  name              = "'${TOKEN_NAME}'";
+  symbol            = "'${TOKEN_SYMBOL}'";
+  decimals          = '${TOKEN_DEMICALS}';
+  fee               = '${TOKEN_FEE}';
+  max_supply        = '${TOKEN_MAX_SUPPLY}';
+  min_burn_amount   = '${TOKEN_MIN_BURN_AMOUNT}';
+  initial_balances  = vec {
+    record {
+      record {
+        owner = principal "'${MASTER_ID}'";
+        subaccount = null
+      };
+      '${TOKEN_MASTER_PRE_MINT_AMOUNT}'
+    };
+  };
+  minting_account   = opt record { 
+    owner = principal "'${TOKEN_MINTER}'";
+    subaccount = null; 
+  };
+  advanced_settings = null;
+})'
 
 dfx canister install godwin_master --argument='( variant { init = record {
-  token = principal "'${TOKEN_CANISTER}'";
+  token = principal "'${TOKEN_ID}'";
   admin = principal "'${DEPLOYER_PRINCIPAL}'";
   cycles_parameters = record {
-    create_sub_cycles  = 200_000_000_000;
-    upgrade_sub_cycles =  10_000_000_000;
+    create_sub_cycles  = '${MASTER_CYCLES_CREATE_SUB}';
+    upgrade_sub_cycles = '${MASTER_CYCLES_UPGRADE_SUB}';
   };
-  sub_creation_price_e9s = 25_000_000_000_000;
-  base_price_parameters = record {
-    base_selection_period         = variant { DAYS = 1 : nat };
-    open_vote_price_e9s           =  10_000_000_000_000;
-    reopen_vote_price_e9s         =   5_000_000_000_000;
-    interest_vote_price_e9s       =   1_000_000_000_000;
-    categorization_vote_price_e9s =   3_000_000_000_000;
+  price_parameters = record {
+    open_vote_price_sats           = '${MASTER_PRICE_SATS_OPEN_VOTE}';
+    reopen_vote_price_sats         = '${MASTER_PRICE_SATS_REOPEN_VOTE}';
+    interest_vote_price_sats       = '${MASTER_PRICE_SATS_INTEREST_VOTE}';
+    categorization_vote_price_sats = '${MASTER_PRICE_SATS_CATEGORIZATION_VOTE}';
+    sub_creation_price_sats        = '${MASTER_PRICE_SATS_SUB_CREATION}';
   };
   validation_parameters = record {
     username = record {

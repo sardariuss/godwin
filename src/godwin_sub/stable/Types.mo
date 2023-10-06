@@ -15,4 +15,14 @@ module {
     // do not forget to add your new migration data types here
   };
 
+  public type Version = {
+    #v0_1_0;
+    #v0_2_0;
+  };
+
+  public type Versions = {
+    expected: Version;
+    actual: Version;
+  };
+
 };

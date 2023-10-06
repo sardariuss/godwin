@@ -54,7 +54,7 @@ module {
   type QueryVoteItem               = Types.QueryVoteItem;
   type StatusInfo                  = Types.StatusInfo;
   type StatusData                  = Types.StatusData;
-  type BasePriceParameters         = Types.BasePriceParameters;
+  type PriceParameters             = Types.PriceParameters;
   type SelectionParameters         = Types.SelectionParameters;
   type SubInfo                     = Types.SubInfo;
   type KindRevealableBallot        = Types.KindRevealableBallot;
@@ -95,7 +95,6 @@ module {
         categories = Iter.toArray(_model.getCategories().entries());
         selection_parameters = _model.getSelectionParameters();
         scheduler_parameters = _model.getSchedulerParameters();
-        prices = _model.getSubPrices().getPrices();
         momentum = _model.getSubMomentum().get();
       };
     };
@@ -109,14 +108,12 @@ module {
     public func setSelectionParameters(caller: Principal, params: SelectionParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setSelectionParameters(params);
-        _model.getSubPrices().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
       });
     };
 
-    public func setBasePriceParameters(caller: Principal, params: BasePriceParameters) : Result<(), AccessControlError> {
+    public func setPriceParameters(caller: Principal, params: PriceParameters) : Result<(), AccessControlError> {
       Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
-        _model.setBasePriceParameters(params);
-        _model.getSubPrices().updatePrices(_model.getBasePriceParameters(), _model.getSelectionParameters());
+        _model.setPriceParameters(params);
       });
     };
 

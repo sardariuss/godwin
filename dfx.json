@@ -7,11 +7,22 @@
         "output": "src/godwin_frontend/declarations/godwin_token"
       }
     },
+    "ck_btc": {
+      "main": "src/godwin_token/main.mo",
+      "type": "motoko",
+      "remote": {
+        "candid": "candid/ck_btc.did",
+        "id": {
+          "ic": "mxzaz-hqaaa-aaaar-qaada-cai"
+        }
+      }
+    },
     "godwin_master":{
       "main": "src/godwin_master/main.mo",
       "type": "motoko",
       "dependencies": [
-        "godwin_token"
+        "godwin_token",
+        "ck_btc"
       ],
       "declarations": {
         "output": "src/godwin_frontend/declarations/godwin_master"
@@ -35,7 +46,8 @@
         "output": "src/godwin_frontend/declarations/godwin_sub"
       },
       "dependencies": [
-        "godwin_token"
+        "godwin_token",
+        "ck_btc"
       ]
     },
     "godwin_clock":{

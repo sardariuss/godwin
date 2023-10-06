@@ -9,9 +9,12 @@ import Interests              "../../model/votes/Interests";
 import Categorizations        "../../model/votes/Categorizations";
 import Opinions               "../../model/votes/Opinions";
 import Joins                  "../../model/votes/QuestionVoteJoins";
-import SubPrices               "../../model/SubPrices";
 
 import Ref                    "../../utils/Ref";
+import Duration               "../../utils/Duration";
+
+import Int                    "mo:base/Int";
+import Float                  "mo:base/Float";
 
 import Map                    "mo:map/Map";
 
@@ -63,7 +66,7 @@ module {
         selection_score = selection.minimum_score;
         last_pick = null;
       });
-      price_register              = Ref.init<PriceRegister>(SubPrices.computeSubPrices(price_parameters, selection));
+      price_register              = Ref.init<PriceRegister>(computeSubPrices(price_parameters, selection));
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);
       };
@@ -110,6 +113,18 @@ module {
   // From 0.1.0 to nothing
   public func downgrade(migration_state: State, date: Time, args: DowngradeArgs): State {
     Debug.trap("Cannot downgrade from initial version");
+  };
+
+  func computeSubPrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) : PriceRegister {
+    let { base_selection_period; reopen_vote_price_e9s; open_vote_price_e9s; interest_vote_price_e9s; categorization_vote_price_e9s; } = base_price_params;
+    let { selection_period } = selection_params;
+    let coef = Float.fromInt(Duration.toTime(selection_period)) / Float.fromInt(Duration.toTime(base_selection_period));
+    return {
+      open_vote_price_e9s           = Int.abs(Float.toInt(Float.fromInt(open_vote_price_e9s          ) * coef));
+      reopen_vote_price_e9s         = Int.abs(Float.toInt(Float.fromInt(reopen_vote_price_e9s        ) * coef));
+      interest_vote_price_e9s       = Int.abs(Float.toInt(Float.fromInt(interest_vote_price_e9s      ) * coef));
+      categorization_vote_price_e9s = Int.abs(Float.toInt(Float.fromInt(categorization_vote_price_e9s) * coef));
+    };
   };
 
 };

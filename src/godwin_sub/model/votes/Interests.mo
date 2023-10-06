@@ -4,7 +4,6 @@ import QuestionVoteJoins   "QuestionVoteJoins";
 import PayToVote           "PayToVote";
 import InterestRules       "InterestRules";
 import PayRules            "../PayRules";
-import SubPrices           "../SubPrices";
 import PayForNew           "../token/PayForNew";
 import PayTypes            "../token/Types";
 import PayForElement       "../token/PayForElement";
@@ -14,6 +13,7 @@ import KeyConverter        "../questions/KeyConverter";
 
 import UtilsTypes          "../../utils/Types";
 import WMap                "../../utils/wrappers/WMap";
+import Ref                 "../../utils/Ref";
 
 import Map                 "mo:map/Map";
 
@@ -28,7 +28,9 @@ module {
   type Time                   = Int;
   type Map<K, V>              = Map.Map<K, V>;
   type WMap2D<K1, K2, V>      = WMap.WMap2D<K1, K2, V>;
+  type Ref<T>                 = Ref.Ref<T>;
   
+  type PriceParameters        = Types.PriceParameters;
   type VoteId                 = Types.VoteId;
   type Vote                   = Types.Vote<Interest, Appeal>;
   type Ballot                 = Types.Ballot<Interest>;
@@ -63,7 +65,6 @@ module {
   type ScanLimitResult<K>     = UtilsTypes.ScanLimitResult<K>;
   type Direction              = UtilsTypes.Direction;
 
-  type SubPrices              = SubPrices.SubPrices;
   type RewardForElement       = RewardForElement.RewardForElement;
   
   public type Register        = Votes.Register<Interest, Appeal>;
@@ -83,7 +84,7 @@ module {
     pay_for_new: PayForNew,
     joins: QuestionVoteJoins,
     queries: QuestionQueries,
-    sub_prices: SubPrices,
+    price_params: Ref<PriceParameters>,
     creator: Principal,
     creator_rewards_register: Map<Nat, MintResult>
   ) : Interests {
@@ -98,15 +99,15 @@ module {
             token_interface,
             #PUT_INTEREST_BALLOT,
           ),
-          func() : Nat { sub_prices.getPrices().interest_vote_price_e9s; },
-          getPayoutFunction(sub_prices)
+          func() : Nat { price_params.v.interest_vote_price_sats; },
+          voterPayout
         )
       ),
       WMap.WMap2D(open_by, Map.phash, Map.nhash),
       pay_for_new,
       joins,
       queries,
-      sub_prices,
+      price_params,
       RewardForElement.RewardForElement(
         creator,
         creator_rewards_register,
@@ -121,16 +122,16 @@ module {
     _pay_for_new: PayForNew,
     _joins: QuestionVoteJoins,
     _queries: QuestionQueries,
-    _sub_prices: SubPrices,
+    _price_params: Ref<PriceParameters>,
     _reward_for_element: RewardForElement
   ) {
     
     public func openVote(principal: Principal, date: Time, last_iteration: ?Nat, on_success: (VoteId) -> QuestionId) : async* Result<(QuestionId, VoteId), OpenVoteError> {
       // Get the price to open the vote
       let vote_price = if (Option.isNull(last_iteration)) { 
-        _sub_prices.getPrices().open_vote_price_e9s; 
+        _price_params.v.open_vote_price_sats; 
       } else { 
-        _sub_prices.getPrices().reopen_vote_price_e9s; 
+        _price_params.v.reopen_vote_price_sats; 
       };
       // The user has to pay to open up an interest vote
       // The PayForNew payin function requires a callback to create the vote, it will be called only if the payement succeeds
@@ -156,9 +157,9 @@ module {
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
       let price = if (iteration == 0) { 
-        _sub_prices.getPrices().open_vote_price_e9s; 
+        _price_params.v.open_vote_price_sats; 
       } else { 
-        _sub_prices.getPrices().reopen_vote_price_e9s; 
+        _price_params.v.reopen_vote_price_sats; 
       };
       // Get the author raw payout
       let author_payout = PayRules.attenuatePayout(
@@ -237,12 +238,10 @@ module {
 
   };
 
-  func getPayoutFunction(sub_prices: SubPrices) : PayoutFunction {
-    func(interest: Interest, appeal: Appeal) : RawPayout {
-      // @todo: the distribution shall not be computed every time the payout is calculated for a voter
-      let distribution = PayRules.computeInterestDistribution(appeal);
-      PayRules.computeInterestVotePayout(distribution, interest);
-    };
+  func voterPayout(interest: Interest, appeal: Appeal) : RawPayout {
+    // @todo: the distribution shall not be computed every time the payout is calculated for a voter
+    let distribution = PayRules.computeInterestDistribution(appeal);
+    PayRules.computeInterestVotePayout(distribution, interest);
   };
 
   class VotePolicy() : IVotePolicy {

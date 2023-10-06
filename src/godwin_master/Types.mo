@@ -20,7 +20,7 @@ module {
 
   public type CyclesParameters = StableTypes.Current.CyclesParameters;
 
-  public type BasePriceParameters = StableTypes.Current.BasePriceParameters;
+  public type PriceParameters = StableTypes.Current.PriceParameters;
 
   public type ValidationParams = StableTypes.Current.ValidationParams;
 

@@ -10,7 +10,6 @@ import Interests              "../../model/votes/Interests";
 import Categorizations        "../../model/votes/Categorizations";
 import Opinions               "../../model/votes/Opinions";
 import Joins                  "../../model/votes/QuestionVoteJoins";
-import SubPrices              "../../model/SubPrices";
 
 import Utils                  "../../utils/Utils";
 import Ref                    "../../utils/Ref";
@@ -33,12 +32,11 @@ module {
   type SubParameters              = V0_2_0.SubParameters;
   type SchedulerParameters        = V0_2_0.SchedulerParameters;
   type SelectionParameters        = V0_2_0.SelectionParameters;
-  type BasePriceParameters        = V0_2_0.BasePriceParameters;
+  type PriceParameters            = V0_2_0.PriceParameters;
   type DecayParameters            = V0_2_0.DecayParameters;
   type Momentum                   = V0_2_0.Momentum;
   type VoteId                     = V0_2_0.VoteId;
   type QuestionId                 = V0_2_0.QuestionId;
-  type PriceRegister              = V0_2_0.PriceRegister;
   type StatusHistory              = V0_2_0.StatusHistory;
   type TransactionsRecord         = V0_2_0.TransactionsRecord;
   type MintResult                 = V0_2_0.MintResult;
@@ -62,14 +60,13 @@ module {
       token                       = Ref.init<Principal>(token);
       categories                  = Categories.initRegister(categories);
       scheduler_params            = Ref.init<SchedulerParameters>(scheduler);
-      base_price_params           = Ref.init<BasePriceParameters>(price_parameters);
+      price_params                = Ref.init<PriceParameters>(price_parameters);
       selection_params            = Ref.init<SelectionParameters>(selection);
       momentum                    = Ref.init<Momentum>({
         num_votes_opened = 0;
         selection_score = selection.minimum_score;
         last_pick = null;
       });
-      price_register              = Ref.init<PriceRegister>(SubPrices.computeSubPrices(price_parameters, selection));
       status                      = {
         register                     = Map.new<Nat, StatusHistory>(Map.nhash);
       };
@@ -120,24 +117,18 @@ module {
     let interest_votes       = { state.votes.interest       with transactions = upgradeTransactionsRecords(state.votes.interest.transactions);       };
     let categorization_votes = { state.votes.categorization with transactions = upgradeTransactionsRecords(state.votes.categorization.transactions); };
     let votes                = { state.votes                with interest = interest_votes; categorization = categorization_votes;                   };
+    let price_params         = Ref.init<PriceParameters>(args.price_parameters);
 
-    #v0_2_0({state with opened_questions; votes; });
+    #v0_2_0({state with 
+      opened_questions; 
+      votes; 
+      price_params; 
+    });
   };
 
   // From 0.2.0 to 0.1.0
   public func downgrade(migration_state: State, date: Time, args: DowngradeArgs): State {
-    // Access current state
-    let state = switch(migration_state){
-      case(#v0_2_0(state)) state;
-      case(_)              Debug.trap("Unexpected migration state (v0_2_0 expected)");
-    };
-
-    let opened_questions     = { state.opened_questions     with transactions = downgradeTransactionsRecords(state.opened_questions.transactions);     };
-    let interest_votes       = { state.votes.interest       with transactions = downgradeTransactionsRecords(state.votes.interest.transactions);       };
-    let categorization_votes = { state.votes.categorization with transactions = downgradeTransactionsRecords(state.votes.categorization.transactions); };
-    let votes                = { state.votes                with interest = interest_votes; categorization = categorization_votes;                     };
-
-    #v0_1_0({state with opened_questions; votes; });
+    Debug.trap("Downgrade not supported");
   };
 
   func upgradeTransactionsRecords(v1: Map<Principal, Map<Nat, V0_1_0.TransactionsRecord>>) : Map<Principal, Map<Nat, V0_2_0.TransactionsRecord>> {
@@ -196,71 +187,6 @@ module {
             }));
           case(#SingleTransferError({error;}))
             #err(error);
-          case(#BadBurn(details))
-            #err(#BadBurn(details));
-          case(#BadFee(details))
-            #err(#BadFee(details));
-          case(#CanisterCallError(details))
-            #err(#CanisterCallError(details));
-          case(#CreatedInFuture(details))
-            #err(#CreatedInFuture(details));
-          case(#Duplicate(details))
-            #err(#Duplicate(details));
-          case(#GenericError(details))
-            #err(#GenericError(details));
-          case(#InsufficientFunds(details))
-            #err(#InsufficientFunds(details));
-          case(#TemporarilyUnavailable)
-            #err(#TemporarilyUnavailable);
-          case(#TooOld)
-            #err(#TooOld);
-        };
-      };
-    };
-  };
-
-  func downgradeTransactionsRecords(v2: Map<Principal, Map<Nat, V0_2_0.TransactionsRecord>>) : Map<Principal, Map<Nat, V0_1_0.TransactionsRecord>> {
-    Utils.mapFilter2D<Principal, Nat, V0_2_0.TransactionsRecord, V0_1_0.TransactionsRecord>(
-      v2, Map.phash, Map.nhash, func(p: Principal, id: Nat, tx_record: V0_2_0.TransactionsRecord) : ?V0_1_0.TransactionsRecord {
-        ?downgradeTransactionsRecord(tx_record);
-      });
-  };
-
-  func downgradeTransactionsRecord(v2: V0_2_0.TransactionsRecord) : V0_1_0.TransactionsRecord {
-    let { payin; payout } = v2;
-    return { 
-      payin; payout = switch(payout){
-        case(#PENDING)   { #PENDING; };
-        case(#PROCESSED({refund; reward;})) { 
-          #PROCESSED({ refund = Option.map(refund, downgradeReapAccountResult); reward; });
-        };
-      };
-    };
-  };
-
-  func downgradeReapAccountResult(v2: V0_2_0.ReapAccountResult) : V0_1_0.ReapAccountResult {
-    switch(v2){
-      case(#ok(tx_index)) { #ok(tx_index); };
-      case(#err(v2_err)) { 
-        switch(v2_err){
-          case(#InsufficientFees({share; subaccount; balance; sum_fees;}))
-            #err(#GenericError({
-              error_code = 2000;
-              message = "v0_2_0 error: insufficient fees [" # 
-                "share      = " # Float.toText(share) # "; " # 
-                "subaccount = " # Utils.blobToText(subaccount) # "; " # 
-                "balance    = " # Nat.toText(balance) # "; " # 
-                "sum_fees   = " # Nat.toText(sum_fees) # "]";
-            }));
-          case(#InvalidSumShares({owed; subaccount; balance_without_fees; total_owed;}))
-            #err(#GenericError({
-              error_code = 2001;
-              message = "v0_2_0 error: invalid sum shares [" # 
-                "owed                 = " # Nat.toText(owed) # "; " # 
-                "subaccount           = " # Utils.blobToText(subaccount) # "; " # 
-                "balance_without_fees = " # Nat.toText(balance_without_fees) # "; " # 
-                "total_owed           = " # Nat.toText(total_owed) # "]";
-            }));
           case(#BadBurn(details))
             #err(#BadBurn(details));
           case(#BadFee(details))

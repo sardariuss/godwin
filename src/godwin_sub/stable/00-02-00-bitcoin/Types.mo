@@ -33,11 +33,10 @@ module {
     token                       : Ref<Principal>;
     categories                  : Map<Category, CategoryInfo>;
     scheduler_params            : Ref<SchedulerParameters>;
-    base_price_params           : Ref<BasePriceParameters>;
+    price_params                : Ref<PriceParameters>;
     selection_params            : Ref<SelectionParameters>;
     questions                   : QuestionsRegister;
     momentum                    : Ref<Momentum>;
-    price_register              : Ref<PriceRegister>;
     status                      : {
       register                     : Map<Nat, StatusHistory>;
     };
@@ -86,9 +85,10 @@ module {
     token: Principal;
     creator: Principal;
     sub_parameters: SubParameters;
-    price_parameters: BasePriceParameters;
+    price_parameters: PriceParameters;
   };
   public type UpgradeArgs = {
+    price_parameters: PriceParameters;
   };
   public type DowngradeArgs = {
   };
@@ -283,19 +283,11 @@ module {
     rejected_status_duration  : Duration;
   };
 
-  public type BasePriceParameters = {
-    base_selection_period         : Duration;
-    open_vote_price_e9s           : Nat;
-    reopen_vote_price_e9s         : Nat;
-    interest_vote_price_e9s       : Nat;
-    categorization_vote_price_e9s : Nat;
-  };
-
-  public type PriceRegister = {
-    open_vote_price_e9s           : Nat;
-    reopen_vote_price_e9s         : Nat;
-    interest_vote_price_e9s       : Nat;
-    categorization_vote_price_e9s : Nat;
+  public type PriceParameters = {
+    open_vote_price_sats           : Nat;
+    reopen_vote_price_sats         : Nat;
+    interest_vote_price_sats       : Nat;
+    categorization_vote_price_sats : Nat;
   };
 
   public type Category = Text;

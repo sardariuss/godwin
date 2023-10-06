@@ -19,6 +19,7 @@ module {
 
   type Duration               = UtilsTypes.Duration;
 
+  public type PriceParameters = Types.Current.PriceParameters;
   public type Category        = Types.Current.Category;
   public type Cursor          = Types.Current.Cursor;
   public type Polarization    = Types.Current.Polarization;

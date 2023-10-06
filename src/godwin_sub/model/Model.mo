@@ -1,7 +1,6 @@
 import StatusManager       "StatusManager";
 import SubMomentum         "SubMomentum";
 import Categories          "Categories";
-import SubPrices           "SubPrices";
 import Categorizations     "votes/Categorizations";
 import Interests           "votes/Interests";
 import Opinions            "votes/Opinions";
@@ -26,10 +25,9 @@ module {
   type Status               = Types.Current.Status;
   type SchedulerParameters  = Types.Current.SchedulerParameters;
   type SelectionParameters  = Types.Current.SelectionParameters;
-  type BasePriceParameters  = Types.Current.BasePriceParameters;
+  type PriceParameters  = Types.Current.PriceParameters;
   
   type Categories           = Categories.Categories;
-  type SubPrices            = SubPrices.SubPrices;
   type Questions            = Questions.Questions;
   type QuestionQueries      = QuestionTypes.QuestionQueries;
   type StatusManager        = StatusManager.StatusManager;
@@ -45,9 +43,8 @@ module {
     _master: WRef<Principal>,
     _scheduler_params: WRef<SchedulerParameters>,
     _selection_parameters: WRef<SelectionParameters>,
-    _base_price_parameters: WRef<BasePriceParameters>,
+    _price_parameters: WRef<PriceParameters>,
     _categories: Categories,
-    _sub_prices: SubPrices,
     _questions: Questions,
     _status_manager: StatusManager,
     _sub_momentum: SubMomentum,
@@ -95,20 +92,16 @@ module {
       _selection_parameters.set(params);
     };
 
-    public func getBasePriceParameters() : BasePriceParameters {
-      _base_price_parameters.get();
+    public func getPriceParameters() : PriceParameters {
+      _price_parameters.get();
     };
 
-    public func setBasePriceParameters(params: BasePriceParameters) {
-      _base_price_parameters.set(params);
+    public func setPriceParameters(params: PriceParameters) {
+      _price_parameters.set(params);
     };
 
     public func getCategories() : Categories {
       _categories;
-    };
-
-    public func getSubPrices() : SubPrices {
-      _sub_prices;
     };
 
     public func getQuestions() : Questions {

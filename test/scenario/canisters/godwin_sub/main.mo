@@ -31,7 +31,7 @@ actor class GodwinSubScenario(){
     let now = Time.now();
     
     let args = switch(_state){
-      case(#v0_1_0(state)) { {
+      case(#v0_2_0(state)) { {
           master = state.master.v;
           token = state.token.v;
           creator = state.creator;
@@ -46,9 +46,10 @@ actor class GodwinSubScenario(){
             };
             selection = state.selection_params.v;
           };
-          price_parameters = state.base_price_params.v;
+          price_parameters = state.price_params.v;
         };
       };
+      case(_) { Debug.trap("Expect state v0_2_0"); };
     };
 
     // Reset the state where the start date is deduced from the scenario duration
@@ -56,7 +57,8 @@ actor class GodwinSubScenario(){
     _state := Migrations.install(start_date, #init(args));
 
     let facade = switch(_state){
-      case(#v0_1_0(state)) { Factory.build(state); };
+      case(#v0_2_0(state)) { Factory.build(state); };
+      case(_) { Debug.trap("Expect state v0_2_0"); };
     };
     // Run the scenario
     await* Scenario.run(facade, start_date, now, tick_duration);

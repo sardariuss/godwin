@@ -9,9 +9,20 @@ module {
 
   type Args  = MigrationTypes.Args;
   type State = MigrationTypes.State;
+  type Versions = MigrationTypes.Versions;
 
   // do not forget to change current migration when you add a new one
   let { init; upgrade; downgrade; } = V0_2_0;
+
+  public func getVersions(state: State) : Versions {
+    {
+      expected = #v0_2_0;
+      actual  = switch(state) {
+        case(#v0_2_0(_)){ #v0_2_0; };
+        case(#v0_1_0(_)){ #v0_1_0; };
+      };
+    };
+  };
 
   public func install(date: Time, args: Args) : State {
     switch(args){

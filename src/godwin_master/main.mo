@@ -1,5 +1,6 @@
 import Types              "Types";
 import Migrations         "stable/Migrations";
+import MigrationTypes     "stable/Types";
 import Factory            "Factory";
 import Controller         "Controller";
 
@@ -22,7 +23,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   type Balance                = Types.Balance;
   type Duration               = Types.Duration;
   type CyclesParameters       = Types.CyclesParameters;
-  type BasePriceParameters    = Types.BasePriceParameters;
+  type PriceParameters        = Types.PriceParameters;
   type ValidationParams       = Types.ValidationParams;
   type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
   type TransferResult         = Types.TransferResult;
@@ -38,9 +39,13 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
 
   _state := Migrations.migrate(_state, Time.now(), args);
 
-  // In subsequent versions, the controller will be set to null if the version of the state is not the last one
   let _controller = switch(_state){
-    case(#v0_1_0(state)) { ?Factory.build(state); };
+    case(#v0_2_0(state)) { ?Factory.build(state); };
+    case(_) { null; };
+  };
+
+  public query func getVersions() : async MigrationTypes.Versions {
+    Migrations.getVersions(_state);
   };
 
   public shared query func getAdmin() : async Principal {
@@ -59,20 +64,12 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().setCyclesParameters(caller, cycles_parameters);
   };
 
-  public query func getSubCreationPriceE8s() : async Balance {
-    getController().getSubCreationPriceE8s();
+  public shared query func getPriceParameters() : async PriceParameters {
+    getController().getPriceParameters();
   };
 
-  public shared({caller}) func setSubCreationPriceE8s(sub_creation_price_e9s: Balance) : async Result<(), AccessControlError> {
-    getController().setSubCreationPriceE8s(caller, sub_creation_price_e9s);
-  };
-
-  public shared query func getBasePriceParameters() : async BasePriceParameters {
-    getController().getBasePriceParameters();
-  };
-
-  public shared({caller}) func setBasePriceParameters(base_price_parameters: BasePriceParameters) : async Result<(), AccessControlError> {
-    await getController().setBasePriceParameters(caller, base_price_parameters);
+  public shared({caller}) func setPriceParameters(base_price_parameters: PriceParameters) : async Result<(), AccessControlError> {
+    await getController().setPriceParameters(caller, base_price_parameters);
   };
 
   public shared query func getSubValidationParams() : async ValidationParams {
