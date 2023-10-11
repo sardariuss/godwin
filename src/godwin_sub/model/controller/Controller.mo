@@ -88,6 +88,10 @@ module {
 
     let _vote_facade = VoteFacade.VoteFacade(_model.getInterestVotes(), _model.getOpinionVotes(), _model.getCategorizationVotes());
 
+    public func setSelfId(id: Principal){
+      _model.getTokenInterface().setSelfId(id);
+    };
+
     public func getSubInfo() : SubInfo {
       {
         name = _model.getName();

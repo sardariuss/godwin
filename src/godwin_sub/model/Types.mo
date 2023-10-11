@@ -20,7 +20,7 @@ module {
   public type QuestionId                     = QuestionTypes.QuestionId;  
   public type Question                       = QuestionTypes.Question;
   public type Status                         = QuestionTypes.Status;
-  public type OpenQuestionError              = QuestionTypes.OpenQuestionError or PayTypes.TransferFromMasterError;
+  public type OpenQuestionError              = QuestionTypes.OpenQuestionError or PayTypes.PullBtcError;
   public type QuestionOrderBy                = QuestionTypes.OrderBy;
 
   public type TransactionsRecord             = PayTypes.TransactionsRecord;

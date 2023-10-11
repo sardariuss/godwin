@@ -8,6 +8,9 @@
         "id": {
           "ic": "mxzaz-hqaaa-aaaar-qaada-cai"
         }
+      },
+      "declarations": {
+        "output": "src/godwin_frontend/declarations/ck_btc"
       }
     },
     "godwin_token":{

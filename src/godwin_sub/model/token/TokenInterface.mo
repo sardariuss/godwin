@@ -29,54 +29,68 @@ module {
 
   let { toBaseResult; } = Types;
   type MasterInterface                = Types.MasterInterface;
-  type GodwinTokenInterface           = Types.GodwinTokenInterface;
+  type ICRC1TokenInterface            = Types.ICRC1TokenInterface;
   type Subaccount                     = Types.Subaccount;
   type Balance                        = Types.Balance;
   type Account                        = Types.Account;
   type CanisterCallError              = Types.CanisterCallError;
-  type TransferFromMasterResult       = Types.TransferFromMasterResult;
-  type ReapAccountReceiver            = Types.ReapAccountReceiver;
-  type ReapAccountRecipient           = Types.ReapAccountRecipient;
-  type ReapAccountResult              = Types.ReapAccountResult;
-  type MintReceiver                   = Types.MintReceiver;
-  type MintRecipient                  = Types.MintRecipient;
+  type PullBtcResult                  = Types.PullBtcResult;
+  type RedistributeBtcReceiver        = Types.RedistributeBtcReceiver;
+  type RedistributeBtcResult          = Types.RedistributeBtcResult;
+  type RewardGwcReceiver              = Types.RewardGwcReceiver;
+  type RewardGwcResult                = Types.RewardGwcResult;
   type TransferArgs                   = Types.TransferArgs;
   type TransferResult                 = Types.TransferResult;
-  type MintError                      = Types.MintError;
-  type MintResult                     = Types.MintResult;
-  type Mint                           = Types.Mint;
   type ITokenInterface                = Types.ITokenInterface;
 
-  public func build({master: Principal; token: Principal}) : TokenInterface {
+  public func build({master: Principal; gwc: Principal; ck_btc: Principal}) : TokenInterface {
     TokenInterface(
       actor(Principal.toText(master)) : MasterInterface,
-      actor(Principal.toText(token)) : GodwinTokenInterface
+      actor(Principal.toText(gwc)) : ICRC1TokenInterface,
+      actor(Principal.toText(ck_btc)) : ICRC1TokenInterface
     );
   };
 
-  public class TokenInterface(_master: MasterInterface, _token: GodwinTokenInterface) : ITokenInterface {
+  public class TokenInterface(
+    _master: MasterInterface,
+    _gwc: ICRC1TokenInterface, // unused for now
+    _ck_btc: ICRC1TokenInterface
+  ) : ITokenInterface {
 
-    public func transferFromMaster(from: Principal, to_subaccount: Blob, amount: Balance) : async TransferFromMasterResult {
+    var _self_id : ?Principal = null;
+
+    public func setSelfId(self_id: Principal) {
+      _self_id := ?self_id;
+    };
+
+    func unwrapSelfId() : Principal {
+      switch(_self_id){
+        case(null) { Debug.trap("Self principal is not set"); };
+        case(?self_id) { self_id; };
+      };
+    };
+
+    public func pullBtc(from: Principal, to_subaccount: Blob, amount: Balance) : async PullBtcResult {
       try {
-        await _master.pullTokens(from, amount, ?to_subaccount);
+        await _master.pullBtc(from, amount, ?to_subaccount);
       } catch(e) {
-        #err(#CanisterCallError(Error.code(e)));
+        #err(toCanisterCallError(Principal.fromActor(_master), "pullBtc", e));
       };
     };
     
-    public func reapSubaccount(subaccount: Blob, receivers: Iter<ReapAccountReceiver>) : async Trie<Principal, ?ReapAccountResult> {
+    public func redistributeBtc(subaccount: Blob, receivers: Iter<RedistributeBtcReceiver>) : async Trie<Principal, ?RedistributeBtcResult> {
 
-      var results : Trie<Principal, ?ReapAccountResult> = Trie.empty();
+      var results : Trie<Principal, ?RedistributeBtcResult> = Trie.empty();
 
       // Get the receivers in an array to be able to iterate over them more than once
       let array_receivers = Iter.toArray(receivers);
 
-      let fee = await _token.icrc1_fee();
-      let balance = await _token.icrc1_balance_of({ owner = Principal.fromText("aaaaa-aa"); subaccount = ?subaccount; }); // @todo
+      let fee = await _ck_btc.icrc1_fee();
+      let balance = await _ck_btc.icrc1_balance_of({ owner = unwrapSelfId(); subaccount = ?subaccount; });
 
       // Remove a fee for each positive share to distribute
       // Return insufficient fees error if the sum of the fees is greater or equal to the subaccount balance
-      let sum_fees = Array.foldLeft(array_receivers, 0, func(sum: Nat, { share; }: ReapAccountReceiver) : Nat {
+      let sum_fees = Array.foldLeft(array_receivers, 0, func(sum: Nat, { share; }: RedistributeBtcReceiver) : Nat {
         if (share > 0.0) { sum + fee; } else { sum; };
       });
       if (sum_fees >= balance) {
@@ -91,7 +105,7 @@ module {
       // Return an error if the sum of shares is greater than the balance without the fees
       var total_owed : Nat = 0;
       let balance_without_fees = Int.abs(balance - sum_fees); // Convert to float here to avoid doing it everytime in the loop
-      let to_transfer = Array.map<ReapAccountReceiver, (Principal, Balance)>(array_receivers, func({ to; share; }: ReapAccountReceiver) : (Principal, Balance) {
+      let to_transfer = Array.map<RedistributeBtcReceiver, (Principal, Balance)>(array_receivers, func({ to; share; }: RedistributeBtcReceiver) : (Principal, Balance) {
         let owed = if (share > 0.0) { Int.abs(Float.toInt(Float.fromInt(balance_without_fees) * share)); } else { 0; };
         total_owed += owed;
         (to, owed);
@@ -108,7 +122,7 @@ module {
         let result = if (owed == 0) { null; } else {
           ?toBaseResult(
             try {
-              await _token.icrc1_transfer({
+              await _ck_btc.icrc1_transfer({
                 from_subaccount = ?subaccount;
                 to = getMasterAccount(?to);
                 memo = null;
@@ -117,7 +131,7 @@ module {
                 created_at_time = null;
               });
             } catch(e) {
-              #Err(#CanisterCallError(Error.code(e)));
+              #Err(toCanisterCallError(Principal.fromActor(_ck_btc), "icrc1_transfer", e));
             }
           );
         };
@@ -127,46 +141,30 @@ module {
       return results;
     };
 
-    public func mintBatch(receivers: Iter<MintReceiver>) : async Trie<Principal, ?MintResult> {
+    public func rewardGwcToAll(receivers: Iter<RewardGwcReceiver>) : async Trie<Principal, ?RewardGwcResult> {
 
-      var results : Trie<Principal, ?MintResult> = Trie.empty();
-
-      let map_recipients = Map.new<Subaccount, Principal>(Map.bhash);
-      let to_accounts = Buffer.Buffer<MintRecipient>(0);
-
-      for ({ to; amount; } in receivers){
-        if (amount > 0) {
-        // Add to the recipients 
-        to_accounts.add({ account = getMasterAccount(?to); amount; });
-        // Keep the mapping of subaccount <-> principal
-        Map.set(map_recipients, Map.bhash, Account.toSubaccount(to), to);
-        // Initialize the results map in case no error is found
-        results := Trie.put(results, key(to), Principal.equal, ?#err(#SingleMintLost({ amount; }))).0;
-        } else {
-          results := Trie.put(results, key(to), Principal.equal, null).0;
-        };
+      var results : Trie<Principal, ?RewardGwcResult> = Trie.empty();
+      let recipients = Buffer.Buffer<RewardGwcReceiver>(0);
+      for ({to; amount;} in receivers){
+        results := Trie.put(results, key(to), Principal.equal, null).0;
+        recipients.add({ to; amount; });
       };
 
-      let mint_batch = try {
-        await _master.mintBatch({
-          to = Buffer.toArray(to_accounts);
-          memo = null;
-        });
+      let reward_result = try {
+        await _master.rewardGwc(Buffer.toArray(recipients));
       } catch(e) {
-        #err(#CanisterCallError(Error.code(e)));
+        #err(toCanisterCallError(Principal.fromActor(_master), "rewardGwc", e));
       };
 
-      switch(mint_batch) {
-        case(#err(err)) {    
-          for (receiver in receivers){
-            results := Trie.put(results, key(receiver.to), Principal.equal, ?#err(err)).0;
+      switch(reward_result) {
+        case(#err(err)) {
+          for ((k, v) in Trie.iter(results)){
+            results := Trie.put(results, key(k), Principal.equal, ?#err(err)).0;
           };
         };
         case(#ok(transfer_results)){
-          for ((args, result) in Array.vals(transfer_results)){
-            Option.iterate(transferToMintResult(map_recipients, args, result), func((principal, result): (Principal, MintResult)){
-              results := Trie.put(results, key(principal), Principal.equal, ?result).0;
-            });
+          for ((receiver, result) in Array.vals(transfer_results)){
+            results := Trie.put(results, key(receiver.to), Principal.equal, ?result).0;
           };
         };
       };
@@ -174,18 +172,15 @@ module {
       results;
     };
 
-    public func mint(to: Principal, amount: Balance) : async MintResult {
-      let args = {
-        to = getMasterAccount(?to);
-        amount;
-        memo = null;
-        created_at_time = null;
-      };
-      
-      let mint = try {
-        await _master.mint(args);
+    public func rewardGwc(receiver: RewardGwcReceiver) : async RewardGwcResult {
+      let result = try {
+        await _master.rewardGwc([receiver]);
       } catch(e) {
-        #err(#CanisterCallError(Error.code(e)));
+        #err(toCanisterCallError(Principal.fromActor(_master), "rewardGwc", e));
+      };
+      switch(result){
+        case(#err(err)) { #err(err); };
+        case(#ok(transfer_results)) { transfer_results[0].1; };
       };
     };
 
@@ -195,24 +190,8 @@ module {
 
   };
 
-  // @todo: in case the subaccount or the principal is ever null, the transfer will be lost
-  func transferToMintResult(map_recipients: Map<Subaccount, Principal>, args: Mint, result: TransferResult) : ?(Principal, MintResult) {
-    let opt_subaccount = args.to.subaccount;
-    switch(opt_subaccount){
-      case(null) { null; };
-      case(?subaccount) {
-        let opt_principal = Map.get(map_recipients, Map.bhash, subaccount);
-        switch(opt_principal){
-          case(null) { null; };
-          case(?principal) {
-            switch(result){
-              case(#Ok(tx_index)) { ?(principal, #ok(tx_index));                                         };
-              case(#Err(err))     { ?(principal, #err(#SingleMintError({ args = args; error = err; }))); };
-            };
-          };
-        };
-      };
-    };
+  private func toCanisterCallError(principal: Principal, method: Text, error: Error) : CanisterCallError {
+    #CanisterCallError({ canister = principal; method; code = Error.code(error); message = Error.message(error); });
   };
  
 };

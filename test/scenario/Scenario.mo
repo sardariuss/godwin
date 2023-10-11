@@ -140,7 +140,7 @@ module {
     switch(openQuestionError){
       case(#TextTooLong)              { "TextTooLong";                                   };
       case(#PrincipalIsAnonymous)     { "PrincipalIsAnonymous";                          };
-      case(#CanisterCallError(code))  { "CanisterCallError: " # errorCodeToString(code); };
+      case(#CanisterCallError(_))     { "CanisterCallError";                             };
       case(#TooOld)                   { "TooOld";                                        };
       case(#CreatedInFuture(_))       { "CreatedInFuture";                               };
       case(#BadFee(_))                { "BadFee";                                        };

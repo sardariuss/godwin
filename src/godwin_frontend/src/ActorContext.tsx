@@ -2,13 +2,13 @@ import { createActor }                                                          
 import { toMap }                                                                 from "./utils";
 import { _SERVICE as MasterService, Account }                                    from "../declarations/godwin_master/godwin_master.did";
 import { _SERVICE as SubService, CategoryInfo, 
-  SchedulerParameters, PriceRegister, SubInfo as IdlSubInfo, 
-  SelectionParameters, Momentum  }                                               from "../declarations/godwin_sub/godwin_sub.did";
+  SchedulerParameters, SubInfo as IdlSubInfo, 
+  SelectionParameters, Momentum, PriceParameters }                               from "../declarations/godwin_sub/godwin_sub.did";
+import { _SERVICE as CKBTCService }                                              from "../declarations/ck_btc/ck_btc.did";
 import { _SERVICE as TokenService }                                              from "../declarations/godwin_token/godwin_token.did";
-import { _SERVICE as AirdopService }                                             from "../declarations/godwin_airdrop/godwin_airdrop.did";
 import { canisterId as masterId, idlFactory as masterFactory, godwin_master   }  from "../declarations/godwin_master";
+import { ck_btc }                                                                from "../declarations/ck_btc";
 import { godwin_token }                                                          from "../declarations/godwin_token";
-import { canisterId as airdropId, idlFactory as airdropFactory, godwin_airdrop } from "../declarations/godwin_airdrop";
 import { idlFactory as subFactory }                                              from "../declarations/godwin_sub";
 
 import { AuthClient }                                                            from "@dfinity/auth-client";
@@ -27,7 +27,6 @@ type SubInfo = {
   categories: Map<string, CategoryInfo>;
   selection_parameters: SelectionParameters;
   scheduler_parameters: SchedulerParameters;
-  prices: PriceRegister;
   momentum: Momentum;
 }
 
@@ -38,7 +37,6 @@ const fromIdlSubInfo = (info: IdlSubInfo) : SubInfo => {
     categories: toMap(info.categories),
     selection_parameters: info.selection_parameters,
     scheduler_parameters: info.scheduler_parameters,
-    prices: info.prices,
     momentum: info.momentum
   };
 }
@@ -58,9 +56,10 @@ export const ActorContext = React.createContext<{
   addSub: (principal: Principal, id: string) => Promise<void>;
   login: () => void;
   logout: () => void;
+  ck_btc: ActorSubclass<CKBTCService> | undefined;
   token: ActorSubclass<TokenService> | undefined;
-  airdrop: ActorSubclass<AirdopService> | undefined;
   master: ActorSubclass<MasterService> | undefined;
+  priceParameters: PriceParameters | undefined;
   subs: Map<string, Sub>;
   userAccount?: Account | null;
   balance: bigint | null;
@@ -73,8 +72,9 @@ export const ActorContext = React.createContext<{
   login: () => {},
   logout: () => {},
   token: godwin_token,
-  airdrop: godwin_airdrop,
+  ck_btc: ck_btc,
   master: godwin_master,
+  priceParameters: undefined,
   subs: new Map(),
   balance: null,
   refreshBalance: () => {},
@@ -88,9 +88,8 @@ export function useAuthClient() {
 
   const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
-  const [token                              ] = useState<ActorSubclass<TokenService> | undefined> (godwin_token  );
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService> | undefined>(godwin_master );
-  const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService> | undefined>(godwin_airdrop);
+  const [priceParameters, setPriceParameters] = useState<PriceParameters | undefined> (undefined     );
   const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
   const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
   const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
@@ -117,16 +116,6 @@ export function useAuthClient() {
     });
   }
 
-  const refreshAirdrop = async () => {
-    setAirdrop(
-      await createActor({
-        canisterId: airdropId,
-        idlFactory: airdropFactory,
-        identity: authClient?.getIdentity(), 
-      })
-    );
-  }
-
   const refreshMaster = async () => {
     setMaster(
       await createActor({
@@ -135,6 +124,11 @@ export function useAuthClient() {
         identity: authClient?.getIdentity(), 
       })
     );
+  }
+
+  const refreshPriceParameters = async () => {
+    let params = await godwin_master?.getPriceParameters();
+    setPriceParameters(params);
   }
 
   const createSub = async (principal: Principal, id: string) : Promise<Sub> => {
@@ -188,7 +182,7 @@ export function useAuthClient() {
 
   const refreshBalance = () => {
     if (userAccount !== null) {
-      token?.icrc1_balance_of(userAccount).then((balance) => {;
+      ck_btc?.icrc1_balance_of(userAccount).then((balance) => {;
         setBalance(balance);
       });
     } else {
@@ -230,12 +224,12 @@ export function useAuthClient() {
   };
 
   useEffect(() => {
+    refreshPriceParameters();
     refreshAuthClient();
   }, []);
 
   useEffect(() => {
     refreshMaster();
-    refreshAirdrop();
     refreshUserAccount();
     refreshLoggedUserName();
     fetchSubs();
@@ -255,9 +249,10 @@ export function useAuthClient() {
     addSub,
     login,
     logout,
-    token,
-    airdrop,
+    ck_btc,
+    token: godwin_token,
     master,
+    priceParameters,
     subs,
     userAccount,
     balance,

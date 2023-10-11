@@ -15,7 +15,7 @@ module {
   
   type ITokenInterface          = Types.ITokenInterface;
   type Balance                  = Types.Balance;
-  type MintResult               = Types.MintResult;
+  type RewardGwcResult          = Types.RewardGwcResult;
 
   type Id                       = Nat;
 
@@ -23,7 +23,7 @@ module {
   // the canister:godwin_token. This is required to be able to build the tests.
   public class RewardForElement(
     _beneficiary: Principal,
-    _mint_register: Map<Id, MintResult>,
+    _mint_register: Map<Id, RewardGwcResult>,
     _token_interface: ITokenInterface
   ) {
 
@@ -31,7 +31,7 @@ module {
       if (Map.has(_mint_register, Map.nhash, id)){
         Debug.trap("The element " # Nat.toText(id) # " has already been rewarded.");
       };
-      let result = await _token_interface.mint(_beneficiary, token_amount_e9s);
+      let result = await _token_interface.rewardGwc({to = _beneficiary; amount = token_amount_e9s});
       Map.set(_mint_register, Map.nhash, id, result);
     };
 

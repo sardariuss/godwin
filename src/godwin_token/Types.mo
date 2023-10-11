@@ -38,66 +38,6 @@ module {
 
   public type TransferResult          = ICRC1.TransferResult;
 
-  ///////////////////////////////////////////
-
-  // Additional types specific to godwin
-
-  public type ReapAccountError = {
-    #InsufficientFunds : { balance : Balance; };
-    #NoRecipients;
-    #NegativeShare: ReapAccountRecipient;
-    #BalanceExceeded : { 
-      sum_shares: Float; 
-      total_amount: Balance;
-      balance_without_fees: Balance;
-    };
-  };
-
-  public type ReapAccountResult = {
-    #Ok : [ (TransferArgs, TransferResult)];
-    #Err : ReapAccountError;
-  };
-
-  public type ReapAccountRecipient = {
-    account : Account;
-    share : Float;
-  };
-
-  public type ReapAccountArgs = {
-    subaccount : ?Subaccount;
-    to : [ReapAccountRecipient];
-    memo : ?Blob;
-    /// The time at which the transaction was created.
-    /// If this is set, the canister will check for duplicate transactions and reject them.
-    // @todo: this cannot be used with the current reap_account implementation, because many
-    // transfer are done at the same time.
-    //created_at_time : ?Nat64;
-  };
-
-  public type MintRecipient = {
-    account : Account;
-    amount : Balance;
-  };
-
-  public type MintBatchArgs = {
-    to : [MintRecipient];
-    memo : ?Blob;
-  };
-
-  public type MintBatchResult = {
-    #Ok : [(Mint, TransferResult)];
-    #Err : TransferError;
-  };
-
-  public type GodwinTokenInterface = actor {
-    // Mint and burn are missing in ICRC1
-    mint: shared (Mint) -> async TransferResult;
-    burn: shared (BurnArgs) -> async TransferResult;
-    // Specific to the godwin token
-    reap_account : shared (ReapAccountArgs) -> async ReapAccountResult;
-    mint_batch : shared (MintBatchArgs) -> async MintBatchResult;
-  };
-
-  public type FullInterface = GodwinTokenInterface and ICRC1.FullInterface;
+  public type FullInterface           = ICRC1.FullInterface; 
 
 };

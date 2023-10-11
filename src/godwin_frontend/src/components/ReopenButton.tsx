@@ -7,6 +7,7 @@ import { Tooltip }                     from "@mui/material";
 import ErrorOutlineIcon                from '@mui/icons-material/ErrorOutline';
 
 import React, { useState, useContext } from "react"
+import { LedgerType } from "./token/TokenTypes";
 
 type ReopenButtonInput = {
   sub: Sub,
@@ -16,7 +17,7 @@ type ReopenButtonInput = {
 
 const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
 
-  const {refreshBalance} = useContext(ActorContext);
+  const {refreshBalance, priceParameters} = useContext(ActorContext);
 
   const [submitting,    setSubmitting   ] = useState<boolean>      (false);
   const [error,         setError        ] = useState<string | null>(null );
@@ -52,7 +53,7 @@ const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
         </div> :
         <div className="flex flex-col items-center gap-y-1">
           Propose again
-          <Balance amount={sub.info.prices.reopen_vote_price_e9s}/>
+          <Balance amount={priceParameters?.reopen_vote_price_sats} ledger_type={LedgerType.BTC}/>
         </div>
       }
       </button>

@@ -41,7 +41,7 @@ type Props = {
 
 const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, rightPlaceholderId, question_id, principal, showHistory}: Props) => {
 
-  const {refreshBalance}   = useContext(ActorContext);
+  const {refreshBalance, priceParameters}   = useContext(ActorContext);
 
   const countdownDurationMs = 10000;
   const voteKind = voteKindToCandidVariant(VoteKind.CATEGORIZATION);
@@ -179,7 +179,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
                     set_run_countdown={setCountdownVote}
                     trigger_update={triggerVote}
                     set_trigger_update={setTriggerVote}
-                    cost={sub.info.prices.categorization_vote_price_e9s}>
+                    cost={priceParameters?.categorization_vote_price_sats}>
                   <SvgButton onClick={ () => { setTriggerVote(true); } } disabled={ triggerVote }>
                     <PutBallotIcon/>
                   </SvgButton>

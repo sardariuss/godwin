@@ -16,7 +16,7 @@ import Principal     "mo:base/Principal";
 import Debug         "mo:base/Debug";
 import Iter          "mo:base/Iter";
 
-actor class GodwinSubScenario(){
+actor class GodwinSubScenario() = self {
 
   // For convenience: from base module
   type Time = Time.Time;
@@ -57,12 +57,13 @@ actor class GodwinSubScenario(){
     let start_date = now - Duration.toTime(scenario_duration);
     _state := Migrations.install(start_date, #init(args));
 
-    let facade = switch(_state){
+    let controller = switch(_state){
       case(#v0_2_0(state)) { Factory.build(state); };
       case(_) { Debug.trap("Expect state v0_2_0"); };
     };
+    controller.setSelfId(Principal.fromActor(self));
     // Run the scenario
-    await* Scenario.run(facade, start_date, now, tick_duration, airdrop_sats_per_user);
+    await* Scenario.run(controller, start_date, now, tick_duration, airdrop_sats_per_user);
   };
 
 };

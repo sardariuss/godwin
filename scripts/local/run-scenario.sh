@@ -1,4 +1,4 @@
-# Creating a sub requires tokens in caller's subaccount on the master canister
+# Transfer btc to the deployer master subaccount to be able to create a sub
 export GET_PRINCIPAL="dfx identity get-principal"
 export DEPLOYER_PRINCIPAL=$(eval "$GET_PRINCIPAL")
 export GET_MASTER_ACCOUNT="dfx canister call godwin_master getUserAccount '(principal \""${DEPLOYER_PRINCIPAL}"\")'"

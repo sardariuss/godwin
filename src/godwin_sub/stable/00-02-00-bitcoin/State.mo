@@ -21,6 +21,7 @@ import Option                 "mo:base/Option";
 import Principal              "mo:base/Principal";
 import Float                  "mo:base/Float";
 import Nat                    "mo:base/Nat";
+import Error                  "mo:base/Error";
 
 module {
 
@@ -39,7 +40,7 @@ module {
   type QuestionId                 = V0_2_0.QuestionId;
   type StatusHistory              = V0_2_0.StatusHistory;
   type TransactionsRecord         = V0_2_0.TransactionsRecord;
-  type MintResult                 = V0_2_0.MintResult;
+  type RewardGwcResult            = V0_2_0.RewardGwcResult;
   type InitArgs                   = V0_2_0.InitArgs;
   type UpgradeArgs                = V0_2_0.UpgradeArgs;
   type DowngradeArgs              = V0_2_0.DowngradeArgs;
@@ -78,7 +79,7 @@ module {
         register                     = Map.new<Nat, (Principal, Blob)>(Map.nhash);
         index                        = Ref.init<Nat>(0);
         transactions                 = Map.new<Principal, Map<VoteId, TransactionsRecord>>(Map.phash);
-        creator_rewards              = Map.new<VoteId, MintResult>(Map.nhash);
+        creator_rewards              = Map.new<VoteId, RewardGwcResult>(Map.nhash);
       };
       votes                       = {
         interest                     = {
@@ -113,7 +114,8 @@ module {
       case(_)              Debug.trap("Unexpected migration state (v0_1_0 expected)");
     };
 
-    let opened_questions     = { state.opened_questions     with transactions = upgradeTransactionsRecords(state.opened_questions.transactions);     };
+    let opened_questions     = { state.opened_questions     with transactions = upgradeTransactionsRecords(state.opened_questions.transactions);     
+                                                                 creator_rewards = updateRewardGwcResult(state.opened_questions.creator_rewards);    };
     let interest_votes       = { state.votes.interest       with transactions = upgradeTransactionsRecords(state.votes.interest.transactions);       };
     let categorization_votes = { state.votes.categorization with transactions = upgradeTransactionsRecords(state.votes.categorization.transactions); };
     let votes                = { state.votes                with interest = interest_votes; categorization = categorization_votes;                   };
@@ -131,6 +133,12 @@ module {
     Debug.trap("Downgrade not supported");
   };
 
+  func updateRewardGwcResult(v1: Map<VoteId, V0_1_0.MintResult>) : Map<VoteId, V0_2_0.RewardGwcResult> {
+    Map.mapFilter(v1, Map.nhash, func(id: VoteId, result: V0_1_0.MintResult) : ?V0_2_0.RewardGwcResult {
+      ?toRewardGwcResult(result);
+    });
+  };
+
   func upgradeTransactionsRecords(v1: Map<Principal, Map<Nat, V0_1_0.TransactionsRecord>>) : Map<Principal, Map<Nat, V0_2_0.TransactionsRecord>> {
     Utils.mapFilter2D<Principal, Nat, V0_1_0.TransactionsRecord, V0_2_0.TransactionsRecord>(
       v1, Map.phash, Map.nhash, func(p: Principal, id: Nat, tx_record: V0_1_0.TransactionsRecord) : ?V0_2_0.TransactionsRecord {
@@ -144,13 +152,13 @@ module {
       payin; payout = switch(payout){
         case(#PENDING)   { #PENDING; };
         case(#PROCESSED({refund; reward;})) { 
-          #PROCESSED({ refund = Option.map(refund, upgradeReapAccountResult); reward; });
+          #PROCESSED({ refund = Option.map(refund, toRedistributeBtcResult); reward = Option.map(reward, toRewardGwcResult); });
         };
       };
     };
   };
 
-  func upgradeReapAccountResult(v1: V0_1_0.ReapAccountResult) : V0_2_0.ReapAccountResult {
+  func toRedistributeBtcResult(v1: V0_1_0.ReapAccountResult) : V0_2_0.RedistributeBtcResult {
     switch(v1){
       case(#ok(tx_index)) { #ok(tx_index); };
       case(#err(v1_err)) { 
@@ -162,7 +170,7 @@ module {
             }));
           case(#NegativeShare({account = {owner; subaccount}; share})) 
             #err(#GenericError({ 
-              error_code = 1001; 
+              error_code = 1000; 
               message = "v0_1_0 error: negative share [" # 
                 "account = {
                   owner      = " # Principal.toText(owner) # "; 
@@ -172,7 +180,7 @@ module {
             }));
           case(#BalanceExceeded({sum_shares; total_amount; balance_without_fees; }))
             #err(#GenericError({
-              error_code = 1002;
+              error_code = 1000;
               message = "v0_1_0 error: balance exceeded [" # 
                 "sum_shares           = " # Float.toText(sum_shares) # "; " # 
                 "total_amount         = " # Nat.toText(total_amount) # "; " # 
@@ -180,7 +188,7 @@ module {
             }));
           case(#SingleReapLost({share; subgodwin_subaccount; }))
             #err(#GenericError({
-              error_code = 1003;
+              error_code = 1000;
               message = "v0_1_0 error: single reap lost [" # 
                 "share                = " # Float.toText(share) # "; " # 
                 "subgodwin_subaccount = " # Utils.blobToText(subgodwin_subaccount) # "]";
@@ -192,7 +200,10 @@ module {
           case(#BadFee(details))
             #err(#BadFee(details));
           case(#CanisterCallError(details))
-            #err(#CanisterCallError(details));
+            #err(#GenericError({
+              error_code = 1000;
+              message = "v0_1_0 error: canister call error"
+            }));
           case(#CreatedInFuture(details))
             #err(#CreatedInFuture(details));
           case(#Duplicate(details))
@@ -205,6 +216,47 @@ module {
             #err(#TemporarilyUnavailable);
           case(#TooOld)
             #err(#TooOld);
+        };
+      };
+    };
+  };
+
+  func toRewardGwcResult(v1: V0_1_0.MintResult) : V0_2_0.RewardGwcResult {
+    switch(v1){
+      case(#ok(tx_index)) { #ok(tx_index); };
+      case(#err(v1_err)) { 
+        switch(v1_err){
+          case(#SingleMintLost({amount;}))
+             #err(#GenericError({
+              error_code = 1000;
+              message = "v0_1_0 error: single mint lost [" # 
+                "amount = " # Nat.toText(amount) # "]";
+            }));
+          case(#SingleMintError({error}))
+            #err(error);
+          case(#BadBurn(details))
+            #err(#BadBurn(details));
+          case(#BadFee(details))
+            #err(#BadFee(details));
+          case(#CanisterCallError(error))
+            #err(#GenericError({
+              error_code = 1000;
+              message = "v0_1_0 error: canister call error"
+            }));
+          case(#CreatedInFuture(details))
+            #err(#CreatedInFuture(details));
+          case(#Duplicate(details))
+            #err(#Duplicate(details));
+          case(#GenericError(details))
+            #err(#GenericError(details));
+          case(#InsufficientFunds(details))
+            #err(#InsufficientFunds(details));
+          case(#TemporarilyUnavailable)
+            #err(#TemporarilyUnavailable);
+          case(#TooOld)
+            #err(#TooOld);
+          case(#AccessDenied(details))
+            #err(#AccessDenied(details));
         };
       };
     };

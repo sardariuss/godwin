@@ -10,6 +10,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { Tooltip }                                from "@mui/material";
 import ErrorOutlineIcon                           from "@mui/icons-material/ErrorOutline";
 import DoneIcon                                   from '@mui/icons-material/Done';
+import { LedgerType } from "./token/TokenTypes";
 
 type Props = {
   textInputId: string,
@@ -27,7 +28,7 @@ enum SubmittingState {
 
 const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Props) => {
 
-  const {subs, refreshBalance} = useContext(ActorContext);
+  const {subs, refreshBalance, priceParameters} = useContext(ActorContext);
   
   const [sub,           setSub          ] = useState<Sub | undefined>   (undefined);
   const [showSubsList,  setShowSubsList ] = useState<boolean>           (false    );
@@ -141,7 +142,7 @@ const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Prop
               </div> :
               <div className="flex flex-row items-center gap-x-1 text-white">
                 Propose
-                <Balance amount={sub !== undefined ? sub.info.prices.open_vote_price_e9s : undefined}/>
+                <Balance amount={sub !== undefined ? priceParameters?.open_vote_price_sats : undefined} ledger_type={LedgerType.BTC}/>
               </div>
             }
           </button>

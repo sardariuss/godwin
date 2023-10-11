@@ -13,7 +13,7 @@ import Principal          "mo:base/Principal";
 import Time               "mo:base/Time";
 import Debug              "mo:base/Debug";
 
-shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterInterface = this {
+shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterInterface = self {
 
   type Result<Ok, Err>        = Result.Result<Ok, Err>;
 
@@ -26,9 +26,10 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   type PriceParameters        = Types.PriceParameters;
   type ValidationParams       = Types.ValidationParams;
   type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
-  type TransferResult         = Types.TransferResult;
+  type PullBtcResult          = Types.PullBtcResult;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
-  type MintBatchResult        = Types.MintBatchResult;
+  type RewardGwcReceiver     = Types.RewardGwcReceiver;
+  type RewardGwcResult        = Types.RewardGwcResult;
   type RemoveSubResult        = Types.RemoveSubResult;
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
@@ -86,7 +87,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   };
 
   public shared({caller}) func createSubGodwin(identifier: Text, sub_parameters: SubParameters, payement: LedgerType) : async CreateSubGodwinResult  {
-    await getController().createSubGodwin({ master = Principal.fromActor(this); user = caller; }, identifier, sub_parameters, Time.now(), payement);
+    await getController().createSubGodwin(caller, identifier, sub_parameters, Time.now(), payement);
   };
 
   public shared({caller}) func upgradeAllSubs(args: SubMigrationArgs) : async UpgradeAllSubsResult {
@@ -101,20 +102,16 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().listSubGodwins();
   };
 
-  public shared({caller}) func pullTokens(user: Principal, amount: Balance, subaccount: ?Blob) : async TransferResult {
-    await getController().pullTokens(caller, user, amount, subaccount, Time.now());
+  public shared({caller}) func pullBtc(user: Principal, amount: Balance, subaccount: ?Blob) : async PullBtcResult {
+    await getController().pullBtc(caller, user, amount, subaccount, Time.now());
   };
 
-  public shared({caller}) func mintBatch(args: TokenTypes.MintBatchArgs) : async MintBatchResult {
-    await getController().mintBatch(caller, args);
-  };
-
-  public shared({caller}) func mint(args: TokenTypes.Mint) : async TransferResult {
-    await getController().mint(caller, args);
+  public shared({caller}) func rewardGwc(receivers: [RewardGwcReceiver]) : async RewardGwcResult {
+    await getController().rewardGwc(caller, Time.now(), receivers);
   };
 
   public query func getUserAccount(user: Principal) : async TokenTypes.Account {
-    getController().getUserAccount({ master = Principal.fromActor(this); user;});
+    getController().getUserAccount(user);
   };
 
   public query func getUserName(user: Principal) : async ?Text {
@@ -159,7 +156,13 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
 
   func getController() : Controller {
     switch(_controller){
-      case (?c) { c; };
+      case (?c) { 
+        // Unfortunately the principal of the canister cannot be set at construction because of 
+        // compiler error "cannot use self before self has been defined".
+        // Surprisingly the getController function can still be called in query functions.
+        c.setSelfId(Principal.fromActor(self));
+        c; 
+      };
       case (null) { Debug.trap("Controller is null"); };
     };
   };

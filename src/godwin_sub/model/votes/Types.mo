@@ -134,7 +134,7 @@ module {
     #IterationOutOfBounds;
   };
 
-  public type OpenVoteError = PayTypes.TransferFromMasterError;
+  public type OpenVoteError = PayTypes.PullBtcError;
 
   public type GetVoteError = {
     #VoteNotFound;
@@ -175,7 +175,7 @@ module {
     #VoteNotFound;
     #ChangeBallotNotAllowed;
     #NoSubacountLinked;
-    #PayinError: PayTypes.TransferFromMasterError;
+    #PayinError: PayTypes.PullBtcError;
   };
 
 };

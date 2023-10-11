@@ -10,15 +10,15 @@ import Nat       "mo:base/Nat";
 module {
 
   // For convenience: from base module
-  type Principal          = Principal.Principal;
+  type Principal              = Principal.Principal;
 
-  type Map<K, V>          = Map.Map<K, V>;
+  type Map<K, V>              = Map.Map<K, V>;
 
-  type Id                 = Nat;
-  type TransactionsRecord = Types.TransactionsRecord;
-  type TxIndex            = Types.TxIndex;
-  type ReapAccountResult  = Types.ReapAccountResult;
-  type MintResult         = Types.MintResult;
+  type Id                     = Nat;
+  type TransactionsRecord     = Types.TransactionsRecord;
+  type TxIndex                = Types.TxIndex;
+  type RedistributeBtcResult  = Types.RedistributeBtcResult;
+  type RewardGwcResult        = Types.RewardGwcResult;
 
   public class TransactionsRecords(
     _register: Map<Principal, Map<Id, TransactionsRecord>>,
@@ -37,7 +37,7 @@ module {
       Map.set(_register, Map.phash, principal, transactions);
     };
 
-    public func setPayout(principal: Principal, id: Id, refund: ?ReapAccountResult, reward: ?MintResult){
+    public func setPayout(principal: Principal, id: Id, refund: ?RedistributeBtcResult, reward: ?RewardGwcResult){
       let error_prefix = "Cannot update the transaction record for principal '" # Principal.toText(principal) # "' and element '" # Nat.toText(id) # "'";
       // Get the transactions from this user
       let transactions = getRecords(principal);

@@ -33,25 +33,25 @@ module {
   public type TransferArgs         = TokenTypes.TransferArgs;
   public type TransferError        = TokenTypes.TransferError;
   public type Mint                 = TokenTypes.Mint;
-  public type ReapAccountRecipient = TokenTypes.ReapAccountRecipient;
-  public type MintRecipient        = TokenTypes.MintRecipient;
-  public type GodwinTokenInterface = TokenTypes.FullInterface;
+  public type ICRC1TokenInterface  = TokenTypes.FullInterface;
 
-  public type CanisterCallError = {
-    #CanisterCallError: Error.ErrorCode;
+ public type CanisterCallError = {
+    #CanisterCallError: {
+      canister: Principal;
+      method: Text;
+      code: Error.ErrorCode;
+      message: Text;
+    };
   };
 
-  // Transfer from master types
-  public type TransferFromMasterError  = MasterTypes.TransferError or CanisterCallError;
-  public type TransferFromMasterResult = Result<TxIndex, TransferFromMasterError>;
-
-  // Transfer to master types
-  public type TransferToMasterResult = Result<TxIndex, TransferError or CanisterCallError>;
+  // Pull BTC types
+  public type PullBtcError = MasterTypes.PullBtcError or CanisterCallError;
+  public type PullBtcResult = Result<TxIndex, PullBtcError>;
   
-  // Reap account types
-  public type ReapAccountReceiver  = { to: Principal; share: Float; };
-  public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
-  public type ReapAccountError = TransferError or CanisterCallError or {
+  // Redistribute BTC types
+  public type RedistributeBtcReceiver  = { to: Principal; share: Float; };
+  public type RedistributeBtcResult = Result<TxIndex, RedistributeBtcError>;
+  public type RedistributeBtcError = TransferError or CanisterCallError or {
     #InsufficientFees: {
       share: Float;
       subaccount: Subaccount;
@@ -66,18 +66,10 @@ module {
     };
   };
 
-  // Mint types
-  public type MintReceiver    = { to: Principal; amount: Balance; };
-  public type MintResult       = Result<TxIndex, MintError>;
-  public type MintError        = MasterTypes.TransferError or CanisterCallError or { 
-    #SingleMintLost: {
-      amount: Balance;
-    };
-    #SingleMintError: {
-      args: Mint;
-      error: TransferError;
-    };
-  };
+  // Reward GWC types @btc
+  public type RewardGwcReceiver  = MasterTypes.RewardGwcReceiver;
+  public type RewardGwcResult    = Result<TxIndex, RewardGwcError>;
+  public type RewardGwcError     = MasterTypes.TransferError or CanisterCallError;
 
   public type PayoutRecipient = { 
     to: Principal;
@@ -104,17 +96,17 @@ module {
     payout: {
       #PENDING;
       #PROCESSED: {
-        refund: ?ReapAccountResult;
-        reward: ?MintResult;
+        refund: ?RedistributeBtcResult;
+        reward: ?RewardGwcResult;
       };
     };
   };
 
   public type ITokenInterface = {
-    transferFromMaster: (from: Principal, to_subaccount: Blob, amount: Balance) -> async TransferFromMasterResult;
-    reapSubaccount: (subaccount: Blob, recipients: Iter<ReapAccountReceiver>) -> async Trie<Principal, ?ReapAccountResult>;
-    mintBatch: (recipients: Iter<MintReceiver>) -> async Trie<Principal, ?MintResult>;
-    mint:(to: Principal, amount: Balance) -> async MintResult;
+    pullBtc: (from: Principal, to_subaccount: Blob, amount: Balance) -> async PullBtcResult;
+    redistributeBtc: (subaccount: Blob, receivers: Iter<RedistributeBtcReceiver>) -> async Trie<Principal, ?RedistributeBtcResult>;
+    rewardGwcToAll: (receivers: Iter<RewardGwcReceiver>) -> async Trie<Principal, ?RewardGwcResult>;
+    rewardGwc: (RewardGwcReceiver) -> async RewardGwcResult;
   };
 
 };

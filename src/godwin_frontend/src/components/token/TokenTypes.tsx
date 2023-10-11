@@ -11,3 +11,7 @@ export type Transaction = {
   timestamp: bigint,
 }
 
+export enum LedgerType {
+  BTC,
+  GWC
+}

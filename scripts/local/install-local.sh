@@ -125,4 +125,4 @@ dfx canister install godwin_clock
 # Generate the candid files
 dfx generate
 
-dfx canister install godwin_frontend
+#dfx canister install godwin_frontend

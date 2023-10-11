@@ -1,5 +1,5 @@
 import { transactionFromIdlType, transactionKindToString } from "./TokenUtils"
-import { Transaction }                                     from "./TokenTypes"
+import { Transaction, LedgerType }                         from "./TokenTypes"
 import Balance                                             from "../base/Balance"
 import Spinner                                             from "../Spinner"
 import { nsToStrDate }                                     from "../../utils/DateUtils"
@@ -10,24 +10,32 @@ import React, { useState, useEffect, useContext }          from "react"
 
 type TransactionComponentInput = {
   tx_index: bigint;
+  ledger_type: LedgerType;
 }
 
-export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
+export const TransactionComponent = ({tx_index, ledger_type}: TransactionComponentInput) => {
 
   const [tx, setTx] = useState<Transaction | null>(null);
 
-  const {token} = useContext(ActorContext);
+  const {token, ck_btc} = useContext(ActorContext);
 
+  // @todo: use get_transactions instead (get_transaction is not part of ckbtc: https://dashboard.internetcomputer.org/canister/mxzaz-hqaaa-aaaar-qaada-cai)
   const refreshTx = () => {
-    token?.get_transaction(tx_index).then(tx => {
-      let opt_tx = fromNullable(tx);
-      setTx(old => { return opt_tx !== undefined ? transactionFromIdlType(opt_tx) : null; });
-    });
+    switch (ledger_type) {
+      case LedgerType.BTC: ck_btc?.get_transaction(tx_index).then(tx => {
+        let opt_tx = fromNullable(tx);
+        setTx(old => { return opt_tx !== undefined ? transactionFromIdlType(opt_tx) : null; });
+      }); break;
+      case LedgerType.GWC: token?.get_transaction(tx_index).then(tx => {
+        let opt_tx = fromNullable(tx);
+        setTx(old => { return opt_tx !== undefined ? transactionFromIdlType(opt_tx) : null; });
+      }); break;
+    }
   }
   
   useEffect(() => {
     refreshTx();
-  }, [tx_index, token]);
+  }, [tx_index]);
 
   return (
     <div>
@@ -38,7 +46,7 @@ export const TransactionComponent = ({tx_index}: TransactionComponentInput) => {
       </div> :
       <div className="flex flex-col text-sm">
         <div className="self-center">
-          <Balance amount={tx.amount}/>
+          <Balance amount={tx.amount} ledger_type={ledger_type}/>
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">
           <div>

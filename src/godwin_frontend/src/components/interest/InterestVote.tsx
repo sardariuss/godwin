@@ -32,7 +32,7 @@ type Props = {
 
 const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId, rightPlaceholderId, question_id, showHistory}: Props) => {
 
-  const {refreshBalance} = useContext(ActorContext);
+  const {refreshBalance, priceParameters} = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
   const voteKind = voteKindToCandidVariant(VoteKind.INTEREST);
@@ -165,7 +165,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
                       set_run_countdown={setCountdownVote}
                       trigger_update={triggerVote}
                       set_trigger_update={setTriggerVote}
-                      cost={sub.info.prices.interest_vote_price_e9s}
+                      cost={priceParameters?.interest_vote_price_sats}
                     >
                       <SvgButton onClick={() => setTriggerVote(true)}>
                         <PutBallotIcon/>

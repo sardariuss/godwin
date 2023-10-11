@@ -17,6 +17,7 @@ import React, { useState, useEffect, useContext }                from "react";
 import { Tooltip }                                               from "@mui/material";
 import ErrorOutlineIcon                                          from "@mui/icons-material/ErrorOutline";
 import { useNavigate }                                           from "react-router-dom";
+import { LedgerType } from "./token/TokenTypes";
 
 const createDimension = () : [Category, CategoryInfo] => { 
   return [
@@ -242,7 +243,7 @@ const CreateSub = () => {
             </div> :
             <div className="flex flex-row items-center gap-x-1 text-white">
               Create sub
-              <Balance amount={subCreationPrice}/>
+              <Balance amount={subCreationPrice} ledger_type={LedgerType.BTC}/>
             </div>
           }
         </button>

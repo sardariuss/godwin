@@ -25,16 +25,15 @@ module {
   func key(p: Principal) : Key<Principal> { { hash = Principal.hash(p); key = p; } };
   
   type SubaccountPrefix         = Types.SubaccountPrefix;
-  type ReapAccountReceiver      = Types.ReapAccountReceiver;
-  type ReapAccountError         = Types.ReapAccountError;
-  type ReapAccountResult        = Types.ReapAccountResult;
-  type TransferFromMasterResult = Types.TransferFromMasterResult;
+  type RedistributeBtcReceiver  = Types.RedistributeBtcReceiver;
+  type RedistributeBtcResult    = Types.RedistributeBtcResult;
+  type PullBtcResult            = Types.PullBtcResult;
   type TransactionsRecord       = Types.TransactionsRecord;
   type ITokenInterface          = Types.ITokenInterface;
   type Balance                  = Types.Balance;
   type PayoutRecipient          = Types.PayoutRecipient;
-  type MintResult               = Types.MintResult;
-  type MintReceiver             = Types.MintReceiver;
+  type RewardGwcResult          = Types.RewardGwcResult;
+  type RewardGwcReceiver        = Types.RewardGwcReceiver;
 
   type Id                       = Nat;
 
@@ -58,8 +57,8 @@ module {
     _subaccount_prefix: SubaccountPrefix
   ) {
 
-    public func payin(id: Id, principal: Principal, amount: Balance) : async* TransferFromMasterResult {
-      switch(await _token_interface.transferFromMaster(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
+    public func payin(id: Id, principal: Principal, amount: Balance) : async* PullBtcResult {
+      switch(await _token_interface.pullBtc(principal, SubaccountGenerator.getSubaccount(_subaccount_prefix, id), amount)){
         case(#err(err)) { #err(err); };
         case(#ok(tx_index)) { 
           _user_transactions.initWithPayin(principal, id, tx_index);
@@ -70,17 +69,17 @@ module {
 
     public func payout(id: Id, recipients: Iter<PayoutRecipient>) : async* () {
       // Refund the users
-      let refunds = await _token_interface.reapSubaccount(
+      let refunds = await _token_interface.redistributeBtc(
         SubaccountGenerator.getSubaccount(_subaccount_prefix, id), 
-        Iter.map(recipients, func({to; args;} : PayoutRecipient): ReapAccountReceiver { { to; share = args.refund_share; }; })
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): RedistributeBtcReceiver { { to; share = args.refund_share; }; })
       );
       // Reward the users
-      let rewards = await _token_interface.mintBatch(
-        Iter.map(recipients, func({to; args;} : PayoutRecipient): MintReceiver { { to; amount = Option.get(args.reward_tokens, 0); }; })
+      let rewards = await _token_interface.rewardGwcToAll(
+        Iter.map(recipients, func({to; args;} : PayoutRecipient): RewardGwcReceiver { { to; amount = Option.get(args.reward_tokens, 0); }; })
       );
       // Join the refunds and rewards into a single trie
-      type Payout = { refund: ?ReapAccountResult; reward: ?MintResult };
-      let payouts = Trie.disj(refunds, rewards, Principal.equal, func(refund: ??ReapAccountResult, reward: ??MintResult) : Payout {
+      type Payout = { refund: ?RedistributeBtcResult; reward: ?RewardGwcResult };
+      let payouts = Trie.disj(refunds, rewards, Principal.equal, func(refund: ??RedistributeBtcResult, reward: ??RewardGwcResult) : Payout {
         {
           refund = switch(refund){ case(null) { null; }; case(?r) { r; }; };
           reward = switch(reward){ case(null) { null; }; case(?r) { r; }; };

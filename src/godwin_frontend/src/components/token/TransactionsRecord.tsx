@@ -1,12 +1,12 @@
 import { TransactionComponent }                        from "./Transaction";
-import { reapAccountErrorToString, mintErrorToString } from "./TokenUtils";
+import { RedistributeBtcErrorToString, mintErrorToString } from "./TokenUtils";
 import Balance                                         from "../base/Balance";
 import { TransactionsRecord }                          from "../../../declarations/godwin_sub/godwin_sub.did";
 
-import React                                           from "react";
 import { Tooltip }                                     from "@mui/material";
 import ErrorOutlineIcon                                from "@mui/icons-material/ErrorOutline";
 import { fromNullable }                                from "@dfinity/utils";
+import { LedgerType } from "./TokenTypes";
 
 export type TransactionsRecordInput = {
   tx_record: TransactionsRecord | undefined;
@@ -22,7 +22,7 @@ export const TransactionsRecordComponent = ({tx_record}: TransactionsRecordInput
         <div className="flex flex-col items-center text-red-600 dark:text-red-400">
           <div className="text-black dark:text-white">Payin</div>
           <div>
-            <TransactionComponent tx_index={tx_record.payin} />
+            <TransactionComponent tx_index={tx_record.payin} ledger_type={LedgerType.BTC} />
           </div>
         </div>
         <div className="flex flex-col items-center">
@@ -31,12 +31,12 @@ export const TransactionsRecordComponent = ({tx_record}: TransactionsRecordInput
             { tx_record.payout['PROCESSED'] === undefined ? 
               <div className="text-xs text-gray-500 dark:text-gray-400">Pending</div> :
                 fromNullable(tx_record.payout['PROCESSED'].refund) === undefined ?
-              <Balance amount={BigInt(0)}/> :
+              <Balance amount={BigInt(0)} ledger_type={LedgerType.BTC}/> :
                 fromNullable(tx_record.payout['PROCESSED'].refund)['err'] !== undefined ?
-              <Tooltip title={ reapAccountErrorToString(fromNullable(tx_record.payout['PROCESSED'].refund)['err'])} arrow>
+              <Tooltip title={ RedistributeBtcErrorToString(fromNullable(tx_record.payout['PROCESSED'].refund)['err'])} arrow>
                 <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
               </Tooltip> : 
-              <TransactionComponent tx_index={fromNullable(tx_record.payout['PROCESSED'].refund)['ok']} />
+              <TransactionComponent tx_index={fromNullable(tx_record.payout['PROCESSED'].refund)['ok']} ledger_type={LedgerType.BTC} />
             }
           </div>
         </div>
@@ -46,12 +46,12 @@ export const TransactionsRecordComponent = ({tx_record}: TransactionsRecordInput
             { tx_record.payout['PROCESSED'] === undefined ? 
               <div className="text-xs text-gray-500 dark:text-gray-400">Pending</div> :
                 fromNullable(tx_record.payout['PROCESSED'].reward) === undefined ?
-              <Balance amount={BigInt(0)}/> :
+              <Balance amount={BigInt(0)} ledger_type={LedgerType.GWC}/> :
                 fromNullable(tx_record.payout['PROCESSED'].reward)['err'] !== undefined ?
               <Tooltip title={ mintErrorToString(fromNullable(tx_record.payout['PROCESSED'].reward)['err'])} arrow>
                 <ErrorOutlineIcon color="error"></ErrorOutlineIcon>
               </Tooltip> : 
-              <TransactionComponent tx_index={fromNullable(tx_record.payout['PROCESSED'].reward)['ok']} />
+              <TransactionComponent tx_index={fromNullable(tx_record.payout['PROCESSED'].reward)['ok']} ledger_type={LedgerType.GWC}/>
             }
           </div>
         </div>

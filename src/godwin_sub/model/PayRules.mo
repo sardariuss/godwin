@@ -25,7 +25,6 @@ module {
   type InterestDistribution = VoteTypes.InterestDistribution;
   type Balance              = PayTypes.Balance;
   type RawPayout            = PayTypes.RawPayout;
-  type PayoutArgs           = PayTypes.PayoutArgs;
   type QuestionPayouts      = PayTypes.QuestionPayouts;
 
   type SubMomentum          = SubMomentum.SubMomentum;
@@ -47,7 +46,7 @@ module {
         sigma = 0.8;
         mu    = 0.0;
       };
-      coef = 0.423752;
+      coef = 0.5;
     };
   };
 
@@ -181,22 +180,24 @@ module {
     };
   };
 
-  // see www.desmos.com/calculator/iv87gjyqlx
-  public func attenuatePayout(payout: RawPayout, num_voters: Nat, nominal_share: Float) : RawPayout {
-    
-    // Return the original payout if there is no voter, also prevent dividing by 0
-    if (num_voters == 0){ return payout; };
-
-    let { refund_share; reward; } = payout;
-    let { coef; exponent; } = ATTENUATE_MODIFIER_PARAMS;
-
-    let log_num_voters = Float.log(Float.fromInt(num_voters));
-    let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
-
-    {
-      refund_share  = confidence * refund_share  + (1.0 - confidence) * nominal_share;
-      reward = Option.map(reward, func(r: Float) : Float { r * confidence; });
-    };
-  };
+  // @todo: it is too soon to use such an attenuation function, it is more important at the beginning
+  // of the project that people understand and "see" how the incentives work before complexifying them
+//  // see www.desmos.com/calculator/iv87gjyqlx
+//  public func attenuatePayout(payout: RawPayout, num_voters: Nat, nominal_share: Float) : RawPayout {
+//    
+//    // Return the original payout if there is no voter, also prevent dividing by 0
+//    if (num_voters == 0){ return payout; };
+//
+//    let { refund_share; reward; } = payout;
+//    let { coef; exponent; } = ATTENUATE_MODIFIER_PARAMS;
+//
+//    let log_num_voters = Float.log(Float.fromInt(num_voters));
+//    let confidence = 1.0 - Float.exp(-Float.pow(log_num_voters * coef, exponent));
+//
+//    {
+//      refund_share  = confidence * refund_share  + (1.0 - confidence) * nominal_share;
+//      reward = Option.map(reward, func(r: Float) : Float { r * confidence; });
+//    };
+//  };
 
 };

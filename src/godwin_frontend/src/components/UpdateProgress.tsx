@@ -8,6 +8,7 @@ import { Tooltip }                            from "@mui/material";
 import ErrorOutlineIcon                       from '@mui/icons-material/ErrorOutline';
 import DoneIcon                               from '@mui/icons-material/Done';
 import { CssVarsProvider, extendTheme }       from '@mui/joy/styles';
+import { LedgerType } from "./token/TokenTypes";
 
 // This part could be declared in your theme file
 declare module '@mui/joy/CircularProgress' {
@@ -180,9 +181,10 @@ const UpdateProgress = <Error,>({
       }
       <div className="absolute pt-6 flex flex-col w-full items-center">
       {
+        // @todo: do not hardcode the ledger type
         cost !== undefined && error === null && !updateProgress ?
         <div className="text-xs pt-1">
-          <Balance amount={cost}/>
+          <Balance amount={cost} ledger_type={LedgerType.BTC}/>
         </div> : <></>
       }
       </div>

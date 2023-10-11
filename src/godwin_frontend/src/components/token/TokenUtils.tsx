@@ -1,6 +1,6 @@
 import { Transaction, TransactionKind } from "./TokenTypes";
 import { Transaction as IdlTransaction } from "../../../declarations/godwin_token/godwin_token.did";
-import { ReapAccountError, MintError, TransferError } from "../../../declarations/godwin_sub/godwin_sub.did";
+import { RedistributeBtcError, MintError, TransferError } from "../../../declarations/godwin_sub/godwin_sub.did";
 
 import { fromNullable } from "@dfinity/utils";
 import { Mint } from "../../../declarations/godwin_master/godwin_master.did";
@@ -39,21 +39,30 @@ export const transactionFromIdlType = (tx: IdlTransaction) : Transaction => {
 }
 
 // @todo complete the strings
-export const reapAccountErrorToString = (err: ReapAccountError) : string => {
+export const RedistributeBtcErrorToString = (err: RedistributeBtcError) : string => {
   if(err['GenericError']           !== undefined) return 'GenericError';       // { 'message' : string, 'error_code' : bigint }}
   if(err['TemporarilyUnavailable'] !== undefined) return 'TemporarilyUnavailable';
   if(err['BadBurn']                !== undefined) return 'BadBurn';            // { 'min_burn_amount' : Balance } }
   if(err['Duplicate']              !== undefined) return 'Duplicate';          // { 'duplicate_of' : TxIndex } }
-  if(err['BalanceExceeded']        !== undefined) return 'BalanceExceeded : sum_shares = ' + err['BalanceExceeded']['sum_shares'].toString();     // { 'sum_shares' : number } }
-  if(err['SingleReapLost']         !== undefined) return 'SingleReapLost';     // { 'subgodwin_subaccount' : Subaccount__1, 'share' : number,}}
-  if(err['NoRecipients']           !== undefined) return 'NoRecipients';
-  if(err['SingleTransferError']    !== undefined) return 'SingleTransferError';// { 'args' : TransferArgs, 'error' : TransferError }}
   if(err['BadFee']                 !== undefined) return 'BadFee';             // { 'expected_fee' : Balance } }
-  if(err['NegativeShare']          !== undefined) return 'NegativeShare';      // { ReapAccountRecipient }
   if(err['CreatedInFuture']        !== undefined) return 'CreatedInFuture';    // { 'ledger_time' : Timestamp } }
   if(err['TooOld']                 !== undefined) return 'TooOld';
   if(err['CanisterCallError']      !== undefined) return 'CanisterCallError';  // { ErrorCode }
   if(err['InsufficientFunds']      !== undefined) return 'InsufficientFunds';  // { 'balance' : Balance } 
+  if(err['InvalidSumShares']       !== undefined) return 'InvalidSumShares';   
+//    {
+//      'owed' : Balance__1,
+//      'subaccount' : Subaccount,
+//      'total_owed' : Balance__1,
+//      'balance_without_fees' : Balance__1,
+//    }
+  if(err['InsufficientFees']       !== undefined) return 'InsufficientFees';   
+//    {
+//      'balance' : Balance__1,
+//      'sum_fees' : Balance__1,
+//      'subaccount' : Subaccount,
+//      'share' : number,
+//    }
   throw new Error("Invalid reap account error");
 }
 

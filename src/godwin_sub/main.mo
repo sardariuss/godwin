@@ -9,7 +9,9 @@ import Principal       "mo:base/Principal";
 import Time            "mo:base/Time";
 import Debug           "mo:base/Debug";
 
-shared actor class GodwinSub(args: MigrationTypes.Args) = {
+import ckBTC           "canister:ck_btc";
+
+shared actor class GodwinSub(args: MigrationTypes.Args) = self {
 
   // For convenience: from base module
   type Result<Ok, Err>                = Result.Result<Ok, Err>;
@@ -58,8 +60,8 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   _state := Migrations.migrate(_state, Time.now(), args);
 
   let _controller = switch(_state){
-    case(#v0_2_0(state)) { ?Factory.build(state); };
-    case(_)              { null;                  };
+    case(#v0_2_0(state)) { ?Factory.build(state, Principal.fromActor(ckBTC)); };
+    case(_)              { null;                                              };
   };
 
   public query func getVersions() : async MigrationTypes.Versions {
@@ -156,9 +158,15 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   func getController() : Controller {
     switch(_controller){
-      case (?c) { c; };
+      case (?c) { 
+        // Unfortunately the principal of the canister cannot be set at construction because of 
+        // compiler error "cannot use self before self has been defined".
+        // Surprisingly the getController function can still be called in query functions.
+        c.setSelfId(Principal.fromActor(self));
+        c; 
+      };
       case (null) { Debug.trap("Controller is null"); };
     };
   };
-
+ 
 };

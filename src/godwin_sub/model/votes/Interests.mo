@@ -56,7 +56,7 @@ module {
   type QuestionQueries        = QuestionTypes.QuestionQueries;
   type ITokenInterface        = PayTypes.ITokenInterface;
   type TransactionsRecord     = PayTypes.TransactionsRecord;
-  type MintResult             = PayTypes.MintResult;
+  type RewardGwcResult        = PayTypes.RewardGwcResult;
   type RawPayout              = PayTypes.RawPayout;
   type PayForNew              = PayForNew.PayForNew;
 
@@ -86,7 +86,7 @@ module {
     queries: QuestionQueries,
     price_params: Ref<PriceParameters>,
     creator: Principal,
-    creator_rewards_register: Map<Nat, MintResult>
+    creator_rewards_register: Map<Nat, RewardGwcResult>
   ) : Interests {
     Interests(
       Votes.Votes(
@@ -162,11 +162,7 @@ module {
         _price_params.v.reopen_vote_price_sats; 
       };
       // Get the author raw payout
-      let author_payout = PayRules.attenuatePayout(
-        PayRules.computeQuestionAuthorPayout(closure, vote.aggregate), 
-        Map.size(vote.ballots),
-        1.0 // nominal share is the full refund
-      );
+      let author_payout = PayRules.computeQuestionAuthorPayout(closure, vote.aggregate);
       // Get the creator raw reward
       let creator_reward = PayRules.deduceSubCreatorReward(author_payout);
       

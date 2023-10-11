@@ -32,7 +32,7 @@ module {
 
   type Controller      = Controller.Controller;
   
-  public func build(state: State) : Controller {
+  public func build(state: State, ck_btc: Principal) : Controller {
 
     let master = state.master;
     
@@ -44,7 +44,7 @@ module {
 
     let sub_momentum = SubMomentum.build(state.momentum, state.selection_params);
 
-    let token_interface = TokenInterface.build({ master = state.master.v; token = state.token.v; });
+    let token_interface = TokenInterface.build({ master = state.master.v; gwc = state.token.v; ck_btc; });
     let pay_to_open_question = PayForNew.build(
       token_interface,
       #OPEN_QUESTION,
@@ -103,6 +103,7 @@ module {
       WRef.WRef(state.scheduler_params),
       WRef.WRef(state.selection_params),
       WRef.WRef(state.price_params),
+      token_interface,
       categories,
       questions,
       status_manager,

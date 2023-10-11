@@ -12,6 +12,11 @@ module {
 
   type Result<Ok, Err> = Result.Result<Ok, Err>;
 
+  public type TxIndex        = TokenTypes.TxIndex;
+  public type TransferResult = Result<TxIndex, TransferError>;
+  public type Balance        = TokenTypes.Balance;
+  public type Account        = TokenTypes.Account;
+
   public type Duration = UtilsTypes.Duration;
 
   public type SubMigrationArgs = SubMigrationTypes.Args;
@@ -42,13 +47,17 @@ module {
 
   public type ListSubUpgradesResults = [(Principal, SingleSubUpgradeResult)];
 
-  public type SingleSubUpgradeResult = Result<(), FailedUpgradeError>;
+  public type SingleSubUpgradeResult = Result<(), CanisterCallError>;
 
   public type RemoveSubResult = Result<Principal, RemoveSubError>;
   
-  public type FailedUpgradeError = {
-    code: Error.ErrorCode;
-    message: Text;
+  public type CanisterCallError = {
+    #CanisterCallError: {
+      canister: Principal;
+      method: Text;
+      code: Error.ErrorCode;
+      message: Text;
+    };
   };
 
   public type RemoveSubError = AccessControlError or {
@@ -70,7 +79,7 @@ module {
     #MinimumInterestScoreTooLow: ({minimum         : Float;   });
   };
 
-  public type TransferError = TokenTypes.TransferError or AccessControlError; // @todo: add the CanisterCallError
+  public type TransferError = TokenTypes.TransferError or AccessControlError or CanisterCallError;
 
   public type SetUserNameError = {
     #AnonymousNotAllowed;
@@ -79,25 +88,20 @@ module {
     #NameAlreadyTaken;
   };
 
-  public type Principals = {
-    master: Principal;
-    user: Principal;
+  public type RewardGwcReceiver = {
+    to: Principal;
+    amount: Balance;
   };
-
-  public type MintBatchArgs = TokenTypes.MintBatchArgs;
 
   public type CreateSubGodwinResult = Result<Principal, CreateSubGodwinError or TransferError>;
 
-  public type TransferResult = Result<TokenTypes.TxIndex, TransferError>;
-
-  public type MintBatchResult = Result<[(TokenTypes.Mint, TokenTypes.TransferResult)], TransferError>;
-
-  public type Balance = TokenTypes.Balance;
+  public type PullBtcError = TransferError;
+  public type PullBtcResult = Result<TxIndex, TransferError>;
+  public type RewardGwcResult = Result<[(RewardGwcReceiver, TransferResult)], AccessControlError>;
 
   public type MasterInterface = actor {
-    pullTokens: shared(Principal, TokenTypes.Balance, ?Blob) -> async TransferResult;
-    mintBatch: shared(MintBatchArgs) -> async MintBatchResult;
-    mint: shared(TokenTypes.Mint) -> async TransferResult;
+    pullBtc: shared(Principal, Balance, ?Blob) -> async PullBtcResult;
+    rewardGwc: shared([RewardGwcReceiver]) -> async RewardGwcResult;
   };
 
   public type TokenResult<Ok, Err> = {

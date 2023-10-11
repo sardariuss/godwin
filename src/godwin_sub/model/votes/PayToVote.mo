@@ -1,15 +1,15 @@
-import Types               "Types";
+import Types        "Types";
 
-import PayRules             "../PayRules";
-import PayForElement        "../token/PayForElement";
-import PayTypes             "../token/Types";
+import PayRules      "../PayRules";
+import PayForElement "../token/PayForElement";
+import PayTypes      "../token/Types";
 
-import Map                 "mo:map/Map";
+import Map          "mo:map/Map";
 
-import Principal           "mo:base/Principal";
-import Result              "mo:base/Result";
-import Buffer              "mo:base/Buffer";
-import Float               "mo:base/Float";
+import Principal    "mo:base/Principal";
+import Result       "mo:base/Result";
+import Buffer       "mo:base/Buffer";
+import Float        "mo:base/Float";
 
 module {
 
@@ -65,11 +65,9 @@ module {
       let recipients = Map.new<Principal, PayoutRecipient>(Map.phash);
       for ((principal, raw_payout) in Map.entries(raw_payouts)){
         // Normalize the refund shares, so that the sum of shares makes 1
-        let normalized_payout = { raw_payout with refund_share = raw_payout.refund_share / sum_shares; }; 
-        // Attenuate the payout
-        let attenuated_payout = PayRules.attenuatePayout(normalized_payout, number_voters, 1.0 / Float.fromInt(number_voters));
+        let normalized_payout = { raw_payout with refund_share = raw_payout.refund_share / sum_shares; };
         // Convert the reward in tokens
-        let payout_args = { attenuated_payout with reward_tokens = PayRules.convertRewardToTokens(attenuated_payout.reward, _get_payin_price()); };
+        let payout_args = { normalized_payout with reward_tokens = PayRules.convertRewardToTokens(normalized_payout.reward, _get_payin_price()); };
         // Return the full recipient (required by the payout function)
         Map.set(recipients, Map.phash, principal, { to = principal; args = payout_args; });
       };

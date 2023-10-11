@@ -7,13 +7,12 @@ check:
 	npm install
 	dfx start --clean --background
 	dfx canister create --all
+	dfx build ck_btc
 	dfx build godwin_token
-	dfx build godwin_airdrop
 	dfx build godwin_master
 	dfx build godwin_sub
 	dfx build godwin_clock
-	dfx build scenario_sub
-	dfx build scenario_airdrop
+	dfx build scenario
 	dfx build internet_identity
 	dfx generate
 	dfx build godwin_frontend

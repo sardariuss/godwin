@@ -47,7 +47,7 @@ module {
       register                     : Map<Nat, (Principal, Blob)>;
       index                        : Ref<Nat>;
       transactions                 : Map<Principal, Map<VoteId, TransactionsRecord>>;
-      creator_rewards              : Map<VoteId, MintResult>;
+      creator_rewards              : Map<VoteId, RewardGwcResult>;
     };
     votes                       : {
       interest                     : {
@@ -377,11 +377,16 @@ module {
   public type MasterTransferError = TransferError or AccessControlError;
 
   // sub/model/token types
-  public type ReapAccountResult = Result<TxIndex, ReapAccountError>;
+  public type RedistributeBtcResult = Result<TxIndex, RedistributeBtcError>;
   public type CanisterCallError = {
-    #CanisterCallError: Error.ErrorCode;
+    #CanisterCallError: {
+      canister: Principal;
+      method: Text;
+      code: Error.ErrorCode;
+      message: Text;
+    };
   };
-  public type ReapAccountError = TransferError or CanisterCallError or {
+  public type RedistributeBtcError = TransferError or CanisterCallError or {
     #InsufficientFees: {
       share: Float;
       subaccount: Subaccount;
@@ -395,24 +400,16 @@ module {
       total_owed: Balance;
     };
   };
-  public type MintResult = Result<TxIndex, MintError>;
-  public type MintError  = MasterTransferError or CanisterCallError or { 
-    #SingleMintLost: {
-      amount: Balance;
-    };
-    #SingleMintError: {
-      args: Mint;
-      error: TransferError;
-    };
-  };
+  public type RewardGwcResult = Result<TxIndex, RewardGwcError>;
+  public type RewardGwcError  = MasterTransferError or CanisterCallError;
 
   public type TransactionsRecord = {
     payin: TxIndex;
     payout: {
       #PENDING;
       #PROCESSED: {
-        refund: ?ReapAccountResult;
-        reward: ?MintResult;
+        refund: ?RedistributeBtcResult;
+        reward: ?RewardGwcResult;
       };
     };
   };

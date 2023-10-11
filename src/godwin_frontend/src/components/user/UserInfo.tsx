@@ -4,7 +4,6 @@ import CopyIcon                                   from "../icons/CopyIcon";
 import SvgButton                                  from "../base/SvgButton"
 import LogoutIcon                                 from "../icons/LogoutIcon";
 import { getEncodedAccount }                      from "../../utils/LedgerUtils";
-import { airdropErrorToString }                   from "../../utils";
 import { ActorContext }                           from "../../ActorContext"
 import CONSTANTS                                  from "../../Constants";
 import { Account }                                from "../../../declarations/godwin_master/godwin_master.did";
@@ -27,12 +26,12 @@ type UserInfoProps = {
   principal: Principal;
 };
 
+// @btc: create btc account from principal
 const UserInfo = ({ principal } : UserInfoProps) => {
 
-  const {isAuthenticated, authClient, master, airdrop, logout, refreshBalance} = useContext(ActorContext);
+  const {isAuthenticated, authClient, master, logout, refreshBalance} = useContext(ActorContext);
 
   const [isLoggedUser,         setIsLoggedUser        ] = useState<boolean>              (false                );
-  const [isSelfAirdropAllowed, setIsSelfAirdropAllowed] = useState<boolean>              (false                );
   const [account,              setAccount             ] = useState<Account | undefined>  (undefined            );
   const [state,                setState               ] = useState<SubmittingState>      (SubmittingState.STILL);
   const [error,                setError               ] = useState<string | undefined>   (undefined            );
@@ -49,29 +48,6 @@ const UserInfo = ({ principal } : UserInfoProps) => {
       setAccount(account);
     }
   }
-
-  const refreshSelfAirdropAllowed = async () => {
-    setIsSelfAirdropAllowed(airdrop === undefined ? false : await airdrop.isSelfAirdropAllowed());
-  }
-
-  const claimAirdrop = () => {
-    // @todo: temporary airdrop
-    setError(undefined);
-    setState(SubmittingState.SUBMITTING);
-    airdrop?.airdropSelf().then((result) => {
-      if (result['ok'] !== undefined) {
-        setState(SubmittingState.SUCCESS);
-        refreshBalance();
-      } else if (result['err'] !== undefined) {
-        setState(SubmittingState.ERROR);
-        setError(airdropErrorToString(result['err']));
-      }
-    });
-  }
-
-  useEffect(() => {
-    refreshSelfAirdropAllowed();
-  }, [airdrop]);
 
   useEffect(() => {
 		refreshLoggedUser();
@@ -103,7 +79,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
             </div> : <></>
           }
           <div className="flex flex-row items-center space-x-2">
-            {
+            {/*
               isLoggedUser && isSelfAirdropAllowed ?
               <button type="button" onClick={(e) => claimAirdrop()} className="flex flex-col items-center button-blue w-24" disabled={state === SubmittingState.SUBMITTING}>
                 {
@@ -116,7 +92,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
                   </div>
                 }
               </button> : <></>
-            }
+              */}
             <div className="flex flex-col w-6 min-w-6 items-center text-sm">
             {
               state === SubmittingState.ERROR ?

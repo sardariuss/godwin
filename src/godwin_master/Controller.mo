@@ -22,6 +22,8 @@ import Buffer             "mo:base/Buffer";
 import Error              "mo:base/Error";
 import Blob               "mo:base/Blob";
 import Option             "mo:base/Option";
+import Debug              "mo:base/Debug";
+import Array              "mo:base/Array";
 
 import ckBTC              "canister:ck_btc";
 
@@ -38,20 +40,22 @@ module {
   type SubMigrationArgs       = SubMigrationTypes.Args;
   type Balance                = Types.Balance;
   type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
-  type TransferResult         = Types.TransferResult;
-  type Principals             = Types.Principals;
+  type PullBtcResult          = Types.PullBtcResult;
   type AccessControlRole      = Types.AccessControlRole;
   type AccessControlError     = Types.AccessControlError;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
   type SingleSubUpgradeResult = Types.SingleSubUpgradeResult;
   type RemoveSubResult        = Types.RemoveSubResult;
-  type MintBatchResult        = Types.MintBatchResult;
+  type RewardGwcResult        = Types.RewardGwcResult;
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
   type CyclesParameters       = Types.CyclesParameters;
   type PriceParameters        = Types.PriceParameters;
   type ValidationParams       = Types.ValidationParams;
   type LedgerType             = Types.LedgerType;
+  type RewardGwcReceiver      = Types.RewardGwcReceiver;
+  type CanisterCallError      = Types.CanisterCallError;
+  type TransferResult         = Types.TransferResult;
   type Duration               = UtilsTypes.Duration;
   type GodwinSub              = GodwinSub.GodwinSub;
 
@@ -60,6 +64,19 @@ module {
   public class Controller(_model: Model) {
 
     let _token : TokenTypes.FullInterface = actor(Principal.toText(_model.getToken()));
+
+    var _self_id : ?Principal = null;
+
+    public func setSelfId(self_id: Principal) {
+      _self_id := ?self_id;
+    };
+
+    func unwrapSelfId() : Principal {
+      switch(_self_id){
+        case(null) { Debug.trap("Self principal is not set"); };
+        case(?self_id) { self_id; };
+      };
+    };
 
     public func getAdmin() : Principal {
       _model.getAdmin();
@@ -118,9 +135,7 @@ module {
     };
 
     // @todo: it is dangerous to have the master and caller as parameters, use a named Principal inside a record instead
-    public func createSubGodwin(principals: Principals, identifier: Text, sub_parameters: SubParameters, time: Time, payement: LedgerType) : async CreateSubGodwinResult  {
-
-      let { master; user; } = principals;
+    public func createSubGodwin(user: Principal, identifier: Text, sub_parameters: SubParameters, time: Time, payement: LedgerType) : async CreateSubGodwinResult  {
 
       // Verify the parameters
       switch(_model.getSubParamsValidator().validateSubGodwinParams(identifier, sub_parameters)){
@@ -131,24 +146,32 @@ module {
       // Proceed with the payment
       let transfer = switch(payement){
         case(#BTC) {
-          await ckBTC.icrc1_transfer({
-            from_subaccount = ?Blob.toArray(Account.toSubaccount(user));
-            to = { owner = getAdmin(); subaccount = null; };
-            fee = ?10;
-            amount = _model.getPriceParameters().sub_creation_price_sats;
-            memo = null;
-            created_at_time = ?Nat64.fromNat(Int.abs(time));
-          });
+          try{
+            await ckBTC.icrc1_transfer({
+              from_subaccount = ?Blob.toArray(Account.toSubaccount(user));
+              to = { owner = getAdmin(); subaccount = null; };
+              fee = ?10; // @todo: remove hard-coded fee
+              amount = _model.getPriceParameters().sub_creation_price_sats;
+              memo = null;
+              created_at_time = ?Nat64.fromNat(Int.abs(time));
+            });
+          } catch(e){
+            #Err(toCanisterCallError(Principal.fromActor(ckBTC), "icrc1_transfer", e));
+          };
         };
         case(#GWC) {
-          await _token.icrc1_transfer({
-            from_subaccount = ?Account.toSubaccount(user);
-            to = { owner = getAdmin(); subaccount = null; };
-            fee = ?100_000; // Fee might not be required if admin is the owner of the token
-            amount = _model.getPriceParameters().sub_creation_price_gwc_e9s;
-            memo = null;
-            created_at_time = ?Nat64.fromNat(Int.abs(time));
-          });
+          try{
+            await _token.icrc1_transfer({
+              from_subaccount = ?Account.toSubaccount(user);
+              to = { owner = getAdmin(); subaccount = null; };
+              fee = ?100_000; // @todo: remove hard-coded fee
+              amount = _model.getPriceParameters().sub_creation_price_gwc_e9s;
+              memo = null;
+              created_at_time = ?Nat64.fromNat(Int.abs(time));
+            });
+          } catch(e){
+            #Err(toCanisterCallError(Principal.fromActor(_token), "icrc1_transfer", e));
+          };
         };
       };
      
@@ -159,12 +182,16 @@ module {
     
       ExperimentalCycles.add(_model.getCyclesParameters().create_sub_cycles);
 
-      let new_sub = await (system GodwinSub.GodwinSub)(#new {settings = ?{ 
-        controllers = ?[master, _model.getAdmin()];
-        compute_allocation = null; // @todo: add this parameters in the model
-        memory_allocation = null;
-        freezing_threshold = null;
-      }})(#init({ master; token = Principal.fromActor(_token); creator = user; sub_parameters; price_parameters = _model.getPriceParameters(); }));
+      let new_sub = try {
+        await (system GodwinSub.GodwinSub)(#new {settings = ?{ 
+          controllers = ?[unwrapSelfId(), _model.getAdmin()];
+          compute_allocation = null; // @todo: add this parameters in the model
+          memory_allocation = null;
+          freezing_threshold = null;
+        }})(#init({ master = unwrapSelfId(); token = Principal.fromActor(_token); creator = user; sub_parameters; price_parameters = _model.getPriceParameters(); }));
+      } catch(e){
+        return #err(toCanisterCallError(Principal.fromText("aaaaa-aa"), "new GodwinSub", e));
+      };
 
       let principal = Principal.fromActor(new_sub);
 
@@ -193,7 +220,7 @@ module {
           ignore await (system GodwinSub.GodwinSub)(#upgrade(sub))(args);
           #ok;
         } catch(e) {
-          #err({code = Error.code(e); message = Error.message(e); });
+          #err(toCanisterCallError(Principal.fromText("aaaaa-aa"), "update GodwinSub", e));
         };
         
         update_results.add((principal, single_sub_result));
@@ -222,7 +249,7 @@ module {
       Iter.toArray(_model.getSubGodwins().entries());
     };
 
-    public func pullTokens(caller: Principal, user: Principal, amount: Balance, subaccount: ?Blob, time: Time) : async TransferResult {
+    public func pullBtc(caller: Principal, user: Principal, amount: Balance, subaccount: ?Blob, time: Time) : async PullBtcResult {
 
       switch(verifyAuthorizedAccess(caller, #SUB)){
         case(#err(err)) { return #err(err); };
@@ -233,7 +260,7 @@ module {
         await ckBTC.icrc1_transfer({
           amount;
           created_at_time = ?Nat64.fromNat(Int.abs(time));
-          fee = ?10; // @todo: null is supposed to work according to the Token standard, but it doesn't...
+          fee = ?10; // @todo: remove hard-coded fee
           from_subaccount = ?Blob.toArray(Account.toSubaccount(user));
           memo = null;
           to = {
@@ -244,29 +271,36 @@ module {
       );
     };
 
-    public func mintBatch(caller: Principal, args: TokenTypes.MintBatchArgs) : async MintBatchResult {
+    public func rewardGwc(caller: Principal, time: Time, receivers: [RewardGwcReceiver]) : async RewardGwcResult {
 
       switch(verifyAuthorizedAccess(caller, #SUB)){
         case(#err(err)) { return #err(err); };
         case(#ok()) {};
       };
 
-      toBaseResult(await _token.mint_batch(args));
-    };
+      let results = Buffer.Buffer<(RewardGwcReceiver, TransferResult)>(0);
 
-    public func mint(caller: Principal, args: TokenTypes.Mint) : async TransferResult {
-
-      switch(verifyAuthorizedAccess(caller, #SUB)){
-        case(#err(err)) { return #err(err); };
-        case(#ok()) {};
+      for (receiver in Array.vals(receivers)){
+        let result = try {
+          toBaseResult(await _token.icrc1_transfer({
+            from_subaccount = null;
+            to = { owner = unwrapSelfId(); subaccount = ?Account.toSubaccount(receiver.to) };
+            fee = ?100_000;
+            amount = receiver.amount;
+            memo = null;
+            created_at_time = ?Nat64.fromNat(Int.abs(time));
+          }));
+        } catch(e) {
+          #err(toCanisterCallError(Principal.fromActor(_token), "icrc1_transfer", e));
+        };
+        results.add((receiver, result));
       };
 
-      toBaseResult(await _token.mint(args));
+      #ok(Buffer.toArray(results));
     };
 
-    public func getUserAccount(principals: Principals) : TokenTypes.Account {
-      let { master; user; } = principals;
-      { owner = master; subaccount = ?Account.toSubaccount(user) };
+    public func getUserAccount(user: Principal) : TokenTypes.Account {
+      { owner = unwrapSelfId(); subaccount = ?Account.toSubaccount(user) };
     };
 
     public func getUserName(user: Principal) : ?Text {
@@ -324,6 +358,10 @@ module {
       };
       #err(#AccessDenied({required_role;}));
     };
+  };
+
+  private func toCanisterCallError(principal: Principal, method: Text, error: Error) : CanisterCallError {
+    #CanisterCallError({ canister = principal; method; code = Error.code(error); message = Error.message(error); });
   };
 
 };

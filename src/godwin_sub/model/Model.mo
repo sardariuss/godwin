@@ -9,6 +9,7 @@ import Joins               "votes/QuestionVoteJoins";
 import VotersHistory       "votes/VotersHistory";
 import VoteTypes           "votes/Types";
 import SubaccountGenerator "token/SubaccountGenerator";
+import TokenInterface      "token/TokenInterface";
 import QuestionTypes       "questions/Types";
 import Questions           "questions/Questions";
 import Types               "../stable/Types";
@@ -25,7 +26,7 @@ module {
   type Status               = Types.Current.Status;
   type SchedulerParameters  = Types.Current.SchedulerParameters;
   type SelectionParameters  = Types.Current.SelectionParameters;
-  type PriceParameters  = Types.Current.PriceParameters;
+  type PriceParameters      = Types.Current.PriceParameters;
   
   type Categories           = Categories.Categories;
   type Questions            = Questions.Questions;
@@ -37,6 +38,7 @@ module {
   type CategorizationVotes  = Categorizations.Categorizations;
   type Joins                = Joins.QuestionVoteJoins;
   type VotersHistory        = VotersHistory.VotersHistory;
+  type TokenInterface       = TokenInterface.TokenInterface;
 
   public class Model(
     _name: WRef<Text>,
@@ -44,6 +46,7 @@ module {
     _scheduler_params: WRef<SchedulerParameters>,
     _selection_parameters: WRef<SelectionParameters>,
     _price_parameters: WRef<PriceParameters>,
+    _token_interface: TokenInterface,
     _categories: Categories,
     _questions: Questions,
     _status_manager: StatusManager,
@@ -98,6 +101,10 @@ module {
 
     public func setPriceParameters(params: PriceParameters) {
       _price_parameters.set(params);
+    };
+
+    public func getTokenInterface() : TokenInterface {
+      _token_interface;
     };
 
     public func getCategories() : Categories {
