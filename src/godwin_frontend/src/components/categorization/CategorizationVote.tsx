@@ -41,7 +41,7 @@ type Props = {
 
 const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, rightPlaceholderId, question_id, principal, showHistory}: Props) => {
 
-  const {refreshBalance, priceParameters}   = useContext(ActorContext);
+  const {refreshBtcBalance, priceParameters}   = useContext(ActorContext);
 
   const countdownDurationMs = 10000;
   const voteKind = voteKindToCandidVariant(VoteKind.CATEGORIZATION);
@@ -75,7 +75,7 @@ const CategorizationVote = ({sub, voteData, allowVote, bottomPlaceholderId, righ
 
   const putBallot = () : Promise<PutBallotError | null> => {
     return sub.actor.putBallot(voteKind, voteData.id, toCategorizationKindAnswer(categorization)).then((result) => {
-      refreshBalance();
+      refreshBtcBalance();
       return result['err'] ?? null;
     });
   }

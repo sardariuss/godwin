@@ -12,7 +12,11 @@ module.exports = {
 				'humongous-4': '16rem',
 				'humongous-5': '18rem',
 			},
+			minWidth: {
+				'36' : '9rem',
+			},
 			minHeight: {
+				'8'  : '2rem',
 				'half-screen': '50vh',
 			},
 			spacing: {

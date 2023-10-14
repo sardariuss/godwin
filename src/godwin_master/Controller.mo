@@ -56,6 +56,7 @@ module {
   type RewardGwcReceiver      = Types.RewardGwcReceiver;
   type CanisterCallError      = Types.CanisterCallError;
   type TransferResult         = Types.TransferResult;
+  type Account                = Types.Account;
   type Duration               = UtilsTypes.Duration;
   type GodwinSub              = GodwinSub.GodwinSub;
 
@@ -120,6 +121,10 @@ module {
       #ok;
     };
 
+    public func setBtcToGwcRewardRate(caller: Principal, rate: Float) : async Result<(), AccessControlError> {
+      await setPriceParameters(caller, { _model.getPriceParameters() with btc_to_gwc_reward_rate = rate; });
+    };
+
     public func getSubValidationParams() : ValidationParams {
       _model.getSubParamsValidator().getParams();
     };
@@ -135,7 +140,7 @@ module {
     };
 
     // @todo: it is dangerous to have the master and caller as parameters, use a named Principal inside a record instead
-    public func createSubGodwin(user: Principal, identifier: Text, sub_parameters: SubParameters, time: Time, payement: LedgerType) : async CreateSubGodwinResult  {
+    public func createSubGodwin(user: Principal, identifier: Text, sub_parameters: SubParameters, time: Time, ledger: LedgerType) : async CreateSubGodwinResult  {
 
       // Verify the parameters
       switch(_model.getSubParamsValidator().validateSubGodwinParams(identifier, sub_parameters)){
@@ -144,7 +149,7 @@ module {
       };
 
       // Proceed with the payment
-      let transfer = switch(payement){
+      let transfer = switch(ledger){
         case(#BTC) {
           try{
             await ckBTC.icrc1_transfer({
@@ -299,7 +304,7 @@ module {
       #ok(Buffer.toArray(results));
     };
 
-    public func getUserAccount(user: Principal) : TokenTypes.Account {
+    public func getUserAccount(user: Principal) : Account {
       { owner = unwrapSelfId(); subaccount = ?Account.toSubaccount(user) };
     };
 
@@ -311,6 +316,40 @@ module {
       Result.mapOk<(), (), SetUserNameError>(_model.getSubParamsValidator().validateUserName(caller, name), func() {
         _model.getUsers().set(caller, name);
       });
+    };
+
+    public func cashOut(caller: Principal, to: Account, amount: Nat, ledger: LedgerType, time: Time) : async TransferResult {
+      // Proceed with the payment
+      switch(ledger){
+        case(#BTC) {
+          try{
+            toBaseResult(await ckBTC.icrc1_transfer({
+              from_subaccount = ?Blob.toArray(Account.toSubaccount(caller));
+              to = { owner = to.owner; subaccount = Option.map(to.subaccount, Blob.toArray); };
+              fee = ?10; // @todo: remove hard-coded fee
+              amount;
+              memo = null;
+              created_at_time = ?Nat64.fromNat(Int.abs(time));
+            }));
+          } catch(e){
+            #err(toCanisterCallError(Principal.fromActor(ckBTC), "icrc1_transfer", e));
+          };
+        };
+        case(#GWC) {
+          try{
+            toBaseResult(await _token.icrc1_transfer({
+              from_subaccount = ?Account.toSubaccount(caller);
+              to;
+              fee = ?100_000; // @todo: remove hard-coded fee
+              amount;
+              memo = null;
+              created_at_time = ?Nat64.fromNat(Int.abs(time));
+            }));
+          } catch(e){
+            #err(toCanisterCallError(Principal.fromActor(_token), "icrc1_transfer", e));
+          };
+        };
+      };
     };
 
     // Validation functions

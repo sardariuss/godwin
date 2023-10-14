@@ -32,7 +32,7 @@ type Props = {
 
 const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId, rightPlaceholderId, question_id, showHistory}: Props) => {
 
-  const {refreshBalance, priceParameters} = useContext(ActorContext);
+  const {refreshBtcBalance, priceParameters} = useContext(ActorContext);
 
   const countdownDurationMs = 5000;
   const voteKind = voteKindToCandidVariant(VoteKind.INTEREST);
@@ -71,7 +71,7 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
   const putBallot = () : Promise<PutBallotError | null> => {
     if (interest === InterestEnum.Neutral) throw new Error("Cannot put ballot: interest is neutral");
     return sub.actor.putBallot(voteKind, voteData.id, toInterestKindAnswer(interest)).then((result) => {
-      refreshBalance();
+      refreshBtcBalance();
       return result['err'] ?? null;
     });
   }

@@ -62,8 +62,10 @@ export const ActorContext = React.createContext<{
   priceParameters: PriceParameters | undefined;
   subs: Map<string, Sub>;
   userAccount?: Account | null;
-  balance: bigint | null;
-  refreshBalance: () => void;
+  btcBalance: bigint | null;
+  gwcBalance: bigint | null;
+  refreshBtcBalance: () => void;
+  refreshGwcBalance: () => void;
   loggedUserName?: string | undefined;
   refreshLoggedUserName: () => void;
   getPrincipal: () => Principal;
@@ -76,8 +78,10 @@ export const ActorContext = React.createContext<{
   master: godwin_master,
   priceParameters: undefined,
   subs: new Map(),
-  balance: null,
-  refreshBalance: () => {},
+  btcBalance: null,
+  gwcBalance: null,
+  refreshBtcBalance: () => {},
+  refreshGwcBalance: () => {},
   loggedUserName: undefined,
   refreshLoggedUserName: () => {},
   getPrincipal: () => Principal.anonymous()
@@ -86,14 +90,15 @@ export const ActorContext = React.createContext<{
 export function useAuthClient() {
   const navigate = useNavigate();
 
-  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
-  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
+  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>                  (undefined     );
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>                          (null          );
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService> | undefined>(godwin_master );
-  const [priceParameters, setPriceParameters] = useState<PriceParameters | undefined> (undefined     );
-  const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
-  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
-  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
-  const [balance,         setBalance        ] = useState<bigint | null>               (null          );
+  const [priceParameters, setPriceParameters] = useState<PriceParameters | undefined>             (undefined     );
+  const [subs,            setSubs           ] = useState<Map<string, Sub>>                        (new Map()     );
+  const [userAccount,     setUserAccount    ] = useState<Account | null>                          (null          );
+  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>                      (undefined     );
+  const [btcBalance,      setBtcBalance     ] = useState<bigint | null>                           (null          );
+  const [gwcBalance,      setGwcBalance     ] = useState<bigint | null>                           (null          );
 
   const login = () => {
     authClient?.login({
@@ -180,13 +185,23 @@ export function useAuthClient() {
     setUserAccount(null);
   }
 
-  const refreshBalance = () => {
+  const refreshBtcBalance = () => {
     if (userAccount !== null) {
       ck_btc?.icrc1_balance_of(userAccount).then((balance) => {;
-        setBalance(balance);
+        setBtcBalance(balance);
       });
     } else {
-      setBalance(null);
+      setBtcBalance(null);
+    }
+  }
+
+  const refreshGwcBalance = () => {
+    if (userAccount !== null) {
+      godwin_token?.icrc1_balance_of(userAccount).then((balance) => {;
+        setGwcBalance(balance);
+      });
+    } else {
+      setGwcBalance(null);
     }
   }
 
@@ -235,9 +250,10 @@ export function useAuthClient() {
     fetchSubs();
   }, [isAuthenticated]);
 
-  // Refreshing balance when userAccount changes
+  // Refreshing btcBalance when userAccount changes
   useEffect(() => {
-    refreshBalance();
+    refreshBtcBalance();
+    refreshGwcBalance();
   }, [userAccount]);
 
   return {
@@ -255,8 +271,10 @@ export function useAuthClient() {
     priceParameters,
     subs,
     userAccount,
-    balance,
-    refreshBalance,
+    btcBalance,
+    gwcBalance,
+    refreshBtcBalance,
+    refreshGwcBalance,
     loggedUserName,
     refreshLoggedUserName,
     getPrincipal

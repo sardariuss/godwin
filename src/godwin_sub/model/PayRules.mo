@@ -67,8 +67,8 @@ module {
   // Allow to specify only what's required to compute the interest distribution
   type ReducedAppeal = {ups: Nat; downs: Nat};
 
-  public func convertRewardToTokens(reward: ?Float, price: Balance) : ?Balance {
-    Option.map(reward, func(r: Float) : Balance { Int.abs(Float.toInt(r * Float.fromInt(price))); });
+  public func convertRewardToTokens(reward: ?Float, payin_price: Balance, coef: Float) : ?Balance {
+    Option.map(reward, func(r: Float) : Balance { Int.abs(Float.toInt(r * Float.fromInt(payin_price) * coef)); });
   };
 
   // see www.desmos.com/calculator/lejulppdny

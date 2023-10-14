@@ -17,7 +17,7 @@ type ReopenButtonInput = {
 
 const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
 
-  const {refreshBalance, priceParameters} = useContext(ActorContext);
+  const {refreshBtcBalance, priceParameters} = useContext(ActorContext);
 
   const [submitting,    setSubmitting   ] = useState<boolean>      (false);
   const [error,         setError        ] = useState<string | null>(null );
@@ -28,7 +28,7 @@ const ReopenButton = ({sub, questionId, onReopened}: ReopenButtonInput) => {
     sub.actor.reopenQuestion(questionId).then((res) => {
       setSubmitting(false);
       if (res['ok'] !== undefined) {
-        refreshBalance();
+        refreshBtcBalance();
         onReopened(questionId);
       } else if (res['err'] !== undefined) {
         const error : Array<[[] | [Status], string]> = res['err'];

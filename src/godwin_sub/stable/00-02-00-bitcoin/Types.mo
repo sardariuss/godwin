@@ -288,6 +288,7 @@ module {
     reopen_vote_price_sats         : Nat;
     interest_vote_price_sats       : Nat;
     categorization_vote_price_sats : Nat;
+    btc_to_gwc_reward_rate         : Float;
   };
 
   public type Category = Text;

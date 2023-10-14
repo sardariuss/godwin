@@ -34,6 +34,7 @@ module {
   public class PayToVote<T, A>(
     _pay_for_element: PayForElement.PayForElement,
     _get_payin_price: () -> Balance,
+    _get_reward_coef: () -> Float,
     _compute_payout: PayoutFunction<T, A>
   ) {
 
@@ -67,7 +68,7 @@ module {
         // Normalize the refund shares, so that the sum of shares makes 1
         let normalized_payout = { raw_payout with refund_share = raw_payout.refund_share / sum_shares; };
         // Convert the reward in tokens
-        let payout_args = { normalized_payout with reward_tokens = PayRules.convertRewardToTokens(normalized_payout.reward, _get_payin_price()); };
+        let payout_args = { normalized_payout with reward_tokens = PayRules.convertRewardToTokens(normalized_payout.reward, _get_payin_price(), _get_reward_coef()); };
         // Return the full recipient (required by the payout function)
         Map.set(recipients, Map.phash, principal, { to = principal; args = payout_args; });
       };

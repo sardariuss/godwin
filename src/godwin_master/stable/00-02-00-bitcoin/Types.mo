@@ -83,6 +83,7 @@ module {
     reopen_vote_price_sats         : Nat;
     interest_vote_price_sats       : Nat;
     categorization_vote_price_sats : Nat;
+    btc_to_gwc_reward_rate         : Float;
     sub_creation_price_sats        : Nat;
     sub_creation_price_gwc_e9s     : Nat;
   };

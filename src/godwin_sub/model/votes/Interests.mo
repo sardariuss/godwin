@@ -100,6 +100,7 @@ module {
             #PUT_INTEREST_BALLOT,
           ),
           func() : Nat { price_params.v.interest_vote_price_sats; },
+          func() : Float { price_params.v.btc_to_gwc_reward_rate; },
           voterPayout
         )
       ),
@@ -156,6 +157,7 @@ module {
       let (question_id, iteration) = _joins.getQuestionIteration(vote_id);
       _queries.remove(KeyConverter.toHotnessKey(question_id, vote.aggregate.hotness));
       // Payout the author and the sub creator
+      // @todo: use the balance of the associated account instead
       let price = if (iteration == 0) { 
         _price_params.v.open_vote_price_sats; 
       } else { 
@@ -166,8 +168,8 @@ module {
       // Get the creator raw reward
       let creator_reward = PayRules.deduceSubCreatorReward(author_payout);
       
-      await* _pay_for_new.payout(vote_id, { author_payout with reward_tokens = PayRules.convertRewardToTokens(author_payout.reward, price); });
-      switch(PayRules.convertRewardToTokens(creator_reward, price)){
+      await* _pay_for_new.payout(vote_id, { author_payout with reward_tokens = PayRules.convertRewardToTokens(author_payout.reward, price, _price_params.v.btc_to_gwc_reward_rate); });
+      switch(PayRules.convertRewardToTokens(creator_reward, price, _price_params.v.btc_to_gwc_reward_rate)){
         case(null){};
         case(?reward){
           await* _reward_for_element.reward(vote_id, reward);

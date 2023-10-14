@@ -1,5 +1,5 @@
-import CONSTANTS from "../Constants"
-import Coin      from "./icons/Coin"
+import CONSTANTS    from "../Constants"
+import BitcoinToken from "./icons/BitcoinToken";
 
 type HelpProposeDetailsInput = {
   max_num_characters: bigint
@@ -26,9 +26,9 @@ export const HelpProposeDetails = ({max_num_characters} : HelpProposeDetailsInpu
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <div className="w-4 h-4">
-          <Coin/>
+          <BitcoinToken/>
         </div>
-        <span className="italic">This operation requires tokens.</span>
+        <span className="italic">This operation requires bitcoins.</span>
       </div>
     </div>
   )
@@ -64,9 +64,9 @@ export const HelpSelectDetails = () => {
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <div className="w-4 h-4">
-          <Coin/>
+          <BitcoinToken/>
         </div>
-        <span className="italic">This operation requires tokens.</span>
+        <span className="italic">This operation requires bitcoins.</span>
       </div>
     </div>
   )
@@ -113,9 +113,9 @@ export const HelpPositionDetails = () => {
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <div className="w-4 h-4">
-          <Coin/>
+          <BitcoinToken/>
         </div>
-        <span className="italic">This operation requires tokens.</span>
+        <span className="italic">This operation requires bitcoins.</span>
       </div>
     </div>
   )

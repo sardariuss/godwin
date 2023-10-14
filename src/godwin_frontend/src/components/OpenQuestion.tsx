@@ -28,7 +28,7 @@ enum SubmittingState {
 
 const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Props) => {
 
-  const {subs, refreshBalance, priceParameters} = useContext(ActorContext);
+  const {subs, refreshBtcBalance, priceParameters} = useContext(ActorContext);
   
   const [sub,           setSub          ] = useState<Sub | undefined>   (undefined);
   const [showSubsList,  setShowSubsList ] = useState<boolean>           (false    );
@@ -52,7 +52,7 @@ const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Prop
       sub.actor.openQuestion(text).then((res) => {
         if (res['ok'] !== undefined){
           setText("");
-          refreshBalance();
+          refreshBtcBalance();
           setState(SubmittingState.SUCCESS);
           onSubmitQuestion(res['ok']);
         } else if (res['err'] !== undefined){

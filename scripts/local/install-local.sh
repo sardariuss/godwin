@@ -30,6 +30,7 @@ export MASTER_PRICE_SATS_OPEN_VOTE="2_000"
 export MASTER_PRICE_SATS_REOPEN_VOTE="1_000"
 export MASTER_PRICE_SATS_INTEREST_VOTE="200"
 export MASTER_PRICE_SATS_CATEGORIZATION_VOTE="500"
+export MASTER_BTC_TO_GWC_REWARD_RATE="1000.0"
 export MASTER_PRICE_SATS_SUB_CREATION="50_000"
 export MASTER_PRICE_GWC_E9S_SUB_CREATION="10_000_000_000"
 
@@ -85,6 +86,7 @@ dfx canister install godwin_master --argument='( variant { init = record {
     categorization_vote_price_sats = '${MASTER_PRICE_SATS_CATEGORIZATION_VOTE}';
     sub_creation_price_sats        = '${MASTER_PRICE_SATS_SUB_CREATION}';
     sub_creation_price_gwc_e9s     = '${MASTER_PRICE_GWC_E9S_SUB_CREATION}';
+    btc_to_gwc_reward_rate         = '${MASTER_BTC_TO_GWC_REWARD_RATE}';
   };
   validation_parameters = record {
     username = record {

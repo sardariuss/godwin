@@ -31,7 +31,7 @@ const createDimension = () : [Category, CategoryInfo] => {
 
 const CreateSub = () => {
 
-  const { master, refreshBalance, addSub } = useContext(ActorContext);
+  const { master, refreshBtcBalance, addSub } = useContext(ActorContext);
 
   const [name,                  setName                 ] = useState<string>                    (""                                                         );
   const [identifier,            setIdentifier           ] = useState<string>                    (""                                                         );
@@ -98,7 +98,7 @@ const CreateSub = () => {
       setError(err.toString());
     }).finally(() => {
       setSubmitting(false);
-      refreshBalance();
+      refreshBtcBalance();
     });
   }
 

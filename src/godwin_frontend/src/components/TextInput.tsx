@@ -4,22 +4,26 @@ type TextInputProps = {
   id: string;
   label: string;
   dir?: "ltr" | "rtl";
-  input: string;
-  onInputChange: (string) => void;
-  validate?: (string) => Promise<string | undefined>;
+  input: string | undefined;
+  onInputChange: (input: string | undefined) => void;
+  validate?: (input: string) => Promise<string | undefined>;
 }
 
 const TextInput = ({id, label, dir, onInputChange, input, validate}: TextInputProps) => {
 
-  const [text,  setText]  = useState<string>            (input    );
+  const [text,  setText]  = useState<string | undefined>(input    );
   const [error, setError] = useState<string | undefined>(undefined);
   
   // Update from within
-  const updateText = (new_text: string) => {
+  const updateText = (new_text: string | undefined) => {
     if (validate !== undefined){
-      validate(new_text).then((res) => {
-        setError(res);
-      });
+      if (new_text === undefined || new_text.length === 0){
+        setError(undefined);
+      } else {
+        validate(new_text).then((res) => {
+          setError(res);
+        });
+      }
     }
     setText(new_text);
     onInputChange(new_text);
@@ -38,8 +42,8 @@ const TextInput = ({id, label, dir, onInputChange, input, validate}: TextInputPr
   }, []);
 
   return (
-    <div dir={dir?? "ltr"}>
-      <div className="relative pb-1">
+    <div dir={dir?? "ltr"} className="py-1">
+      <div className="relative">
         <input 
           type="text" 
           id={id}

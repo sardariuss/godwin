@@ -72,6 +72,7 @@ module {
           #PUT_CATEGORIZATION_BALLOT,
         ),
         func() : Nat { price_parameters.v.categorization_vote_price_sats; },
+        func() : Float { price_parameters.v.btc_to_gwc_reward_rate; },
         PayRules.computeCategorizationPayout
       )
     );

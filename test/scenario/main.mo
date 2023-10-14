@@ -8,6 +8,7 @@ import Duration       "../../src/godwin_sub/utils/Duration";
 import Scenario       "Scenario";
 
 import GodwinMaster  "canister:godwin_master";
+import ckBTC         "canister:ck_btc";
 
 import Map           "mo:map/Map";
 
@@ -58,7 +59,7 @@ actor class GodwinSubScenario() = self {
     _state := Migrations.install(start_date, #init(args));
 
     let controller = switch(_state){
-      case(#v0_2_0(state)) { Factory.build(state); };
+      case(#v0_2_0(state)) { Factory.build(state, Principal.fromActor(ckBTC)); };
       case(_) { Debug.trap("Expect state v0_2_0"); };
     };
     controller.setSelfId(Principal.fromActor(self));

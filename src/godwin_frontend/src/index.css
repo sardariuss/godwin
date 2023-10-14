@@ -30,7 +30,7 @@
   }
   .button-svg {
     @apply 
-      fill-gray-700 dark:fill-gray-300
+      fill-gray-700 dark:fill-gray-300 stroke-gray-700 dark:stroke-gray-300
       hover:enabled:cursor-pointer hover:fill-black dark:hover:fill-white 
       disabled:fill-gray-300 dark:disabled:fill-gray-700 hover:disabled:fill-gray-300 dark:hover:disabled:fill-gray-700;
   }

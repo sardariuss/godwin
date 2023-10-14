@@ -13,5 +13,10 @@ export type Transaction = {
 
 export enum LedgerType {
   BTC,
-  GWC
+  GWC,
+}
+
+export enum LedgerUnit {
+  ORIGINAL,
+  E8S,
 }

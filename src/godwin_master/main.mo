@@ -6,7 +6,6 @@ import Controller         "Controller";
 
 // Sub types import master types, so we need to import them here to avoid circular dependencies
 import SubTypes           "../godwin_sub/model/Types";
-import TokenTypes         "../godwin_token/Types";
 
 import Result             "mo:base/Result";
 import Principal          "mo:base/Principal";
@@ -28,13 +27,15 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
   type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
   type PullBtcResult          = Types.PullBtcResult;
   type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
-  type RewardGwcReceiver     = Types.RewardGwcReceiver;
+  type RewardGwcReceiver      = Types.RewardGwcReceiver;
   type RewardGwcResult        = Types.RewardGwcResult;
   type RemoveSubResult        = Types.RemoveSubResult;
   type CreateSubGodwinError   = Types.CreateSubGodwinError;
   type SetUserNameError       = Types.SetUserNameError;
   type AccessControlError     = Types.AccessControlError;
   type LedgerType             = Types.LedgerType;
+  type Account                = Types.Account;
+  type TransferResult         = Types.TransferResult;
   type Controller             = Controller.Controller;
 
   stable var _state = Migrations.install(Time.now(), args);
@@ -74,6 +75,10 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     await getController().setPriceParameters(caller, base_price_parameters);
   };
 
+  public shared({caller}) func setBtcToGwcRewardRate(rate: Float) : async Result<(), AccessControlError> {
+    await getController().setBtcToGwcRewardRate(caller, rate);
+  };
+
   public shared query func getSubValidationParams() : async ValidationParams {
     getController().getSubValidationParams();
   };
@@ -110,7 +115,7 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     await getController().rewardGwc(caller, Time.now(), receivers);
   };
 
-  public query func getUserAccount(user: Principal) : async TokenTypes.Account {
+  public query func getUserAccount(user: Principal) : async Account {
     getController().getUserAccount(user);
   };
 
@@ -120,6 +125,10 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
 
   public shared({caller}) func setUserName(name: Text) : async Result<(), SetUserNameError> {
     getController().setUserName(caller, name);
+  };
+
+  public shared({caller}) func cashOut(to: Account, amount: Nat, ledger: LedgerType) : async TransferResult {
+    await getController().cashOut(caller, to, amount, ledger, Time.now());
   };
 
   public query func validateSubIdentifier(identifier: Text) : async Result<(), CreateSubGodwinError> {

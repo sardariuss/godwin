@@ -1,5 +1,6 @@
 import UserInfo                                   from "./UserInfo";
 import LinkSubProfile                             from "./LinkSubProfile";
+import LedgerInfo                                 from "./LedgerInfo";
 import { ActorContext }                           from "../../ActorContext"
 import CONSTANTS                                  from "../../Constants";
 
@@ -38,6 +39,7 @@ const UserComponent = () => {
         </div> : 
         <div className="flex flex-col border dark:border-gray-700 text-gray-900 dark:text-white xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
           <UserInfo principal={principal}/>
+          <LedgerInfo/>
           <ol className="flex flex-col text-black dark:text-white">
             {
               [...Array.from(subs.entries())].map((sub) => (
