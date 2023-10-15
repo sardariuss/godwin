@@ -34,37 +34,45 @@ const Header = () => {
     } else {
         themeToggleDarkIcon.classList.remove('hidden');
     }
-  
-    themeToggleBtn.addEventListener('click', function() {
-  
-        // toggle icons inside button
-        themeToggleDarkIcon.classList.toggle('hidden');
-        themeToggleLightIcon.classList.toggle('hidden');
-  
-        // if set via local storage previously
-        if (localStorage.getItem('color-theme')) {
-            if (localStorage.getItem('color-theme') === 'light') {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            }
-  
-        // if NOT set via local storage previously
-        } else {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
-        }
-        
-    });
 
-  }, []);
+    let toggleFunction = () => {
+  
+      // toggle icons inside button
+      if (themeToggleDarkIcon !== null)
+        themeToggleDarkIcon.classList.toggle('hidden');
+      if (themeToggleLightIcon !== null)
+        themeToggleLightIcon.classList.toggle('hidden');
+
+      // if set via local storage previously
+      if (localStorage.getItem('color-theme')) {
+          if (localStorage.getItem('color-theme') === 'light') {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          } else {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          }
+
+      // if NOT set via local storage previously
+      } else {
+          if (document.documentElement.classList.contains('dark')) {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          } else {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          }
+      }
+    }
+  
+    themeToggleBtn.addEventListener('click', toggleFunction);
+
+    return () => { 
+      if (themeToggleBtn !== null)
+        themeToggleBtn.removeEventListener('click', toggleFunction); 
+    }
+
+  }, [isAuthenticated]);
 
   return (
 		<>
@@ -93,7 +101,7 @@ const Header = () => {
             <div className="block text-black dark:text-white">
               <Balance amount={ balance !== null ? balance : undefined } />
             </div>
-            <Link className="md:block hidden text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-red-300 dark:hover:bg-slate-700 rounded-lg p-2"
+            <Link className="md:block hidden text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-300 dark:hover:bg-slate-700 rounded-lg p-2"
               to={"/user/" + authClient.getIdentity().getPrincipal().toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
               { (loggedUserName !== undefined ? loggedUserName : CONSTANTS.USER.DEFAULT_NAME) + " " + CONSTANTS.USER.DEFAULT_AVATAR }
             </Link>
@@ -117,7 +125,7 @@ const Header = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link className="md:hidden block py-2 px-3 text-end text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-red-300 dark:hover:bg-slate-700 rounded-lg p-2"
+                  <Link className="md:hidden block py-2 px-3 text-end text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-300 dark:hover:bg-slate-700 rounded-lg p-2"
                     to={"/user/" + authClient.getIdentity().getPrincipal().toString()} onClick={(e) => { setShowMenu(!showMenu); }}>
                     { CONSTANTS.USER.DEFAULT_AVATAR + " " + (loggedUserName !== undefined ? loggedUserName : CONSTANTS.USER.DEFAULT_NAME) }
                   </Link>

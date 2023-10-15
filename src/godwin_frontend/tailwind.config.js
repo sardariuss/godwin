@@ -16,6 +16,7 @@ module.exports = {
 				'half-screen': '50vh',
 			},
 			spacing: {
+				'18': '76px',
         '160': '40rem',
       },
 			width: {

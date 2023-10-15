@@ -38,7 +38,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
   const [error,                setError               ] = useState<string | undefined>   (undefined            );
 
 	const refreshLoggedUser = async () => {
-    setIsLoggedUser(authClient?.getIdentity().getPrincipal().compareTo(principal) === "eq");
+    setIsLoggedUser(authClient === undefined ? false : authClient.getIdentity().getPrincipal().compareTo(principal) === "eq");
   }
 
   const refreshAccount = async () => {
@@ -139,7 +139,7 @@ const UserInfo = ({ principal } : UserInfoProps) => {
         { 
           isLoggedUser ?
           <div className="mr-2 w-8 h-8">
-            <SvgButton onClick={(e) => { logout(); }}>
+            <SvgButton onClick={(e) => { logout(authClient); }}>
               <LogoutIcon/>
             </SvgButton>
           </div> : 

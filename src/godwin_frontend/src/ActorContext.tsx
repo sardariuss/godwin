@@ -51,13 +51,11 @@ export type Sub = {
 
 export const ActorContext = React.createContext<{
   authClient?: AuthClient;
-  setAuthClient?: React.Dispatch<AuthClient>;
-  isAuthenticated?: boolean | null;
-  setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
+  isAuthenticated: boolean;
   refreshSubs?: () => Promise<void>;
   addSub: (principal: Principal, id: string) => Promise<void>;
   login: () => void;
-  logout: () => void;
+  logout: (client: AuthClient | undefined) => void;
   token: ActorSubclass<TokenService> | undefined;
   airdrop: ActorSubclass<AirdopService> | undefined;
   master: ActorSubclass<MasterService> | undefined;
@@ -69,9 +67,10 @@ export const ActorContext = React.createContext<{
   refreshLoggedUserName: () => void;
   getPrincipal: () => Principal;
 }>({
+  isAuthenticated: false,
   addSub: () => Promise.resolve(),
   login: () => {},
-  logout: () => {},
+  logout: (client: AuthClient | undefined) => {},
   token: godwin_token,
   airdrop: godwin_airdrop,
   master: godwin_master,
@@ -86,15 +85,15 @@ export const ActorContext = React.createContext<{
 export function useAuthClient() {
   const navigate = useNavigate();
 
-  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>      (undefined     );
-  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>              (null          );
+  const [authClient,      setAuthClient     ] = useState<AuthClient | undefined>                  (undefined     );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>                                 (false         );
   const [token                              ] = useState<ActorSubclass<TokenService> | undefined> (godwin_token  );
   const [master,          setMaster         ] = useState<ActorSubclass<MasterService> | undefined>(godwin_master );
   const [airdrop,         setAirdrop        ] = useState<ActorSubclass<AirdopService> | undefined>(godwin_airdrop);
-  const [subs,            setSubs           ] = useState<Map<string, Sub>>            (new Map()     );
-  const [userAccount,     setUserAccount    ] = useState<Account | null>              (null          );
-  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>          (undefined     );
-  const [balance,         setBalance        ] = useState<bigint | null>               (null          );
+  const [subs,            setSubs           ] = useState<Map<string, Sub>>                        (new Map()     );
+  const [userAccount,     setUserAccount    ] = useState<Account | null>                          (null          );
+  const [loggedUserName,  setLoggedUserName ] = useState<string | undefined>                      (undefined     );
+  const [balance,         setBalance        ] = useState<bigint | null>                           (null          );
 
   const login = () => {
     authClient?.login({
@@ -102,18 +101,19 @@ export function useAuthClient() {
         import.meta.env.DFX_NETWORK === "ic" ? 
           `https://identity.ic0.app/#authorize` : 
           `http://localhost:${import.meta.env.DFX_REPLICA_PORT}?canisterId=${import.meta.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
-      // 7 days in nanoseconds
-      maxTimeToLive: BigInt(8) * BigInt(3_600_000_000_000),
-      onSuccess: () => { setIsAuthenticated(true); },
+      onSuccess: () => { 
+        setIsAuthenticated(true);
+        navigate("/");
+      },
     });
   };
 
-  const logout = () => {
-    authClient?.logout().then(() => {
+  const logout = (client: AuthClient | undefined) => {
+    client?.logout().then(() => {
       // Somehow if only the isAuthenticated flag is set to false, the next login will fail
       // Refreshing the auth client fixes this behavior
       refreshAuthClient();
-      navigate("/");
+      navigate("/login");
     });
   }
 
@@ -216,11 +216,15 @@ export function useAuthClient() {
       idleOptions: {
         captureScroll: true,
         idleTimeout: 900000, // 15 minutes
-      }
+        disableDefaultIdleCallback: true // disable the default reload behavior
+      },
     }).then(async (client) => {
+      // Refresh the authentification client and status
       const is_authenticated = await client.isAuthenticated();
       setAuthClient(client);
       setIsAuthenticated(is_authenticated);
+      // Set callback on idle to logout the user
+      client.idleManager?.registerCallback?.(() => logout(client));
     })
     .catch((error) => {
       console.error(error);
@@ -248,9 +252,7 @@ export function useAuthClient() {
 
   return {
     authClient,
-    setAuthClient,
     isAuthenticated,
-    setIsAuthenticated,
     refreshSubs,
     addSub,
     login,

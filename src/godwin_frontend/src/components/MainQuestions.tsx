@@ -190,7 +190,7 @@ const MainQuestions = () => {
 
 	return (
     <div className="flex flex-col items-center w-full flex-grow">
-      {
+    {
       !initialized? 
         <div className="w-6 h-6 mt-4">
           <Spinner/>
@@ -202,49 +202,47 @@ const MainQuestions = () => {
       : 
         <div className="flex flex-col items-center w-full flex-grow">
           <SubBanner sub={sub}/>
-          <div className="flex flex-col sticky xl:top-18 lg:top-16 md:top-14 top-14 z-20 bg-white dark:bg-slate-900 items-center w-full">
-            <div className="flex flex-col border-x dark:border-gray-700 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
-              <div className="border-b dark:border-gray-700 w-full">
-                <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
-                {
-                  mainTabs.map((tab, index) => (
-                    <li key={index} className="w-1/2">
-                      <MainTabButton label={mainTabToText(tab)} isCurrent={tab == currentMainTab} setIsCurrent={() => setCurrentMainTab(tab)}/>
+          <div className="flex flex-col border-x border-t dark:border-gray-700 sticky xl:top-18 lg:top-16 md:top-14 sm:top-14 z-20 bg-white dark:bg-slate-900 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full">
+            <div className="border-b dark:border-gray-700 w-full">
+              <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center">
+              {
+                mainTabs.map((tab, index) => (
+                  <li key={index} className="w-1/2">
+                    <MainTabButton label={mainTabToText(tab)} isCurrent={tab == currentMainTab} setIsCurrent={() => setCurrentMainTab(tab)}/>
+                  </li>
+                ))
+              }
+              </ul>
+            </div>
+            <div className="border-b dark:border-gray-700 w-full">
+              <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center w-full">
+              {
+                currentMainTab === MainTab.HOME ? (
+                  home_filters.map((filter, index) => (
+                    <li key={index} className="w-1/4">
+                      <TabButton 
+                        label={homeFilterToText(filter)} 
+                        isCurrent={filter == currentHomeFilter} 
+                        setIsCurrent={() => { setCurrentHomeFilter(filter); }}
+                        isHelpVisible={toggleHelp}
+                        setIsHelpVisible={setToggleHelp}
+                      />
+                    </li>))
+                ) : (
+                  browse_filters.map((filter, index) => (
+                    <li key={index} className="w-1/4">
+                      <TabButton 
+                        label={browseFilterToText(filter)} 
+                        isCurrent={filter == currentBrowseFilter} 
+                        setIsCurrent={() => setCurrentBrowseFilter(filter)} 
+                        isHelpVisible={toggleHelp}
+                        setIsHelpVisible={setToggleHelp}
+                      />
                     </li>
                   ))
-                }
-                </ul>
-              </div>
-              <div className="border-b dark:border-gray-700 w-full">
-                <ul className="flex flex-wrap text-sm dark:text-gray-400 font-medium text-center w-full">
-                {
-                  currentMainTab === MainTab.HOME ? (
-                    home_filters.map((filter, index) => (
-                      <li key={index} className="w-1/4">
-                        <TabButton 
-                          label={homeFilterToText(filter)} 
-                          isCurrent={filter == currentHomeFilter} 
-                          setIsCurrent={() => { setCurrentHomeFilter(filter); }}
-                          isHelpVisible={toggleHelp}
-                          setIsHelpVisible={setToggleHelp}
-                        />
-                      </li>))
-                  ) : (
-                    browse_filters.map((filter, index) => (
-                      <li key={index} className="w-1/4">
-                        <TabButton 
-                          label={browseFilterToText(filter)} 
-                          isCurrent={filter == currentBrowseFilter} 
-                          setIsCurrent={() => setCurrentBrowseFilter(filter)} 
-                          isHelpVisible={toggleHelp}
-                          setIsHelpVisible={setToggleHelp}
-                        />
-                      </li>
-                    ))
-                  )
-                }
-                </ul>
-              </div>
+                )
+              }
+              </ul>
             </div>
           </div>
           <div className="flex flex-col border dark:border-gray-700 xl:w-1/3 lg:w-2/3 md:w-2/3 sm:w-full w-full flex-grow">
@@ -282,7 +280,7 @@ const MainQuestions = () => {
             </div>
           </div>
         </div>
-      }
+    }
     </div>
 	);
 };

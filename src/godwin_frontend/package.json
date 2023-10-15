@@ -8,10 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.19.2",
-    "@dfinity/auth-client": "^0.19.2",
-    "@dfinity/candid": "^0.19.2",
-    "@dfinity/principal": "^0.19.2",
+    "@dfinity/agent": "^0.19.3",
+    "@dfinity/auth-client": "^0.19.3",
+    "@dfinity/candid": "^0.19.3",
+    "@dfinity/principal": "^0.19.3",
     "@dfinity/ledger": "0.0.13",
     "@dfinity/utils": "0.0.20",
     "@emotion/react": "^11.9.0",
