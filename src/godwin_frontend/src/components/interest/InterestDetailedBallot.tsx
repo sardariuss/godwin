@@ -50,7 +50,7 @@ const InterestDetailedBallot = ({sub, vote_id, iteration, ballot, principal} : I
           { nsToStrDate(ballot.date) }
         </div>
         <InterestBallot answer={ballot.answer} dateNs={undefined}/>
-        <div className="svg-button w-6 h-6 self-center justify-self-center">
+        <div className="button-svg w-6 h-6 self-center justify-self-center">
           <SvgButton onClick={(e) => {setShowTransactions(old => { return !old; })}}>
             <TransactionIcon/>
           </SvgButton>

@@ -54,7 +54,7 @@ const CategorizationDetailedBallot = ({sub, vote_id, iteration, ballot, principa
           cursorInfo={getStrongestCategoryCursorInfo(ballot.answer, sub.info.categories)}
           showValue={true}
         />
-        <div className="svg-button w-6 h-6 self-center justify-self-center">
+        <div className="button-svg w-6 h-6 self-center justify-self-center">
           <SvgButton onClick={(e) => {setShowTransactions(old => { return !old; })}}>
             <TransactionIcon/>
           </SvgButton>

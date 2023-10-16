@@ -71,7 +71,7 @@ export const CursorSlider = ({id, disabled, cursor, polarizationInfo, setCursor,
         onMouseUp={(e) => onMouseUp()}
         onTouchStart={(e) => onMouseDown()}
         onMouseDown={(e) => onMouseDown()}
-        className={`input appearance-none ${isLate ? "late-vote" : ""}`} 
+        className={`input appearance-none`} 
         style={{
           "--progress-percent": `${ ((marginRatio + ((cursorInfo.value + 1) * 0.5) * (1 - 2 * marginRatio)) * 100).toString() + "%"}`,
           "--slider-left-color": `${cursorInfo.colors.left}`,

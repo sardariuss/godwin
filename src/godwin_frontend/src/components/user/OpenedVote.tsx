@@ -54,7 +54,7 @@ const OpenedVote = ({sub, principal, opened_vote} : OpenedVoteInput) => {
         	</div>
 				}
         </div>
-        <div className="col-span-1 svg-button w-6 h-6 self-center justify-self-center">
+        <div className="col-span-1 button-svg w-6 h-6 self-center justify-self-center">
           <SvgButton disabled={false} onClick={(e) => {setShowTransactions(old => { return !old; })}} hidden={false}>
             <TransactionIcon/>
           </SvgButton>

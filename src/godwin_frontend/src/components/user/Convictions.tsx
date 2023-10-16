@@ -1,6 +1,7 @@
 import { VoterHistory }                                                                             from "./VoterHistory";
 import ChartTypeToggle                                                                              from "../base/ChartTypeToggle";
 import PolarizationBar, { BallotPoint }                                                             from "../base/PolarizationBar";
+import CertifiedIcon                                                                                from "../icons/CertifiedIcon";
 import { Sub }                                                                                      from "../../ActorContext";
 import CONSTANTS                                                                                    from "../../Constants";
 import { ChartTypeEnum, toPolarizationInfo, toPolarization, mul, addPolarization, toMap, VoteKind } from "../../utils";
@@ -94,10 +95,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
             {
               [...Array.from(polarizationMap.entries())].map(([category, polarization]) => (
                 (
-                  <li key={category} style={{
-                    filter: `sepia(` + CONSTANTS.SICK_FILTER.SEPIA_PERCENT * (1 - genuineRatio) + `%) 
-                            hue-rotate(` + CONSTANTS.SICK_FILTER.HUE_ROTATE_DEG * (1 - genuineRatio) + `deg)`
-                    }}>
+                  <li key={category}>
                     <PolarizationBar 
                       name={category}
                       showName={true}
@@ -119,8 +117,11 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
               chartType={chartType}
               setChartType={setChartType}
             />
-            <div className="place-self-center">
-            { voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}
+            <div className="flex flex-row justify-center place-self-center">
+              <div className="w-4 h-4 mr-1">
+                <CertifiedIcon/>
+              </div>
+              <span>{ voteNumber > 0 ? (genuineRatio * 100).toFixed(0) + "% genuine" : ""}</span>
             </div>
           </div>
         </div>

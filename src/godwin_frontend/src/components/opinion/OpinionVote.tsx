@@ -2,6 +2,7 @@ import CursorBallot                                            from "../base/Cur
 import { CursorSlider }                                        from "../base/CursorSlider";
 import UpdateProgress                                          from "../UpdateProgress";
 import SvgButton                                               from "../base/SvgButton";
+import CertifiedIcon                                           from "../icons/CertifiedIcon";
 import ReturnIcon                                              from "../icons/ReturnIcon";
 import PutBallotIcon                                           from "../icons/PutBallotIcon";
 import { putBallotErrorToString, VoteStatusEnum, voteStatusToEnum, RevealableBallot,
@@ -109,8 +110,7 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, bottomPlacehold
               {
                 !canVote(voteData) ? <></> :
                 voteData.id !== ballot.vote_id ?
-                  <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold
-                    ${isLateVote(voteData) ? "late-vote": ""}`}
+                  <div className={`text-sm text-blue-600 dark:text-blue-600 hover:text-blue-800 hover:dark:text-blue-400 hover:cursor-pointer font-bold`}
                     onClick={() => { setBallot(undefined); }}
                   > NEW </div> :
                 ballot.can_change ?
@@ -131,10 +131,18 @@ const OpinionVote = ({sub, voteData, allowVote, onOpinionChange, bottomPlacehold
         <>
           { voteView === VoteView.VOTE && canVote(voteData) ?
             <div className={`relative flex flex-row items-center justify-center w-full transition duration-2000 ${triggerVote ? "opacity-0" : "opacity-100"}`}>
+              <div className="absolute flex flex-col items-center left-0 w-1/5">
+                { 
+                  isLateVote(voteData) ? <></> : 
+                    <div className="w-6 h-6">
+                      <CertifiedIcon/>
+                    </div>
+                }
+              </div>
               <div className="w-2/5">
                 <CursorSlider
                     id={ bottomPlaceholderId + "_slider" }
-                    cursor = { cursor }
+                    cursor={ cursor }
                     polarizationInfo={ CONSTANTS.OPINION_INFO }
                     disabled={ triggerVote }
                     setCursor={ setCursor }
