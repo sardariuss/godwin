@@ -117,7 +117,7 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
               chartType={chartType}
               setChartType={setChartType}
             />
-            <div className="flex flex-row justify-center place-self-center">
+            <div className="flex flex-row justify-center place-self-center" style={{filter: `grayscale(${1 - genuineRatio})`}}>
               <div className="w-4 h-4 mr-1">
                 <CertifiedIcon/>
               </div>

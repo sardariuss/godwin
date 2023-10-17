@@ -1,6 +1,5 @@
 
 const CONSTANTS = {
-  LOGO: '🛸',
   INTEREST_INFO: {
     down: {
       symbol: '👹',
@@ -49,7 +48,7 @@ const CONSTANTS = {
   },
   USER: {
     DEFAULT_NAME: 'New user',
-    DEFAULT_AVATAR: '👽'
+    DEFAULT_AVATAR: '😀'
   },
   TOKEN_DECIMALS: 0,
   CURSOR_DECIMALS: 2,
@@ -60,8 +59,8 @@ const CONSTANTS = {
     BORDER_COLOR_DARK: '#333333',
     BAR_CHART_BORDER_WIDTH: 1.2,
   },
-  INSTRUCTION_BULLET: "🔫",
-  INFO_BULLET: "🛸",
+  INSTRUCTION_BULLET: "🪒",
+  INFO_BULLET: "💈",
   HELP_MESSAGE: {
     DELETED_QUESTION: 'This question has been deleted.',
   },

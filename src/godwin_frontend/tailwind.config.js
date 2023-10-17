@@ -3,15 +3,10 @@ module.exports = {
 	theme: {
 		fontFamily: {
 			inter: "'Inter', sans-serif",
+			ultra: "'Ultra', sans-serif",
+			archivo_black: "'Archivo Black', sans-serif",
 		},
 		extend: {
-			fontSize: {
-				'humongous': '10rem',
-				'humongous-2': '12rem',
-				'humongous-3': '14rem',
-				'humongous-4': '16rem',
-				'humongous-5': '18rem',
-			},
 			minHeight: {
 				'half-screen': '50vh',
 			},
