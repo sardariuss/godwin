@@ -189,7 +189,6 @@ const InterestVote = ({sub, voteData, allowVote, principal, bottomPlaceholderId,
                 ballotHistory.reverse().map(([iteration, ballot], index) => (
                   ballot === undefined ? <></> :
                   <li className="w-full" key={index.toString()}>
-                    <div> { "VOTE ID " + ballot.vote_id.toString() }</div>
                     <InterestDetailedBallot
                       sub={sub}
                       vote_id={ballot.vote_id}

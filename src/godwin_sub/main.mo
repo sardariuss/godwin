@@ -48,7 +48,6 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
   type OpenQuestionError              = Types.OpenQuestionError;
   type ReopenQuestionError            = Types.ReopenQuestionError;
   type AccessControlError             = Types.AccessControlError;
-  type SetSchedulerParametersError    = Types.SetSchedulerParametersError;
   type FindBallotError                = Types.FindBallotError;
   type PutBallotError                 = Types.PutBallotError;
   type RevealVoteError                = Types.RevealVoteError;
@@ -66,7 +65,7 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
     getController().getSubInfo();
   };
 
-  public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
+  public shared({caller}) func setSchedulerParameters(params: SchedulerParameters) : async Result<(), AccessControlError> {
     getController().setSchedulerParameters(caller, params);
   };
 
@@ -80,6 +79,10 @@ shared actor class GodwinSub(args: MigrationTypes.Args) = {
 
   public query func searchQuestions(text: Text, limit: Nat) : async [QuestionId] {
     getController().searchQuestions(text, limit);
+  };
+
+  public shared({caller}) func removeQuestion(question_id: Nat) : async Result<(), AccessControlError> {
+    getController().removeQuestion(caller, question_id);
   };
 
   public query func getQuestion(question_id: QuestionId) : async Result<Question, GetQuestionError> {

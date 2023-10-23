@@ -14,25 +14,30 @@ import Debug              "mo:base/Debug";
 
 shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterInterface = this {
 
-  type Result<Ok, Err>        = Result.Result<Ok, Err>;
+  type Result<Ok, Err>             = Result.Result<Ok, Err>;
 
-  type CategoryArray          = SubTypes.CategoryArray;
-  type SubParameters          = SubTypes.SubParameters;
-  type SubMigrationArgs       = Types.SubMigrationArgs;
-  type Balance                = Types.Balance;
-  type Duration               = Types.Duration;
-  type CyclesParameters       = Types.CyclesParameters;
-  type BasePriceParameters    = Types.BasePriceParameters;
-  type ValidationParams       = Types.ValidationParams;
-  type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
-  type TransferResult         = Types.TransferResult;
-  type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
-  type MintBatchResult        = Types.MintBatchResult;
-  type RemoveSubResult        = Types.RemoveSubResult;
-  type CreateSubGodwinError   = Types.CreateSubGodwinError;
-  type SetUserNameError       = Types.SetUserNameError;
-  type AccessControlError     = Types.AccessControlError;
-  type Controller             = Controller.Controller;
+  type CategoryArray               = SubTypes.CategoryArray;
+  type SubParameters               = SubTypes.SubParameters;
+  type SchedulerParameters         = SubTypes.SchedulerParameters;
+  type SelectionParameters         = SubTypes.SelectionParameters;
+  type SetSchedulerParametersError = Types.SetSchedulerParametersError;
+  type SetSelectionParametersError = Types.SetSelectionParametersError;
+  type SubMigrationArgs            = Types.SubMigrationArgs;
+  type Balance                     = Types.Balance;
+  type Duration                    = Types.Duration;
+  type CyclesParameters            = Types.CyclesParameters;
+  type BasePriceParameters         = Types.BasePriceParameters;
+  type ValidationParams            = Types.ValidationParams;
+  type CreateSubGodwinResult       = Types.CreateSubGodwinResult;
+  type TransferResult              = Types.TransferResult;
+  type UpgradeAllSubsResult        = Types.UpgradeAllSubsResult;
+  type MintBatchResult             = Types.MintBatchResult;
+  type RemoveSubResult             = Types.RemoveSubResult;
+  type CreateSubGodwinError        = Types.CreateSubGodwinError;
+  type SetUserNameError            = Types.SetUserNameError;
+  type AccessControlError          = Types.AccessControlError;
+  type RemoveQuestionError         = Types.RemoveQuestionError;
+  type Controller                  = Controller.Controller;
 
   stable var _state = Migrations.install(Time.now(), args);
 
@@ -67,12 +72,24 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().setSubCreationPriceE8s(caller, sub_creation_price_e9s);
   };
 
+  public shared({caller}) func setSubSchedulerParameters(identifier: Text, scheduler_parameters: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
+    await getController().setSubSchedulerParameters(caller, identifier, scheduler_parameters);
+  };
+  
+  public shared({caller}) func setSubSelectionParameters(identifier: Text, selection_parameters: SelectionParameters) : async Result<(), SetSelectionParametersError> {
+    await getController().setSubSelectionParameters(caller, identifier, selection_parameters);
+  };
+
   public shared query func getBasePriceParameters() : async BasePriceParameters {
     getController().getBasePriceParameters();
   };
 
   public shared({caller}) func setBasePriceParameters(base_price_parameters: BasePriceParameters) : async Result<(), AccessControlError> {
     await getController().setBasePriceParameters(caller, base_price_parameters);
+  };
+
+  public shared({caller}) func removeSubQuestion(sub_name: Text, question_id: Nat) : async Result<(), RemoveQuestionError> {
+    await getController().removeSubQuestion(caller, sub_name, question_id);
   };
 
   public shared query func getSubValidationParams() : async ValidationParams {

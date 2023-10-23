@@ -1,5 +1,4 @@
 import Types        "Types";
-import KeyConverter "KeyConverter";
 
 import Queries       "../../utils/Queries";
 

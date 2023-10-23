@@ -3,10 +3,10 @@ import UtilsTypes        "../godwin_sub/utils/Types";
 import SubMigrationTypes "../godwin_sub/stable/Types";
 import StableTypes       "stable/Types";
 
-import Result      "mo:base/Result";
-import Nat64       "mo:base/Nat64";
-import Nat         "mo:base/Nat";
-import Error       "mo:base/Error";
+import Result            "mo:base/Result";
+import Nat64             "mo:base/Nat64";
+import Nat               "mo:base/Nat";
+import Error             "mo:base/Error";
 
 module {
 
@@ -40,14 +40,19 @@ module {
   public type SingleSubUpgradeResult = Result<(), FailedUpgradeError>;
 
   public type RemoveSubResult = Result<Principal, RemoveSubError>;
+
+  public type SubNotFoundError = {
+    #SubNotFound;
+  };
+
+  public type SetSchedulerParametersError = AccessControlError or SubNotFoundError or { #SubError; };
+  public type SetSelectionParametersError = AccessControlError or SubNotFoundError or { #SubError; };
+  public type RemoveQuestionError         = AccessControlError or SubNotFoundError or { #SubError; };
+  public type RemoveSubError              = AccessControlError or SubNotFoundError;
   
   public type FailedUpgradeError = {
     code: Error.ErrorCode;
     message: Text;
-  };
-
-  public type RemoveSubError = AccessControlError or {
-    #SubNotFound;
   };
 
   public type CreateSubGodwinError = {

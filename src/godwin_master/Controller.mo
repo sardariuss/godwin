@@ -23,32 +23,38 @@ import Error              "mo:base/Error";
 
 module {
 
-  type Model = Model.Model;
+  type Model                       = Model.Model;
 
-  type Result<Ok, Err>        = Result.Result<Ok, Err>;
-  type Map<K, V>              = Map.Map<K, V>;
+  type Result<Ok, Err>             = Result.Result<Ok, Err>;
+  type Map<K, V>                   = Map.Map<K, V>;
 
-  type Time                   = Int;
-  type CategoryArray          = SubTypes.CategoryArray;
-  type SubParameters          = SubTypes.SubParameters;
-  type SubMigrationArgs       = SubMigrationTypes.Args;
-  type Balance                = Types.Balance;
-  type CreateSubGodwinResult  = Types.CreateSubGodwinResult;
-  type TransferResult         = Types.TransferResult;
-  type Principals             = Types.Principals;
-  type AccessControlRole      = Types.AccessControlRole;
-  type AccessControlError     = Types.AccessControlError;
-  type UpgradeAllSubsResult   = Types.UpgradeAllSubsResult;
-  type SingleSubUpgradeResult = Types.SingleSubUpgradeResult;
-  type RemoveSubResult        = Types.RemoveSubResult;
-  type MintBatchResult        = Types.MintBatchResult;
-  type CreateSubGodwinError   = Types.CreateSubGodwinError;
-  type SetUserNameError       = Types.SetUserNameError;
-  type CyclesParameters       = Types.CyclesParameters;
-  type BasePriceParameters    = Types.BasePriceParameters;
-  type ValidationParams       = Types.ValidationParams;
-  type Duration               = UtilsTypes.Duration;
-  type GodwinSub              = GodwinSub.GodwinSub;
+  type Time                        = Int;
+  type CategoryArray               = SubTypes.CategoryArray;
+  type SubParameters               = SubTypes.SubParameters;
+  type SchedulerParameters         = SubTypes.SchedulerParameters;
+  type SelectionParameters         = SubTypes.SelectionParameters;
+  type SubMigrationArgs            = SubMigrationTypes.Args;
+  type Balance                     = Types.Balance;
+  type CreateSubGodwinResult       = Types.CreateSubGodwinResult;
+  type TransferResult              = Types.TransferResult;
+  type Principals                  = Types.Principals;
+  type AccessControlRole           = Types.AccessControlRole;
+  type AccessControlError          = Types.AccessControlError;
+  type UpgradeAllSubsResult        = Types.UpgradeAllSubsResult;
+  type SingleSubUpgradeResult      = Types.SingleSubUpgradeResult;
+  type RemoveSubResult             = Types.RemoveSubResult;
+  type MintBatchResult             = Types.MintBatchResult;
+  type CreateSubGodwinError        = Types.CreateSubGodwinError;
+  type SetUserNameError            = Types.SetUserNameError;
+  type CyclesParameters            = Types.CyclesParameters;
+  type BasePriceParameters         = Types.BasePriceParameters;
+  type ValidationParams            = Types.ValidationParams;
+  type SetSchedulerParametersError = Types.SetSchedulerParametersError;
+  type SetSelectionParametersError = Types.SetSelectionParametersError;
+  type RemoveQuestionError         = Types.RemoveQuestionError;
+  type SubNotFoundError            = Types.SubNotFoundError;
+  type Duration                    = UtilsTypes.Duration;
+  type GodwinSub                   = GodwinSub.GodwinSub;
 
   let { toBaseResult; } = Types;
 
@@ -86,6 +92,30 @@ module {
       });
     };
 
+    public func setSubSchedulerParameters(caller: Principal, identifier: Text, params: SchedulerParameters) : async Result<(), SetSchedulerParametersError> {
+      switch(accessSub(caller, identifier)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(sub)) {
+          switch(await sub.setSchedulerParameters(params)){
+            case(#err(err)) { #err(#SubError); };
+            case(#ok(_)) { #ok; };
+          };
+        };
+      };
+    };
+
+    public func setSubSelectionParameters(caller: Principal, identifier: Text, params: SelectionParameters) : async Result<(), SetSelectionParametersError> {
+      switch(accessSub(caller, identifier)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(sub)) {
+          switch(await sub.setSelectionParameters(params)){
+            case(#err(err)) { #err(#SubError); };
+            case(#ok(_)) { #ok; };
+          }
+        };
+      };
+    };
+    
     public func getBasePriceParameters() : BasePriceParameters {
       _model.getBasePriceParameters();
     };
@@ -106,6 +136,18 @@ module {
       };
 
       #ok;
+    };
+
+    public func removeSubQuestion(caller: Principal, sub_name: Text, question_id: Nat) : async Result<(), RemoveQuestionError> {
+      switch(accessSub(caller, sub_name)){
+        case(#err(err)) { return #err(err); };
+        case(#ok(sub)) {
+          switch(await sub.removeQuestion(question_id)){
+            case(#err(err)) { #err(#SubError); };
+            case(#ok(_)) { #ok; };
+          }; 
+        };
+      };
     };
 
     public func getSubValidationParams() : ValidationParams {
@@ -311,6 +353,22 @@ module {
       };
       #err(#AccessDenied({required_role;}));
     };
+
+    private func accessSub(caller: Principal, identifier: Text) : Result<GodwinSub, AccessControlError or SubNotFoundError> {
+      switch(verifyAuthorizedAccess(caller, #ADMIN)){
+        case(#err(err)) { return #err(err); };
+        case(#ok) {
+          switch(_model.getSubGodwins().find(func(p: Principal, id: Text) : Bool { id == identifier; })){
+            case(null) { return #err(#SubNotFound); };
+            case(?(principal, _)) { 
+              let sub : GodwinSub = actor(Principal.toText(principal));
+              return #ok(sub); 
+            };
+          };
+        };
+      };
+    };
+
   };
 
 };

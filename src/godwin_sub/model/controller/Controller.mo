@@ -74,7 +74,6 @@ module {
   type ReopenQuestionError         = Types.ReopenQuestionError;
   type AccessControlError          = Types.AccessControlError;
   type AccessControlRole           = Types.AccessControlRole;
-  type SetSchedulerParametersError = Types.SetSchedulerParametersError;
   type FindBallotError             = Types.FindBallotError;
   type PutBallotError              = Types.PutBallotError;
   type RevealVoteError             = Types.RevealVoteError;
@@ -100,8 +99,8 @@ module {
       };
     };
 
-    public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), SetSchedulerParametersError> {
-      Result.mapOk<(), (), SetSchedulerParametersError>(verifyAuthorizedAccess(caller, #MASTER), func () {
+    public func setSchedulerParameters(caller: Principal, params: SchedulerParameters) : Result<(), AccessControlError> {
+      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
         _model.setSchedulerParameters(params);
       });
     };
@@ -122,6 +121,17 @@ module {
 
     public func searchQuestions(text: Text, limit: Nat) : [Nat] {
       _model.getQuestions().searchQuestions(text, limit);
+    };
+
+    public func removeQuestion(caller: Principal, question_id: Nat) : Result<(), AccessControlError> {
+      Result.mapOk<(), (), AccessControlError>(verifyAuthorizedAccess(caller, #MASTER), func () {
+        // Remove the question from every order_by query
+        _model.getQueries().removeAll(question_id);
+        // Remove the question's status history
+        _model.getStatusManager().removeStatusHistory(question_id);
+        // Remove the question
+        _model.getQuestions().removeQuestion(question_id);
+      });
     };
 
     public func getQuestion(question_id: Nat) : Result<Question, GetQuestionError> {
@@ -409,8 +419,10 @@ module {
           case(null) { return null; }; // Do not consider the vote if it is not locked or closed
           case(?decay) { decay / current_vote_decay; };
         };
-        // Get the most up-to-date categorization vote for this question
         let (question_id, opinion_iteration) = _model.getOpinionJoins().getQuestionIteration(vote_id);
+        // Do not consider the vote if the question has been removed
+        if (_model.getQuestions().findQuestion(question_id) == null) { return null; };
+        // Get the most up-to-date categorization vote for this question
         let join = Map.findDesc(
           _model.getCategorizationJoins().getQuestionVotes(question_id),
           func(iteration: Nat, id: VoteId) : Bool {

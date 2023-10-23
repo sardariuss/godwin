@@ -89,6 +89,15 @@ module {
       });
     };
 
+    public func removeAll(id: Nat) {
+      for ((order_by, order_register) in _register.entries()){
+        switch(Map.get(order_register.key_map, Map.nhash, id)){
+          case(null){};
+          case(?key){ remove(key); };
+        };
+      };
+    };
+
     public func replace(old: ?Key, new: ?Key) {
       Option.iterate(old, func(key: Key) { remove(key); });
       Option.iterate(new, func(key: Key) { add(key);    });

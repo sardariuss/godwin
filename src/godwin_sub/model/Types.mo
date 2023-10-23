@@ -185,8 +185,6 @@ module {
     #OpenInterestVoteFailed: OpenVoteError;
   };
 
-  public type SetSchedulerParametersError = AccessControlError;
-
   public type GetUserConvictionsError = PrincipalError;
 
   public type GetUserVotesError = PrincipalError;
