@@ -138,6 +138,8 @@ const UpdateProgress = <Error,>({
     setError(null);
   }
 
+  // Watchout, sometimes the CirclarProgress suddenly ceases to work: reinstalling 
+  // packages with npm install often fixes the problem...
 	return (
     <div className="relative flex flex-col items-center w-full">
       { 

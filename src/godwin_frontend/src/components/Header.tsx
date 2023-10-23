@@ -82,7 +82,7 @@ const Header = () => {
            Uses an absolute height for the header so that it is possible to correctly align the top of the sticky tab in MainQuestions.tsx */ 
         <header className="bg-slate-100 dark:bg-gray-800 sticky top-0 z-30 flex flex-row items-center w-full justify-between space-x-2 xl:px-4 lg:px-3 md:px-2 px-2 xl:h-18 lg:h-16 md:h-14 h-14">
           <Link to="/" className="flex flex-row items-center space-x-1">
-            <img src="single_ball.png" alt="single_ball" className="xl:h-14 lg:h-12 md:h-10 h-10 hidden"></img>
+            <img src="token_ball.png" alt="single_ball" className="xl:h-14 lg:h-12 md:h-10 h-10 hidden"></img>
             <span className="xl:text-4xl lg:text-3xl md:text-2xl text-2xl whitespace-nowrap dark:text-white title">{ "Politiballs" }</span>
           </Link>
           <div className="flex flex-row items-center justify-center md:space-x-4">

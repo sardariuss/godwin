@@ -24,7 +24,7 @@ export const HelpProposeDetails = ({max_num_characters} : HelpProposeDetailsInpu
         <span>{" Only the most interesting statements get opened to vote."}</span>
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
-        <img src="single_ball.png" alt="single_ball" className="h-5"></img>
+        <img src="token_ball.png" alt="single_ball" className="h-5"></img>
         <span className="italic">This operation requires some balls.</span>
       </div>
     </div>
@@ -60,7 +60,7 @@ export const HelpSelectDetails = () => {
         <span>{" Only the most interesting statements get opened to vote."}</span>
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
-        <img src="single_ball.png" alt="single_ball" className="h-5"></img>
+        <img src="token_ball.png" alt="single_ball" className="h-5"></img>
         <span className="italic">This operation requires some balls.</span>
       </div>
     </div>
@@ -107,7 +107,7 @@ export const HelpPositionDetails = () => {
         <span>{" It is possible that none of the categories apply."}</span>
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
-        <img src="single_ball.png" alt="single_ball" className="h-5"></img>
+        <img src="token_ball.png" alt="single_ball" className="h-5"></img>
         <span className="italic">This operation requires some balls.</span>
       </div>
     </div>
