@@ -66,7 +66,7 @@ const CONSTANTS = {
   },
   OPEN_QUESTION: {
     PLACEHOLDER: "What's interesting to vote on?",
-    PICK_SUB: "Choose a sub-godwin",
+    PICK_SUB: "Choose a sub",
   },
   SICK_FILTER: {
     SEPIA_PERCENT: 40,

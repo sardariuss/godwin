@@ -120,7 +120,7 @@ const OpenQuestion = ({textInputId, canSelectSub, subId, onSubmitQuestion}: Prop
                   {
                     [...Array.from(subs.entries())].map((elem) => (
                       <li key={elem[0]}>
-                        <div onClick={(e)=>{setSelectedSubId(elem[0]); setShowSubsList(false);}} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white hover:cursor-pointer">{"g/" + elem[0]}</div>
+                        <div onClick={(e)=>{setSelectedSubId(elem[0]); setShowSubsList(false);}} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white hover:cursor-pointer">{"sub/" + elem[0]}</div>
                       </li>
                     ))
                   }

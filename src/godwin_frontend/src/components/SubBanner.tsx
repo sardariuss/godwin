@@ -18,7 +18,7 @@ const SubBanner = ({sub} : Props) => {
       <Link className="w-full text-black dark:text-white font-medium pt-2 pb-1
           bg-gradient-to-r from-purple-200 dark:from-purple-700 from-10% 
                            via-indigo-100  dark:via-indigo-800  via-30% 
-                           to-sky-200      dark:to-sky-600      to-90%" to={"/g/" + sub.id}>
+                           to-sky-200      dark:to-sky-600      to-90%" to={"/sub/" + sub.id}>
         { sub.info.name }
       </Link>
       { /* use a gradient because setting the background color normally does not apply to the sides (when scrolling the bar left and right) */ }

@@ -26,7 +26,7 @@ const LinkSubProfile = ({sub, principal} : LinkSubProfileProps) => {
 	return (
     (
       numberVotes !== undefined ?
-      <Link to={ "/g/" + sub[0] + "/user/" + principal.toString() }>
+      <Link to={ "/sub/" + sub[0] + "/user/" + principal.toString() }>
         <div className={`block w-full flex flex-row justify-between hover:bg-slate-50 hover:dark:bg-slate-850 px-5 w-full border-b dark:border-gray-700 items-center`}>
           <div className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">{sub[1].info.name}</div>
           <div className="text-sm text-gray-700 dark:text-gray-400">{ numberVotes.toString() + " votes"}</div>

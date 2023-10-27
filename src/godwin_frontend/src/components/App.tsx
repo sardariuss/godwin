@@ -63,7 +63,7 @@ function App() {
                 element={ <ListSubs/> }
               />
               <Route
-                path="/g/:subgodwin"
+                path="/sub/:subgodwin"
                 element={ <MainQuestions/> }
               />
               <Route
@@ -71,7 +71,7 @@ function App() {
                 element={ <UserComponent/> }
               />
               <Route
-                path="/g/:subgodwin/user/:user"
+                path="/sub/:subgodwin/user/:user"
                 element={ <SubProfile/> }
               />
               <Route

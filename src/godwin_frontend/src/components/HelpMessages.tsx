@@ -25,7 +25,7 @@ export const HelpProposeDetails = ({max_num_characters} : HelpProposeDetailsInpu
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <img src="token_ball.png" alt="single_ball" className="h-5"></img>
-        <span className="italic">This operation requires some balls.</span>
+        <span className="italic">This operation requires balls.</span>
       </div>
     </div>
   )
@@ -61,7 +61,7 @@ export const HelpSelectDetails = () => {
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <img src="token_ball.png" alt="single_ball" className="h-5"></img>
-        <span className="italic">This operation requires some balls.</span>
+        <span className="italic">This operation requires balls.</span>
       </div>
     </div>
   )
@@ -85,13 +85,13 @@ export const HelpVoteDetails = () => {
       </div>
       <div> 
         { CONSTANTS.INFO_BULLET }
-        <span>{" Your convictions profile will get updated everytime you give your opinion on a statement."}</span>
+        <span>{" Your profile gets updated more precisely with every vote."}</span>
       </div>
     </div>
   )
 }
 
-export const HelpPositionDetails = () => {
+export const HelpMapDetails = () => {
   return (
     <div className="flex flex-col text-sm text-black dark:text-white px-5 py-1 border-b dark:border-gray-700 bg-slate-100 dark:bg-slate-800">
       <div> 
@@ -108,7 +108,7 @@ export const HelpPositionDetails = () => {
       </div>
       <div className="flex flex-row space-x-1 items-center"> 
         <img src="token_ball.png" alt="single_ball" className="h-5"></img>
-        <span className="italic">This operation requires some balls.</span>
+        <span className="italic">This operation requires balls.</span>
       </div>
     </div>
   )
@@ -123,11 +123,11 @@ export const HelpArchivedDetails = () => {
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
-        <span>{" When closed the results of the opinion and positioning votes are revealed."}</span>
+        <span>{" When closed the results of the vote and mapping are revealed."}</span>
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
-        <span>{" You can still give your opinion on closed statements, but your vote won't be genuine nor count in the results."}</span>
+        <span>{" You can still vote on closed statements but it won't count as genuine."}</span>
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
@@ -146,7 +146,7 @@ export const HelpOpenDetails = () => {
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
-        <span>{" While a statement is opened, you can give your genuine opinion on it and position it according to the sub's dimensions."}</span>
+        <span>{" While a statement is opened, you can vote on it and map it in the sub's space."}</span>
       </div>
     </div>
   )
@@ -161,7 +161,7 @@ export const HelpCandidateDetails = () => {
       </div>
       <div> 
         <span>{ CONSTANTS.INFO_BULLET } </span>
-        <span>{" The statements voted the most legit get opened, the rest of them get rejected after a while."}</span>
+        <span>{" The most legit get opened, the rest of them get rejected after a while."}</span>
       </div>
     </div>
   )

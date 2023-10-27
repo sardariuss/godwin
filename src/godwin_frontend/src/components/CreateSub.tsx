@@ -86,7 +86,7 @@ const CreateSub = () => {
       console.log(result);
       if (result['ok'] !== undefined){
         addSub(result['ok'], identifier).then(() => {
-          navigate("/g/" + identifier);
+          navigate("/sub/" + identifier);
         }).catch((err) => {
           setError(err.toString());
         });

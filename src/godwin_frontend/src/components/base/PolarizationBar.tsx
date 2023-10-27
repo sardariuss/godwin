@@ -12,6 +12,7 @@ export type BallotPoint = {
   label: string;
   cursor: number;
   coef: number;
+  decay: number;
   date: bigint;
 };
 
@@ -27,7 +28,7 @@ const getScatterChartData = (input_ballots: BallotPoint[], polarizationInfo: Pol
   for (let i = 0; i < input_ballots.length; i++){
     let final_cursor = input_ballots[i].cursor * input_ballots[i].coef;
     points.push({ x: final_cursor, y: Number(input_ballots[i].date) });
-    colors.push(cursorToColor(final_cursor, polarizationInfo, Math.abs(input_ballots[i].coef)));
+    colors.push(cursorToColor(final_cursor, polarizationInfo, input_ballots[i].decay));
     labels.push(input_ballots[i].label);
   }
   return {

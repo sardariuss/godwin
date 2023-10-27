@@ -41,43 +41,51 @@ const Convictions = ({sub, principal, isLoggedUser} : ConvictionsProps) => {
         return;
       };
 
-      let weighted_ballots = new Map<Category, BallotPoint[]>();
+      let map_ballots = new Map<Category, BallotPoint[]>();
       let map_polarizations = new Map<Category, Polarization>();
-
-      var total_true_weights = 0;
-      var total_late_weights = 0;
-
+      var total_vote_decay = 0;
+      var total_late_decay = 0;
+      
       for (let i = 0; i < queryConvictions.length; i++){
-        // Get the BallotConvictionInput for each vote
+        // Get the { opinion cursor, date, categorization result, vote decay and ballot decay } 
+        // associated to each opinion ballot the user gave.
         let [vote_id, { cursor, date, categorization, vote_decay, late_ballot_decay }] = queryConvictions[i];
 
-        let decay = (fromNullable(late_ballot_decay) ?? 1) * vote_decay;
-        total_true_weights += decay;
-        total_late_weights += fromNullable(late_ballot_decay) !== undefined ? decay : 0;
+        // Update the total decays
+        // For this user, the decay associated to his ballot is the vote 
+        // decay multiplied by the late ballot decay
+        let decay = vote_decay * (fromNullable(late_ballot_decay) ?? 1);
+        total_vote_decay += decay;
+        // Add the decay to the total of late decays if the ballot is late
+        total_late_decay += fromNullable(late_ballot_decay) !== undefined ? decay : 0;
 
         [...Array.from(sub.info.categories)].forEach(([category, _]) => {
-          let weight = toMap(categorization).get(category) ?? 0;
+          let coef = toMap(categorization).get(category) ?? 0;
           // Add the weighted ballot to the ballots array
-          let array : BallotPoint[] = weighted_ballots.get(category) ?? [];
-          // Compute the decay
+          let array : BallotPoint[] = map_ballots.get(category) ?? [];
           array.push({
-            label: "Vote " + vote_id.toString() + ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
+            label: 
+              "Vote " + vote_id.toString() + 
+              ", cursor " + cursor.toFixed(CONSTANTS.CURSOR_DECIMALS) + 
+              ", coef " + coef.toFixed(CONSTANTS.CURSOR_DECIMALS) +
+              ", decay " + decay.toFixed(CONSTANTS.DECAY_DECIMALS),
             cursor,
-            coef: weight * decay,
+            coef,
+            decay,
             date
           });
-          weighted_ballots.set(category, array);
+          map_ballots.set(category, array);
           // Compute the polarization
           let old_polarization = map_polarizations.get(category) ?? {left: 0, center: 0, right: 0};
-          let new_polarization = addPolarization(old_polarization, mul(toPolarization(cursor), weight));
+          let new_polarization = addPolarization(old_polarization, mul(toPolarization(cursor), coef * decay));
           map_polarizations.set(category, new_polarization);
         });
       }
 
       setPolarizationMap(map_polarizations);
-      setBallotsMap(weighted_ballots);
+      setBallotsMap(map_ballots);
       setVoteNumber(queryConvictions.length);
-      setGenuineRatio((total_true_weights - total_late_weights) / total_true_weights);
+      setGenuineRatio((total_vote_decay - total_late_decay) / total_vote_decay);
     });
   }
 

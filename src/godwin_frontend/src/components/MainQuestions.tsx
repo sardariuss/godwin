@@ -5,7 +5,7 @@ import SubBanner                                                               f
 import QuestionComponent, { QuestionInput }                                    from "./Question";
 import Spinner                                                                 from "./Spinner";
 import { HelpProposeDetails, HelpSelectDetails, HelpVoteDetails, 
-  HelpPositionDetails, HelpArchivedDetails, HelpOpenDetails,
+  HelpMapDetails, HelpArchivedDetails, HelpOpenDetails,
   HelpCandidateDetails, HelpRejectedDetails }                                  from "./HelpMessages";
 import ListComponents                                                          from "./base/ListComponents";
 import { ActorContext, Sub }                                                   from "../ActorContext";
@@ -38,7 +38,7 @@ export enum HomeFilter {
   PROPOSE,
   SELECT,
   VOTE,
-  POSITION
+  MAP
 };
 
 const homeFilterToText = (filter: HomeFilter) => {
@@ -49,8 +49,8 @@ const homeFilterToText = (filter: HomeFilter) => {
       return "Select";
     case HomeFilter.VOTE:
       return "Vote";
-    case HomeFilter.POSITION:
-      return "Position";
+    case HomeFilter.MAP:
+      return "Map";
   }
 }
 
@@ -62,12 +62,12 @@ const homeFilterToVoteKind = (filter: HomeFilter) : VoteKind | undefined => {
       return VoteKind.INTEREST;
     case HomeFilter.VOTE:
       return VoteKind.OPINION;
-    case HomeFilter.POSITION:
+    case HomeFilter.MAP:
       return VoteKind.CATEGORIZATION;
   }
 }
 
-const home_filters = [HomeFilter.VOTE, HomeFilter.POSITION, HomeFilter.SELECT, HomeFilter.PROPOSE];
+const home_filters = [HomeFilter.VOTE, HomeFilter.MAP, HomeFilter.SELECT, HomeFilter.PROPOSE];
 
 export enum BrowseFilter {
   CANDIDATE,
@@ -250,7 +250,7 @@ const MainQuestions = () => {
               !toggleHelp ? <></> :
               currentMainTab === MainTab.HOME ?
                 currentHomeFilter === HomeFilter.VOTE          ? <HelpVoteDetails/>                                                  :
-                currentHomeFilter === HomeFilter.POSITION      ? <HelpPositionDetails/>                                              :
+                currentHomeFilter === HomeFilter.MAP           ? <HelpMapDetails/>                                                   :
                 currentHomeFilter === HomeFilter.SELECT        ? <HelpSelectDetails/>                                                :
                 currentHomeFilter === HomeFilter.PROPOSE       ? <HelpProposeDetails max_num_characters={sub.info.character_limit}/> : <></> :
               currentMainTab === MainTab.BROWSE ?
