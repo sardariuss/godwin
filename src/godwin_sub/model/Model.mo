@@ -40,6 +40,7 @@ module {
   type Joins                = Joins.QuestionVoteJoins;
   type VotersHistory        = VotersHistory.VotersHistory;
 
+  // The model is the main data structure of the app. It contains all the data.
   public class Model(
     _name: WRef<Text>,
     _master: WRef<Principal>,

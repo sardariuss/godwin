@@ -16,6 +16,7 @@ module {
   type CyclesParameters    = StableTypes.Current.CyclesParameters;
   type Controller          = Controller.Controller;
 
+  // Builds the controller from the stable state.
   public func build(state: State) : Controller {
     let token                  = WRef.WRef<Principal>                 (state.token                                                                 );
     let admin                  = WRef.WRef<Principal>                 (state.admin                                                                 );

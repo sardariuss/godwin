@@ -32,6 +32,7 @@ module {
     SubPrices(WRef.WRef(price_register));
   };
 
+  // This class is used to store and update the prices of the sub
   public class SubPrices(_price_register: WRef<PriceRegister>) {
 
     public func updatePrices(base_price_params: BasePriceParameters, selection_params: SelectionParameters) {

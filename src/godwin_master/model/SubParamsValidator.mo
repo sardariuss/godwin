@@ -32,6 +32,7 @@ module {
   type WRef<T>               = WRef.WRef<T>;
   type WMap<K, V>            = WMap.WMap<K, V>;
 
+  // This class is responsible for validating the parameters of the subgodwin
   public class SubParamsValidator(
     _params: WRef<ValidationParams>,
     _sub_godwins: WMap<Principal, Text>,

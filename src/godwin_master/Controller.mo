@@ -58,6 +58,10 @@ module {
 
   let { toBaseResult; } = Types;
 
+  // The controller is the main class of the master canister, it is used as entry point for all the calls.
+  // It is responsible for the access control and the validation of the parameters.
+  // It is also responsible for the creation of the subs.
+  // It is the only class that can access the model.
   public class Controller(_model: Model) {
 
     let _token : TokenTypes.FullInterface = actor(Principal.toText(_model.getToken()));

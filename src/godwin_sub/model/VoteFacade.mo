@@ -59,6 +59,7 @@ module {
   type KindAnswer           = Types.KindAnswer;
   type KindVote             = Types.KindVote;
 
+  // This class is an interface to ease the use of the three different kind of votes.
   public class VoteFacade(
     _interest_votes: InterestVotes,
     _opinion_votes: OpinionVotes,

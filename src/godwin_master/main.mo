@@ -176,7 +176,10 @@ shared actor class GodwinMaster(args: Types.MigrationArgs) : async Types.MasterI
     getController().validateUserName(principal: Principal, name: Text);
   };
 
-  func getController() : Controller {
+  // In case the source code version does not match with the stable state version, 
+  // the controller will be null and any call to the canister will trap.
+  // This situation should happen only when the canister is pending to be upgraded or downgraded.
+  private func getController() : Controller {
     switch(_controller){
       case (?c) { c; };
       case (null) { Debug.trap("Controller is null"); };

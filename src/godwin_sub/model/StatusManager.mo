@@ -65,6 +65,7 @@ module {
     StatusManager(WMap.WMap(register, Map.nhash), interest_joins, opinion_joins, categorization_joins);
   };
   
+  // This class is responsible for managing the status of the questions and the associated votes.
   public class StatusManager(
     _register: WMap.WMap<QuestionId, StatusHistory>,
     _interest_joins: Joins,

@@ -83,6 +83,7 @@ module {
     Controller(Schema.SchemaBuilder(model).build(), model);
   };
 
+  // The controller is the main class of the sub canister, it is used as entry point for all the calls.
   public class Controller(_schema: Schema, _model: Model) = {
 
     let _vote_facade = VoteFacade.VoteFacade(_model.getInterestVotes(), _model.getOpinionVotes(), _model.getCategorizationVotes());

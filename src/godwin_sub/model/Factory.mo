@@ -33,6 +33,7 @@ module {
 
   type Controller      = Controller.Controller;
   
+  // Builds the controller from the stable state.
   public func build(state: State) : Controller {
 
     let master = state.master;

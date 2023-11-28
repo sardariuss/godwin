@@ -21,6 +21,7 @@ module {
     SubMomentum(WRef.WRef<Momentum>(momentum), WRef.WRef<SelectionParameters>(selection_params));
   };
 
+  // This class is used to store and update the momentum of the sub.
   public class SubMomentum(_momentum: WRef<Momentum>, _selection_params: WRef<SelectionParameters>) {
 
     public func get() : Momentum {

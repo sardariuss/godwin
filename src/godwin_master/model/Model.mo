@@ -13,6 +13,8 @@ module {
   type BasePriceParameters = StableTypes.Current.BasePriceParameters;
   type SubParamsValidator  = SubParamsValidator.SubParamsValidator;
 
+  // The model is the main data structure of the app. It contains all the classes used
+  // by the controller, and referes to the stable types.
   public class Model(
     _token                   : WRef<Principal>,
     _admin                   : WRef<Principal>,
